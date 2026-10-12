@@ -104,6 +104,14 @@ class Receiver:
                 self._count("tag_fail")
                 self.bus.event("frame", verdict="tag-mismatch", ctr=ctr)
                 return
+        if base == self.base and ctr <= self.last_ctr:
+            # cheap early reject before the expensive verify + decrypt: a frame with an
+            # old counter is a replay or a forgery either way (an attacker cannot make
+            # us burn ~60 ms of CPU per replayed frame)
+            self._count("replay")
+            self._alert("replay", ctr=ctr)
+            self.bus.event("frame", verdict="replay", ctr=ctr, epoch=epoch)
+            return
         r = receive_frame(jpeg, key)                     # tag check + decrypt
         if not r.ok:
             kind = "tag_fail" if r.reason == "tag-mismatch" else "malformed"

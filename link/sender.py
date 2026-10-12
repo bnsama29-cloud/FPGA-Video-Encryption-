@@ -13,6 +13,7 @@ The board version (board/, later) does the same with the FPGA doing the encode.
 import json
 import threading
 import time
+from collections import deque
 
 import cv2
 
@@ -48,6 +49,7 @@ class Sender:
         self.win = Window()
         self.last_hb = time.monotonic()
         self.last_rx_ctr = 0
+        self.loss_hist = deque(maxlen=3)        # (ok, lost) of the last 3 windows
         self.running = True
         self.paused = False
         self.manual_mode = None
@@ -121,6 +123,9 @@ class Sender:
             w, self.win = self.win, Window()
             w.hb_age = time.monotonic() - self.last_hb
             w.sent = self.frames_sent
+            self.loss_hist.append((w.ok, w.lost))
+            w.recent_ok = sum(o for o, _ in self.loss_hist)
+            w.recent_lost = sum(lo for _, lo in self.loss_hist)
             f = w.features(d["deadman_s"])
             dec = self.policy.decide(w, f, time.monotonic())
             if dec.rekey:

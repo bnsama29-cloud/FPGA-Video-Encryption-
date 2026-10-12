@@ -52,11 +52,14 @@ class Window:
     fb_replay: int = 0
     hb_age: float = 0.0
     sent: int = 0                 # frames the sender transmitted in this window
+    recent_ok: int = 0            # ok / lost summed over the last few windows: one
+    recent_lost: int = 0          # window holds only ~10 frames, too few to judge loss
     alerts: list = field(default_factory=list)
 
     def features(self, deadman_s):
-        frames = self.ok + self.lost
-        loss = self.lost / frames if frames else (1.0 if self.hb_age > deadman_s else 0.0)
+        ok, lost = (self.recent_ok, self.recent_lost) if self.recent_ok + self.recent_lost else (self.ok, self.lost)
+        frames = ok + lost
+        loss = lost / frames if frames else (1.0 if self.hb_age > deadman_s else 0.0)
         # video suppressed while heartbeats still arrive: the receiver cannot count
         # gaps it never sees the end of, but the sender knows what it sent
         if self.sent >= 3 and self.ok == 0 and self.fb_ok > 0 and self.hb_age <= deadman_s:

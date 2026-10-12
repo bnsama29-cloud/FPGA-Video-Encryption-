@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  model-and-system:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Golden model, contract equivalence, system layer (incl. end-to-end link)
+        run: RUN_SLOW=1 python -m pytest -q tests/
+
+  rtl:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y iverilog   # 12.0 on Ubuntu 24.04
+      - run: pip install -r requirements.txt
+      - name: Every RTL block + top level in Icarus (cocotb)
+        run: python -m pytest -q tb/
+      - name: Vivado testbench run in Icarus
+        run: make xsim-icarus

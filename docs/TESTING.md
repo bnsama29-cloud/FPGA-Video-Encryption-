@@ -15,7 +15,7 @@ Never change the model to make an RTL test pass, unless the model is proven wron
 
 | # | Command | Checks | "Done when" (milestone) |
 |---|---|---|---|
-| 1 | `make test-model` | 1089 Ascon KATs, tables vs libjpeg, quality vs libjpeg, round trip all modes, tamper/replay/wrong key/session, marker-parsing regression | 14 passed (M0) |
+| 1 | `make test-model` | 1089 Ascon KATs, tables vs libjpeg, quality vs libjpeg, round trip all modes (E0-E5), tamper/replay/wrong key/session/mode downgrade, marker-parsing regression, **stage view == frame view byte for byte** (`tests/test_hw_equivalence.py`), system layer (`tests/test_link.py`; `RUN_SLOW=1` adds the end-to-end link) | all pass (M0) |
 | 2 | `make test-ascon` | RTL Ascon core vs KATs (70-vector subset covering every AD/PT length 0..33 + longest) and random vs model; `make full` runs all 1089 | all pass (M1) |
 | 3 | `make test-crypto` | keystream for 4 nonces incl. early restart, random take sizes; tag for AD lengths 1,15,16,17,31,32,33,48,100 + random | all pass (M1/M5) |
 | 4 | `make test-front` | colour + 4:2:0 + blocking on bars (pure R/G/B/black/white), noise, checker, 16×16 single MCU, non-square, back-to-back frames | byte-exact (M2) |
@@ -24,7 +24,8 @@ Never change the model to make an RTL test pass, unless the model is proven wron
 | 7 | `make test-entropy` | run-length: DC-only, all-zero, ZRL, 62 zeros + last non-zero, dense, max values. Encryption: all 5 modes, keystream starvation, decrypt = re-encrypt. Huffman+packer: 4 images + every one of the 324 AC codes, 0xFF stuffing, padding | byte-exact (M3, M5) |
 | 8 | `make test-top` | registers (read-back, write-only key, WSTRB, unused address); one frame per mode with receiver round trip; back-to-back frames of 4 sizes with random DMA stalls + tamper/replay/wrong key/wrong session; throughput | all pass (M4, M5) |
 | 9 | `make full` | everything above with all KATs and a 320×240 frame | all pass |
-| 10 | `make lint`, `make synth`, then `scripts/vivado_ooc.tcl` in Vivado | synthesizable, resource estimate, timing slack ≥ 0 at 100 MHz | WNS ≥ 0 |
+| 10 | `make xsim-icarus`, then `vivado/run_xsim.sh` (or `.bat`) in Vivado | the XSim testbench: 5 frames, all register/scan/tag checks, receiver accepts the rebuilt JPEGs | `XSIM RESULT: PASS` |
+| 11 | `make lint`, `make synth`, then `vivado -mode batch -source vivado/vivado_ooc.tcl` | synthesizable, resource estimate, timing slack ≥ 0 at 100 MHz | WNS ≥ 0 |
 
 Every test that uses randomness prints `random seed = N`; rerun with `SEED=N` to get the identical run.
 
@@ -89,3 +90,10 @@ Keep this log going; it is good material for the report and shows what the tests
 | 2 | keystream test: "first mismatch at bit 6", RTL looked right | testbench read the window right after `RisingEdge`, getting the previous cycle's value | decide at `FallingEdge` | before suspecting RTL, check *when* the testbench samples |
 | 3 | `invalid Huffman code at bit 6466` in the receiver, although RTL matched the model byte for byte | model searched for `FF C0` to find SOF0; session ID 0x00C0FFEE is stored as `EE FF C0 00` inside APP11 | walk marker segments (`segments()`), regression test added | never byte-search for JPEG markers |
 | 4 | planted bug: quantiser test said only "block 14 mismatch" | weak assertion message | report index, input, reciprocal, got, expected, exact quotient | the message `F=-2048, R=624, exact quotient 19.5000, got -19 expected -20` points straight at rounding |
+| 5 | A frame from the RTL repo's model was rejected by the GitHub golden receiver; 335 of 348 scan bytes differed in E2 (identical in E0) | two models had drifted: sign rule, keystream bit order, nonce layout, tag coverage, APP11 format; also ~6% of DCT coefficients differed by ±1 (one-pass vs two-pass DCT) and the quantiser divided instead of multiplying by a reciprocal | contract v2 (docs/INTERFACES.md §7), `tests/test_hw_equivalence.py` proves both views byte-identical | one referee only; test the referees against each other |
+| 6 | Changing the APP11 mode byte from E2 to E1 was not detected by the RTL-format receiver | v1 RTL tag covered the scan only | tag AD = 26-byte prefix (meta + size) + scan; `tag_unit.v` absorbs a prefix latched at START; top-level test now tries a downgrade | authenticate every field the receiver acts on |
+| 7 | 32-bit random session ids | birthday bound: a repeated id (= repeated nonce = repeated keystream) is expected after ~65k sessions under one key | 64-bit session id + SESSION_ID_HI / FRAME_CTR_HI registers | nonce width is a security parameter, not a detail |
+| 8 | Receiver reported ~40 "lost" frames after a bit-flip attack | frames that arrived but failed the tag were counted again as a counter gap | gap minus frames rejected since the last good one | rejected ≠ lost |
+| 9 | p95 latency rose from 110 ms to 1 s during a replay attack | receiver fully decrypted every replayed frame (~60 ms) before the counter check: an attacker could load the CPU for free | cheap counter pre-check before verify + decrypt (the authoritative check still follows the tag) | reject as early and as cheaply as possible |
+| 10 | Defence escalated during 3% benign packet loss | one 12 KB frame = ~11 UDP fragments, so 3% packet loss ≈ 28% frame loss, and 1-s windows of ~10 frames are noisy | loss over a 3-window horizon, 1400-byte fragments; false alarms 3/45 → 0/45 on `quick.json` | measure the network effect you are reacting to |
+| 11 | Bandit learned E4 for "calm" with some random seeds | almost no exploration after the first visit; constant step size let one unlucky window dominate | optimistic initial values + sample-average updates (floor 0.05); test passes for 8/8 seeds | test learners over several seeds |

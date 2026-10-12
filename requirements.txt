@@ -1,6 +1,12 @@
+# Golden model, system simulation, experiments
 numpy>=1.24
 pillow>=10.0
 scikit-image>=0.21
 opencv-python>=4.8
 matplotlib>=3.7
+cryptography>=42        # AES-GCM / ChaCha20 baselines in experiments/benchmark_crypto.py
 pytest>=7.0
+# RTL testbenches (versions verified with Icarus Verilog 12.0)
+cocotb==2.1.0
+cocotbext-axi==0.1.28
+# GPU experiment only: see requirements-gpu.txt

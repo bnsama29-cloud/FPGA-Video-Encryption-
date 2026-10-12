@@ -21,7 +21,7 @@ DEFAULTS = {
         "control": 47004,        # dashboard / experiments -> channel and sender (JSON)
         "sender_control": 47005,
         "bus": [47010],          # telemetry + previews -> dashboard / experiment logger
-        "fragment": 1200,        # UDP payload bytes per fragment
+        "fragment": 1400,        # UDP payload bytes per fragment (+24 B header < 1472 = Ethernet MTU)
     },
     "keys": {
         # Pre-shared 128-bit master key (hex). In a product this would come from a

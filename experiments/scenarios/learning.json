@@ -1,0 +1,57 @@
+{
+  "name": "learning",
+  "about": "~8 minutes: the same two attacks repeated 5 times with 40 s of calm in between (longer than the 30 s attack memory). Run with --policy bandit and compare time-to-mitigate per round.",
+  "end_s": 462,
+  "steps": [
+    {
+      "at": 12,
+      "attack": "bitflip",
+      "duration": 6
+    },
+    {
+      "at": 57,
+      "attack": "replay",
+      "duration": 6
+    },
+    {
+      "at": 102,
+      "attack": "bitflip",
+      "duration": 6
+    },
+    {
+      "at": 147,
+      "attack": "replay",
+      "duration": 6
+    },
+    {
+      "at": 192,
+      "attack": "bitflip",
+      "duration": 6
+    },
+    {
+      "at": 237,
+      "attack": "replay",
+      "duration": 6
+    },
+    {
+      "at": 282,
+      "attack": "bitflip",
+      "duration": 6
+    },
+    {
+      "at": 327,
+      "attack": "replay",
+      "duration": 6
+    },
+    {
+      "at": 372,
+      "attack": "bitflip",
+      "duration": 6
+    },
+    {
+      "at": 417,
+      "attack": "replay",
+      "duration": 6
+    }
+  ]
+}
