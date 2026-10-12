@@ -6,8 +6,12 @@ so ports and keys always agree.
 """
 import argparse
 import copy
-import tomllib
 from pathlib import Path
+
+try:
+    import tomllib                      # Python 3.11+
+except ModuleNotFoundError:             # Python 3.10 (Ubuntu 22.04): pip install tomli
+    import tomli as tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
