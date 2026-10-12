@@ -1,0 +1,6 @@
+# Quick open-source synthesis sanity check for the Zynq-7020 fabric (xc7).
+# Real numbers (timing, power) must come from Vivado: scripts/vivado_ooc.tcl
+read_verilog -Irtl/include rtl/ascon_round.v rtl/ascon_aead128_core.v rtl/keystream_gen.v rtl/tag_unit.v rtl/rgb2ycbcr_block.v rtl/dct_stage.v rtl/dct8x8.v rtl/quantiser.v rtl/zigzag_rle.v rtl/selective_enc.v rtl/huffman_enc.v rtl/bit_packer.v rtl/scan_word_packer.v rtl/axil_regs.v rtl/secure_jpeg_top.v
+chparam -set LOG_MAXW 11 secure_jpeg_top
+synth_xilinx -family xc7 -top secure_jpeg_top -flatten
+tee -o sim_build/yosys_utilisation.txt stat
