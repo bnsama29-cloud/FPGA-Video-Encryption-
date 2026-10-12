@@ -99,7 +99,8 @@ def analyse(events, cfg, t0):
         bad = [f for f in frames if s["t"] <= f["t"] <= end + 2 and f["verdict"] != "ok"]
         ep["rx_rejected"] = len(bad)
         ep["rx_first_rejection_s"] = round(bad[0]["t"] - s["t"], 3) if bad else None
-        ws = [w for w in windows if w["t"] >= s["t"]]
+        # only windows inside this episode (+ a short tail), never the next attack's reaction
+        ws = [w for w in windows if s["t"] <= w["t"] <= end + 5.0]
         aware = next((w for w in ws if w["threat"] >= 0.5), None)
         ep["sender_aware_s"] = round(aware["t"] - s["t"], 3) if aware else None
         mit = next((w for w in ws if leak[w["mode"]] <= leak[top] + 1e-9), None)

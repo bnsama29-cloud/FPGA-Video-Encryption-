@@ -82,7 +82,7 @@ class Sender:
                     self.last_hb = time.monotonic()
                     c = msg.get("counts", {})
                     if msg.get("type") == "hb":
-                        for k in ("ok", "lost", "tag_fail", "replay", "malformed", "stale_epoch"):
+                        for k in ("ok", "lost", "tag_fail", "replay", "malformed", "stale_epoch", "junk"):
                             setattr(self.win, k, getattr(self.win, k) + int(c.get(k, 0)))
                         self.last_rx_ctr = msg.get("last_good", self.last_rx_ctr)
                     elif msg.get("type") == "alert":
@@ -137,7 +137,7 @@ class Sender:
                        session=f"{self.session_id:016x}", policy=self.policy.name, reason=dec.reason,
                        manual=self.manual_mode, threat=round(threat_score(f), 3), features=f,
                        counts=dict(ok=w.ok, lost=w.lost, tag_fail=w.tag_fail, replay=w.replay,
-                                   malformed=w.malformed, stale_epoch=w.stale_epoch,
+                                   malformed=w.malformed, stale_epoch=w.stale_epoch, junk=w.junk,
                                    fb_ok=w.fb_ok, fb_forged=w.fb_forged, fb_replay=w.fb_replay),
                        alerts=w.alerts[:20], hb_age=round(w.hb_age, 2),
                        enc_fraction=round(self.enc_bits / payload, 4),

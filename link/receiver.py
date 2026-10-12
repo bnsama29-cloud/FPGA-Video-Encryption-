@@ -18,10 +18,10 @@ import os
 import time
 
 from model.container import parse_jpeg
-from model.jpeg import receive_frame
+from model.jpeg import receive_frame, verify_frame
 
 from . import config, keys, wire
-from .feedback import FeedbackWriter
+from .feedback import FeedbackWriter, ReplayWindow
 
 
 class Receiver:
@@ -40,6 +40,7 @@ class Receiver:
         self.seen_bases = set()
         self.ratchet = keys.Ratchet(self.master, 0)
         self.last_ctr = 0
+        self.window = ReplayWindow(64)   # which recent counters were already accepted
         self.rejected_since_good = 0     # frames that arrived but failed (not 'lost')
         self.counts = self._zero()
         self.total = self._zero()
@@ -48,7 +49,7 @@ class Receiver:
 
     @staticmethod
     def _zero():
-        return dict(ok=0, lost=0, tag_fail=0, replay=0, malformed=0, stale_epoch=0)
+        return dict(ok=0, lost=0, tag_fail=0, replay=0, malformed=0, stale_epoch=0, junk=0, late=0)
 
     def _send_fb(self, msg):
         wire.send_message(self.fsock, self.faddr, wire.FEEDBACK, self.fbw.pack(msg), self.fbw.ctr)
@@ -105,12 +106,24 @@ class Receiver:
                 self.bus.event("frame", verdict="tag-mismatch", ctr=ctr)
                 return
         if base == self.base and ctr <= self.last_ctr:
-            # cheap early reject before the expensive verify + decrypt: a frame with an
-            # old counter is a replay or a forgery either way (an attacker cannot make
-            # us burn ~60 ms of CPU per replayed frame)
-            self._count("replay")
-            self._alert("replay", ctr=ctr)
-            self.bus.event("frame", verdict="replay", ctr=ctr, epoch=epoch)
+            # Older than the newest frame shown. Never decrypt it (an attacker must not be
+            # able to make us burn ~60 ms of CPU per frame). Like SRTP's replay window:
+            #   seen before, or older than the window  -> replay (attack evidence)
+            #   not seen, inside the window, tag valid  -> 'late' (benign reordering)
+            off = self.last_ctr - ctr
+            seen = off < self.window.size and (self.window.bitmap >> off) & 1
+            if seen or off >= self.window.size:
+                self._count("replay")
+                self._alert("replay", ctr=ctr)
+                self.bus.event("frame", verdict="replay", ctr=ctr, epoch=epoch)
+            elif verify_frame(jpeg, key):
+                self.window.check(ctr)
+                self._count("late")
+                self.bus.event("frame", verdict="late", ctr=ctr, epoch=epoch)
+            else:
+                self._count("tag_fail")
+                self._alert("tag-fail")
+                self.bus.event("frame", verdict="tag-mismatch", ctr=ctr, epoch=epoch)
             return
         r = receive_frame(jpeg, key)                     # tag check + decrypt
         if not r.ok:
@@ -126,6 +139,7 @@ class Receiver:
             self.base = base
             self.ratchet = keys.Ratchet(self.master, epoch)
             self.last_ctr = 0
+            self.window = ReplayWindow(64)
             self.bus.event("session", session=f"{sid:016x}", epoch=epoch)
         elif epoch > self.ratchet.epoch:
             self.ratchet.forward(epoch)                  # old key erased
@@ -139,6 +153,7 @@ class Receiver:
             lost = ctr - self.last_ctr - 1 - self.rejected_since_good
             if lost > 0:
                 self._count("lost", lost)
+        self.window.check(ctr)
         self.last_ctr = ctr
         self.rejected_since_good = 0
         self._count("ok")
@@ -150,6 +165,10 @@ class Receiver:
                        bytes=len(jpeg))
 
     def heartbeat(self):
+        junk = self.rasm.junk - getattr(self, "_junk_seen", 0)     # datagrams that were not ours
+        self._junk_seen = self.rasm.junk
+        self.counts["junk"] += junk
+        self.total["junk"] += junk
         lat = sorted(self.latency)
         msg = dict(type="hb", counts=self.counts, last_good=self.last_ctr, epoch=self.ratchet.epoch,
                    latency_ms=lat[len(lat) // 2] if lat else None)

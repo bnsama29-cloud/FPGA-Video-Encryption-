@@ -187,6 +187,21 @@ def receive_frame(jpeg, key, guard=None):
     return ReceivedFrame(True, status, mode, session_id, ctr, plain, plain_scan)
 
 
+def verify_frame(jpeg, key):
+    """Tag check only (no decoding): True if the frame is authentic under `key`.
+    Cheap -- one Ascon pass over the scan -- for frames we will not display."""
+    try:
+        p = parse_jpeg(jpeg)
+    except ValueError:
+        return False
+    sec = p.secure()
+    if sec is None:
+        return False
+    meta, _, session_id, ctr, tag = sec
+    expected = ascon.mac(key, ascon.make_nonce(session_id, ctr, 1), auth_data(meta, p.width, p.height, p.scan))
+    return hmac.compare_digest(expected, tag)
+
+
 def selective_encrypt_jpeg(plain_jpeg, key, session_id, frame_ctr, mode):
     """Software selective encryption of an existing plain JPEG (baseline b).
     Must give exactly the same bytes as the in-encoder path."""

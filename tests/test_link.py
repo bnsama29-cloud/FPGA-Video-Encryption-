@@ -188,3 +188,24 @@ def test_end_to_end_link_detects_and_reacts():
     assert any(w["mode"] == c["defence"]["max_mode"] for w in windows), "sender never escalated"
     assert log.take("rekey", "sender"), "sender never rekeyed"
     assert log.take("epoch", "receiver"), "receiver did not follow the rekey"
+
+
+def test_receiver_late_frame_is_not_a_replay():
+    """Benign reordering (late, never seen) must not look like an attack; a duplicate must."""
+    from link.receiver import Receiver
+    c = config.load(overrides=["link.video_out=47191", "link.fb_in=47192", "link.bus=[47199]"])
+    rx = Receiver(c)
+    master = bytes.fromhex(c["keys"]["master"])
+    sid = keys.session_id(0x77, 0)
+    img = make_image(32, 32)
+    f = {n: encode_frame(img, keys.video_key(master, 0), sid, n, "E2").jpeg for n in (1, 2, 3)}
+    for n in (1, 3, 2, 2, 1):
+        rx.handle_frame(f[n], wire.now_ms())
+    t = rx.total
+    assert (t["ok"], t["late"], t["replay"]) == (2, 1, 2)
+    forged = bytearray(f[2])
+    forged[-5] ^= 1
+    rx.handle_frame(bytes(forged), wire.now_ms())      # counter 2 already seen -> replay
+    assert rx.total["replay"] == 3 and rx.total["tag_fail"] == 0
+    rx.vsock.close()
+    rx.fsock.close()

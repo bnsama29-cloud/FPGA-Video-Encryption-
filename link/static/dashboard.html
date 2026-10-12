@@ -438,6 +438,7 @@ function onEvent(ev) {
     while (series.length > 400) series.shift();
     if (c.fb_forged) log(`Rejected ${c.fb_forged} forged feedback message(s)`, "bad");
     if (c.fb_replay) log(`Rejected ${c.fb_replay} replayed feedback message(s)`, "bad");
+    if (c.junk > 50) log(`Receiver is being flooded: ${c.junk} junk datagrams in one second`, "bad");
     const pi = ev.policy_info || {};
     $("bandit").innerHTML = pi.context ? `<dt>Context</dt><dd>${pi.context}</dd>` +
       Object.entries(pi.q || {}).map(([m, v]) => `<dt>Value of ${m}</dt><dd>${v.toFixed(3)}</dd>`).join("") +

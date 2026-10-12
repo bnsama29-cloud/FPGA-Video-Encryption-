@@ -56,12 +56,13 @@ class Reassembler:
     def __init__(self, timeout=1.0):
         self.timeout = timeout
         self.parts = {}
-        self.dropped = 0
+        self.dropped = 0          # incomplete messages that timed out
+        self.junk = 0             # datagrams that are not ours at all (bad header)
 
     def add(self, datagram):
         p = parse(datagram)
         if p is None:
-            self.dropped += 1
+            self.junk += 1
             return None
         mtype, stream, msg_id, idx, cnt, t_ms, payload = p
         if cnt == 1:

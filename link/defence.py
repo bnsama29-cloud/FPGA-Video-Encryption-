@@ -50,6 +50,7 @@ class Window:
     fb_ok: int = 0
     fb_forged: int = 0
     fb_replay: int = 0
+    junk: int = 0                 # datagrams at the receiver that were not ours (flood / scan)
     hb_age: float = 0.0
     sent: int = 0                 # frames the sender transmitted in this window
     recent_ok: int = 0            # ok / lost summed over the last few windows: one
@@ -67,8 +68,12 @@ class Window:
         return dict(
             integrity=int(self.tag_fail + self.malformed + self.stale_epoch > 0),
             replay=int(self.replay > 0),
-            loss_level=0 if loss < 0.05 else (1 if loss < 0.3 else 2),
+            # 0 normal, 1 degraded (bad network OR partial jamming: indistinguishable,
+            # and more encryption does not help -> reported, no escalation),
+            # 2 suppressed (almost nothing gets through: deliberate -> treat as attack)
+            loss_level=0 if loss < 0.05 else (1 if loss < 0.9 else 2),
             feedback_attack=int(self.fb_forged + self.fb_replay > 0),
+            flood=int(self.junk > 50),
             deadman=int(self.hb_age > deadman_s),
             loss=round(loss, 3),
         )
@@ -77,7 +82,7 @@ class Window:
 def threat_score(f):
     """0..1 evidence that an active attacker is present (shown on the dashboard)."""
     s = (1.0 * f["integrity"] + 1.0 * f["replay"] + 0.8 * f["feedback_attack"]
-         + 1.0 * f["deadman"] + 0.25 * f["loss_level"])
+         + 0.6 * f.get("flood", 0) + 1.0 * f["deadman"] + 0.25 * f["loss_level"])
     return min(1.0, s)
 
 
@@ -143,13 +148,13 @@ class ThresholdPolicy(Policy):
         self.until = 0.0
 
     def decide(self, w, f, now):
-        strong = f["integrity"] or f["replay"] or f["feedback_attack"]
+        strong = f["integrity"] or f["replay"] or f["feedback_attack"] or f.get("flood", 0)
         if strong:
             self.until = now + self.d["hold_s"]
             dec = Decision(self.max_mode, False, "active attack evidence")
         elif f["loss_level"] == 2:
             self.until = max(self.until, now + self.d["hold_s"] / 2)
-            dec = Decision(self.max_mode, False, "heavy loss (possible jamming)")
+            dec = Decision(self.max_mode, False, "video suppressed (jamming)")
         elif now < self.until:
             dec = Decision(self.mode, False, "holding after evidence")
         else:
@@ -183,7 +188,7 @@ class BanditPolicy(Policy):
     def context(self, f, now):
         recent = int(now - self.recent_attack < 30.0)
         return (f"i{f['integrity']}r{f['replay']}l{f['loss_level']}"
-                f"b{f['feedback_attack']}d{f['deadman']}m{recent}")
+                f"b{f['feedback_attack']}f{f.get('flood', 0)}d{f['deadman']}m{recent}")
 
     def loss(self, threat, action, changed):
         d = self.d
