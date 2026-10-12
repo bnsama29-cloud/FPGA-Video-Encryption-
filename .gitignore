@@ -23,3 +23,5 @@ hls_dct_quant/
 *.jou
 vivado*.log
 xsim.dir/
+vivado/xsim_work/
+vivado/proj/

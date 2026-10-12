@@ -7,7 +7,7 @@ RTL_ALL  = ascon_round.v ascon_aead128_core.v keystream_gen.v tag_unit.v rgb2ycb
            bit_packer.v scan_word_packer.v axil_regs.v secure_jpeg_top.v
 LINT_WAIVE = -Wno-UNUSEDSIGNAL -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC
 
-.PHONY: help setup tables vectors test test-model test-rtl test-ascon test-crypto test-front \
+.PHONY: xsim-vectors xsim-icarus help setup tables vectors test test-model test-rtl test-ascon test-crypto test-front \
         test-dct test-entropy test-top full one waves lint lint-strict synth hls-csim \
         bundle demo clean
 
@@ -23,6 +23,8 @@ help:
 	@echo "make one T=tb/test_dct_quant.py::test_dct8x8 [SEED=n]   one test, full log"
 	@echo "make waves T=...  same with waveforms -> gtkwave sim_build/<top>/*.fst"
 	@echo "make bundle T=... [SEED=n]   debug_bundle.md to paste into Claude"
+	@echo "make xsim-icarus  Vivado testbench (vivado/tb_secure_jpeg_top.v) run in Icarus"
+	@echo "                  (in Vivado: bash vivado/run_xsim.sh  or  vivado\\run_xsim.bat)"
 	@echo "make lint | lint-strict | synth | hls-csim | demo | clean"
 
 setup:
@@ -69,6 +71,16 @@ hls-csim: vectors
 	mkdir -p sim_build && g++ -std=c++14 -O2 -Wno-unknown-pragmas -Wno-unused-label \
 	  -Ihls -Ihls/shim hls/dct_quant.cpp hls/tb_dct_quant.cpp -o sim_build/hls_csim
 	./sim_build/hls_csim vectors/dct_quant_vectors.txt
+
+# ---- Vivado XSim testbench (vivado/): same files run in Icarus here and in XSim
+XSIM_SRC = $(shell grep '^verilog' vivado/xsim.prj | awk '{print $$3}' | sed 's#^../../##; s#^../#vivado/#')
+xsim-vectors:
+	$(PY) vivado/gen_xsim_vectors.py $(ARGS)
+
+xsim-icarus: xsim-vectors
+	mkdir -p sim_build && iverilog -g2005 -o sim_build/tb_xsim.vvp -Irtl/include $(XSIM_SRC)
+	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work | tee sim_build/xsim_icarus.log | grep -E "^frame|RESULT|ERROR"
+	$(PY) vivado/check_xsim_output.py
 
 bundle:
 	$(PY) scripts/debug_bundle.py $(T) $(if $(SEED),--seed $(SEED))
