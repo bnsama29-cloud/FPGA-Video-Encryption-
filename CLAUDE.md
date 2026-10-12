@@ -1,5 +1,7 @@
 # Project rules for Claude Code
 
+Team members work in roles 1-5. If the user says which role they have (or asks what to do next), read `docs/TEAM_CONTEXT.md` first: it holds the project state, the contract, the measured results and each role's step-by-step tasks.
+
 Hardware JPEG/MJPEG encoder with in-loop selective encryption (Ascon-AEAD128, NIST SP 800-232) for a PYNQ-Z2 (xc7z020clg400-1, 100 MHz). Student team project (RVCE); explain changes so the team can defend them.
 
 ## Ground truth
