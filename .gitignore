@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+results*/
+out_image/
+rx_frames/
+*.mp4
+*.mjpeg
+receiver_log.csv
