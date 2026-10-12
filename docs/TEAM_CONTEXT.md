@@ -6,6 +6,7 @@
 > 2. Then say who you are and which role you have, e.g.
 >    *"I'm Rishab, I'm doing Role 3. I have finished step 1. Help me with step 2."*
 > 3. Paste error messages, logs and your results into the chat as you go. Claude cannot see your laptop.
+> 4. For the board phase, the paper plan and future work, also give Claude `docs/ROADMAP.md`.
 >
 > The file is long on purpose: it holds everything a fresh chat needs. Each role's section
 > (§8) also works on its own.
