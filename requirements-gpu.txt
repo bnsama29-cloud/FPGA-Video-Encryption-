@@ -1,0 +1,5 @@
+# Only for the learned-attack experiment (experiments/learned_attack.py) on a CUDA GPU.
+# Install the CUDA build that matches your driver, e.g. for an RTX 40xx laptop:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124
+# (see https://pytorch.org/get-started/locally/). Then: pip install -r requirements-gpu.txt
+torch>=2.3

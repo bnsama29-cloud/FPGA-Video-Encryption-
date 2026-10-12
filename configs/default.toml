@@ -1,0 +1,31 @@
+# Settings for the system simulation (python -m link.run_all).
+# Every node reads this same file. Override any value on the command line:
+#   python -m link.run_all --set sender.policy=bandit --set channel.loss=0.05
+# All options and their meaning: link/config.py (DEFAULTS).
+
+[keys]
+master = "000102030405060708090a0b0c0d0e0f"   # demo key: change it for anything real
+
+[sender]
+source = "synthetic"        # synthetic | path/to/video.mp4 | webcam:0
+width = 320                 # multiples of 16 (the RTL needs this)
+height = 240
+fps = 10.0                  # ~10 fps at 320x240 with the Python encoder
+quality = 75
+mode = "E2"                 # base mode = the floor the defence never goes below
+encoder = "model"           # model | rtl (real Verilog per frame in Icarus; use 128x96 and fps = 0.5)
+policy = "threshold"        # fixed | threshold | bandit
+
+[channel]
+loss = 0.0
+delay_ms = 5.0
+jitter_ms = 2.0
+
+[defence]
+deadman_s = 3.0
+hold_s = 8.0
+rekey_min_interval_s = 10.0
+memory_file = "sim_out/bandit_memory.json"
+
+[dashboard]
+http_port = 8000

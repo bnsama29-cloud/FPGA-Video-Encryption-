@@ -1,0 +1,13 @@
+{
+  "name": "quick",
+  "about": "~2 minutes: one of each attack family, then benign loss. Use it to check everything works.",
+  "end_s": 110,
+  "steps": [
+    {"at": 12, "attack": "bitflip", "duration": 6},
+    {"at": 30, "attack": "replay", "duration": 6},
+    {"at": 48, "attack": "fb_drop", "duration": 6},
+    {"at": 66, "attack": "drop", "duration": 6},
+    {"at": 84, "impair": {"loss": 0.03}},
+    {"at": 100, "impair": {"loss": 0.0}}
+  ]
+}

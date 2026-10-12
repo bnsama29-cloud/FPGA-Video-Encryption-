@@ -139,9 +139,11 @@ def test_close_to_libjpeg(frame):
 def test_encrypt_decrypt_bit_exact(frame, mode):
     img, an, plain = frame
     enc = package_frame(an, KEY, 9, 41, mode)
-    assert len(enc.symbols) == len(an.symbols)
-    assert all(a.size == b.size and a.run == b.run for a, b in zip(enc.symbols, an.symbols))
-    assert enc.payload_bits == plain.payload_bits             # zero overhead before stuffing
+    ref = run_length_encode(an.quant, restart=True) if MODES[mode].shuffle else an.symbols
+    assert len(enc.symbols) == len(ref)
+    assert all(a.size == b.size and a.run == b.run for a, b in zip(enc.symbols, ref))
+    if not MODES[mode].shuffle:
+        assert enc.payload_bits == plain.payload_bits         # zero overhead before stuffing
     assert decode_pixels(enc.jpeg).shape == img.shape          # still a valid JPEG
     r = receive_frame(enc.jpeg, KEY)
     assert r.ok and r.mode == mode and r.plain_jpeg == plain.jpeg
@@ -208,3 +210,40 @@ def test_keystream_bit_accounting(frame):
         from model.selective import apply_keystream
         _, n = apply_keystream(an.symbols, ks, mode)
         assert ks.consumed == n
+
+
+# ---- E5: keyed MCU shuffle with restart intervals --------------------------------
+def test_e5_structure_and_overhead(frame):
+    img, an, plain = frame
+    from model.entropy import split_restart
+    enc = package_frame(an, KEY, 9, 41, "E5")
+    assert len(split_restart(enc.scan)) == an.n_mcu            # one segment per MCU
+    assert parse_jpeg(enc.jpeg).segment(0xDD) == (1).to_bytes(2, "big")   # DRI = 1 MCU
+    assert cv2.imdecode(np.frombuffer(enc.jpeg, np.uint8), cv2.IMREAD_COLOR) is not None
+    assert len(enc.jpeg) < 1.15 * len(plain.jpeg)               # markers + padding only
+
+
+def test_e5_shuffle_is_keyed_per_frame(frame):
+    _, an, _ = frame
+    from model.entropy import split_restart
+    a = split_restart(package_frame(an, KEY, 9, 41, "E5").scan)
+    b = split_restart(package_frame(an, KEY, 9, 42, "E5").scan)
+    assert sorted(len(x) for x in a) != [len(x) for x in a]     # not in natural order
+    assert [len(x) for x in a] != [len(x) for x in b]           # different order per frame
+
+
+def test_e5_tamper_and_segment_swap_rejected(frame):
+    _, an, _ = frame
+    from model.entropy import join_restart, split_restart
+    enc = package_frame(an, KEY, 9, 41, "E5")
+    segs = split_restart(enc.scan)
+    segs[0], segs[1] = segs[1], segs[0]
+    swapped = enc.jpeg.replace(enc.scan, join_restart(segs))
+    assert receive_frame(swapped, KEY).reason == "tag-mismatch"
+
+
+def test_shuffle_order_is_a_permutation():
+    from model.selective import shuffle_order
+    ks = ascon.Keystream(KEY, ascon.make_nonce(1, 1, 0))
+    for n in (1, 2, 7, 300, 3600):
+        assert sorted(shuffle_order(n, ks)) == list(range(n))

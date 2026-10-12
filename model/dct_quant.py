@@ -1,41 +1,45 @@
-"""8x8 forward DCT (fixed-point, HLS-friendly) and the quantiser.
+"""8x8 forward DCT and quantiser: bit-exact with rtl/dct8x8.v and rtl/quantiser.v.
 
-DCT definition (bit-exact contract for the Vitis HLS block):
-    x      = sample - 128                         (level shift, int)
-    T[u,x] = round(4096 * c(u) * cos((2x+1) u pi / 16)),
-             c(0) = sqrt(1/8), c(u>0) = sqrt(2/8)  (12-bit fixed-point matrix)
-    P      = T . X . T^T                          (exact integer, fits in 40 bits)
-    F      = sign(P) * ((|P| + 2^23) >> 24)       (round half away from zero)
-F is a 16-bit signed coefficient in row-major order (coefficient stream contract).
+DCT (contract v2 = the arithmetic the RTL and the HLS block implement):
+    C[u][x] = round(2^13 * c(u)/2 * cos((2x+1) u pi / 16)),  c(0)=1/sqrt(2), c(u>0)=1
+    pass 1 on the rows of (sample - 128):  A[u][y] = (sum_x C[u][x] X[y][x] + 2^10) >> 11
+    pass 2 on the rows of A:               F[v][u] = (sum_y C[v][y] A[u][y] + 2^14) >> 15
+    (>> = arithmetic shift, i.e. floor). F is a 16-bit signed coefficient, row-major.
+    Each pass is one rtl/dct_stage.v (8 multiply-accumulates, output transposed).
 
-Quantiser:
-    q = sign(F) * ((|F| + (Q >> 1)) // Q)         (round half away from zero)
+Quantiser (one DSP multiply instead of a divider):
+    R = round(65536 / Q) = (131072 + Q) // (2Q)          17-bit reciprocal
+    q = sign(F) * ((|F| * R + 2^15) >> 16)
+    DC clamped to -1024..1023, AC to -1023..1023.
+
+Contract v1 used a one-pass 12-bit DCT and a true division; about 6% of the
+coefficients differed by 1 from the RTL, so v1 could not check the hardware.
 
 Quantisation tables are the JPEG Annex K tables scaled with the libjpeg quality
 formula. Tables here are in natural (row-major) order; DQT stores them zig-zag.
 """
+import math
+
 import numpy as np
 
-
-def _dct_matrix():
-    T = np.zeros((8, 8))
-    for u in range(8):
-        c = np.sqrt(1 / 8) if u == 0 else np.sqrt(2 / 8)
-        for x in range(8):
-            T[u, x] = c * np.cos((2 * x + 1) * u * np.pi / 16)
-    return np.round(T * 4096).astype(np.int64)
+DCT_SCALE_BITS = 13
+STAGE1_SHIFT, STAGE2_SHIFT = 11, 15
 
 
-T_INT = _dct_matrix()                 # export to HLS as a constant ROM
-DCT_SHIFT = 24
+def _dct_coeff(u, x):
+    cu = 1 / math.sqrt(2) if u == 0 else 1.0
+    return int(math.floor((1 << DCT_SCALE_BITS) * cu / 2 * math.cos((2 * x + 1) * u * math.pi / 16) + 0.5))
+
+
+DCT_C = np.array([[_dct_coeff(u, x) for x in range(8)] for u in range(8)], dtype=np.int64)
 
 
 def fdct(blocks):
-    """blocks: (..., 8, 8) unsigned samples 0..255 -> (..., 8, 8) int32 coefficients."""
-    X = blocks.astype(np.int64) - 128
-    P = T_INT @ X @ T_INT.T
-    mag = (np.abs(P) + (1 << (DCT_SHIFT - 1))) >> DCT_SHIFT
-    return (np.sign(P) * mag).astype(np.int32)
+    """blocks: (..., 8, 8) unsigned samples 0..255 -> (..., 8, 8) int32 coefficients F[v, u]."""
+    X = np.asarray(blocks, dtype=np.int64) - 128
+    A = (np.einsum("ux,...yx->...uy", DCT_C, X) + (1 << (STAGE1_SHIFT - 1))) >> STAGE1_SHIFT
+    F = (np.einsum("vy,...uy->...vu", DCT_C, A) + (1 << (STAGE2_SHIFT - 1))) >> STAGE2_SHIFT
+    return F.astype(np.int32)
 
 
 BASE_LUMA = np.array([
@@ -74,11 +78,25 @@ def tables(quality=DEFAULT_QUALITY):
 Q_LUMA, Q_CHROMA = tables(DEFAULT_QUALITY)
 
 
+def reciprocal(q):
+    """17-bit reciprocal R = round(65536 / Q) loaded into rtl/quantiser.v (QT_DATA)."""
+    q = np.asarray(q, dtype=np.int64)
+    return (131072 + q) // (2 * q)
+
+
 def quantise(coeffs, table):
-    """Accepts a flat block of 64 (with any 8x8 or 64-entry table) or (...,8,8) arrays."""
+    """Bit-exact rtl/quantiser.v. table = quantisation steps Q (not reciprocals).
+
+    Accepts a flat block of 64 (with any 8x8 or 64-entry table) or (..., 8, 8) arrays."""
     c = np.asarray(coeffs, dtype=np.int64)
     q = np.asarray(table, dtype=np.int64)
     if c.shape[-1] == 64 and q.size == 64:
         q = q.reshape(64)
-    mag = (np.abs(c) + (q >> 1)) // q
-    return (np.sign(c) * mag).astype(np.int32)
+    m = (np.abs(c) * reciprocal(q) + (1 << 15)) >> 16
+    out = np.sign(c) * m
+    lo = np.full(out.shape, -1023, dtype=np.int64)
+    if c.shape[-1] == 64:
+        lo[..., 0] = -1024
+    else:
+        lo[..., 0, 0] = -1024
+    return np.clip(out, lo, 1023).astype(np.int32)

@@ -6,8 +6,10 @@ Verified against the official known-answer vectors (vectors/LWC_AEAD_KAT_128_128
 Conventions (the hardware must match these):
   * Bytes are loaded into 64-bit state words little-endian (SP 800-232).
   * Keystream = Ascon-AEAD128 ciphertext of an all-zero plaintext, empty AD,
-    under (K, N_enc). Keystream bits are consumed MSB-first within each byte,
-    bytes in order.
+    under (K, N_enc). Keystream bit i = bit (i mod 8) of keystream byte (i div 8),
+    i.e. LSB-first within each byte (contract v2, matches rtl/keystream_gen.v).
+  * Nonce (contract v2) = session_id (8 bytes LE) || (frame_ctr << 1 | purpose)
+    (8 bytes LE), so state word x3 = session_id and x4 = {frame_ctr, purpose}.
   * Frame tag = Ascon-AEAD128 with an empty plaintext and the frame's
     authenticated data as AD, under (K, N_mac). Output = 16-byte tag.
 """
@@ -132,8 +134,10 @@ def mac(key, nonce, data):
 class Keystream:
     """Streaming keystream: Ascon-AEAD128 encryption of an endless zero message.
 
-    bits(n) returns the next n keystream bits as an int (first bit = MSB).
-    Matches the hardware keystream port, which hands out one bit per request.
+    take(n) returns the next n keystream bits as an int whose bit j is the j-th
+    bit handed out (LSB = first bit). Bit order inside the keystream: bit i =
+    bit (i mod 8) of byte (i div 8). Same as the hardware window port
+    (rtl/keystream_gen.v: ks_bits[0] = next unused bit).
     """
 
     def __init__(self, key, nonce):
@@ -151,24 +155,68 @@ class Keystream:
         self.blocks += 1
         return out
 
-    def bits(self, n):
+    def take(self, n):
         while self._nbits < n:
-            self._buf = (self._buf << 128) | int.from_bytes(self.next_block(), "big")
+            self._buf |= int.from_bytes(self.next_block(), "little") << self._nbits
             self._nbits += 128
+        v = self._buf & ((1 << n) - 1)
+        self._buf >>= n
         self._nbits -= n
-        v = self._buf >> self._nbits
-        self._buf &= (1 << self._nbits) - 1
         self.consumed += n
         return v
 
 
-def make_nonce(session_id, frame_ctr, purpose):
-    """N = session_id (64 bit, big-endian) || frame_ctr (63 bit) || purpose (1 bit).
+def keystream(key, nonce, nbytes):
+    """First nbytes of the keystream (= ciphertext of nbytes zero bytes, no AD)."""
+    return encrypt(key, nonce, b"", bytes(nbytes))[:nbytes]
 
+
+def keystream_bits(key, nonce, nbits):
+    """Keystream as a list of bits in consumption order (used by the testbenches)."""
+    ks = keystream(key, nonce, (nbits + 7) // 8)
+    return [(ks[i >> 3] >> (i & 7)) & 1 for i in range(nbits)]
+
+
+FRAME_CTR_BITS = 63
+SESSION_ID_BITS = 64
+
+
+def make_nonce(session_id, frame_ctr, purpose):
+    """Contract v2 nonce: session_id (64 bit) || frame_ctr (63 bit) || purpose (1 bit).
+
+    Byte layout: session_id as 8 little-endian bytes, then (frame_ctr << 1 | purpose)
+    as 8 little-endian bytes. Ascon loads words little-endian, so in hardware the
+    state words are simply x3 = session_id and x4 = {frame_ctr, purpose}.
     purpose 0 = encryption keystream (N_enc), 1 = frame tag (N_mac).
+    A nonce must never repeat under one key: never reuse a (session_id, frame_ctr)
+    pair, and pick a fresh random 64-bit session_id (or a new key) per session.
     """
-    if not 0 <= frame_ctr < (1 << 63):
+    if not 0 <= frame_ctr < (1 << FRAME_CTR_BITS):
         raise ValueError("frame counter out of range")
-    if not 0 <= session_id < (1 << 64):
+    if not 0 <= session_id < (1 << SESSION_ID_BITS):
         raise ValueError("session id out of range")
-    return session_id.to_bytes(8, "big") + ((frame_ctr << 1) | (purpose & 1)).to_bytes(8, "big")
+    return session_id.to_bytes(8, "little") + ((frame_ctr << 1) | (purpose & 1)).to_bytes(8, "little")
+
+
+def key_from_words(words):
+    """KEY0..KEY3 register values -> 16-byte key (KEY0 = key bytes 0..3, LE)."""
+    return b"".join((w & 0xFFFFFFFF).to_bytes(4, "little") for w in words)
+
+
+def parse_kat(path):
+    """Parse an LWC_AEAD_KAT file into a list of dicts (values as bytes)."""
+    vecs, cur = [], {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                if cur:
+                    vecs.append(cur)
+                    cur = {}
+                continue
+            k, _, v = line.partition("=")
+            k, v = k.strip(), v.strip()
+            cur[k] = int(v) if k == "Count" else bytes.fromhex(v)
+    if cur:
+        vecs.append(cur)
+    return vecs

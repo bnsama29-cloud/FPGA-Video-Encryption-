@@ -1,0 +1,192 @@
+"""Run one scripted attack scenario against the live simulated link and measure it.
+
+    python experiments/scenario.py --scenario experiments/scenarios/quick.json --policy threshold
+    python experiments/scenario.py --scenario experiments/scenarios/learning.json --policy bandit --watch
+
+Starts channel + receiver + sender on their own port block (so a dashboard on the
+default ports is not disturbed; --watch also sends telemetry to the dashboard),
+replays the scenario's timeline of attacks / impairments, records every bus
+event, and writes to the run folder:
+    events.jsonl      every telemetry event
+    windows.csv       one row per sender defence window (mode, threat, counts ...)
+    episodes.csv      one row per attack episode (detection, time to mitigate ...)
+    summary.json      everything aggregated (see analyse())
+
+Scenario file (JSON):
+    {"name": "...", "end_s": 120,
+     "steps": [{"at": 15, "attack": "bitflip", "duration": 8, "rate": 1.0},
+               {"at": 40, "impair": {"loss": 0.05}}, ...]}
+"""
+import argparse
+import csv
+import json
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from link import config, wire               # noqa: E402
+from link.buslog import BusLogger           # noqa: E402
+
+MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
+
+
+def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memory=None, quiet=False):
+    sc = json.loads(Path(scenario).read_text())
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    bus = [base_port + 10] + ([47010] if watch else [])
+    sets = [f"link.video_in={base_port}", f"link.video_out={base_port + 1}", f"link.fb_in={base_port + 2}",
+            f"link.fb_out={base_port + 3}", f"link.control={base_port + 4}",
+            f"link.sender_control={base_port + 5}", f"link.bus={bus}",
+            f"sender.policy='{policy}'",
+            f"defence.memory_file='{memory or (out / 'bandit_memory.json')}'"] + list(sc.get("set", [])) + list(extra_sets)
+    args = [x for s in sets for x in ("--set", s)]
+    cfg = config.load(overrides=sets)
+    log = BusLogger(base_port + 10)
+    out_log = None if not quiet else subprocess.DEVNULL
+    procs = [subprocess.Popen([sys.executable, "-m", f"link.{n}"] + args, cwd=ROOT, stdout=out_log)
+             for n in ("channel", "receiver", "sender")]
+    t0 = time.time()
+    try:
+        for step in sorted(sc["steps"], key=lambda s: s["at"]):
+            while time.time() - t0 < step["at"]:
+                time.sleep(0.05)
+                if any(p.poll() is not None for p in procs):
+                    raise RuntimeError("a node exited early; run it alone to see the error")
+            if "attack" in step:
+                wire.send_control(cfg, "control", cmd="attack", type=step["attack"],
+                                  duration=step.get("duration", 10), rate=step.get("rate", 1.0))
+            if "impair" in step:
+                wire.send_control(cfg, "control", cmd="impair", **step["impair"])
+            if not quiet:
+                print(f"  t={time.time() - t0:5.1f}s  {step}")
+        while time.time() - t0 < sc["end_s"]:
+            time.sleep(0.2)
+    finally:
+        for p in procs:
+            p.terminate()
+        for p in procs:
+            p.wait()
+        time.sleep(0.3)
+        log.close()
+    events = log.take()
+    with open(out / "events.jsonl", "w") as f:
+        for e in events:
+            f.write(json.dumps(e) + "\n")
+    summary = analyse(events, cfg, t0)
+    summary.update(scenario=sc.get("name", Path(scenario).stem), policy=policy)
+    write_tables(summary, out)
+    (out / "summary.json").write_text(json.dumps(summary, indent=2))
+    return summary
+
+
+def analyse(events, cfg, t0):
+    """Turn the event log into the numbers for the paper."""
+    d = cfg["defence"]
+    leak, cost_tab = d["leakage"], d["cost"]
+    top = d["max_mode"]
+    windows = [e for e in events if e["src"] == "sender" and e["kind"] == "window"]
+    frames = [e for e in events if e["src"] == "receiver" and e["kind"] == "frame"]
+    starts = [e for e in events if e["kind"] == "attack_start"]
+    ends = [e for e in events if e["kind"] == "attack_end"]
+    episodes = []
+    for s in starts:
+        end = next((e["t"] for e in ends if e["type"] == s["type"] and e["t"] >= s["t"]), s["t"] + s["duration"])
+        ep = dict(type=s["type"], start=s["t"] - t0, end=end - t0, duration=end - s["t"])
+        bad = [f for f in frames if s["t"] <= f["t"] <= end + 2 and f["verdict"] != "ok"]
+        ep["rx_rejected"] = len(bad)
+        ep["rx_first_rejection_s"] = round(bad[0]["t"] - s["t"], 3) if bad else None
+        # only windows inside this episode (+ a short tail), never the next attack's reaction
+        ws = [w for w in windows if s["t"] <= w["t"] <= end + 5.0]
+        aware = next((w for w in ws if w["threat"] >= 0.5), None)
+        ep["sender_aware_s"] = round(aware["t"] - s["t"], 3) if aware else None
+        mit = next((w for w in ws if leak[w["mode"]] <= leak[top] + 1e-9), None)
+        ep["time_to_mitigate_s"] = round(mit["t"] - s["t"], 3) if mit else None
+        during = [w for w in windows if s["t"] <= w["t"] <= end + 1]
+        ep["mean_leakage_during"] = round(sum(leak[w["mode"]] for w in during) / len(during), 4) if during else None
+        ep["modes_during"] = "".join(w["mode"][1] for w in during)
+        ep["rekeys"] = sum(1 for e in events if e["kind"] == "rekey" and s["t"] <= e["t"] <= end + 2)
+        episodes.append(ep)
+
+    def under_attack(t, slack=2.0):
+        return any(s["t"] <= t <= next((e["t"] for e in ends if e["type"] == s["type"] and e["t"] >= s["t"]),
+                                       s["t"] + s["duration"]) + slack for s in starts)
+
+    calm = [w for w in windows if not under_attack(w["t"], slack=d["hold_s"] + 2)]
+    false_alarm = [w for w in calm if w["threat"] >= 0.5]
+    verdicts = {}
+    for f in frames:
+        verdicts[f["verdict"]] = verdicts.get(f["verdict"], 0) + 1
+    lat = sorted(f["latency_ms"] for f in frames if f["verdict"] == "ok" and f.get("latency_ms") is not None)
+    tt = [e["time_to_mitigate_s"] for e in episodes if e["time_to_mitigate_s"] is not None]
+    return dict(
+        windows=len(windows),
+        episodes=episodes,
+        frames=verdicts,
+        latency_ms_median=lat[len(lat) // 2] if lat else None,
+        latency_ms_p95=lat[int(len(lat) * 0.95)] if lat else None,
+        mean_cost=round(sum(cost_tab[w["mode"]] for w in windows) / max(1, len(windows)), 4),
+        mean_cost_calm=round(sum(cost_tab[w["mode"]] for w in calm) / max(1, len(calm)), 4),
+        mean_enc_fraction=round(sum(w["enc_fraction"] for w in windows) / max(1, len(windows)), 4),
+        mean_leakage_under_attack=round(sum(e["mean_leakage_during"] or 0 for e in episodes) / max(1, len(episodes)), 4),
+        mean_time_to_mitigate_s=round(sum(tt) / len(tt), 3) if tt else None,
+        mitigated_episodes=f"{len(tt)}/{len(episodes)}",
+        false_alarm_windows=len(false_alarm),
+        calm_windows=len(calm),
+        timeline=[dict(t=round(w["t"] - t0, 2), mode=w["mode"], threat=w["threat"], counts=w["counts"]) for w in windows],
+        attacks=[dict(type=e["type"], start=e["start"], end=e["end"]) for e in episodes],
+    )
+
+
+def write_tables(summary, out):
+    eps = summary["episodes"]
+    if eps:
+        with open(out / "episodes.csv", "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(eps[0]))
+            w.writeheader()
+            w.writerows(eps)
+    with open(out / "windows.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["t", "mode", "threat", "ok", "lost", "tag_fail", "replay", "malformed", "stale_epoch",
+                    "fb_forged", "fb_replay"])
+        for r in summary["timeline"]:
+            c = r["counts"]
+            w.writerow([r["t"], r["mode"], r["threat"], c["ok"], c["lost"], c["tag_fail"], c["replay"],
+                        c["malformed"], c["stale_epoch"], c["fb_forged"], c["fb_replay"]])
+
+
+def print_summary(s):
+    print(f"\n{s['scenario']} / {s['policy']}: frames {s['frames']}, "
+          f"latency median {s['latency_ms_median']} ms, p95 {s['latency_ms_p95']} ms")
+    print(f"{'attack':<11}{'start':>7}{'rx first reject':>16}{'sender aware':>13}{'mitigated':>10}"
+          f"{'leak':>7}{'rekeys':>7}  modes")
+    for e in s["episodes"]:
+        fmt = lambda v: "-" if v is None else f"{v:.1f}s"
+        print(f"{e['type']:<11}{e['start']:>6.0f}s{fmt(e['rx_first_rejection_s']):>16}{fmt(e['sender_aware_s']):>13}"
+              f"{fmt(e['time_to_mitigate_s']):>10}{e['mean_leakage_during'] or 0:>7.2f}{e['rekeys']:>7}  {e['modes_during']}")
+    print(f"mean time to mitigate {s['mean_time_to_mitigate_s']} s ({s['mitigated_episodes']}), "
+          f"leakage under attack {s['mean_leakage_under_attack']}, cost {s['mean_cost']} "
+          f"(calm {s['mean_cost_calm']}), false alarms {s['false_alarm_windows']}/{s['calm_windows']} calm windows")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--scenario", default=str(ROOT / "experiments" / "scenarios" / "quick.json"))
+    ap.add_argument("--policy", default="threshold", choices=["fixed", "threshold", "bandit"])
+    ap.add_argument("--out", help="run folder (default sim_out/runs/<scenario>_<policy>)")
+    ap.add_argument("--memory", help="bandit memory file to start from / keep (default: fresh in the run folder)")
+    ap.add_argument("--base-port", type=int, default=47200)
+    ap.add_argument("--watch", action="store_true", help="also send telemetry to a running dashboard")
+    ap.add_argument("--set", action="append", default=[], help="extra config override")
+    a = ap.parse_args()
+    out = a.out or ROOT / "sim_out" / "runs" / f"{Path(a.scenario).stem}_{a.policy}"
+    s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory)
+    print_summary(s)
+    print(f"\nwritten {out}/")
+
+
+if __name__ == "__main__":
+    main()

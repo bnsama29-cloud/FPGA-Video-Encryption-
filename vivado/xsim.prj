@@ -1,0 +1,18 @@
+# xvlog project file: every RTL source + the XSim testbench.
+# Paths are relative to vivado/xsim_work/ (where run_xsim.sh / run_xsim.bat run xvlog).
+verilog work ../../rtl/ascon_round.v
+verilog work ../../rtl/ascon_aead128_core.v
+verilog work ../../rtl/keystream_gen.v
+verilog work ../../rtl/tag_unit.v
+verilog work ../../rtl/rgb2ycbcr_block.v
+verilog work ../../rtl/dct_stage.v
+verilog work ../../rtl/dct8x8.v
+verilog work ../../rtl/quantiser.v
+verilog work ../../rtl/zigzag_rle.v
+verilog work ../../rtl/selective_enc.v
+verilog work ../../rtl/huffman_enc.v
+verilog work ../../rtl/bit_packer.v
+verilog work ../../rtl/scan_word_packer.v
+verilog work ../../rtl/axil_regs.v
+verilog work ../../rtl/secure_jpeg_top.v
+verilog work ../tb_secure_jpeg_top.v
