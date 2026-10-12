@@ -1,0 +1,122 @@
+"""Configuration shared by every node of the system simulation.
+
+Defaults live here; configs/default.toml overrides them; command-line flags
+(--set section.key=value) override the file. Every node loads the same file,
+so ports and keys always agree.
+"""
+import argparse
+import copy
+import tomllib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+DEFAULTS = {
+    "link": {
+        "host": "127.0.0.1",
+        "video_in": 47000,       # sender -> channel
+        "video_out": 47001,      # channel -> receiver
+        "fb_in": 47002,          # receiver -> channel (feedback)
+        "fb_out": 47003,         # channel -> sender  (feedback)
+        "control": 47004,        # dashboard / experiments -> channel and sender (JSON)
+        "sender_control": 47005,
+        "bus": [47010],          # telemetry + previews -> dashboard / experiment logger
+        "fragment": 1200,        # UDP payload bytes per fragment
+    },
+    "keys": {
+        # Pre-shared 128-bit master key (hex). In a product this would come from a
+        # key exchange or provisioning; here both ends read it from the config.
+        "master": "000102030405060708090a0b0c0d0e0f",
+        "session_base": 0,       # 0 = random 48-bit base chosen by the sender at start
+    },
+    "sender": {
+        "source": "synthetic",   # synthetic | <video file> | webcam:<index>
+        "width": 320,
+        "height": 240,
+        "fps": 10.0,
+        "quality": 75,
+        "mode": "E2",            # starting / base mode
+        "encoder": "model",      # model (golden Python) | rtl (Icarus/XSim per frame)
+        "policy": "threshold",   # fixed | threshold | bandit
+        "preview_every": 1,      # send a preview to the dashboard every N frames
+        "loop": True,            # loop video files
+    },
+    "receiver": {
+        "heartbeat_s": 0.5,      # authenticated heartbeat period
+        "alert_min_gap_s": 0.2,  # rate limit for immediate alerts
+        "max_epoch_jump": 4,     # how far the receiver ratchets forward on its own
+        "preview_every": 1,
+    },
+    "channel": {
+        "loss": 0.0,             # benign random packet loss (0..1) per fragment
+        "delay_ms": 5.0,
+        "jitter_ms": 2.0,
+        "reorder": 0.0,          # probability a frame is delayed by one frame time
+        "attacker_view_every": 5,  # run the replacement attack on every Nth frame
+    },
+    "defence": {
+        "window_s": 1.0,
+        "deadman_s": 3.0,        # no valid heartbeat for this long -> maximum protection
+        "hold_s": 8.0,           # threshold policy: keep escalation this long after evidence
+        "rekey_min_interval_s": 10.0,
+        "rekey_on_tag_fail": 5,  # tag failures in one window that trigger a rekey
+        "max_mode": "E4",
+        "epsilon": 0.1,          # bandit exploration rate
+        "alpha": 0.3,            # bandit learning rate
+        "memory_file": "sim_out/bandit_memory.json",
+        # Expected leakage per mode (attacker reconstruction quality, 0..1) and cost
+        # per mode (fraction of payload bits encrypted). Measured with
+        # experiments/measure_mode_tradeoff.py; replace with your own numbers.
+        "leakage": {"E0": 1.0, "E1": 0.55, "E2": 0.35, "E3": 0.2, "E4": 0.15},
+        "cost": {"E0": 0.0, "E1": 0.06, "E2": 0.07, "E3": 0.35, "E4": 0.4},
+        "w_switch": 0.02,
+        "w_cost": 0.5,
+    },
+    "dashboard": {
+        "http_port": 8000,
+    },
+}
+
+
+def _merge(base, over):
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            _merge(base[k], v)
+        else:
+            base[k] = v
+    return base
+
+
+def _parse_value(text):
+    try:
+        return tomllib.loads(f"v = {text}")["v"]
+    except tomllib.TOMLDecodeError:
+        return text
+
+
+def load(path=None, overrides=()):
+    """Returns the merged configuration dict."""
+    cfg = copy.deepcopy(DEFAULTS)
+    path = Path(path) if path else ROOT / "configs" / "default.toml"
+    if path.exists():
+        _merge(cfg, tomllib.loads(path.read_text()))
+    for item in overrides:
+        key, _, value = item.partition("=")
+        sec, _, name = key.partition(".")
+        cfg.setdefault(sec, {})[name] = _parse_value(value)
+    if isinstance(cfg["link"]["bus"], int):
+        cfg["link"]["bus"] = [cfg["link"]["bus"]]
+    return cfg
+
+
+def add_args(ap):
+    ap.add_argument("--config", help="TOML file (default configs/default.toml)")
+    ap.add_argument("--set", action="append", default=[], metavar="SECTION.KEY=VALUE",
+                    help="override one setting, e.g. --set sender.mode=E4 (repeatable)")
+    return ap
+
+
+def from_args(description):
+    ap = add_args(argparse.ArgumentParser(description=description))
+    a = ap.parse_args()
+    return load(a.config, a.set), a
