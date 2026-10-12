@@ -2,7 +2,7 @@
 // Standard JPEG tables (Annex K) in ROM; component 0 uses luminance tables,
 // components 1 and 2 chrominance. Output chunk is right-aligned:
 // o_bits[o_len-1] is the first bit to be written.
-// Golden model: model/jpeg.py :: huffman_bits()
+// Golden model: model/hw.py :: huffman_bits()
 `default_nettype none
 module huffman_enc (
     input  wire        clk,

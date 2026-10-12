@@ -11,11 +11,12 @@ Files (one value per line, hex, readable by $readmemh, cocotb or numpy):
     coeffs.hex               16-bit two's complement DCT output, 64 per block row-major
     quant.hex                16-bit two's complement quantiser output, row-major
     qtable_luma.hex / qtable_chroma.hex   8-bit, row-major
-    dct_matrix.hex           16-bit two's complement T_INT (8x8) for the HLS ROM
+    dct_matrix.hex           16-bit two's complement DCT_C (8x8, 2^13 scale) for the HLS ROM
     symbols_plain.hex        23-bit packed symbols (format below), coding order
     symbols_<mode>.hex       same, after selective encryption
     symbols_*.csv            human-readable version
-    keystream.hex            first keystream bytes for N_enc (one byte per line)
+    keystream.hex            first keystream bytes for N_enc (one byte per line;
+                             bit i of the stream = bit i%8 of byte i//8)
     scan_plain.hex           stuffed scan bytes from the plain encoder
     scan_<mode>.hex          stuffed scan bytes after in-encoder encryption
     frame_<mode>.jpg / plain.jpg   complete JPEG files for viewing
@@ -35,7 +36,7 @@ import numpy as np
 from skimage import data
 
 from model import ascon
-from model.dct_quant import T_INT
+from model.dct_quant import DCT_C
 from model.jpeg import analyse_frame, package_frame
 from model.selective import MODE_ID, MODES
 
@@ -99,16 +100,15 @@ def main():
     write_hex(out / "quant.hex", st["quant"], 16)
     write_hex(out / "qtable_luma.hex", an.qy, 8)
     write_hex(out / "qtable_chroma.hex", an.qc, 8)
-    write_hex(out / "dct_matrix.hex", T_INT, 16)
+    write_hex(out / "dct_matrix.hex", DCT_C, 16)
     np.savez(out / "stages.npz", **st)          # same data for Python testbenches
     write_symbols(out, "plain", an.symbols)
 
     plain = package_frame(an)
     write_hex(out / "scan_plain.hex", np.frombuffer(plain.scan, np.uint8), 8)
     (out / "plain.jpg").write_bytes(plain.jpeg)
-    ks = ascon.Keystream(key, ascon.make_nonce(a.session, a.ctr, 0))
-    write_hex(out / "keystream.hex",
-              np.frombuffer(ks.bits(8 * a.keystream_bytes).to_bytes(a.keystream_bytes, "big"), np.uint8), 8)
+    ks = ascon.keystream(key, ascon.make_nonce(a.session, a.ctr, 0), a.keystream_bytes)
+    write_hex(out / "keystream.hex", np.frombuffer(ks, np.uint8), 8)
 
     cfg = dict(width=an.width, height=an.height, padded=list(st["rgb_padded"].shape[:2][::-1]),
                n_mcu=an.n_mcu, n_blocks=an.n_mcu * 6, quality=a.quality, key=key.hex(),

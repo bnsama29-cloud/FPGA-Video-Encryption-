@@ -4,7 +4,7 @@
 // 64 samples in (row-major), 64 out (row-major). Ping-pong input buffers, so
 // a new block can be loaded while the previous one is computed: 1 sample/clock.
 // Uses 8 multipliers (one output per clock).
-// Golden model: model/jpeg.py :: dct_stage()
+// Golden model: model/hw.py :: dct_stage()
 `default_nettype none
 module dct_stage #(
     parameter IN_W  = 16,

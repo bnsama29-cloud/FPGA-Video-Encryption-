@@ -3,7 +3,7 @@
 // baseline range (DC -1024..1023, AC -1023..1023).
 // Tables: 2 x 64 reciprocals (luma, chroma) in natural order, written through
 // qt_we/qt_addr/qt_data (addr[6] = table, addr[5:0] = coefficient index).
-// Golden model: model/jpeg.py :: reciprocal(), quantise()
+// Golden model: model/hw.py :: reciprocal(), quantise()
 `default_nettype none
 module quantiser (
     input  wire               clk,

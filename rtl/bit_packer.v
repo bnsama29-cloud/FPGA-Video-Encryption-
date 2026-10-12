@@ -3,7 +3,7 @@
 // there is room in the 64-bit accumulator, emits one byte per clock.
 // The chunk carrying i_flast ends the frame: the packer flushes and marks the
 // final output byte with o_last.
-// Golden model: model/jpeg.py :: pack_bytes()
+// Golden model: model/hw.py :: pack_bytes()
 `default_nettype none
 module bit_packer (
     input  wire        clk,

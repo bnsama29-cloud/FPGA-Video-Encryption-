@@ -1,6 +1,6 @@
 // ascon_round.v -- one Ascon permutation round (combinational).
 // State packing: s = {x4, x3, x2, x1, x0}, x0 = s[63:0].
-// Golden model: model/ascon.py :: ascon_round()
+// Golden model: model/ascon.py :: permutation() (one round of it)
 `default_nettype none
 module ascon_round (
     input  wire [319:0] s_in,

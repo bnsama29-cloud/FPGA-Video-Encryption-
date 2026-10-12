@@ -7,7 +7,7 @@ RTL_ALL  = ascon_round.v ascon_aead128_core.v keystream_gen.v tag_unit.v rgb2ycb
            bit_packer.v scan_word_packer.v axil_regs.v secure_jpeg_top.v
 LINT_WAIVE = -Wno-UNUSEDSIGNAL -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC
 
-.PHONY: help setup tables vectors test test-model test-ascon test-crypto test-front \
+.PHONY: help setup tables vectors test test-model test-rtl test-ascon test-crypto test-front \
         test-dct test-entropy test-top full one waves lint lint-strict synth hls-csim \
         bundle demo clean
 
@@ -15,8 +15,10 @@ help:
 	@echo "make setup        install Python packages (inside your venv)"
 	@echo "make tables       regenerate ROM include files from the model"
 	@echo "make vectors      write per-stage golden vectors to vectors/"
-	@echo "make test         full regression (model + every block + top)   ~1 min"
-	@echo "make test-model | test-ascon | test-crypto | test-front | test-dct | test-entropy | test-top"
+	@echo "make test         full regression (model + every RTL block + top)   ~1 min"
+	@echo "make test-model   golden model + contract equivalence (tests/)       ~5 s"
+	@echo "make test-rtl     every RTL block + top level in Icarus (tb/)        ~30 s"
+	@echo "make test-ascon | test-crypto | test-front | test-dct | test-entropy | test-top"
 	@echo "make full         long run: all 1089 Ascon KATs, 320x240 frames"
 	@echo "make one T=tb/test_dct_quant.py::test_dct8x8 [SEED=n]   one test, full log"
 	@echo "make waves T=...  same with waveforms -> gtkwave sim_build/<top>/*.fst"
@@ -32,10 +34,10 @@ tables:
 vectors:
 	$(PY) -m model.gen_vectors
 
-test:
-	$(PYTEST) -q tb/
+test: test-model test-rtl
 
-test-model:   ; $(PYTEST) -q tb/test_model.py
+test-model:   ; $(PYTEST) -q tests/
+test-rtl:     ; $(PYTEST) -q tb/
 test-ascon:   ; $(PYTEST) -q tb/test_ascon_core.py
 test-crypto:  ; $(PYTEST) -q tb/test_crypto_units.py
 test-front:   ; $(PYTEST) -q tb/test_rgb2ycbcr_block.py
@@ -44,7 +46,7 @@ test-entropy: ; $(PYTEST) -q tb/test_entropy.py
 test-top:     ; $(PYTEST) -q -s tb/test_top.py
 
 full:
-	FULL=1 $(PYTEST) -q tb/
+	FULL=1 $(PYTEST) -q tests/ tb/
 
 one:
 	$(PYTEST) -x -s -q $(T)
@@ -72,7 +74,7 @@ bundle:
 	$(PY) scripts/debug_bundle.py $(T) $(if $(SEED),--seed $(SEED))
 
 demo:
-	$(PY) scripts/visual_security.py
+	$(PY) scripts/encode_image.py --out sim_out/demo
 
 clean:
 	rm -rf sim_build sim_out results.xml tb/*.result.xml debug_bundle.md hls_dct_quant .pytest_cache \

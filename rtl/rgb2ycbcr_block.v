@@ -6,7 +6,7 @@
 //      m_flast on the last sample of the last block of the frame.
 // Two MCU-row buffers (ping-pong): one fills while the other is emitted.
 // width and height must be multiples of 16, width <= 2^LOG_MAXW.
-// Golden model: model/jpeg.py :: rgb_to_ycbcr(), planes(), blocks_in_hw_order()
+// Golden model: model/hw.py :: rgb_to_ycbcr(), planes(), blocks_in_hw_order()
 `default_nettype none
 module rgb2ycbcr_block #(
     parameter LOG_MAXW = 11                  // 2048 pixels max line width

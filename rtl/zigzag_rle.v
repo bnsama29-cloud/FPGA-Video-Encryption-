@@ -7,7 +7,7 @@
 //   ZRL (16 zeros) = run 15, size 0, eob 0.
 // DC predictors (one per component) reset on `start`.
 // Ping-pong block buffers: scanning one block while the next is written.
-// Golden model: model/jpeg.py :: run_length(), category(), amp_bits()
+// Golden model: model/hw.py :: run_length(), category(), amp_bits()
 `default_nettype none
 module zigzag_rle (
     input  wire               clk,

@@ -8,7 +8,7 @@ import cocotb
 from cocotb.triggers import RisingEdge
 
 from common import start, run_sim, rng_for, drive_stream, collect_stream
-from model import jpeg as J
+from model import hw as J
 from model.testimage import make_image
 
 

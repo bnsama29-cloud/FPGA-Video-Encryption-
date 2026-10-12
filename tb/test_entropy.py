@@ -13,7 +13,7 @@ import cocotb
 from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly
 
 from common import start, run_sim, rng_for, drive_stream, collect_stream, full_run
-from model import jpeg as J, ascon
+from model import hw as J, ascon
 from model.testimage import make_image
 
 SYM_FIELDS = ("is_dc", "run", "size", "amp", "eob", "comp")
@@ -103,7 +103,7 @@ async def selective_enc_matches_model(dut):
     dut.ks_avail.value = 0
     dut.ks_bits.value = 0
     await start(dut)
-    key, nonce = bytes(range(16)), ascon.make_nonce(3, 9, 0)
+    key, nonce = bytes(range(16)), ascon.make_nonce(9, 3, 0)
     syms = J.encode_frame(make_image(32, 32, "scene"), 75, 0)["symbols"]
     syms += sym_stream_from_qblocks(special_qblocks(), [0, 1, 2, 0, 1, 2])
     for mode in range(5):

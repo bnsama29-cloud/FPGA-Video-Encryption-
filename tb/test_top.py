@@ -21,13 +21,14 @@ from cocotbext.axi import (AxiLiteBus, AxiLiteMaster, AxiStreamBus,
 from PIL import Image
 
 from common import start, run_sim, rng_for, full_run, ROOT
-from model import jpeg as J, ascon
+from model import hw as J, ascon
 from model.testimage import make_image, psnr
 
 # register map (rtl/axil_regs.v)
 CTRL, STATUS, VERSION = 0x00, 0x04, 0x08
 WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
+SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
 
 OUT_DIR = ROOT / "sim_out"
 
@@ -50,7 +51,8 @@ class Encoder:
     async def setup_session(self, key, session_id, quality):
         for i in range(4):
             await self.wr(KEY0 + 4 * i, int.from_bytes(key[4 * i:4 * i + 4], "little"))
-        await self.wr(SESSION_ID, session_id)
+        await self.wr(SESSION_ID, session_id)              # bits [31:0]
+        await self.wr(SESSION_ID_HI, session_id >> 32)     # bits [63:32]
         luma, chroma = J.quality_tables(quality)
         await self.wr(QT_ADDR, 0)
         for q in luma + chroma:
@@ -60,7 +62,8 @@ class Encoder:
         h, w = img.shape[:2]
         await self.wr(WIDTH, w)
         await self.wr(HEIGHT, h)
-        await self.wr(FRAME_CTR, frame_ctr)
+        await self.wr(FRAME_CTR, frame_ctr)                # bits [31:0]
+        await self.wr(FRAME_CTR_HI, frame_ctr >> 32)       # bits [62:32]
         t0 = cocotb.utils.get_sim_time("ns")
         await self.wr(CTRL, 1 | (mode << 1))
         px = img.astype(np.uint32)
@@ -84,9 +87,8 @@ class Encoder:
 
 
 def build_jpeg(w, h, quality, mode, frame_ctr, session_id, scan, tag):
-    """ARM side: headers + APP11 tag segment + scan + EOI."""
-    return (J.headers(w, h, quality, J.app11_segment(mode, frame_ctr, session_id, tag))
-            + scan + b"\xFF\xD9")
+    """ARM side: headers + APP11 tag segment + scan + EOI (model/container.py)."""
+    return J.build_frame(w, h, quality, mode, frame_ctr, session_id, scan, tag)
 
 
 async def init(dut):
@@ -100,12 +102,15 @@ async def init(dut):
 async def registers(dut):
     """Write and read back every register; keys must not be readable."""
     enc = await init(dut)
-    assert await enc.rd(VERSION) == 0x5EC00100
+    assert await enc.rd(VERSION) == 0x5EC00200
     for addr, val in [(WIDTH, 0x280), (HEIGHT, 0x1E0), (FRAME_CTR, 0xDEADBEEF),
-                      (SESSION_ID, 0x12345678), (QT_ADDR, 0x55)]:
+                      (SESSION_ID, 0x12345678), (SESSION_ID_HI, 0x9ABCDEF0),
+                      (FRAME_CTR_HI, 0x7FFFFFFF), (QT_ADDR, 0x55)]:
         await enc.wr(addr, val)
         got = await enc.rd(addr)
         assert got == val, f"reg 0x{addr:02x}: wrote 0x{val:x} read 0x{got:x}"
+    await enc.wr(FRAME_CTR_HI, 0xFFFFFFFF)               # counter is 63 bits
+    assert await enc.rd(FRAME_CTR_HI) == 0x7FFFFFFF
     await enc.wr(KEY0, 0xCAFEF00D)
     assert await enc.rd(KEY0) == 0, "key register must read back as 0"
     assert await enc.rd(0xFC) == 0, "unused address must read 0"
@@ -146,12 +151,12 @@ async def check_frame(dut, enc, img, quality, mode, ctr, key, sid, receiver, tag
 async def frame_every_mode(dut):
     """One frame per mode; bit-exact with the model; receiver round trip."""
     enc = await init(dut)
-    key, sid, quality = bytes(range(16)), 0x00C0FFEE, 75
+    key, sid, quality = bytes(range(16)), 0x00FFC0EE_00C0FFEE, 75   # FF C0 inside APP11
     await enc.setup_session(key, sid, quality)
     rx = J.Receiver(key, sid)
     img = make_image(64, 48, "scene")
     for mode in range(5):
-        await check_frame(dut, enc, img, quality, mode, 10 + mode, key, sid, rx, f"mode{mode}")
+        await check_frame(dut, enc, img, quality, mode, (1 << 33) + mode, key, sid, rx, f"mode{mode}")
 
 
 @cocotb.test()
@@ -163,7 +168,7 @@ async def back_to_back_with_stalls(dut):
     enc.src.set_pause_generator(itertools.cycle([rng.random() < 0.3 for _ in range(97)]))
     enc.sink.set_pause_generator(itertools.cycle([rng.random() < 0.4 for _ in range(89)]))
     key = bytes(rng.randrange(256) for _ in range(16))
-    sid, quality = rng.randrange(1 << 32), 50
+    sid, quality = rng.randrange(1 << 64), 50
     await enc.setup_session(key, sid, quality)
     rx = J.Receiver(key, sid)
     frames = [(16, 16, "bars"), (48, 32, "noise"), (32, 32, "checker"), (64, 32, "scene")]
@@ -178,6 +183,10 @@ async def back_to_back_with_stalls(dut):
     bad = bytearray(jpgs[1]); bad[-10] ^= 0x04
     assert J.Receiver(key, sid).process(bytes(bad))[0] == "tag-mismatch"
     assert J.Receiver(key, sid ^ 1).process(jpgs[0])[0] == "wrong-session"
+    assert J.Receiver(key, sid ^ (1 << 63)).process(jpgs[0])[0] == "wrong-session"
+    # contract v2: the mode byte is authenticated (v1 tagged the scan only)
+    down = bytearray(jpgs[0]); k = down.find(b"SJV1"); down[k + 5] = 1
+    assert J.Receiver(key, sid).process(bytes(down))[0] == "tag-mismatch", "mode downgrade not detected"
     other = J.Receiver(bytes(16), sid)
     assert other.process(jpgs[0])[0] == "tag-mismatch", "wrong key must fail"
 

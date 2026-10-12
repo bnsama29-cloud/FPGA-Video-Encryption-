@@ -1,7 +1,9 @@
 """Keystream generator and per-frame tag unit vs the golden model.
 
 Edge cases (project doc 14.2): different nonces -> different keystreams,
-restart mid-stream, AD lengths 1..100 incl. exact multiples of 16.
+restart mid-stream, AD lengths 26 + (1..120) incl. exact multiples of 16.
+The tag AD is the 26-byte header prefix (latched at start) followed by the
+scan bytes (contract v2).
 """
 import cocotb
 from cocotb.triggers import RisingEdge, FallingEdge
@@ -10,7 +12,9 @@ from common import start, run_sim, rng_for
 from model import ascon
 
 
-async def pulse_start(dut, key, nonce):
+async def pulse_start(dut, key, nonce, prefix=None):
+    if prefix is not None:
+        dut.ad_prefix.value = int.from_bytes(prefix, "little")   # byte 0 in [7:0]
     dut.key.value = int.from_bytes(key, "little")
     dut.nonce.value = int.from_bytes(nonce, "little")
     dut.start.value = 1
@@ -50,7 +54,7 @@ async def keystream_matches_model(dut):
     key = bytes(range(16))
     seen = set()
     for frame in range(4):
-        nonce = ascon.make_nonce(frame, 0xABCD, 0)
+        nonce = ascon.make_nonce(0xABCD_0000_1234_5678, frame + (1 << 40), 0)
         await pulse_start(dut, key, nonce)
         await RisingEdge(dut.clk)
         nbits = 700 if frame < 3 else 37          # frame 3: restart early
@@ -68,11 +72,13 @@ async def tag_matches_model(dut):
     dut.ad_valid.value = 0
     await start(dut)
     key = bytes(rng.randrange(256) for _ in range(16))
-    lengths = [1, 15, 16, 17, 31, 32, 33, 48, 100] + [rng.randint(1, 120) for _ in range(6)]
+    lengths = [1, 5, 6, 7, 15, 16, 17, 22, 38, 100]   # 26+6 = 32, 26+22 = 48 + [rng.randint(1, 120) for _ in range(6)]
     for frame, n in enumerate(lengths):
-        nonce = ascon.make_nonce(frame, 7, 1)
+        nonce = ascon.make_nonce(7, frame, 1)
         data = bytes(rng.randrange(256) for _ in range(n))
-        await pulse_start(dut, key, nonce)
+        prefix = bytes(rng.randrange(256) for _ in range(26))
+        await pulse_start(dut, key, nonce, prefix)
+        dut.ad_prefix.value = 0          # must have been latched at start
         i = 0
         while i < n:
             if rng.random() < 0.3:
@@ -91,7 +97,7 @@ async def tag_matches_model(dut):
                 break
         assert int(dut.tag_valid.value), f"no tag for length {n}"
         got = int(dut.tag.value).to_bytes(16, "little")
-        assert got == ascon.mac(key, nonce, data), f"tag mismatch for AD length {n}"
+        assert got == ascon.mac(key, nonce, prefix + data), f"tag mismatch for AD length 26+{n}"
 
 
 def test_keystream_gen():

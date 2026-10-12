@@ -5,10 +5,10 @@ Frame layout:
 
 APP11 (marker 0xFFEB) secure segment payload, 38 bytes, ignored by normal viewers:
     'SJV1'      4 bytes  identifier
-    version     1 byte   (1)
+    version     1 byte   (2 = contract v2; frames with another version are rejected)
     mode        1 byte   0..4 = E0..E4
     session_id  8 bytes  big-endian
-    frame_ctr   8 bytes  big-endian
+    frame_ctr   8 bytes  big-endian (63-bit counter)
     tag        16 bytes  Ascon-AEAD128 tag
 
 Authenticated data for the tag (AD):
@@ -25,7 +25,7 @@ from .entropy import (AC_CHROMA_BITS, AC_CHROMA_VALS, AC_LUMA_BITS, AC_LUMA_VALS
 
 SECURE_MARKER = 0xEB
 SECURE_IDENT = b"SJV1"
-SECURE_VERSION = 1
+SECURE_VERSION = 2
 META_LEN = 22
 TAG_LEN = 16
 
@@ -105,7 +105,8 @@ class ParsedJPEG:
     def secure(self):
         """Returns (meta bytes, mode_id, session_id, frame_ctr, tag) or None."""
         p = self.segment(SECURE_MARKER)
-        if p is None or len(p) != META_LEN + TAG_LEN or p[:4] != SECURE_IDENT:
+        if (p is None or len(p) != META_LEN + TAG_LEN or p[:4] != SECURE_IDENT
+                or p[4] != SECURE_VERSION):
             return None
         meta, tag = p[:META_LEN], p[META_LEN:]
         return (meta, meta[5], int.from_bytes(meta[6:14], "big"),

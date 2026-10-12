@@ -3,7 +3,7 @@
 //   stage 2: cols,  shift 15 (integer result, natural row-major order F[v*8+u])
 // Drop-in alternative to the Vitis HLS DCT in hls/ (same streams, same
 // arithmetic) so the whole pipeline can be simulated with free tools.
-// Golden model: model/jpeg.py :: dct2d()
+// Golden model: model/hw.py :: dct2d()
 `default_nettype none
 module dct8x8 (
     input  wire               clk,

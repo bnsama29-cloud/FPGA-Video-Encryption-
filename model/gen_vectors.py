@@ -21,7 +21,7 @@ import os
 
 import numpy as np
 
-from . import jpeg as J, ascon
+from . import hw as J, ascon
 from .testimage import make_image
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -79,8 +79,8 @@ def main():
                 f"FRAME_CTR 0x{a.frame_ctr:x}\nSESSION_ID 0x{a.session_id:x}\n"
                 + "".join(f"KEY{i} 0x{w:08x}\n" for i, w in enumerate(kw))
                 + f"CTRL 0x{1 | (a.mode << 1):x}\nQUALITY {a.quality}\n"
-                f"N_ENC {ascon.make_nonce(a.frame_ctr, a.session_id, 0).hex()}\n"
-                f"N_MAC {ascon.make_nonce(a.frame_ctr, a.session_id, 1).hex()}\n"
+                f"N_ENC {ascon.make_nonce(a.session_id, a.frame_ctr, 0).hex()}\n"
+                f"N_MAC {ascon.make_nonce(a.session_id, a.frame_ctr, 1).hex()}\n"
                 f"OUT_BYTES {len(e['scan'])}\nKEYSTREAM_BITS {e['keystream_bits_used']}\n")
 
     # HLS testbench vectors: reciprocals, then one block per line

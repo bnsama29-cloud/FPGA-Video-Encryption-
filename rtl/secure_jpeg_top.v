@@ -2,13 +2,14 @@
 //
 //  s_axis (RGB pixels from DMA) -> rgb2ycbcr_block -> dct8x8 -> quantiser
 //    -> zigzag_rle -> selective_enc (+ keystream_gen) -> huffman_enc -> bit_packer
-//    -> { tag_unit (Ascon MAC over scan bytes), scan_word_packer -> m_axis (DMA) }
+//    -> { tag_unit (Ascon MAC over 26-byte header prefix + scan bytes),
+//         scan_word_packer -> m_axis (DMA) }
 //  s_axil: register file (axil_regs.v) for the ARM.
 //
-// Per frame (what the PYNQ Python does): write WIDTH/HEIGHT/FRAME_CTR/
-// SESSION_ID/KEY (key once per session), write CTRL = start | mode<<1, start
+// Per frame (what the PYNQ Python does): write WIDTH/HEIGHT/FRAME_CTR(_HI)/
+// SESSION_ID(_HI)/KEY (key once per session), write CTRL = start | mode<<1, start
 // both DMA channels, wait for STATUS.DONE, read OUT_BYTES and TAG0..3.
-// Golden model: model/jpeg.py :: encode_frame()
+// Golden model: model/hw.py :: encode_frame()  (== model/jpeg.py :: encode_frame)
 `default_nettype none
 module secure_jpeg_top #(
     parameter LOG_MAXW = 11
@@ -52,7 +53,9 @@ module secure_jpeg_top #(
     wire         start;
     wire [2:0]   mode;
     wire [11:0]  width, height;
-    wire [31:0]  frame_ctr, session_id, out_bytes;
+    wire [62:0]  frame_ctr;
+    wire [63:0]  session_id;
+    wire [31:0]  out_bytes;
     wire [127:0] key, tag;
     wire         qt_we, tag_valid;
     wire [6:0]   qt_addr;
@@ -81,9 +84,27 @@ module secure_jpeg_top #(
     reg  [2:0] mode_l;                        // mode latched for the whole frame
     always @(posedge clk) if (start) mode_l <= mode;
 
-    // nonces: 32-bit LE words [frame_ctr, 0, session_id, purpose]
-    wire [127:0] n_enc = {32'd0, session_id, 32'd0, frame_ctr};
-    wire [127:0] n_mac = {32'd1, session_id, 32'd0, frame_ctr};
+    // nonces (contract v2): bytes 0..7 = session_id LE, bytes 8..15 =
+    // (frame_ctr << 1 | purpose) LE  ->  Ascon state x3 = session_id,
+    // x4 = {frame_ctr, purpose}.  purpose 0 = keystream, 1 = tag.
+    wire [127:0] n_enc = {frame_ctr, 1'b0, session_id};
+    wire [127:0] n_mac = {frame_ctr, 1'b1, session_id};
+
+    // 26-byte tag AD prefix = APP11 metadata + frame size, byte 0 in [7:0]:
+    //   'S' 'J' 'V' '1', version 2, mode, session_id (8 B, big-endian),
+    //   frame_ctr (8 B, big-endian), width (2 B BE), height (2 B BE)
+    // Golden model: model/hw.py :: tag_prefix()
+    function [63:0] bswap64;
+        input [63:0] v;
+        integer b;
+        begin
+            for (b = 0; b < 8; b = b + 1) bswap64[8*b +: 8] = v[8*(7-b) +: 8];
+        end
+    endfunction
+    wire [207:0] tag_prefix = {
+        height[7:0], 4'd0, height[11:8], width[7:0], 4'd0, width[11:8],
+        bswap64({1'b0, frame_ctr}), bswap64(session_id),
+        5'd0, mode, 8'h02, 8'h31, 8'h56, 8'h4A, 8'h53};
 
     // ------------------------------------------------------- colour + blocks
     wire       c_valid, c_ready, c_blast_unused, c_flast;
@@ -169,8 +190,8 @@ module secure_jpeg_top #(
     wire t_ready, w_ready;
     assign b_ready = t_ready && w_ready;
 
-    tag_unit u_tag (
-        .clk(clk), .rst(rst), .start(start), .key(key), .nonce(n_mac),
+    tag_unit #(.PREFIX_BYTES(26)) u_tag (
+        .clk(clk), .rst(rst), .start(start), .key(key), .nonce(n_mac), .ad_prefix(tag_prefix),
         .ad_valid(b_valid && w_ready), .ad_ready(t_ready), .ad_data(b_data), .ad_last(b_last),
         .tag_valid(tag_valid), .tag(tag));
 

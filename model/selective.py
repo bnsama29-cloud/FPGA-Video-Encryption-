@@ -1,10 +1,20 @@
 """Selective encryption stage (sits between run-length and Huffman, as in the hardware).
 
-Each non-zero symbol carries a `size`-bit amplitude field (see entropy.py).
-Encryption XORs keystream bits onto that field; the size never changes.
+Each non-zero symbol carries a `size`-bit amplitude field (see entropy.py):
+positive v -> v, negative v -> v + 2^size - 1 (ones' complement). Encryption
+XORs keystream bits onto that field; the size never changes, so Huffman code
+lengths and the file layout are unchanged (format compliant).
 
-    sign only : field ^= (k << (size-1))        consumes 1 keystream bit
-    all bits  : field ^= k[size-1:0]            consumes `size` keystream bits
+Contract v2 (identical to rtl/selective_enc.v):
+    keystream bit 0          -> sign: if 1, invert ALL `size` bits of the field.
+                                In JPEG's ones' complement coding that is exactly
+                                v -> -v, so sign-only modes keep the magnitude.
+    keystream bits 1..size-1 -> XOR onto the low size-1 field bits (bit k -> field
+                                bit k-1), only in the "all bits" modes.
+    A sign-only symbol consumes 1 keystream bit, an all-bits symbol `size` bits.
+
+(Contract v1 flipped only the field MSB for "sign" encryption. That changes the
+magnitude as well as the sign (e.g. 5 -> -6), so it was not sign encryption.)
 
 Modes (value sets from section 6.1 of the project document):
     E0 : nothing encrypted (plain JPEG, tag only)
@@ -41,10 +51,22 @@ MODE_ID = {name: i for i, name in enumerate(MODES)}       # E0 -> 0 ... E4 -> 4
 MODE_NAME = {i: name for name, i in MODE_ID.items()}
 
 
+def symbol_mask(size, ks_bits, all_bits):
+    """XOR mask for one amplitude field from the keystream bits it consumed.
+
+    ks_bits: int, bit j = j-th keystream bit for this symbol (LSB first)."""
+    full = (1 << size) - 1
+    mask = full if (ks_bits & 1) else 0
+    if all_bits:
+        mask ^= (ks_bits >> 1) & (full >> 1)
+    return mask
+
+
 def apply_keystream(symbols, ks, mode):
     """XOR keystream onto the selected amplitude bits.
 
-    Returns (new symbol list, number of encrypted bits).
+    ks: an object with take(n) -> int (ascon.Keystream). Returns
+    (new symbol list, number of encrypted bits).
     """
     cfg = MODES[mode]
     out = []
@@ -60,10 +82,10 @@ def apply_keystream(symbols, ks, mode):
         else:
             all_bits, sign = cfg.ac_all, cfg.ac_sign
         if all_bits:
-            mask = ks.bits(size)
+            mask = symbol_mask(size, ks.take(size), True)
             n += size
         elif sign:
-            mask = ks.bits(1) << (size - 1)
+            mask = symbol_mask(size, ks.take(1), False)
             n += 1
         else:
             app(s)
@@ -80,7 +102,7 @@ def apply_keystream(symbols, ks, mode):
 def replacement_attack(symbols, mode):
     """Attacker without the key replaces encrypted values with fixed guesses.
 
-    * AC sign encrypted only  -> take |amp| (magnitude is still correct)
+    * AC sign encrypted only  -> take |amp| (magnitude is exact in contract v2)
     * AC amplitude encrypted  -> smallest positive value of the same size category
     * DC encrypted (any)      -> DC difference = 0 (flat grey blocks)
     The attacker re-encodes a valid JPEG from the result.

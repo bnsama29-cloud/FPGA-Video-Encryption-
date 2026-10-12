@@ -6,7 +6,7 @@
 //   keystream bit 0 -> sign: if 1, invert all s amplitude bits (= negate value)
 //   keystream bits 1..s-1 -> XORed onto the low s-1 amplitude bits (E3/E4)
 // Sizes, runs and therefore Huffman code lengths never change.
-// Golden model: model/jpeg.py :: bits_needed(), encrypt_symbol()
+// Golden model: model/hw.py :: bits_needed(), encrypt_symbol()  (= model/selective.py)
 `default_nettype none
 module selective_enc (
     input  wire        clk,

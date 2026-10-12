@@ -4,7 +4,7 @@ Run:  python -m model.gen_rtl_tables      (make tables does this)
 """
 import os
 
-from .jpeg import DCT_C
+from .dct_quant import DCT_C
 from .tables import ZIGZAG, DC_CODES, AC_CODES
 
 HERE = os.path.dirname(os.path.abspath(__file__))

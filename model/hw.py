@@ -1,6 +1,7 @@
-"""Bit-exact golden model of the hardware JPEG encoder with selective encryption.
+"""Stage-level, bit-exact view of the hardware pipeline (used by the RTL testbenches).
 
-Each function here corresponds to one RTL block:
+Each function here corresponds to one RTL block and works on plain Python lists,
+one block / one symbol at a time, exactly the granularity the testbenches drive:
 
   rgb_to_ycbcr / blocks_in_hw_order  -> rtl/rgb2ycbcr_block.v
   dct2d (two dct_stage passes)       -> rtl/dct8x8.v (+ rtl/dct_stage.v)
@@ -8,15 +9,19 @@ Each function here corresponds to one RTL block:
   run_length                         -> rtl/zigzag_rle.v
   selective_encrypt                  -> rtl/selective_enc.v (+ keystream_gen.v)
   huffman_bits / pack_bytes          -> rtl/huffman_enc.v + rtl/bit_packer.v
-  ascon.mac(scan)                    -> rtl/tag_unit.v
+  frame_tag                          -> rtl/tag_unit.v (AD prefix + scan bytes)
 
-The integer arithmetic is chosen so that hardware and model agree exactly.
+There is ONE contract (v2, docs/INTERFACES.md). The arithmetic constants come from
+model/dct_quant.py, the cryptography (nonce, keystream, tag) from model/ascon.py
+and the file format (APP11 segment, tag AD, headers) from model/container.py.
+tests/test_hw_equivalence.py proves that encode_frame() here produces exactly the
+same JPEG bytes as model/jpeg.py (the frame-level golden model) for every mode.
 """
-import math
 from collections import namedtuple
 
-from . import ascon
-from .tables import (Q_LUMA_BASE, Q_CHROMA_BASE, ZIGZAG, DC_CODES, AC_CODES,
+from . import ascon, container
+from .dct_quant import DCT_C as _DCT_C, STAGE1_SHIFT, STAGE2_SHIFT, tables as _tables
+from .tables import (ZIGZAG, DC_CODES, AC_CODES,                          # noqa: F401
                      DC_LUMA_BITS, DC_LUMA_VALS, DC_CHROMA_BITS, DC_CHROMA_VALS,
                      AC_LUMA_BITS, AC_LUMA_VALS, AC_CHROMA_BITS, AC_CHROMA_VALS)
 
@@ -82,16 +87,7 @@ def blocks_in_hw_order(rgb):
 
 
 # ------------------------------------------------------------------- 8x8 DCT
-DCT_SCALE_BITS = 13
-
-
-def _dct_coeff(u, x):
-    cu = 1 / math.sqrt(2) if u == 0 else 1.0
-    return int(math.floor((1 << DCT_SCALE_BITS) * cu / 2 * math.cos((2 * x + 1) * u * math.pi / 16) + 0.5))
-
-
-DCT_C = [[_dct_coeff(u, x) for x in range(8)] for u in range(8)]
-STAGE1_SHIFT, STAGE2_SHIFT = 11, 15
+DCT_C = _DCT_C.tolist()          # same integers as model/dct_quant.py and the ROM
 
 
 def dct_stage(block, shift):
@@ -109,11 +105,9 @@ def dct2d(samples):
 
 # ----------------------------------------------------------------- quantiser
 def quality_tables(quality):
-    """libjpeg quality scaling. Returns (luma, chroma) natural-order tables."""
-    quality = _clamp(quality, 1, 100)
-    s = 5000 // quality if quality < 50 else 200 - 2 * quality
-    scale = lambda t: [_clamp((q * s + 50) // 100, 1, 255) for q in t]
-    return scale(Q_LUMA_BASE), scale(Q_CHROMA_BASE)
+    """libjpeg quality scaling. Returns (luma, chroma) natural-order tables as lists."""
+    qy, qc = _tables(quality)
+    return [int(v) for v in qy.flatten()], [int(v) for v in qc.flatten()]
 
 
 def reciprocal(q):
@@ -242,38 +236,6 @@ def pack_bytes(chunks):
 
 
 # --------------------------------------------------------------- file format
-def _seg(marker, payload):
-    return bytes([0xFF, marker]) + (len(payload) + 2).to_bytes(2, "big") + payload
-
-
-APP11_ID = b"SJPG"   # our tag segment: id, version, mode, frame_ctr, session_id, tag
-
-
-def app11_segment(mode, frame_ctr, session_id, tag):
-    payload = (APP11_ID + bytes([1, mode]) + frame_ctr.to_bytes(4, "little")
-               + session_id.to_bytes(4, "little") + bytes(tag))
-    return _seg(0xEB, payload)
-
-
-def headers(width, height, quality, app11=b""):
-    """SOI, APP0 (JFIF), [APP11 tag], DQT, SOF0, DHT x4, SOS."""
-    luma, chroma = quality_tables(quality)
-    h = b"\xFF\xD8"
-    h += _seg(0xE0, b"JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00")
-    h += app11
-    h += _seg(0xDB, bytes([0x00]) + bytes(luma[ZIGZAG[k]] for k in range(64))
-              + bytes([0x01]) + bytes(chroma[ZIGZAG[k]] for k in range(64)))
-    h += _seg(0xC0, bytes([8]) + height.to_bytes(2, "big") + width.to_bytes(2, "big")
-              + bytes([3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1]))
-    for cls_id, bits, vals in ((0x00, DC_LUMA_BITS, DC_LUMA_VALS),
-                               (0x10, AC_LUMA_BITS, AC_LUMA_VALS),
-                               (0x01, DC_CHROMA_BITS, DC_CHROMA_VALS),
-                               (0x11, AC_CHROMA_BITS, AC_CHROMA_VALS)):
-        h += _seg(0xC4, bytes([cls_id]) + bytes(bits) + bytes(vals))
-    h += _seg(0xDA, bytes([3, 1, 0x00, 2, 0x11, 3, 0x11, 0, 63, 0]))
-    return h
-
-
 def segments(jpeg):
     """Walk the marker segments of a JPEG header: yields (marker, offset, payload)
     up to and including SOS. Never byte-search for markers: 0xFF 0xC0 can occur
@@ -288,15 +250,6 @@ def segments(jpeg):
         if marker == 0xDA:
             return
         i += 2 + seglen
-
-
-def parse_app11(jpeg):
-    """Returns dict(mode, frame_ctr, session_id, tag) or None."""
-    for marker, _, p in segments(jpeg):
-        if marker == 0xEB and p[:4] == APP11_ID:
-            return dict(mode=p[5], frame_ctr=int.from_bytes(p[6:10], "little"),
-                        session_id=int.from_bytes(p[10:14], "little"), tag=bytes(p[14:30]))
-    return None
 
 
 def frame_size(jpeg):
@@ -317,6 +270,25 @@ def split_scan(jpeg):
     raise ValueError("no SOS segment")
 
 
+def tag_prefix(mode, frame_ctr, session_id, width, height):
+    """The 26 bytes the tag unit absorbs before the scan bytes:
+    APP11 meta (22 B: 'SJV1', version, mode, session BE, counter BE) || width || height."""
+    return container.auth_data(container.secure_meta(mode, session_id, frame_ctr), width, height, b"")
+
+
+def frame_tag(key, mode, frame_ctr, session_id, width, height, scan):
+    """Per-frame tag = Ascon-AEAD128(K, N_mac, AD = tag_prefix || scan, P = empty)."""
+    return ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 1),
+                     tag_prefix(mode, frame_ctr, session_id, width, height) + scan)
+
+
+def build_frame(width, height, quality, mode, frame_ctr, session_id, scan, tag):
+    """What the ARM does after the fabric is done: headers + APP11 + scan + EOI."""
+    qy, qc = _tables(quality)
+    meta = container.secure_meta(mode, session_id, frame_ctr)
+    return container.build_jpeg(width, height, qy, qc, scan, secure_segment=meta + tag)
+
+
 # ------------------------------------------------------------- full encoder
 def encode_frame(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0,
                  session_id=0):
@@ -333,12 +305,11 @@ def encode_frame(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0,
         coeffs.append(f)
         qcoeffs.append(q)
         syms.extend(run_length(q, comp, pred))
-    n_enc = ascon.make_nonce(frame_ctr, session_id, 0)
-    n_mac = ascon.make_nonce(frame_ctr, session_id, 1)
+    n_enc = ascon.make_nonce(session_id, frame_ctr, 0)
     enc_syms, ks_bits = selective_encrypt(syms, mode, key, n_enc)
     scan = pack_bytes([huffman_bits(s) for s in enc_syms])
-    tag = ascon.mac(key, n_mac, scan)
-    jpeg = headers(w, h, quality, app11_segment(mode, frame_ctr, session_id, tag)) + scan + b"\xFF\xD9"
+    tag = frame_tag(key, mode, frame_ctr, session_id, w, h, scan)
+    jpeg = build_frame(w, h, quality, mode, frame_ctr, session_id, scan, tag)
     return dict(blocks=blocks, coeffs=coeffs, qcoeffs=qcoeffs, symbols=syms,
                 enc_symbols=enc_syms, keystream_bits_used=ks_bits, scan=scan,
                 tag=tag, jpeg=jpeg, width=w, height=h, recips=recips)
@@ -399,31 +370,29 @@ def decode_symbols(scan, width, height):
 
 # ------------------------------------------------------------------ receiver
 class Receiver:
-    """Laptop-side golden receiver: verify tag, reject replays, decrypt."""
+    """Testbench-friendly wrapper around the golden receiver (model/jpeg.py).
+
+    process(jpeg) -> (verdict, clear_jpeg_or_None), verdict in
+    {'ok', 'bad-format', 'wrong-session', 'replay', 'tag-mismatch'}.
+    A dropped frame (counter gap) is still 'ok' here; model.jpeg reports it as 'gap'."""
 
     def __init__(self, key, session_id):
-        self.key, self.session_id, self.last_ctr = bytes(key), session_id, -1
+        from .jpeg import ReplayGuard
+        self.key, self.session_id, self.guard = bytes(key), session_id, ReplayGuard()
 
     def process(self, jpeg):
-        """Returns (verdict, clear_jpeg_or_None). verdict in
-        {'ok', 'bad-format', 'wrong-session', 'replay', 'tag-mismatch'}."""
+        from .jpeg import receive_frame
         try:
-            info = parse_app11(jpeg)
-        except (AssertionError, IndexError):
-            info = None
-        if info is None:
+            sec = container.parse_jpeg(jpeg).secure()
+        except ValueError:
+            sec = None
+        if sec is None:
             return "bad-format", None
-        if info["session_id"] != self.session_id:
+        if sec[2] != self.session_id:
             return "wrong-session", None
-        if info["frame_ctr"] <= self.last_ctr:
-            return "replay", None
-        hdr, scan = split_scan(jpeg)
-        n_mac = ascon.make_nonce(info["frame_ctr"], self.session_id, 1)
-        if ascon.mac(self.key, n_mac, scan) != info["tag"]:
-            return "tag-mismatch", None
-        self.last_ctr = info["frame_ctr"]
-        w, h = frame_size(hdr)
-        syms = decode_symbols(scan, w, h)
-        n_enc = ascon.make_nonce(info["frame_ctr"], self.session_id, 0)
-        clear, _ = selective_encrypt(syms, info["mode"], self.key, n_enc)
-        return "ok", hdr + pack_bytes([huffman_bits(s) for s in clear]) + b"\xFF\xD9"
+        r = receive_frame(jpeg, self.key, self.guard)
+        if r.ok:
+            return "ok", r.plain_jpeg
+        if r.reason in ("replay", "tag-mismatch"):
+            return r.reason, None
+        return "bad-format", None
