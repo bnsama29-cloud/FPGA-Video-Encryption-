@@ -111,13 +111,18 @@ def zigzag(qblocks):
     return qblocks.reshape(n, 6, 64)[:, :, ZIGZAG]
 
 
-def run_length_encode(qblocks):
-    """Quantised blocks (n_mcu, 6, 8, 8) -> list[Symbol] in coding order."""
+def run_length_encode(qblocks, restart=False):
+    """Quantised blocks (n_mcu, 6, 8, 8) -> list[Symbol] in coding order.
+
+    restart=True: restart interval of one MCU (T.81 F.1.2.3): the DC predictors
+    are reset to 0 at the start of every MCU, so each MCU decodes on its own."""
     zz = zigzag(qblocks).tolist()
     pred = [0, 0, 0]
     out = []
     app = out.append
     for mcu in zz:
+        if restart:
+            pred = [0, 0, 0]
         for b in range(6):
             c = COMP_OF_BLOCK[b]
             blk = mcu[b]
@@ -143,7 +148,7 @@ def run_length_encode(qblocks):
     return out
 
 
-def symbols_to_blocks(symbols, n_mcu):
+def symbols_to_blocks(symbols, n_mcu, restart=False):
     """Inverse of run_length_encode: list[Symbol] -> quantised blocks (n_mcu, 6, 8, 8)."""
     zz = np.zeros((n_mcu * 6, 64), dtype=np.int32)
     pred = [0, 0, 0]
@@ -151,6 +156,8 @@ def symbols_to_blocks(symbols, n_mcu):
     for s in symbols:
         if s.is_dc:
             blk += 1
+            if restart and blk % 6 == 0:
+                pred = [0, 0, 0]
             pred[s.comp] += s.amp
             zz[blk, 0] = pred[s.comp]
             k = 1
@@ -267,3 +274,59 @@ def huffman_decode(scan, n_mcu):
     if pos > nb:
         raise ScanError("scan data truncated")
     return out
+
+
+# ---- Restart intervals (used by mode E5: one MCU per interval) -----------------
+RST = [bytes([0xFF, 0xD0 + i]) for i in range(8)]
+
+
+def mcu_segments(symbols):
+    """Split a coding-order symbol list into per-MCU lists (an MCU = 6 blocks)."""
+    segs, cur, blocks = [], [], 0
+    for s in symbols:
+        if s.is_dc:
+            if blocks == 6:
+                segs.append(cur)
+                cur, blocks = [], 0
+            blocks += 1
+        cur.append(s)
+    if cur:
+        segs.append(cur)
+    return segs
+
+
+def encode_segments(symbols):
+    """Huffman-code each MCU separately (each padded to a byte with 1s and stuffed).
+    Returns (list of segment bytes, payload bits before padding)."""
+    out, total = [], 0
+    for seg in mcu_segments(symbols):
+        b, n = huffman_encode(seg)
+        out.append(b)
+        total += n
+    return out, total
+
+
+def join_restart(segments):
+    """seg0 RST0 seg1 RST1 ... segN (markers numbered modulo 8, none after the last)."""
+    parts = []
+    for i, seg in enumerate(segments):
+        if i:
+            parts.append(RST[(i - 1) % 8])
+        parts.append(seg)
+    return b"".join(parts)
+
+
+def split_restart(scan):
+    """Inverse of join_restart. RST markers cannot occur inside stuffed data."""
+    segs, start, i = [], 0, 0
+    while True:
+        j = scan.find(b"\xff", i)
+        if j < 0 or j + 1 >= len(scan):
+            break
+        if 0xD0 <= scan[j + 1] <= 0xD7:
+            segs.append(scan[start:j])
+            start = i = j + 2
+        else:
+            i = j + 2
+    segs.append(scan[start:])
+    return segs

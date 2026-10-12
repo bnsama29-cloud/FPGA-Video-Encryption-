@@ -292,7 +292,10 @@ def build_frame(width, height, quality, mode, frame_ctr, session_id, scan, tag):
 # ------------------------------------------------------------- full encoder
 def encode_frame(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0,
                  session_id=0):
-    """Returns a dict with every intermediate stage (used as test vectors)."""
+    """Returns a dict with every intermediate stage (used as test vectors).
+    Modes 0..4 only: E5 (MCU shuffle) needs restart markers the RTL does not have yet."""
+    if not 0 <= mode <= 4:
+        raise ValueError("the RTL view supports modes 0..4 (E5 is model-only for now)")
     h, w = len(rgb), len(rgb[0])
     luma, chroma = quality_tables(quality)
     recips = [[reciprocal(q) for q in luma], [reciprocal(q) for q in chroma]]

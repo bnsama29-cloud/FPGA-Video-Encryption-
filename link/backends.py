@@ -63,6 +63,8 @@ class RtlEncoder:
         if w % 16 or h % 16:
             raise ValueError("the RTL needs width and height that are multiples of 16")
         m = MODE_ID[mode]
+        if m > 4:
+            raise ValueError(f"{mode} needs restart markers, which the RTL does not produce yet")
         e = hw.encode_frame(rgb, self.quality, m, key, frame_ctr, session_id)
         cmds = ["W 20 %08x" % int.from_bytes(key[0:4], "little"),
                 "W 24 %08x" % int.from_bytes(key[4:8], "little"),

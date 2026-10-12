@@ -43,7 +43,7 @@ def auth_data(meta, width, height, scan):
     return meta + width.to_bytes(2, "big") + height.to_bytes(2, "big") + scan
 
 
-def build_headers(width, height, qy, qc, secure_segment=None):
+def build_headers(width, height, qy, qc, secure_segment=None, restart_interval=0):
     out = bytearray(b"\xff\xd8")
     out += _segment(0xE0, b"JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00")
     if secure_segment is not None:
@@ -59,12 +59,14 @@ def build_headers(width, height, qy, qc, secure_segment=None):
                               (0x01, DC_CHROMA_BITS, DC_CHROMA_VALS), (0x11, AC_CHROMA_BITS, AC_CHROMA_VALS)):
         dht += bytes([tc_th]) + bytes(bits) + bytes(vals)
     out += _segment(0xC4, dht)
+    if restart_interval:
+        out += _segment(0xDD, restart_interval.to_bytes(2, "big"))      # DRI
     out += _segment(0xDA, bytes([3, 1, 0x00, 2, 0x11, 3, 0x11, 0, 63, 0]))
     return bytes(out)
 
 
-def build_jpeg(width, height, qy, qc, scan, secure_segment=None):
-    return build_headers(width, height, qy, qc, secure_segment) + scan + b"\xff\xd9"
+def build_jpeg(width, height, qy, qc, scan, secure_segment=None, restart_interval=0):
+    return build_headers(width, height, qy, qc, secure_segment, restart_interval) + scan + b"\xff\xd9"
 
 
 class JPEGFormatError(ValueError):

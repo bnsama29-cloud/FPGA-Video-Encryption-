@@ -31,7 +31,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-MODES = ["E0", "E1", "E2", "E3", "E4"]
+MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
 def mode_index(m):
@@ -146,7 +146,7 @@ class ThresholdPolicy(Policy):
             dec = Decision(self.max_mode, False, "active attack evidence")
         elif f["loss_level"] == 2:
             self.until = max(self.until, now + self.d["hold_s"] / 2)
-            dec = Decision(self._clamp("E3"), False, "heavy loss (possible jamming)")
+            dec = Decision(self.max_mode, False, "heavy loss (possible jamming)")
         elif now < self.until:
             dec = Decision(self.mode, False, "holding after evidence")
         else:
@@ -163,7 +163,7 @@ class BanditPolicy(Policy):
     def __init__(self, cfg, base_mode, memory_file=None, seed=None):
         super().__init__(cfg, base_mode)
         self.actions = MODES[mode_index(self.min_mode):mode_index(self.max_mode) + 1]
-        self.q, self.n = {}, {}
+        self.q, self.n, self.na = {}, {}, {}
         self.prev = None                 # (context, action)
         self.recent_attack = -1e9
         self.rng = random.Random(seed)
@@ -173,7 +173,7 @@ class BanditPolicy(Policy):
         if self.memory_file and self.memory_file.exists():
             try:
                 mem = json.loads(self.memory_file.read_text())
-                self.q, self.n = mem.get("q", {}), mem.get("n", {})
+                self.q, self.n, self.na = mem.get("q", {}), mem.get("n", {}), mem.get("na", {})
             except ValueError:
                 pass
 
@@ -195,7 +195,10 @@ class BanditPolicy(Policy):
             ctx0, a0, changed = self.prev
             r = -self.loss(threat, a0, changed)
             q = self.q.setdefault(ctx0, {})
-            q[a0] = q.get(a0, r) + self.d["alpha"] * (r - q.get(a0, r))
+            na = self.na.setdefault(ctx0, {})
+            na[a0] = na.get(a0, 0) + 1
+            step = max(self.d["alpha"], 1.0 / na[a0])     # sample average, then a small floor
+            q[a0] = q.get(a0, r) + step * (r - q.get(a0, r))
             self.n[ctx0] = self.n.get(ctx0, 0) + 1
             self.last_reward = r
             self.updates += 1
@@ -206,18 +209,17 @@ class BanditPolicy(Policy):
         q = self.q.get(ctx, {})
         eps = self.d["epsilon"] / math.sqrt(1 + self.n.get(ctx, 0))
         untried = [a for a in self.actions if a not in q]
-        if untried and self.rng.random() < max(eps, 0.5 if not q else 0):
-            a = self.rng.choice(untried)
-            why = "explore (new context)"
+        if untried:
+            # optimistic initial values: an untried action looks perfect (loss 0),
+            # so every protection level is tried once in every new situation
+            a = self.base if self.base in untried else untried[0]
+            why = "try untested level"
         elif self.rng.random() < eps:
             a = self.rng.choice(self.actions)
             why = "explore"
-        elif q:
-            a = max(self.actions, key=lambda x: q.get(x, -1e9))
-            why = "learned best"
         else:
-            a = self.base
-            why = "default"
+            a = max(self.actions, key=lambda x: q[x])
+            why = "learned best"
         dec = Decision(a, False, f"bandit {why} in {ctx}")
         dec = self.safety(w, f, now, dec)
         dec.mode = self._clamp(dec.mode)
@@ -227,7 +229,7 @@ class BanditPolicy(Policy):
 
     def save(self):
         self.memory_file.parent.mkdir(parents=True, exist_ok=True)
-        self.memory_file.write_text(json.dumps({"q": self.q, "n": self.n}, indent=1))
+        self.memory_file.write_text(json.dumps({"q": self.q, "n": self.n, "na": self.na}, indent=1))
 
     def info(self):
         ctx = self.prev[0] if self.prev else None

@@ -32,8 +32,10 @@ class Sender:
         self.ratchet = keys.Ratchet(self.master, 0)
         self.fb = FeedbackReader(keys.feedback_key(self.master))
         self.mode = s["mode"]
-        self.policy = make_policy(s["policy"], cfg, self.mode)
         self.encoder = make_encoder(s["encoder"], s["quality"])
+        if self.encoder.name == "rtl" and cfg["defence"]["max_mode"] == "E5":
+            cfg["defence"]["max_mode"] = "E4"          # the RTL has no restart markers yet
+        self.policy = make_policy(s["policy"], cfg, self.mode)
         self.source = open_source(s["source"], s["width"], s["height"], s["loop"])
         self.fps = float(s["fps"])
         self.ctr = 1

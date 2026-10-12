@@ -110,18 +110,20 @@ def test_threshold_policy_escalates_holds_and_rekeys():
     calm = Window(ok=10, fb_ok=2)
     assert p.decide(calm, calm.features(3), 0).mode == "E2"
     atk = Window(ok=2, tag_fail=8, fb_ok=2)
+    top = c["defence"]["max_mode"]
     d = p.decide(atk, atk.features(3), 1)
-    assert d.mode == "E4" and d.rekey
+    assert d.mode == top and d.rekey
     d = p.decide(calm, calm.features(3), 2)
-    assert d.mode == "E4" and not d.rekey               # holding, rekey rate-limited
+    assert d.mode == top and not d.rekey                # holding, rekey rate-limited
     assert p.decide(calm, calm.features(3), 1 + c["defence"]["hold_s"] + 0.1).mode == "E2"
 
 
 def test_deadman_rule():
-    p = ThresholdPolicy(cfg(), "E2")
+    c = cfg()
+    p = ThresholdPolicy(c, "E2")
     w = Window(hb_age=5.0)
     d = p.decide(w, w.features(3.0), 10)
-    assert d.mode == "E4" and d.rekey and "dead-man" in d.reason
+    assert d.mode == c["defence"]["max_mode"] and d.rekey and "dead-man" in d.reason
 
 
 def test_video_stall_counts_as_heavy_loss():
@@ -134,8 +136,8 @@ def test_bandit_learns_to_escalate_under_attack_and_relax_when_calm():
     p = BanditPolicy(c, "E2", memory_file=None, seed=1)
     calm, atk = Window(ok=10, fb_ok=2), Window(ok=2, tag_fail=3, fb_ok=2)
     t = 0.0
-    for episode in range(40):                           # alternate long calm / attack phases
-        for _ in range(6):
+    for episode in range(15):          # calm phases longer than the 30 s attack memory
+        for _ in range(40):
             p.decide(calm, calm.features(3), t)
             t += 1
         for _ in range(6):
@@ -143,7 +145,9 @@ def test_bandit_learns_to_escalate_under_attack_and_relax_when_calm():
             t += 1
     q_atk = p.q[p.context(atk.features(3), t)]
     q_calm = p.q[p.context(calm.features(3), t + 100)]
-    assert max(q_atk, key=q_atk.get) in ("E3", "E4")
+    # with the measured leakage/cost table, E3/E4 do not reduce the edge leak but cost
+    # more, so the learner should prefer E5 under attack and the E2 floor when calm
+    assert max(q_atk, key=q_atk.get) == "E5"
     assert max(q_calm, key=q_calm.get) == "E2"
     assert threat_score(atk.features(3)) == 1.0
 
@@ -181,6 +185,6 @@ def test_end_to_end_link_detects_and_reacts():
     assert "tag-mismatch" in verdicts
     assert verdicts & {"replay", "stale-epoch"}
     windows = log.take("window", "sender")
-    assert any(w["mode"] == "E4" for w in windows), "sender never escalated"
+    assert any(w["mode"] == c["defence"]["max_mode"] for w in windows), "sender never escalated"
     assert log.take("rekey", "sender"), "sender never rekeyed"
     assert log.take("epoch", "receiver"), "receiver did not follow the rekey"

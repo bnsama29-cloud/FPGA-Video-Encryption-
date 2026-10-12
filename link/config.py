@@ -60,15 +60,17 @@ DEFAULTS = {
         "hold_s": 8.0,           # threshold policy: keep escalation this long after evidence
         "rekey_min_interval_s": 10.0,
         "rekey_on_tag_fail": 5,  # tag failures in one window that trigger a rekey
-        "max_mode": "E4",
+        "max_mode": "E5",        # E5 = E4 + keyed MCU shuffle (model only; capped to E4 with encoder=rtl)
         "epsilon": 0.1,          # bandit exploration rate
-        "alpha": 0.3,            # bandit learning rate
+        "alpha": 0.05,           # bandit step-size floor (sample average until 1/n < alpha)
         "memory_file": "sim_out/bandit_memory.json",
-        # Expected leakage per mode (attacker reconstruction quality, 0..1) and cost
-        # per mode (fraction of payload bits encrypted). Measured with
-        # experiments/measure_mode_tradeoff.py; replace with your own numbers.
-        "leakage": {"E0": 1.0, "E1": 0.55, "E2": 0.35, "E3": 0.2, "E4": 0.15},
-        "cost": {"E0": 0.0, "E1": 0.06, "E2": 0.07, "E3": 0.35, "E4": 0.4},
+        # Leakage per mode = edge correlation between the original and the best
+        # picture an eavesdropper reconstructs without the key (0 = nothing, 1 = all);
+        # cost = fraction of payload bits encrypted. Measured on the synthetic CCTV
+        # scene with experiments/measure_mode_tradeoff.py (320x240, q75). Re-measure
+        # on your own videos and paste the numbers into configs/default.toml.
+        "leakage": {"E0": 0.996, "E1": 0.336, "E2": 0.327, "E3": 0.352, "E4": 0.352, "E5": 0.0},
+        "cost": {"E0": 0.0, "E1": 0.115, "E2": 0.135, "E3": 0.25, "E4": 0.287, "E5": 0.303},
         "w_switch": 0.02,
         "w_cost": 0.5,
     },

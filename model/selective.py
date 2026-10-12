@@ -22,6 +22,11 @@ Modes (value sets from section 6.1 of the project document):
     E2 : AC signs + DC-difference signs                  (main configuration)
     E3 : E2 + all AC amplitude bits
     E4 : E3 + all DC-difference amplitude bits
+    E5 : E4 + keyed shuffle of the MCUs (restart interval = 1 MCU; Hirose et al.
+         2024). Amplitude/sign encryption never hides WHICH coefficients are
+         non-zero, so E1-E4 all leak an edge sketch; E5 also moves every 16x16
+         MCU to a secret position. Model only for now: the RTL does not emit
+         restart markers yet (see HELP_GUIDE.md).
 
 Keystream bits are consumed strictly in coding order, only for selected fields.
 Symbols with size 0 (EOB, ZRL, DC diff of 0) consume nothing.
@@ -38,6 +43,7 @@ class ModeCfg:
     dc_sign: bool
     ac_all: bool
     dc_all: bool
+    shuffle: bool = False
 
 
 MODES = {
@@ -46,8 +52,9 @@ MODES = {
     "E2": ModeCfg(True, True, False, False),
     "E3": ModeCfg(True, True, True, False),
     "E4": ModeCfg(True, True, True, True),
+    "E5": ModeCfg(True, True, True, True, True),
 }
-MODE_ID = {name: i for i, name in enumerate(MODES)}       # E0 -> 0 ... E4 -> 4
+MODE_ID = {name: i for i, name in enumerate(MODES)}       # E0 -> 0 ... E5 -> 5
 MODE_NAME = {i: name for name, i in MODE_ID.items()}
 
 
@@ -119,3 +126,18 @@ def replacement_attack(symbols, mode):
         else:
             out.append(s)
     return [s._replace(size=category(s.amp)) if (s.is_dc or s.size) else s for s in out]
+
+
+def shuffle_order(n, ks):
+    """Keyed uniform permutation of range(n) (Fisher-Yates, rejection sampling).
+
+    ks: object with take(bits) -> int. Output position i carries MCU order[i]."""
+    order = list(range(n))
+    for i in range(n - 1, 0, -1):
+        bits = i.bit_length()
+        while True:
+            j = ks.take(bits)
+            if j <= i:
+                break
+        order[i], order[j] = order[j], order[i]
+    return order

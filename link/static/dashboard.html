@@ -255,7 +255,7 @@ select { padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--r
             <select id="policy"><option value="fixed">Fixed</option><option value="threshold">Threshold rules</option><option value="bandit">Learning (bandit)</option></select>
           </label>
           <label>Protection
-            <select id="manual"><option value="">Automatic</option><option>E0</option><option>E1</option><option>E2</option><option>E3</option><option>E4</option></select>
+            <select id="manual"><option value="">Automatic</option><option>E0</option><option>E1</option><option>E2</option><option>E3</option><option>E4</option><option>E5</option></select>
           </label>
           <button id="rekey" style="padding:8px 12px">Rekey now</button>
         </div>
@@ -270,13 +270,14 @@ select { padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--r
 </main>
 
 <script>
-const MODES = ["E0", "E1", "E2", "E3", "E4"];
+const MODES = ["E0", "E1", "E2", "E3", "E4", "E5"];
 const MODE_TEXT = {
   E0: "Tag only, picture in clear",
   E1: "AC signs",
   E2: "AC + DC signs",
   E3: "Signs + AC amplitudes",
   E4: "Signs + all amplitudes",
+  E5: "E4 + shuffled blocks",
 };
 const ATTACKS = [
   ["Video path", null],
@@ -396,7 +397,7 @@ function drawTimeline() {
     }
   }
   // protection level as a step line on its own scale (E0 bottom .. E4 top of the band)
-  const MY = (m) => 8 + plotH * 0.18 - (MODES.indexOf(m) / 4) * plotH * 0.16;
+  const MY = (m) => 8 + plotH * 0.18 - (MODES.indexOf(m) / 5) * plotH * 0.16;
   g.strokeStyle = "#4C3FBF"; g.lineWidth = 2.5; g.beginPath();
   let prevY = null;
   for (const s of series) {
@@ -406,7 +407,7 @@ function drawTimeline() {
     prevY = y;
   }
   g.stroke();
-  if (prevY !== null) { g.fillStyle = "#4C3FBF"; g.fillText("E4", padL + 4, MY("E4") + 4); g.fillText("E0", padL + 4, MY("E0") + 4); }
+  if (prevY !== null) { g.fillStyle = "#4C3FBF"; g.fillText("E5", padL + 4, MY("E5") + 4); g.fillText("E0", padL + 4, MY("E0") + 4); }
 }
 setInterval(drawTimeline, 1000);
 window.addEventListener("resize", drawTimeline);
