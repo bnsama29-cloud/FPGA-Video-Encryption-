@@ -271,6 +271,9 @@ the repo) for the multi-receiver design, and `docs/ROADMAP.md` §6 for the rest.
 | Key holder recovers the frame bit-exactly | tests + `visual_security_grid.py` row 3 | ✅ |
 | E1–E4 leak an edge sketch; E5 removes it, even against a jigsaw solver | `measure_mode_tradeoff.py`, `jigsaw_attack.py` | ✅ synthetic + 3 photos; real clips: Role 5 |
 | Learned (neural) attacker | `experiments/learned_attack.py` | 📝 needs GPU + clips (Role 5) |
+| E1–E4 leak an edge sketch and E5 does not, also on real video | `kaggle/run_real_video.py` → `paper_tables.py` (4 clips: 2 trailers, 2 talking heads) | ✅ |
+| The bandit is a trade-off, not simply better: cheaper encryption, slower reaction, more leakage under attack | `experiments/policy_seeds.py` (paired by seed) | ✅ 3 seeds; 5+ seeds on Kaggle before calling it significant |
+| Reaction time per attack type, mean ± std | repeated `full_suite` runs → `paper_tables.py` | ✅ 3 runs |
 | Every tampered / replayed / forged frame or feedback is rejected; reaction ≤ ~1.5 s | `experiments/scenario.py` suites | ✅ simulation; board run 📝 |
 | Encryption adds 0 cycles to the encoder | `experiments/benchmark_crypto.py --rtl` | ✅ RTL simulation |
 | Resource use and timing on the Zynq-7020 | `vivado/vivado_ooc.tcl`, `board/block_design.tcl` | 🧪 Role 1 |
