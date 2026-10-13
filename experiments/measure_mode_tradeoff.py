@@ -86,7 +86,9 @@ def main():
                 if best is None or s > best[0]:
                     best = (s, name, img)
             s, name, img = best
-            ec = float(np.corrcoef(edges(y0), edges(luma(img)))[0, 1])
+            e0, e1 = edges(y0), edges(luma(img))
+            # a flat/black frame has no edges (zero variance): correlation is undefined, so skip it in the mean
+            ec = float(np.corrcoef(e0, e1)[0, 1]) if e0.std() > 0 and e1.std() > 0 else float("nan")
             rows[m].append(dict(ssim=s, psnr=psnr(rgb, img), edge_corr=ec, best_view=name,
                                 cost=e.enc_bits / e.payload_bits))
             if a.save_images and i == 0:
@@ -94,7 +96,8 @@ def main():
         print(f"frame {i}: " + "  ".join(f"{m} ssim {rows[m][-1]['ssim']:.2f}" for m in MODES))
     summary = {}
     for m, r in rows.items():
-        summary[m] = {k: float(np.mean([x[k] for x in r])) for k in ("ssim", "psnr", "edge_corr", "cost")}
+        summary[m] = {k: float(np.nanmean([x[k] for x in r])) for k in ("ssim", "psnr", "edge_corr", "cost")}
+        summary[m]["edge_corr_frames"] = int(sum(not np.isnan(x["edge_corr"]) for x in r))   # frames with defined edges
         summary[m]["ssim_std"] = float(np.std([x["ssim"] for x in r]))
         summary[m]["frames"] = len(r)
     Path(a.out).write_text(json.dumps(dict(source=a.video, size=a.size, quality=a.quality, modes=summary), indent=2))
