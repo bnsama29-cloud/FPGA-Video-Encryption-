@@ -4,6 +4,10 @@ Companion to `docs/TEAM_CONTEXT.md` (give both files to Claude). Status as of 12
 Roles: 1 Hardware & Vivado · 2 Cryptography & protocol · 3 Network & attacker ·
 4 Receiver, dashboard & demo · 5 Defence, ML & visual security (RTX 4060).
 
+**Code for the board phase and for the paper-strengthening items now lives in `future_work/`**;
+its README (`future_work/README.md`) is the step-by-step guide, with status per item and a
+claim-to-evidence checklist.
+
 ---
 
 ## 1. Where we are

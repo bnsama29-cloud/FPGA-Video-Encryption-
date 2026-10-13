@@ -460,6 +460,9 @@ attacks" (§7.4).
 
 ## 9. Later (after the simulation is done)
 
+> The code for the board phase and for the extra paper evidence is in `future_work/`; its
+> `README.md` is the in-depth guide (what is tested, what still needs the board, who does what).
+
 **Multiple receivers.** The encoder encrypts each frame once. Each receiver gets its own tag key,
 so one receiver cannot forge frames for another; that is a few microseconds of extra Ascon work
 per receiver per frame. Removing a receiver = rekey everyone else. Optionally, use tiered access

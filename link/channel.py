@@ -50,12 +50,12 @@ class Channel:
         L, c = cfg["link"], cfg["channel"]
         self.c = dict(c)
         self.size = L["fragment"]
-        self.vin = wire.udp_socket(L["video_in"], L["host"], timeout=0.05)
-        self.fin = wire.udp_socket(L["fb_in"], L["host"], timeout=0.05)
-        self.ctl = wire.udp_socket(L["control"], L["host"], timeout=0.2)
+        self.vin = wire.udp_socket(L["video_in"], config.bind_host(cfg), timeout=0.05)
+        self.fin = wire.udp_socket(L["fb_in"], config.bind_host(cfg), timeout=0.05)
+        self.ctl = wire.udp_socket(L["control"], config.bind_host(cfg), timeout=0.2)
         self.out = wire.udp_socket()
         self.to_rx = (L["host"], L["video_out"])
-        self.to_tx = (L["host"], L["fb_out"])
+        self.to_tx = (config.sender_host(cfg), L["fb_out"])
         self.bus = wire.Bus(cfg, "channel")
         self.rng = random.Random()
         self.lock = threading.Lock()
