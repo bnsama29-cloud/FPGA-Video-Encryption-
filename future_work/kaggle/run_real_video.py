@@ -90,9 +90,9 @@ if HAVE_GPU or QUICK:
     for k, (tr, te) in enumerate(PAIRS):
         args = ("--modes E2 E5 --size 96x64 --frames 60 --test-frames 50 --stride 6 --epochs 1" if QUICK else
                 "--modes E1 E2 E4 E5 --size 160x128 --frames 1000 --test-frames 400 --stride 3 --epochs 25")
-        sh(f"python experiments/learned_attack.py --train-source '{tr}' --test-source '{te}' {args}",
+        sh(f"python experiments/learned_attack.py --train-source '{tr}' --test-source '{te}' {args} "
+           f"--out sim_out/real/learned_pair{k + 1}",
            f"learned attack pair {k + 1}: train {pathlib.Path(tr).stem} -> test {pathlib.Path(te).stem}", tail=14)
-        shutil.copytree(REPO / "sim_out" / "learned_attack", REPO / "sim_out" / "real" / f"learned_pair{k + 1}", dirs_exist_ok=True)
 else:
     print("No GPU: learned attack skipped (Accelerator: GPU T4).")
 
