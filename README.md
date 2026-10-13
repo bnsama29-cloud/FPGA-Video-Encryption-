@@ -48,6 +48,7 @@ In Vivado: `python vivado/gen_xsim_vectors.py`, then `bash vivado/run_xsim.sh` (
 | `experiments/` | Paper numbers: mode trade-off, attack scenarios, policy comparison, crypto benchmark, learned (GPU) attack | see HELP_GUIDE.md §6 |
 | `scripts/` | Golden-model tools: image/video evaluation, MJPEG server + receiver, vector export | `scripts/run_video_eval.py` |
 | `future_work/` | Board bring-up kit (PYNQ driver, block design, board sender), baselines, jigsaw attack, paper figures, format compliance. **Read `future_work/README.md`** | `python -m future_work.board.board_sender --mock` |
+| `docs/VIVADO_ONE_DAY.md` | **The Vivado day**: XSim, post-route numbers, overlay, board first contact. Then `docs/REMAINING_WORK.md` | `python vivado/run_vivado_day.py` |
 | `docs/` | Interface contract v2 (registers, nonce, tag, file format), testing guide | `docs/INTERFACES.md` |
 | `configs/` | Settings shared by every node | `configs/default.toml` |
 

@@ -19,7 +19,7 @@ QUICK     = False      # True = smoke test of every role in ~15 min (no repeats,
 PARALLEL  = 1          # 2 = run scenario chains side by side (faster, but CPU contention can shift reaction times;
                        #     for numbers that go into the paper keep 1)
 REPO_URL  = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
-BRANCH    = "future-work"   # change to "main" once pull request #3 is merged
+BRANCH    = "main"          # everything is merged into main
 CLIP_TRAIN = None      # e.g. "/kaggle/input/my-clips/train.mp4"  (Role 5 learned attack; None = synthetic, testing only)
 CLIP_TEST  = None      # a DIFFERENT clip, e.g. "/kaggle/input/my-clips/test.mp4"
 CLIP_DEMO  = None      # clip for Role 4's mode trade-off / jigsaw; None = synthetic scene

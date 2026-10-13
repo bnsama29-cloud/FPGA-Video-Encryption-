@@ -93,6 +93,9 @@ implementation is planned (§4.1).
 
 ### 3.1 Build the overlay (🧪, Role 1 leads)
 
+**Use `docs/VIVADO_ONE_DAY.md`**: `python vivado/run_vivado_day.py` runs XSim, the post-route numbers,
+this block design and the report parser in one go; `future_work/board/first_contact.py` is the board test.
+
 ```bash
 vivado -mode batch -source future_work/board/block_design.tcl      # from the repo root
 ```

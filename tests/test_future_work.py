@@ -141,3 +141,24 @@ def test_paper_tables_from_result_files(tmp_path):
     assert "| bitflip | 2 | 2/2 | 0.10 ± 0.00 | 0.50 ± 0.14 |" in md
     assert "| E5 | 0.300 | 0.100 |" in md and "clipA" in md
     assert "Not found" in md and "jigsaw.json" in md          # missing parts are listed, never invented
+
+
+def test_first_contact_on_mock(tmp_path):
+    """The board bring-up script: bit-exact gate + timing, run against the golden-model mock."""
+    import json
+    r = subprocess.run([sys.executable, "-m", "future_work.board.first_contact", "--mock", "--sizes", "32x16",
+                        "--frames", "1", "--timing-frames", "1", "--out", str(tmp_path)],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    res = json.loads((tmp_path / "first_contact.json").read_text())
+    assert res["all_bit_exact"] and len(res["exactness"]) == 5 and len(res["speed"]) == 5
+    assert "NOT the FPGA" in (tmp_path / "first_contact.md").read_text()
+
+
+def test_vivado_driver_dry_run():
+    r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--dry-run", "--blocks"], cwd=ROOT,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    for step in ("xsim_run", "ooc_secure_jpeg_top", "ooc_keystream_gen", "block_design", "parse_reports"):
+        assert step in r.stdout
+    assert "vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0" in r.stdout

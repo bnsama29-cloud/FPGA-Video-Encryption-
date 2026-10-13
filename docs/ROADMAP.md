@@ -8,6 +8,9 @@ Roles: 1 Hardware & Vivado · 2 Cryptography & protocol · 3 Network & attacker 
 its README (`future_work/README.md`) is the step-by-step guide, with status per item and a
 claim-to-evidence checklist.
 
+**Next:** `docs/VIVADO_ONE_DAY.md` (Vivado numbers + overlay + board first contact in one day), then
+`docs/REMAINING_WORK.md` (board, polish, paper, with owners and dates). Those two supersede the dates below.
+
 ---
 
 ## 1. Where we are
