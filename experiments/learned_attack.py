@@ -23,6 +23,7 @@ the network just memorises the background and the result means nothing.
 Writes results.json, results.md and examples_<mode>.png (original | attack | network).
 """
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -47,10 +48,18 @@ def decode(jpeg):
     return np.asarray(Image.open(io.BytesIO(jpeg)).convert("RGB"))
 
 
+def cache_path(source, mode, n, size, stride, quality, tag):
+    """Cache file of one dataset. The SOURCE is part of the name: without it, a second run with other
+    videos silently reused the first run's frames (bug log #13)."""
+    w, h = size
+    src = hashlib.sha1(str(source).encode()).hexdigest()[:8]
+    return OUT / f"data_{tag}_{Path(str(source)).stem[:20]}-{src}_{mode}_{w}x{h}_{n}_s{stride}_q{quality}.npz"
+
+
 def make_pairs(source, mode, n, size, stride, quality, tag):
     """Returns (X uint8 [n, H, W, 6], Y uint8 [n, H, W, 3]); cached as .npz."""
     w, h = size
-    cache = OUT / f"data_{tag}_{mode}_{w}x{h}_{n}_s{stride}_q{quality}.npz"
+    cache = cache_path(source, mode, n, size, stride, quality, tag)
     if cache.exists():
         d = np.load(cache)
         return d["X"], d["Y"]
@@ -198,10 +207,14 @@ def main():
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--width", type=int, default=32, help="U-Net base channels (32 fits an 8 GB GPU)")
     ap.add_argument("--lr", type=float, default=2e-3)
+    ap.add_argument("--out", help="output folder (default sim_out/learned_attack); use one per train/test pair")
     a = ap.parse_args()
     if a.train_source == a.test_source and a.train_source != "synthetic":
         raise SystemExit("use different videos for training and testing (otherwise the network memorises the scene)")
     size = tuple(int(v) for v in a.size.split("x"))
+    global OUT
+    if a.out:
+        OUT = Path(a.out)
     OUT.mkdir(parents=True, exist_ok=True)
     res_file = OUT / "results.json"
     results = json.loads(res_file.read_text()) if res_file.exists() else {}

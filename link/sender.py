@@ -36,7 +36,7 @@ class Sender:
         self.encoder = make_encoder(s["encoder"], s["quality"])
         if self.encoder.name == "rtl" and cfg["defence"]["max_mode"] == "E5":
             cfg["defence"]["max_mode"] = "E4"          # the RTL has no restart markers yet
-        self.policy = make_policy(s["policy"], cfg, self.mode)
+        self.policy = make_policy(s["policy"], cfg, self.mode, config.policy_seed(cfg))
         self.source = open_source(s["source"], s["width"], s["height"], s["loop"])
         self.fps = float(s["fps"])
         self.ctr = 1
@@ -103,7 +103,8 @@ class Sender:
                 if c == "mode":
                     self.manual_mode = cmd.get("mode") if cmd.get("mode") in MODES else None
                 elif c == "policy":
-                    self.policy = make_policy(cmd["policy"], self.cfg, self.cfg["sender"]["mode"])
+                    self.policy = make_policy(cmd["policy"], self.cfg, self.cfg["sender"]["mode"],
+                                              config.policy_seed(self.cfg))
                 elif c == "rekey":
                     self._rekey("operator request")
                 elif c == "fps":
