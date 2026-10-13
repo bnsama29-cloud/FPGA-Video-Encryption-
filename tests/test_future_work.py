@@ -119,3 +119,25 @@ def test_learned_attack_cache_depends_on_the_source():
     args = ("E2", 100, (160, 128), 2, 75, "train")
     assert la.cache_path("clips/a.mp4", *args) != la.cache_path("clips/b.mp4", *args)
     assert la.cache_path("clips/a.mp4", *args) == la.cache_path("clips/a.mp4", *args)
+
+
+def test_paper_tables_from_result_files(tmp_path):
+    """Every table number must come from result files: build a tiny result tree and check the tables."""
+    import json
+    ep = lambda t, ttm: dict(type=t, rx_first_rejection_s=0.1, time_to_mitigate_s=ttm)
+    for k, ttm in ((1, 0.4), (2, 0.6)):
+        d = tmp_path / "sim_out" / "runs" / f"full_suite_threshold_rep{k}"
+        d.mkdir(parents=True)
+        (d / "summary.json").write_text(json.dumps(dict(
+            episodes=[ep("bitflip", ttm)], mean_time_to_mitigate_s=ttm, false_alarm_windows=0, calm_windows=10,
+            latency_ms_median=100, latency_ms_p95=150)))
+    modes = {m: dict(edge_corr=0.3, ssim=0.5, cost=0.1, psnr=12.0) for m in ("E0", "E1", "E2", "E3", "E4", "E5")}
+    (tmp_path / "sim_out" / "real" / "clipA").mkdir(parents=True)
+    (tmp_path / "sim_out" / "real" / "clipA" / "mode_tradeoff.json").write_text(
+        json.dumps(dict(source="/x/clipA.mp4", modes=modes)))
+    subprocess.run([sys.executable, "-m", "future_work.figures.paper_tables", "--root", str(tmp_path)],
+                   cwd=ROOT, check=True, capture_output=True)
+    md = (tmp_path / "paper_tables.md").read_text()
+    assert "| bitflip | 2 | 2/2 | 0.10 ± 0.00 | 0.50 ± 0.14 |" in md
+    assert "| E5 | 0.300 | 0.100 |" in md and "clipA" in md
+    assert "Not found" in md and "jigsaw.json" in md          # missing parts are listed, never invented

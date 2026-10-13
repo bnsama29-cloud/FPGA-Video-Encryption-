@@ -117,6 +117,8 @@ sh("make lint", "R1", "Verilator lint", tail=3, check_text="lint clean")
 sh("make hls-csim", "R1", "HLS C simulation (needs g++)", tail=3)
 if not QUICK:
     sh("python experiments/benchmark_crypto.py --rtl", "R1", "cycles/pixel per mode (RTL)", tail=25)
+    # Role 2 re-runs the benchmark without --rtl, which rewrites sim_out/benchmark: keep the RTL copy
+    shutil.copytree(REPO / "sim_out" / "benchmark", REPO / "sim_out" / "benchmark_rtl", dirs_exist_ok=True)
 
 
 # ## Role 2: cryptography and the golden model
@@ -241,6 +243,7 @@ if out.exists(): shutil.rmtree(out)
 out.mkdir()
 for src in ("sim_out", "future_work/results"):
     if (REPO / src).exists(): shutil.copytree(REPO / src, out / src.replace("/", "_"))
+sh(f"python -m future_work.figures.paper_tables --root {out} --out {out}/paper_tables.md", "all", "paper tables", tail=3)
 shutil.make_archive(str(WORK / "results"), "zip", out)
 print("results.zip:", round((WORK / "results.zip").stat().st_size / 1e6, 1), "MB  -> download from the Output tab")
 

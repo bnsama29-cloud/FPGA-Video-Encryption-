@@ -307,15 +307,35 @@ They are marked 🧪 above; Role 1 confirms them on the first board day (§3.1�
 
 ## 8. Running everything (except Vivado) on Kaggle
 
-`future_work/kaggle/run_all_roles.ipynb` runs every role's simulation work in one notebook: RTL tests, lint,
-Vivado testbench in Icarus, model and Ascon tests, benchmarks, attack scenarios with repeats (mean ± std),
-the live link and the mock board, policies, jigsaw, figures and the learned attack on the GPU. It prints a
-pass/fail/time table and zips all results to `/kaggle/working/results.zip`.
+Two scripts, each pasted into one Kaggle code cell (or the `.ipynb` version of the first). Turn on
+*Internet* and *GPU T4*. One Kaggle account is enough.
 
-* One Kaggle account is enough. Turn on *Internet* and *GPU T4*, then *Run All*.
-* `QUICK=True`: smoke test of every step (~15 min). Full run: ~1.5 h (`PARALLEL=1`) or ~1 h (`PARALLEL=2`; CPU
-  contention can shift reaction times, so keep 1 for paper numbers).
-* Set `CLIP_TRAIN`, `CLIP_TEST` (two different real videos, uploaded as a Kaggle Dataset) for real learned-attack numbers.
-  Without them the step uses synthetic frames and only proves the pipeline works.
-* Not on Kaggle: Vivado, the board, the webcam, and viewing the dashboard (the notebook checks its API instead).
-* It builds Icarus Verilog 12 from source (~7 min) because Kaggle's Ubuntu ships version 11.
+**Run 1: `future_work/kaggle/run_all_roles.py`** (~2.3 h with 3 seeds; `QUICK=True` ~15 min). It runs:
+
+* RTL tests, lint, the Vivado testbench in Icarus, and the model and Ascon tests;
+* the benchmarks;
+* attack scenarios repeated `REPEATS` times;
+* the live link and the mock board (it then checks that no link process is left running, see bug #14);
+* policies, including `experiments/policy_seeds.py` over `SEEDS`;
+* the jigsaw solver, the figures and a learned-attack pipeline test.
+
+It ends with `paper_tables.md` (all tables, built from the result files) inside `results.zip`.
+`PARALLEL=2` is faster, but CPU contention shifts reaction times: keep 1 for paper numbers.
+
+**Run 2: `future_work/kaggle/run_real_video.py`** (~45 min). It needs the clips as a private Kaggle
+Dataset (see `future_work/clips_manifest.md`; never commit them) and finds them by itself. It runs on
+real video:
+
+* mode trade-off and jigsaw on every clip;
+* the visual-security figures;
+* the full attack suite with a trailer and with a talking-head clip as the sender's video;
+* the learned attack on two train/test pairs of different clips.
+
+It writes `real_video_results.zip`.
+
+**Afterwards:** unzip both results files into one folder and run
+`python -m future_work.figures.paper_tables --root <folder>`. This gives one Markdown file with every
+table, and it lists anything still missing.
+
+Not on Kaggle: Vivado, the board, the webcam, and viewing the dashboard (the script checks its API instead).
+Kaggle's Ubuntu ships Icarus Verilog 11, so the script builds version 12 from source (~2.5 min).
