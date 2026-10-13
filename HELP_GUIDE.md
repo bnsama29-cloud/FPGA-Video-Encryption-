@@ -460,6 +460,9 @@ attacks" (§7.4).
 
 ## 9. Later (after the simulation is done)
 
+> **Vivado:** follow `docs/VIVADO_ONE_DAY.md` (`python vivado/run_vivado_day.py` does it all). What remains
+> after that: `docs/REMAINING_WORK.md`.
+>
 > The code for the board phase and for the extra paper evidence is in `future_work/`; its
 > `README.md` is the in-depth guide (what is tested, what still needs the board, who does what).
 

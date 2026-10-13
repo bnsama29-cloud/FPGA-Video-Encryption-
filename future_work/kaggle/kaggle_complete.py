@@ -27,7 +27,7 @@ SEEDS = list(range(1, 11))    # bandit vs threshold: one learning run (7.7 min) 
 REPEATS = 3                   # repeated full_suite / benign runs (Role 3)
 RUN = dict(role1=True, role2=True, role3=True, role4=True, role5=True, seeds=True, real_video=True)
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
-BRANCH = "future-work"        # "main" once pull request #3 is merged
+BRANCH = "main"               # everything is merged into main
 PAIRS = None                  # learned attack (train, test) clip pairs; None = automatic
 # =============================================================================
 

@@ -2,14 +2,16 @@
 #
 #   vivado -mode batch -source future_work/board/block_design.tcl          (from the repo root)
 #   vivado -mode gui   -source future_work/board/block_design.tcl          (to inspect the diagram)
+#   vivado -mode batch -source future_work/board/block_design.tcl -tclargs 50   (FCLK0 = 50 MHz
+#                                                         if timing fails at 100 MHz)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
 #
-# STATUS: written as a starting point and NOT yet run in Vivado (no Vivado in the
-# environment it was written in). Expect to fix small things (IP versions, pin
-# names) on the first run -- paste the first error into Claude together with
-# docs/TEAM_CONTEXT.md. Tested with nothing; reviewed against Vivado 2023.x syntax.
+# STATUS: NOT yet run in Vivado (no Vivado where it was written); reviewed against the
+# Vivado 2019.2-2024.x Tcl API. Expect to fix small things on the first run (an IP
+# version, a pin name). Guide: docs/VIVADO_ONE_DAY.md step 4. Paste the FIRST
+# "ERROR:" line of vivado.log into Claude together with docs/TEAM_CONTEXT.md.
 #
 # What it builds:
 #   ps7 (DDR + FIXED_IO, FCLK0 = 100 MHz, M_AXI_GP0 master, S_AXI_HP0 slave, IRQ_F2P)
@@ -22,11 +24,20 @@ set root    [file normalize [file join [file dirname [info script]] .. ..]]
 set projdir [file join $root future_work board vivado_proj]
 set outdir  [file join $root future_work board overlay]
 set part    xc7z020clg400-1
+set fclk    [expr {[llength $argv] > 0 ? [lindex $argv 0] : 100}]
 
 create_project pynq_secure_jpeg $projdir -part $part -force
-# Board files make the PS presets exact. If the PYNQ-Z2 board files are installed
-# (https://github.com/Xilinx/PYNQ -> boards/Pynq-Z2), uncomment:
-# set_property board_part tul.com.tw:pynq-z2:part0:1.0 [current_project]
+# PYNQ-Z2 board files give the exact PS presets (DDR, MIO). They are used automatically
+# when installed: copy the "pynq-z2" folder from https://github.com/Xilinx/PYNQ
+# (boards/Pynq-Z2/board_files) or the TUL website into <Vivado>/data/boards/board_files/.
+set bp [lindex [lsort [get_board_parts -quiet *pynq-z2*]] end]
+if {$bp ne ""} {
+    set_property board_part $bp [current_project]
+    puts "INFO: using board part $bp"
+} else {
+    puts "WARNING: PYNQ-Z2 board files not installed: using the bare part $part. The overlay still"
+    puts "WARNING: loads on PYNQ (the PYNQ image configures DDR at boot), but install them for exact presets."
+}
 
 add_files [glob [file join $root rtl *.v]]
 add_files [file join $root future_work board sjpeg_bd_top.v]
@@ -40,7 +51,7 @@ set ps7 [create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7 ps7]
 apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
     -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable"} $ps7
 set_property -dict [list \
-    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {100} \
+    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ $fclk \
     CONFIG.PCW_USE_M_AXI_GP0 {1} \
     CONFIG.PCW_USE_S_AXI_HP0 {1} \
     CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64} \
@@ -65,19 +76,24 @@ connect_bd_intf_net [get_bd_intf_pins dma/M_AXIS_MM2S] [get_bd_intf_pins sjpeg/s
 connect_bd_intf_net [get_bd_intf_pins sjpeg/m_axis]     [get_bd_intf_pins dma/S_AXIS_S2MM]
 
 # ---- AXI-Lite control from the PS, memory access to DDR through HP0
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 \
-    -config {Master "/ps7/M_AXI_GP0" Clk "/ps7/FCLK_CLK0 (100 MHz)"} [get_bd_intf_pins dma/S_AXI_LITE]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 \
-    -config {Master "/ps7/M_AXI_GP0" Clk "/ps7/FCLK_CLK0 (100 MHz)"} [get_bd_intf_pins sjpeg/s_axil]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 \
-    -config {Slave "/ps7/S_AXI_HP0" Clk "/ps7/FCLK_CLK0 (100 MHz)"} [get_bd_intf_pins dma/M_AXI_MM2S]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 \
-    -config {Slave "/ps7/S_AXI_HP0" Clk "/ps7/FCLK_CLK0 (100 MHz)"} [get_bd_intf_pins dma/M_AXI_S2MM]
+# (same -config form that Vivado 2019.2+ records in its journal; clocks "Auto" = FCLK_CLK0,
+# the only clock in the design)
+proc axi_auto {master slave target} {
+    apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config [list \
+        Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $master Slave $slave \
+        ddr_seg {Auto} intc_ip {Auto} master_apm {0}] [get_bd_intf_pins $target]
+}
+axi_auto /ps7/M_AXI_GP0  /dma/S_AXI_LITE   dma/S_AXI_LITE
+axi_auto /ps7/M_AXI_GP0  /sjpeg/s_axil     sjpeg/s_axil
+axi_auto /dma/M_AXI_MM2S /ps7/S_AXI_HP0    ps7/S_AXI_HP0
+axi_auto /dma/M_AXI_S2MM /ps7/S_AXI_HP0    ps7/S_AXI_HP0
 
 # ---- clock and reset for our IP (active-high, synchronous, from the automation's reset block)
-connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins sjpeg/clk]
+# (the AXI automation above may already have wired them: only connect what is still open)
+proc unconnected {pin} { expr {[llength [get_bd_nets -quiet -of_objects [get_bd_pins $pin]]] == 0} }
+if {[unconnected sjpeg/clk]} { connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins sjpeg/clk] }
 set rstblk [lindex [get_bd_cells -filter {VLNV =~ "*proc_sys_reset*"}] 0]
-connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins sjpeg/rst]
+if {[unconnected sjpeg/rst]} { connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins sjpeg/rst] }
 
 # ---- interrupts: our DONE + both DMA channels -> IRQ_F2P
 set cc [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat irq_concat]
@@ -93,16 +109,20 @@ save_bd_design
 
 # ---- wrapper, synthesis, implementation, bitstream
 set bd [get_files system.bd]
-make_wrapper -files $bd -top
-add_files -norecurse [file join $projdir pynq_secure_jpeg.gen sources_1 bd system hdl system_wrapper.v]
+# make_wrapper returns the path of the wrapper (.gen/ in Vivado 2020.2+, .srcs/ before)
+add_files -norecurse [make_wrapper -files $bd -top]
 set_property top system_wrapper [current_fileset]
 update_compile_order -fileset sources_1
 launch_runs impl_1 -to_step write_bitstream -jobs 4
 wait_on_run impl_1
 
 file mkdir $outdir
+if {[get_property PROGRESS [get_runs impl_1]] ne "100%"} {
+    error "implementation did not finish -- open $projdir in the GUI and read the impl_1 / synth_1 logs"
+}
 set bit [glob -nocomplain [file join $projdir pynq_secure_jpeg.runs impl_1 *.bit]]
-set hwh [glob -nocomplain [file join $projdir pynq_secure_jpeg.gen sources_1 bd system hw_handoff system.hwh]]
+set hwh [concat [glob -nocomplain [file join $projdir pynq_secure_jpeg.gen sources_1 bd system hw_handoff system.hwh]] \
+                [glob -nocomplain [file join $projdir pynq_secure_jpeg.srcs sources_1 bd system hw_handoff system.hwh]]]
 if {$bit eq "" || $hwh eq ""} {
     error "bitstream or .hwh not found -- open the project and check the impl_1 log"
 }
@@ -110,6 +130,9 @@ file copy -force [lindex $bit 0] [file join $outdir secure_jpeg.bit]
 file copy -force [lindex $hwh 0] [file join $outdir secure_jpeg.hwh]
 open_run impl_1
 report_utilization    -file [file join $outdir utilization.txt]
-report_timing_summary -file [file join $outdir timing.txt]
+report_utilization    -hierarchical -hierarchical_depth 3 -file [file join $outdir utilization_hier.txt]
+report_timing_summary -max_paths 10 -file [file join $outdir timing.txt]
 report_power          -file [file join $outdir power.txt]
-puts "Overlay in $outdir (secure_jpeg.bit + secure_jpeg.hwh). Check WNS >= 0 in timing.txt."
+set wns [get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]]
+puts "RESULT overlay fclk=${fclk}MHz WNS=${wns}ns"
+puts "Overlay in $outdir (secure_jpeg.bit + secure_jpeg.hwh). WNS must be >= 0 before using it."

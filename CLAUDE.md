@@ -17,6 +17,7 @@ Hardware JPEG/MJPEG encoder with in-loop selective encryption (Ascon-AEAD128, NI
 - System simulation: `python -m link.run_all` (dashboard on :8000). Experiments: `experiments/*.py` (see HELP_GUIDE.md).
 - `make one T=tb/<file>.py::<test> SEED=<n>` one test; `make waves T=...` with FST waveforms in `sim_build/<top>/`.
 - `make bundle T=...` collects a failure into `debug_bundle.md`.
+- Vivado (needs Vivado on PATH): `python vivado/run_vivado_day.py` (XSim, post-route OOC, block design, tables); guide `docs/VIVADO_ONE_DAY.md`; board test `python -m future_work.board.first_contact`.
 - `make lint`, `make synth` (Yosys estimate), `make hls-csim`, `make tables`, `make vectors`.
 
 ## Conventions

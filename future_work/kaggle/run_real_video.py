@@ -15,7 +15,7 @@ Never commit the clips: they are copyrighted (the repo ignores *.mp4).
 # ---- SETTINGS ---------------------------------------------------------------
 QUICK = False            # True = tiny smoke test (~10 min)
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
-BRANCH = "future-work"   # "main" after pull request #3 is merged
+BRANCH = "main"          # everything is merged into main
 PAIRS = None             # None = automatic; or [("/kaggle/input/x/a.mp4", "/kaggle/input/x/b.mp4"), ...] (train, test)
 # -----------------------------------------------------------------------------
 import glob, json, os, pathlib, shutil, subprocess, sys, time
