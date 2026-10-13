@@ -310,6 +310,11 @@ They are marked 🧪 above; Role 1 confirms them on the first board day (§3.1�
 
 ## 8. Running everything (except Vivado) on Kaggle
 
+**Simplest: `future_work/kaggle/kaggle_complete.py`** does everything below in ONE run (all roles,
+10-seed policy study, real video). Run it with *Save Version → Save & Run All*. It takes about 4 h 10 min,
+or about 2 h 45 min with `PARALLEL=2`; `QUICK=True` is a 20-minute smoke test. It writes `results.zip`
+after every section. The two scripts below do the same work in two parts.
+
 Two scripts, each pasted into one Kaggle code cell (or the `.ipynb` version of the first). Turn on
 *Internet* and *GPU T4*. One Kaggle account is enough.
 
