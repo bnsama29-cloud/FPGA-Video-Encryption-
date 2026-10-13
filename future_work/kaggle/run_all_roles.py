@@ -200,7 +200,7 @@ sh("python -m future_work.figures.visual_security_grid", "R5", "visual-security 
 if HAVE_GPU or QUICK:
     tr, te = (CLIP_TRAIN or "synthetic"), (CLIP_TEST or "synthetic")
     if tr == "synthetic": print("NOTE: synthetic clips = pipeline test only. For paper numbers set CLIP_TRAIN / CLIP_TEST to two different real videos.")
-    args = "--modes E2 E5 --size 96x64 --frames 60 --test-frames 50 --stride 1 --epochs 1" if QUICK else \
+    args = "--modes E2 E5 --size 96x64 --frames 60 --test-frames 50 --stride 1 --epochs 1" if (QUICK or tr == "synthetic") else \
            "--modes E1 E2 E4 E5 --size 160x128 --frames 3000 --epochs 25"
     sh(f"python experiments/learned_attack.py --train-source {tr} --test-source {te} {args}", "R5", f"learned attack ({'GPU' if HAVE_GPU else 'CPU, tiny'})", tail=25)
 else:
