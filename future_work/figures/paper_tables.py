@@ -52,6 +52,7 @@ def reaction_table(root, out, missing):
     suite = [p for p in runs if p.parent.name.startswith("full_suite_") and "_rep" in p.parent.name]
     if not suite:
         missing.append("repeated full_suite runs (sim_out/runs/full_suite_*_rep*)")
+        real_video_scenarios(runs, out)
         return
     eps = {}
     for p in suite:
@@ -74,6 +75,10 @@ def reaction_table(root, out, missing):
                 f"p95 {ms([x['latency_ms_p95'] for x in benign], 0)} ms.", ""]
     else:
         missing.append("repeated benign runs")
+    real_video_scenarios(runs, out)
+
+
+def real_video_scenarios(runs, out):
     real = [p for p in runs if p.parent.name.startswith("scenario_")]
     if real:
         out += ["Same attacks with real video as the sender's source:", "",
