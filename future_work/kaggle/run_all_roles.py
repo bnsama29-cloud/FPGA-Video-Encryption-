@@ -1,6 +1,6 @@
 """Secure video link: every role's simulation work (no Vivado) in one script.
 
-Kaggle: New Notebook -> File -> Import / or paste into a code cell and run. Turn Internet ON and GPU T4.
+Kaggle: New Notebook -> paste into one code cell and run. Turn Internet ON and GPU T4.
 Edit the SETTINGS block below. Output: /kaggle/working/results.zip
 """
 
@@ -10,7 +10,7 @@ Edit the SETTINGS block below. Output: /kaggle/working/results.zip
 # Role 3 (attack scenarios, repeated runs), Role 4 (live link + dashboard API, format compliance, mock board), Role 5 (policies, learned attack on the GPU, jigsaw, figures).
 # 
 # **Before you start:** Settings (right panel) → *Internet: On* (needs phone verification) → *Accelerator: GPU T4* (for Role 5's learned attack; CPU also works, that step just gets skipped).
-# Then *Run All*. Expected time: **~1.5 h** (`PARALLEL=1`), **~1 h** (`PARALLEL=2`), **~15 min** (`QUICK=True`).
+# Then *Run All*. Expected time: **~2.3 h** (`PARALLEL=1`, 3 seeds), **~1.5 h** (`PARALLEL=2`), **~15 min** (`QUICK=True`).
 # 
 # Every step is logged; a failed step does not stop the notebook, and the last cell prints a pass/fail/time table and zips all results to `/kaggle/working/results.zip`.
 
@@ -24,6 +24,7 @@ CLIP_TRAIN = None      # e.g. "/kaggle/input/my-clips/train.mp4"  (Role 5 learne
 CLIP_TEST  = None      # a DIFFERENT clip, e.g. "/kaggle/input/my-clips/test.mp4"
 CLIP_DEMO  = None      # clip for Role 4's mode trade-off / jigsaw; None = synthetic scene
 REPEATS   = 3          # repeated runs for mean +- std (Role 3)
+SEEDS     = [1, 2, 3]  # bandit vs threshold, one learning run per (policy, seed): ~15 min per seed
 
 import os, sys, time, json, subprocess, shutil, glob, statistics, pathlib
 from concurrent.futures import ThreadPoolExecutor
@@ -49,6 +50,24 @@ def sh(cmd, role, step, cwd=None, tail=25, check_text=None, timeout=None):
     LOG.append((role, step, "PASS" if ok else "FAIL", round(dt, 1)))
     print(f"--> {'PASS' if ok else 'FAIL'} in {dt:.0f} s")
     return ok
+
+def start(cmd):
+    """Start a long-running command in its own process group, so stop() can end ALL of it
+    (with shell=True, terminate() alone only kills the shell and leaves the link nodes running)."""
+    return subprocess.Popen(cmd, shell=True, cwd=REPO, env=ENV, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL, start_new_session=True)
+
+def stop(p):
+    import signal
+    try:
+        os.killpg(p.pid, signal.SIGTERM); p.wait(10)
+    except Exception:
+        try: os.killpg(p.pid, signal.SIGKILL)
+        except Exception: pass
+
+def stray_nodes():
+    return subprocess.run("ps aux | grep -E 'link\\.(run_all|channel|receiver|sender|dashboard)|board_sender' | grep -v grep",
+                          shell=True, capture_output=True, text=True).stdout.strip()
 
 def chains(jobs, parallel):
     """jobs = list of chains; a chain = list of zero-arg callables run in order. Chains run `parallel` at a time."""
@@ -144,7 +163,7 @@ ports = "--set link.video_in=49000 --set link.video_out=49001 --set link.fb_in=4
         "--set link.control=49004 --set link.sender_control=49005 --set link.bus=[49010] --set dashboard.http_port=49123 " \
         "--set defence.memory_file=''"
 t0 = time.time()
-ra = subprocess.Popen(f"python -m link.run_all {ports}", shell=True, cwd=REPO, env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+ra = start(f"python -m link.run_all {ports}")
 time.sleep(25)
 try:
     st = json.load(urllib.request.urlopen("http://127.0.0.1:49123/api/state", timeout=10))
@@ -154,16 +173,14 @@ try:
 except Exception as e:
     ok = False; print("dashboard API check failed:", e)
 LOG.append(("R4", "full link: sender -> channel -> receiver -> dashboard API", "PASS" if ok else "FAIL", round(time.time()-t0, 1)))
-ra.terminate()
-try: ra.wait(10)
-except Exception: ra.kill()
+stop(ra)
 
 # same link, but the sender is the "board" driver on the model emulation of the FPGA IP
 ports2 = ports.replace("49", "50")
 t0 = time.time()
-ra = subprocess.Popen(f"python -m link.run_all --no-sender {ports2}", shell=True, cwd=REPO, env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+ra = start(f"python -m link.run_all --no-sender {ports2}")
 time.sleep(3)
-bs = subprocess.Popen(f"python -m future_work.board.board_sender --mock {ports2}", shell=True, cwd=REPO, env=ENV, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+bs = start(f"python -m future_work.board.board_sender --mock {ports2}")
 time.sleep(25)
 try:
     st = json.load(urllib.request.urlopen("http://127.0.0.1:50123/api/state", timeout=10))
@@ -175,9 +192,11 @@ except Exception as e:
     ok = False; print("failed:", e)
 LOG.append(("R4", "mock board sender over the live link", "PASS" if ok else "FAIL", round(time.time()-t0, 1)))
 for p in (bs, ra):
-    p.terminate()
-    try: p.wait(10)
-    except Exception: p.kill()
+    stop(p)
+time.sleep(2)
+left = stray_nodes()
+LOG.append(("R4", "link processes stopped (none left running)", "FAIL" if left else "PASS", 0))
+if left: print("still running:\n" + left)
 
 demo = f"--video {CLIP_DEMO}" if CLIP_DEMO else ""
 sh("python -m future_work.figures.format_compliance", "R4", "format compliance (Pillow, OpenCV, scikit-image, ffmpeg)", tail=12)
@@ -192,6 +211,8 @@ chain = [lambda: sh("python experiments/compare_policies.py --scenario experimen
 if not QUICK:
     chain.append(lambda: sh("python experiments/compare_policies.py --scenario experiments/scenarios/learning.json --policies threshold bandit",
                             "R5", "learning run: threshold vs bandit (7.7 min each)", tail=12))
+    chain.append(lambda: sh(f"python experiments/policy_seeds.py --seeds {' '.join(map(str, SEEDS))} --parallel {PARALLEL}",
+                            "R5", f"bandit vs threshold over seeds {SEEDS}", tail=20))
 t0 = time.time(); chains([chain], 1); print(f"policies: {time.time()-t0:.0f} s wall")
 
 demo = f"--video {CLIP_DEMO}" if CLIP_DEMO else ""

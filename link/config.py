@@ -69,6 +69,7 @@ DEFAULTS = {
         "max_mode": "E5",        # E5 = E4 + keyed MCU shuffle (model only; capped to E4 with encoder=rtl)
         "epsilon": 0.1,          # bandit exploration rate
         "alpha": 0.05,           # bandit step-size floor (sample average until 1/n < alpha)
+        "seed": -1,              # bandit exploration seed; -1 = random each run (set it for repeatable studies)
         "memory_file": "sim_out/bandit_memory.json",
         # Leakage per mode = edge correlation between the original and the best
         # picture an eavesdropper reconstructs without the key (0 = nothing, 1 = all);
@@ -136,3 +137,9 @@ def from_args(description):
     ap = add_args(argparse.ArgumentParser(description=description))
     a = ap.parse_args()
     return load(a.config, a.set), a
+
+
+def policy_seed(cfg):
+    """Bandit seed from defence.seed; None (random) when it is negative or missing."""
+    s = cfg["defence"].get("seed", -1)
+    return None if s is None or int(s) < 0 else int(s)
