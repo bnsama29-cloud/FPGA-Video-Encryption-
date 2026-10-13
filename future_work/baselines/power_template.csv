@@ -1,0 +1,8 @@
+method,mode,width,height,fps,power_w,idle_power_w,notes
+#example (delete): ARM libjpeg-turbo + AES-GCM,full,640,480,25.0,3.10,2.40,fake numbers - replace
+ARM libjpeg-turbo (no encryption),-,640,480,,,,run bench_software_codecs.py on the board
+ARM libjpeg-turbo + full AES-128-GCM,full,640,480,,,,
+ARM libjpeg-turbo + selective E2 (Python),E2,640,480,,,,
+FPGA encoder + in-pipeline encryption,E0,640,480,,,,board_sender / pynq_driver loop
+FPGA encoder + in-pipeline encryption,E2,640,480,,,,
+FPGA encoder + in-pipeline encryption,E4,640,480,,,,

@@ -31,7 +31,7 @@ class Receiver:
         self.r = r
         self.master = bytes.fromhex(cfg["keys"]["master"])
         self.fbw = FeedbackWriter(keys.feedback_key(self.master), int.from_bytes(os.urandom(8), "big") | 1)
-        self.vsock = wire.udp_socket(L["video_out"], L["host"], timeout=0.05)
+        self.vsock = wire.udp_socket(L["video_out"], config.bind_host(cfg), timeout=0.05)
         self.fsock = wire.udp_socket()
         self.faddr = (L["host"], L["fb_in"])
         self.bus = wire.Bus(cfg, "receiver")

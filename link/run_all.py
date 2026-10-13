@@ -10,6 +10,7 @@ You can also run each one in its own terminal (python -m link.<node>), which is
 how the team splits the work. Ctrl+C stops everything.
 """
 import argparse
+import signal
 import subprocess
 import sys
 import time
@@ -19,16 +20,24 @@ from . import config
 NODES = ["channel", "receiver", "dashboard", "sender"]
 
 
+def _stop(*_):
+    raise KeyboardInterrupt
+
+
 def main():
     ap = config.add_args(argparse.ArgumentParser(description=__doc__,
                                                  formatter_class=argparse.RawDescriptionHelpFormatter))
     ap.add_argument("--no-dashboard", action="store_true")
+    ap.add_argument("--no-sender", action="store_true",
+                    help="laptop side only (the sender runs on the PYNQ board)")
     a = ap.parse_args()
+    # `kill <pid>` (SIGTERM) must stop the children too, exactly like Ctrl+C
+    signal.signal(signal.SIGTERM, _stop)
     extra = (["--config", a.config] if a.config else []) + [x for s in a.set for x in ("--set", s)]
     procs = []
     try:
         for node in NODES:
-            if node == "dashboard" and a.no_dashboard:
+            if (node == "dashboard" and a.no_dashboard) or (node == "sender" and a.no_sender):
                 continue
             procs.append(subprocess.Popen([sys.executable, "-m", f"link.{node}"] + extra))
             time.sleep(0.4)

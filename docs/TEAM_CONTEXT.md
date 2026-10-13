@@ -184,6 +184,11 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 | Board bring-up (Vivado block design, PYNQ driver, real fps, latency, power) | needed to claim any energy or speed advantage | all, after simulation |
 | Multiple receivers | designed only (Role 4 writes the design doc) | later |
 
+Much of this has a head start in `future_work/` (PYNQ driver tested on a mock, Vivado block design script,
+board sender, software baselines, energy table, jigsaw attack on E5, visual-security figure, format
+compliance). Read `future_work/README.md` before starting any board or paper-polish task: it says what is
+tested, what is untested until the board exists, and which claim each script supports.
+
 ---
 
 ## 6. Honest limitations and claims to avoid (the paper must respect these)

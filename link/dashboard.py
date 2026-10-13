@@ -32,7 +32,7 @@ class Hub:
 
     def __init__(self, cfg):
         self.cfg = cfg
-        self.sock = wire.udp_socket(cfg["link"]["bus"][0], cfg["link"]["host"], timeout=0.2)
+        self.sock = wire.udp_socket(cfg["link"]["bus"][0], config.bind_host(cfg), timeout=0.2)
         self.rasm = wire.Reassembler()
         self.frames = {}
         self.frame_seq = {}

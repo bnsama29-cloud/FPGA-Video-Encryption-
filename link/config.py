@@ -17,7 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULTS = {
     "link": {
-        "host": "127.0.0.1",
+        "host": "127.0.0.1",     # where to SEND (all on one PC: localhost)
+        "bind_host": "",         # where to LISTEN; "" = same as host. Board + laptop: "0.0.0.0"
+        "sender_host": "",       # where the channel sends feedback (the sender / board); "" = host
         "video_in": 47000,       # sender -> channel
         "video_out": 47001,      # channel -> receiver
         "fb_in": 47002,          # receiver -> channel (feedback)
@@ -113,6 +115,14 @@ def load(path=None, overrides=()):
     if isinstance(cfg["link"]["bus"], int):
         cfg["link"]["bus"] = [cfg["link"]["bus"]]
     return cfg
+
+
+def bind_host(cfg):
+    return cfg["link"].get("bind_host") or cfg["link"]["host"]
+
+
+def sender_host(cfg):
+    return cfg["link"].get("sender_host") or cfg["link"]["host"]
 
 
 def add_args(ap):
