@@ -302,3 +302,20 @@ the repo) for the multi-receiver design, and `docs/ROADMAP.md` §6 for the rest.
 
 Not testable here (needs Vivado or the PYNQ-Z2): `board/block_design.tcl` and `PynqBackend`.
 They are marked 🧪 above; Role 1 confirms them on the first board day (§3.1–3.2).
+
+---
+
+## 8. Running everything (except Vivado) on Kaggle
+
+`future_work/kaggle/run_all_roles.ipynb` runs every role's simulation work in one notebook: RTL tests, lint,
+Vivado testbench in Icarus, model and Ascon tests, benchmarks, attack scenarios with repeats (mean ± std),
+the live link and the mock board, policies, jigsaw, figures and the learned attack on the GPU. It prints a
+pass/fail/time table and zips all results to `/kaggle/working/results.zip`.
+
+* One Kaggle account is enough. Turn on *Internet* and *GPU T4*, then *Run All*.
+* `QUICK=True`: smoke test of every step (~15 min). Full run: ~1.5 h (`PARALLEL=1`) or ~1 h (`PARALLEL=2`; CPU
+  contention can shift reaction times, so keep 1 for paper numbers).
+* Set `CLIP_TRAIN`, `CLIP_TEST` (two different real videos, uploaded as a Kaggle Dataset) for real learned-attack numbers.
+  Without them the step uses synthetic frames and only proves the pipeline works.
+* Not on Kaggle: Vivado, the board, the webcam, and viewing the dashboard (the notebook checks its API instead).
+* It builds Icarus Verilog 12 from source (~7 min) because Kaggle's Ubuntu ships version 11.
