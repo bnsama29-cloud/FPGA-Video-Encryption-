@@ -110,3 +110,12 @@ def test_block_design_wrapper_compiles(tmp_path):
                         "-s", "sjpeg_bd_top", *map(str, srcs), str(ROOT / "future_work" / "board" / "sjpeg_bd_top.v")],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
+
+
+def test_learned_attack_cache_depends_on_the_source():
+    """Bug #13: the cache name ignored the video, so a second run reused the first run's frames."""
+    pytest.importorskip("torch")
+    from experiments import learned_attack as la
+    args = ("E2", 100, (160, 128), 2, 75, "train")
+    assert la.cache_path("clips/a.mp4", *args) != la.cache_path("clips/b.mp4", *args)
+    assert la.cache_path("clips/a.mp4", *args) == la.cache_path("clips/a.mp4", *args)
