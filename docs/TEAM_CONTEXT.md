@@ -157,7 +157,7 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
   Tears of Steel (CC BY 3.0) and Kodak; standard image-encryption metrics; E5 restart interval
   N = 1–32 with the non-zero counting attack; U-Net trained on 3 clips and tested on 3 others; the
   attack suite with an open clip. Snapshot in `paper/data/extra/` (its README gives the provenance).
-  A short rerun is pending (GUIDE B20, B21).
+  A rerun (same day) added the fixed restart interval on the open sources and the learned-attack control.
 
 **Not done yet.**
 
@@ -189,7 +189,7 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 - **Passive eavesdroppers are invisible.** The defence reacts only to *active* attacks; a passive eavesdropper is handled only by the floor mode (E2).
 - **Loss vs jamming.** The receiver can't tell benign loss from partial jamming. Only near-total suppression (≥90% frame loss) escalates.
 - **Reaction time.** It is bounded by the 1 s decision window plus the 0.5 s heartbeat.
-- **Learned attacker.** A U-Net **breaks E1** (edge corr. 0.69, SSIM 0.79 on unseen clips). It recovers coarse brightness and colour from E2–E5 (SSIM up to ~0.43; E5 0.36 in the 3→3 setup) but no outline under E5 (edge ≤ 0.044). How much of the SSIM is the video prior is pending (GUIDE B21). Say exactly that, not "nothing leaks".
+- **Learned attacker.** A U-Net **breaks E1** (edge corr. 0.69, SSIM 0.79 on unseen clips). It recovers coarse brightness and colour from E2–E5 (SSIM up to ~0.43; E5 0.36 in the 3→3 setup) but no outline under E5 (edge ≤ 0.044). Against a no-ciphertext control (the median training frame) the E5 edge correlation is equal (0.037 vs 0.036: no outline from the stream), but SSIM is 0.11 higher in the 3→3 setup — probably frame-level brightness/colour (GUIDE B25). Say exactly that, not "nothing leaks".
 - **Standard metrics.** Key sensitivity is good, but adjacent-pixel correlation (0.88–0.92) and entropy stay far from full-cipher values: format-compliant encryption keeps 8×8 structure. Report them for comparability, never as proof of security.
 - **Bandit.** Over 10 seeds it encrypts fewer bits but reacts slower and leaks more under attack: a trade-off, not an improvement.
 - **Test clips.** The four private clips are copyrighted trailers / talking-head videos: numbers only, never frames. Pictures in the paper come only from the open films (Sintel, Tears of Steel) or the synthetic scene.
