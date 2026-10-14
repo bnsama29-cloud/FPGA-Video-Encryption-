@@ -25,8 +25,8 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 |---|---|---|
 | Golden model + contract v2 | ✅ done | `model/`, `docs/INTERFACES.md`, 1089 Ascon KATs |
 | RTL (E0–E4) | ✅ bit-exact with the model in cocotb + Icarus, 0 extra cycles for encryption | `tb/`, `make test` |
-| Vivado testbench | ✅ in Icarus · ⏳ in Vivado XSim | `make xsim-icarus`, then `docs/VIVADO_ONE_DAY.md` |
-| Post-route resources / timing / power | ⏳ first run done (≈ 47 MHz, bug #17 fixed) → **re-run** | `python vivado/run_vivado_day.py` |
+| Vivado testbench | ✅ in Icarus · ✅ in Vivado XSim 2026.1 | `make xsim-icarus`, `python vivado/run_vivado_day.py --steps xsim` |
+| Post-route resources / timing / power | ✅ encoder meets 100 MHz (run 3, in the paper) · ⏳ overlay −0.24 ns → run 4 with the extra converter stage | `python vivado/run_vivado_day.py --maxw 9 10` |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
 | Simulation results, private clips | ✅ (Kaggle, 47/47 steps) | `paper/data/simulation/` |
 | Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps + rerun 9/9 steps) | `paper/data/extra/` (README there says where each file came from) |
@@ -217,7 +217,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
-| B14 | **Comparison table in the paper** | P1 | 1 + 2 | ½ d after 4.1 | below; §7 has the numbers |
+| B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
 | B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
 | B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |

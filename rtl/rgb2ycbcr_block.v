@@ -33,15 +33,18 @@ module rgb2ycbcr_block #(
     // conversion, the clamp, the chroma average and the line-buffer write in ONE clock (the
     // out-of-context run could not see it: its input ports have no input delay). Now:
     //   take  the counters (wx, wy, wsel, wactive) advance exactly as before, so s_ready is unchanged
-    //   D1    registered pixel + where it goes          D2  registered Y, Cb, Cr
+    //   D1    registered pixel + where it goes
+    //   C     registered sums (multiply-add)            D2  registered, clamped Y, Cb, Cr
+    //   (C added after the second overlay run: multiply-add + clamp in one clock missed by 0.24 ns)
     //   write line buffers / chroma sums from D2, and `full` is set when the last pixel lands there
-    // The writes happen 2 clocks after the handshake, in the same order, so the buffers
-    // end up with the same contents; the reader starts 2 clocks later.
-    reg                d1_v, d2_v;
+    // The writes happen 3 clocks after the handshake, in the same order, so the buffers
+    // end up with the same contents; the reader starts 3 clocks later.
+    reg                d1_v, c_v, d2_v;
     reg [23:0]         d1_rgb;
-    reg                d1_sel, d2_sel, d1_last, d2_last;
-    reg [3:0]          d1_y, d2_y;
-    reg [LOG_MAXW-1:0] d1_x, d2_x;
+    reg                d1_sel, c_sel, d2_sel, d1_last, c_last, d2_last;
+    reg [3:0]          d1_y, c_y, d2_y;
+    reg [LOG_MAXW-1:0] d1_x, c_x, d2_x;
+    reg signed [18:0]  c_yt, c_cbt, c_crt;
     reg [7:0]          d2_yp, d2_cb, d2_cr;
 
     // ---------------------------------------------------- colour conversion (on D1)
@@ -57,7 +60,7 @@ module rgb2ycbcr_block #(
             else                     sat8 = v[15:8];
         end
     endfunction
-    wire [7:0] y_px = sat8(y_t), cb_px = sat8(cb_t), cr_px = sat8(cr_t);
+    wire [7:0] y_px = sat8(c_yt), cb_px = sat8(c_cbt), cr_px = sat8(c_crt);
 
     // ---------------------------------------------------------- line buffers
     reg [7:0] ybuf  [0:2*16*MAXW-1];         // {sel, row[3:0], x}
@@ -89,8 +92,10 @@ module rgb2ycbcr_block #(
     always @(posedge clk) begin
         d1_rgb <= s_data[23:0];
         d1_sel <= wsel; d1_y <= wy; d1_x <= wx[LOG_MAXW-1:0]; d1_last <= last_px_of_row;
+        c_yt <= y_t; c_cbt <= cb_t; c_crt <= cr_t;
+        c_sel <= d1_sel; c_y <= d1_y; c_x <= d1_x; c_last <= d1_last;
         d2_yp <= y_px; d2_cb <= cb_px; d2_cr <= cr_px;
-        d2_sel <= d1_sel; d2_y <= d1_y; d2_x <= d1_x; d2_last <= d1_last;
+        d2_sel <= c_sel; d2_y <= c_y; d2_x <= c_x; d2_last <= c_last;
         if (d2_v) begin
             ybuf[{d2_sel, d2_y, d2_x}] <= d2_yp;
             if (!d2_x[0]) begin
@@ -127,9 +132,9 @@ module rgb2ycbcr_block #(
             wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start;
             rrow <= 8'd0; rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
-            d1_v <= 1'b0; d2_v <= 1'b0;
+            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0;
         end else begin
-            d1_v <= take; d2_v <= d1_v;
+            d1_v <= take; c_v <= d1_v; d2_v <= c_v;
             // writer counters
             if (take) begin
                 if (wx == width - 12'd1) begin

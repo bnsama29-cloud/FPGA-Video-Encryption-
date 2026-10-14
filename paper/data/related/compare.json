@@ -1,0 +1,61 @@
+{
+ "_note": "Published numbers for the comparison table, copied from each source (checked 14 Oct 2026). Every row cites a refs.bib key. Do not add a row you have not read.",
+ "rows": [
+  {
+   "work": "logiJPGE",
+   "cite": "logijpge",
+   "device": "Zynq-7020",
+   "function": "JPEG enc.",
+   "lut": 3240,
+   "ff": 1969,
+   "bram": 16,
+   "dsp": 30,
+   "mhz": 150,
+   "mpix_s": 150,
+   "source": "https://www.logicbricks.com/Documentation/Datasheets/IP/logiJPGE_hds.pdf (Table 1, XC7Z020-1, Vivado 2019.2, 4:2:2, max width 2048)",
+   "crypto": "none"
+  },
+  {
+   "work": "CAST JPEG-E-S",
+   "cite": "castjpeg",
+   "device": "Artix-7",
+   "function": "JPEG enc.",
+   "lut": 3069,
+   "ff": null,
+   "bram": 2,
+   "dsp": 16,
+   "mhz": 166,
+   "mpix_s": null,
+   "source": "https://www.cast-inc.com/pdfs/cast_jpeg-e-s-brief-amd.pdf (Artix-7 -1; one colour sample per clock)",
+   "crypto": "none"
+  },
+  {
+   "work": "Khairallah",
+   "cite": "khairallah2023",
+   "device": "Artix-7",
+   "function": "Ascon-PRF MAC",
+   "lut": 1031,
+   "ff": 391,
+   "bram": 0,
+   "dsp": 0,
+   "mhz": 200,
+   "mpix_s": null,
+   "source": "NIST LWC workshop 2023, accepted paper 14 (Ascon-PRF-192, 1 round/cycle, period 5 ns)",
+   "crypto": "MAC"
+  },
+  {
+   "work": "Kurian",
+   "cite": "kurian2025",
+   "device": "Artix-7",
+   "function": "Ascon AEAD + replay",
+   "lut": 5335,
+   "ff": 4287,
+   "bram": 32,
+   "dsp": 0,
+   "mhz": 100,
+   "mpix_s": null,
+   "source": "https://www.mdpi.com/2079-9292/14/13/2668 (largest of three types; 3490-5335 LUT, 4285-4287 FF)",
+   "crypto": "AEAD"
+  }
+ ]
+}

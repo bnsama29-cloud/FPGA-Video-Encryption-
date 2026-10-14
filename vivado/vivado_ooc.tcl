@@ -4,7 +4,7 @@
 #   vivado -mode batch -source vivado/vivado_ooc.tcl                              (whole design, 100 MHz)
 #   vivado -mode batch -source vivado/vivado_ooc.tcl -tclargs ascon_aead128_core  (one block)
 #   vivado -mode batch -source vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 8.0 (try 125 MHz)
-#   vivado -mode batch -source vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0 LOG_MAXW=10
+#   vivado -mode batch -source vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0 LOG_MAXW 10
 #                                                     (1024-pixel line buffers: memory sweep)
 # Reports in sim_build/vivado_<top>[_<period>ns]/: utilization.txt, utilization_hier.txt,
 # timing.txt (WNS), power.txt (vectorless estimate). python vivado/parse_reports.py turns
@@ -14,8 +14,9 @@
 # timing-driven (declaring it only after synth_design would leave synthesis blind).
 set top    [expr {[llength $argv] > 0 ? [lindex $argv 0] : "secure_jpeg_top"}]
 set period [expr {[llength $argv] > 1 ? [lindex $argv 1] : "10.0"}]
-# optional third argument: a top-level parameter, e.g. LOG_MAXW=10 (memory sweep, GUIDE B19)
-set gen    [expr {[llength $argv] > 2 ? [lindex $argv 2] : ""}]
+# optional 3rd + 4th arguments: a top-level parameter and its value, e.g. LOG_MAXW 10 (memory sweep,
+# GUIDE B19). Two arguments, not LOG_MAXW=10: Windows cmd splits arguments at '=' (bug #19).
+set gen    [expr {[llength $argv] > 3 ? "[lindex $argv 2]=[lindex $argv 3]" : ""}]
 set out    sim_build/vivado_$top
 if {$period != 10.0} { set out ${out}_${period}ns }
 if {$gen ne ""} { set out ${out}_[string tolower [string map {= ""} $gen]] }

@@ -83,7 +83,7 @@ def step_xsim(a):
 def step_ooc(a):
     out = vivado("ooc_secure_jpeg_top", "vivado/vivado_ooc.tcl", "secure_jpeg_top 10.0", r"RESULT top=", a.dry_run)
     for w in a.maxw:                    # memory sweep (GUIDE B19): line buffers for 2^w-pixel lines
-        vivado(f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW={w}",
+        vivado(f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW {w}",
                r"RESULT top=", a.dry_run)
     if a.blocks:
         for b in BLOCKS:
