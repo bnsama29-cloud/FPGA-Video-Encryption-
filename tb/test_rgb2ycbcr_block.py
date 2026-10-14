@@ -74,3 +74,8 @@ async def full_throughput(dut):
 
 def test_rgb2ycbcr_block():
     run_sim("rgb2ycbcr_block", "test_rgb2ycbcr_block")
+
+
+def test_rgb2ycbcr_block_small_line_buffer():
+    """Memory sweep (GUIDE B19): 512-pixel line buffers give the same blocks for frames that fit."""
+    run_sim("rgb2ycbcr_block", "test_rgb2ycbcr_block", parameters={"LOG_MAXW": 9})

@@ -10,6 +10,7 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
     python vivado/run_vivado_day.py --dry-run        # only print what it would run
     python vivado/run_vivado_day.py --steps bd --fclk 50        # overlay at 50 MHz
     python vivado/run_vivado_day.py --steps bd --jobs 1         # less RAM (8 GB laptops: 1-2)
+    python vivado/run_vivado_day.py --maxw 9 10                 # + line-buffer memory sweep
 Run it from a normal terminal with YOUR Python (numpy + pillow), not with `exec` from the
 Vivado Tcl console: that uses Vivado's bundled Python and hides all output until the end.
 
@@ -60,8 +61,8 @@ def run(name, cmd, check=None, dry=False):
     print(f"--> {'PASS' if ok else 'FAIL'} in {dt / 60:.1f} min   (log: {log.relative_to(ROOT)})", flush=True)
     if not ok:
         errs = [line for line in out.splitlines() if "ERROR" in line][:3]
-        if errs:
-            print("first errors:\n  " + "\n  ".join(errs))
+        print("first errors:\n  " + "\n  ".join(errs) if errs else
+              "first lines of the log:\n  " + "\n  ".join(out.splitlines()[:8]))
     return out
 
 
@@ -81,6 +82,9 @@ def step_xsim(a):
 
 def step_ooc(a):
     out = vivado("ooc_secure_jpeg_top", "vivado/vivado_ooc.tcl", "secure_jpeg_top 10.0", r"RESULT top=", a.dry_run)
+    for w in a.maxw:                    # memory sweep (GUIDE B19): line buffers for 2^w-pixel lines
+        vivado(f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW={w}",
+               r"RESULT top=", a.dry_run)
     if a.blocks:
         for b in BLOCKS:
             vivado(f"ooc_{b}", "vivado/vivado_ooc.tcl", f"{b} 10.0", r"RESULT top=", a.dry_run)
@@ -137,6 +141,8 @@ def main():
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
     ap.add_argument("--fmax", action="store_true", help="re-run the top at the clock the slack suggests")
     ap.add_argument("--fclk", type=int, default=100, help="PL clock of the overlay in MHz (block design)")
+    ap.add_argument("--maxw", type=int, nargs="*", default=[],
+                    help="also run the encoder with LOG_MAXW = these values (memory sweep, e.g. 9 10)")
     ap.add_argument("--jobs", type=int, default=2, help="parallel runs in the block design (each ~2 GB RAM)")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
