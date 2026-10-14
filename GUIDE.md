@@ -218,6 +218,12 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
 | B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
+| B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM; Kaggle adds 640x480 | `docs/RESEARCH.md` |
+| B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model; RTL later | `docs/RESEARCH.md` |
+| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
+| B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
+| B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
+| B31 | Frame-size side channel of plain MJPEG (found by R4): size padding option + threat-model text | P1 | 2 + 5 | after Kaggle | `docs/RESEARCH.md` |
 | B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
 | B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |

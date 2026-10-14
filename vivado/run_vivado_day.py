@@ -11,6 +11,7 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
     python vivado/run_vivado_day.py --steps bd --fclk 50        # overlay at 50 MHz
     python vivado/run_vivado_day.py --steps bd --jobs 1         # less RAM (8 GB laptops: 1-2)
     python vivado/run_vivado_day.py --maxw 9 10                 # + line-buffer memory sweep
+    python vivado/run_vivado_day.py --steps ooc parse --periods 8.0 6.667   # clock sweep 125/150 MHz
 Run it from a normal terminal with YOUR Python (numpy + pillow), not with `exec` from the
 Vivado Tcl console: that uses Vivado's bundled Python and hides all output until the end.
 
@@ -82,6 +83,8 @@ def step_xsim(a):
 
 def step_ooc(a):
     out = vivado("ooc_secure_jpeg_top", "vivado/vivado_ooc.tcl", "secure_jpeg_top 10.0", r"RESULT top=", a.dry_run)
+    for per in a.periods:               # clock sweep (research R5): which block limits 125 / 150 MHz?
+        vivado(f"ooc_period_{per}ns", "vivado/vivado_ooc.tcl", f"secure_jpeg_top {per}", r"RESULT top=", a.dry_run)
     for w in a.maxw:                    # memory sweep (GUIDE B19): line buffers for 2^w-pixel lines
         vivado(f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW {w}",
                r"RESULT top=", a.dry_run)
@@ -141,6 +144,8 @@ def main():
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
     ap.add_argument("--fmax", action="store_true", help="re-run the top at the clock the slack suggests")
     ap.add_argument("--fclk", type=int, default=100, help="PL clock of the overlay in MHz (block design)")
+    ap.add_argument("--periods", type=float, nargs="*", default=[],
+                    help="also run the encoder at these clock periods in ns (clock sweep, e.g. 8.0 6.667)")
     ap.add_argument("--maxw", type=int, nargs="*", default=[],
                     help="also run the encoder with LOG_MAXW = these values (memory sweep, e.g. 9 10)")
     ap.add_argument("--jobs", type=int, default=2, help="parallel runs in the block design (each ~2 GB RAM)")
