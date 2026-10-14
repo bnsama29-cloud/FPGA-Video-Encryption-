@@ -47,6 +47,8 @@ make             # main.pdf (pdflatex + bibtex)
 | §VI, last paragraph | ARM baseline, FPGA fps, energy per frame | GUIDE.md A1–A4, B1 |
 | Acknowledgment | AI-assistance disclosure (below) | team |
 | refs.bib | 3 small gaps marked `TODO` (pages/volume for Puech, Lin, Boyadjis) | IEEE Xplore / ScienceDirect |
+| §II / §IV | comparison table with prior designs (numbers ready in GUIDE.md §7) | GUIDE.md B14, after Vivado |
+| §V | standard image-encryption metrics (key sensitivity, NPCR/UACI, entropy, histograms) | GUIDE.md B13 |
 
 ## References: how they were checked
 

@@ -182,6 +182,13 @@ P1 = the paper is weak without it, P2 = clearly stronger, P3 = future-work secti
 | B10 | Simulated-clock scenarios (seconds instead of real time) for 100-seed studies | P3 | 3 | 2 d | below |
 | B11 | Multi-receiver prototype (per-receiver tags) | P3 | 4 + 3 | 3 d | below |
 | B12 | Masked Ascon, ROI encryption, H.264/HEVC | P3 | – | future | paper §VII only |
+| B13 | **Standard image-encryption metrics**: key space, key sensitivity, histogram, entropy, adjacent-pixel correlation, NPCR/UACI | P1 | 5 | 1 d | below; reviewers in this field ask for them (§7) |
+| B14 | **Comparison table in the paper** (prior FPGA JPEG encryptors, Ascon cores, commercial JPEG cores) | P1 | 1 + 2 | ½ d after 4.1 | below; §7 has the numbers |
+| B15 | **Non-zero counting attack (NZCA)** and restart intervals 2–32, as in Hirose et al. | P2 | 5 | 1 d | below; joins B5 |
+| B16 | **Leakage on a standard image set** (Kodak 24 or UCID) besides video | P2 | 4 + 5 | ½ d | below |
+| B17 | **Stronger learned attackers**: large training set, GAN-style attack | P2 | 5 | 2 d GPU | extends B4; §7 |
+| B18 | **Throughput toward 1 pixel/clock and a higher clock** | P3 | 1 | 1 week | below; commercial cores do 1 px/clk at 150–166 MHz |
+| B19 | **Area: fewer BRAM/DSP**, shared Ascon core (B7) | P3 | 1 | 2–4 d | below; ours ~25 BRAM36 / 24 DSP vs 2–16 BRAM in commercial cores |
 
 **B1 – Selective encryption in C.** The current software baseline is Python (~140 ms/frame), which a
 reviewer will dismiss.
@@ -257,6 +264,44 @@ for policy statistics (100+ seeds).
 
 **B11 – Multi-receiver.** Encrypt once, then compute one tag per receiver key (a few µs of Ascon
 each). The channel fans out to N receiver processes. Removing a receiver means rekeying the others.
+
+**B13 – Standard metrics.** Image-encryption papers almost always report a common set of metrics;
+reviewers expect them even though selective encryption is a different setting. Add
+`experiments/standard_metrics.py`, run it per mode on the synthetic scene + Kodak (B16), and report it.
+Write in the paper why pixel-scrambling metrics alone do not prove security for a format-compliant
+scheme (Massoudi et al.), and keep edge correlation and the attacks as the main evidence.
+
+| Metric | What to compute |
+|---|---|
+| Key space | 128-bit key; the E5 permutation adds log2(n_MCU!) |
+| Key sensitivity | flip one key bit → decrypt → SSIM / percentage of differing pixels vs the original |
+| Histograms and entropy | of the no-key decoded image |
+| Adjacent-pixel correlation | horizontal / vertical / diagonal, 2000 pairs |
+| NPCR / UACI | between the no-key decodes under two keys that differ in one bit |
+| Encryption time per frame | from the RTL cycles (already done) |
+
+**B14 – Comparison table.** After the Vivado day, add Table "Comparison with related designs" to §II or
+§IV: device, LUT, FF, BRAM, DSP, clock, pixels/s, encryption, authentication, format compliance. Use
+the rows of §7 and cite each source. Compare like with like, and mark which numbers are post-route
+and which are estimates.
+
+**B15 – NZCA and restart interval.** Hirose et al. reconstruct outlines by counting non-zero
+coefficients per block, and find that large restart intervals reveal outlines. Implement NZCA as a
+third keyless attacker in `experiments/measure_mode_tradeoff.py`. Then rerun it for restart intervals
+1, 2, 4, 8, 32 (needs B5), so our E5 result becomes directly comparable to theirs.
+
+**B16 – Standard images.** The Kodak set (24 images, free to use) or UCID (1338 images, used by
+Hirose et al.) makes leakage numbers comparable with image-encryption papers. Run
+`measure_mode_tradeoff.py` on an image folder; this needs a small `--images DIR` option.
+
+**B18 – Throughput.** At 1.64 cycles/pixel and 100 MHz we reach ~61 Mpixel/s. Commercial JPEG cores
+reach 1 pixel/clock at 150–166 MHz on 7-series parts, i.e. 1080p60. Find the stage that limits us
+(cocotb stall statistics per stage), pipeline it, and push fmax (Vivado `--fmax`). This is future
+work for the paper; just state the gap honestly.
+
+**B19 – Area.** Yosys estimates 25 BRAM36 and 24 DSP. Check in Vivado where they go (line buffers,
+Huffman tables, the DCT multipliers). BRAM-light line buffers and a shared Ascon core (B7) would bring
+us near the commercial cores plus one ~1 K-LUT Ascon.
 
 ### 4.4 The paper (all, drafting now; final by 15 Dec)
 
@@ -343,3 +388,60 @@ unfinished slips through.
 6. **Writing.** AI tools may help draft. Every sentence in the paper must be checked, rewritten in your
    own words where needed, and understood by the person presenting it. Disclose AI assistance as the
    conference requires (paper/README.md).
+
+---
+
+## 7. How we compare with published work (checked 14 Oct 2026)
+
+Numbers are copied from each source. Ours are RTL simulation and a Yosys estimate until §4.1 is done.
+
+| Work | Platform | Area | Speed | Encryption | Authentication | Format compliant | Security evaluation |
+|---|---|---|---|---|---|---|---|
+| **Ours** | Zynq-7020 (RTL sim) | ~5.7 K LUT, 2.8 K FF, 25 BRAM36, 24 DSP (Yosys est.) | 1.64 cycles/px → ~199 fps VGA if 100 MHz closes; 0 extra cycles for encryption | Ascon-AEAD128 keystream on signs/amplitudes (+ keyed MCU shuffle in E5) | per-frame 128-bit tag over metadata + scan, replay window, ratchet | yes, 4 decoders | edge leakage on synthetic + 4 clips, jigsaw, U-Net; 11 active attacks, 10-seed policy study |
+| Kishore et al. 2015 [JRTIP] | FPGA JPEG encoder | +~1 % hardware for the encryption stage | not quoted here | lightweight block/symbol scrambling | no | yes (claimed) | visual |
+| Bağbaba & Örs 2015 [ELECO] | FPGA | – | – | TEA on DC (+5 AC) coefficients | no | – | PSNR |
+| Gladis Kurian & Chen 2025 [Electronics] | Artix-7 100T | 3.5–5.3 K LUT, 4.3 K FF, 32 BRAM, 0 DSP | 100 MHz; replay check ~0.8 µs | Ascon-128 (messages, not video) | AEAD + Bloom-filter replay check | n/a | false-positive rate |
+| Khairallah & Yadhunathan 2023 [NIST LWC workshop] | Artix-7 100T | Ascon-p MACs: ~0.8–1.7 K LUT, ~390 FF | 200 MHz, 33–166 Mbps (duplex) | – (MAC) | MAC | n/a | – |
+| CAST JPEG-E-S (commercial) | Artix-7 | 3.1 K LUT, 2 BRAM, 16 DSP | 1 sample/clk @ 166 MHz | none | none | yes | – |
+| logicBRICKS logiJPGE (commercial) | Zynq-7020 | 3.2 K LUT, 2.0 K FF, 16 BRAM, 30 DSP | 1 px/clk @ 150 MHz, 1080p60 | none | none | yes | – |
+| Hirose, Imaizumi & Kiya 2024 [arXiv] | software | – | – | bitstream XOR + restart-marker block permutation (RI 2–32) | no | yes | key space/sensitivity, NZCA, histograms, PSNR/SSIM on 1338 UCID images |
+| Sirichotedumrong & Kiya [arXiv 2010.06198] | software | – | – | learnable block-wise encryption | no | – | learned attacks (ITN, GAN) reach SSIM 0.72–0.91 |
+| Qiu et al. 2025 [arXiv 2503.16287] | Raspberry Pi 4B + Zynq HLS prototype | – | 720p, 10 s clip in ~2.7 s | chaotic keystream XOR on raw frames | no | no (raw video) | entropy, correlation, NPCR/UACI, NIST/DIEHARD |
+
+**Where we are stronger:**
+
+* **Authentication.** We are the only one in this list that authenticates every frame *and* its
+  metadata while staying playable.
+* **Standard cipher.** We use a standardized lightweight AEAD (SP 800-232) instead of TEA, chaos or
+  an ad-hoc scrambler.
+* **Zero cycle cost.** Encryption costs no cycles.
+* **Attacks.** We evaluate learned and puzzle-solving attackers on real video, plus a closed-loop
+  response to 11 active attacks with statistics over runs and seeds. None of the hardware papers
+  above does this.
+
+**Where we are weaker (each has a task):**
+
+| Weakness | Task |
+|---|---|
+| No post-route, power or board numbers yet | §4.1, §4.2 |
+| Throughput ~2.5× below commercial JPEG cores, which reach 1 px/clk at 150 MHz | B18 |
+| Each of our Ascon blocks (~1.4–1.7 K LUT, est.) is larger than published round-based Ascon cores (~0.8–1.1 K LUT) | B7, B19 |
+| More BRAM/DSP than commercial encoders | B19 |
+| The standard image-encryption metrics are missing | B13 |
+| No restart-interval study and no NZCA | B5, B15 |
+| Our learned attacker is small next to the ITN/GAN attacks in the literature | B17 |
+| No standard image set | B16 |
+
+**Sources:**
+
+* [Gladis Kurian & Chen 2025](https://www.mdpi.com/2079-9292/14/13/2668)
+* [Khairallah & Yadhunathan, NIST LWC 2023](https://csrc.nist.gov/csrc/media/Events/2023/lightweight-cryptography-workshop-2023/documents/accepted-papers/14-fpga-implementations-of-message-authentication-codes.pdf)
+* [CAST JPEG-E-S brief](https://www.cast-inc.com/pdfs/cast_jpeg-e-s-brief-amd.pdf)
+* [logiJPGE datasheet](https://www.logicbricks.com/Documentation/Datasheets/IP/logiJPGE_hds.pdf)
+* [Hirose et al.](https://arxiv.org/abs/2410.06522)
+* [Sirichotedumrong & Kiya](https://arxiv.org/abs/2010.06198)
+* [Qiu et al.](https://arxiv.org/abs/2503.16287)
+* [Malal 2024 (ISCTR, Ascon throughput/area)](https://avesis.metu.edu.tr/yayin/6f2daa79-8ad3-46de-aec5-5fd1bd1b9937/high-performance-fpga-implementations-of-lightweight-ascon-128-and-ascon-128a-with-enhanced-throughput-to-area-efficiency)
+
+Kishore et al. and Bağbaba & Örs are in `paper/refs.bib`. Read a source before citing it, and add it
+to `refs.bib` with a "checked:" comment.
