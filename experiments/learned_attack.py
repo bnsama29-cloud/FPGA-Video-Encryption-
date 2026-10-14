@@ -78,12 +78,33 @@ def make_pairs(source, mode, n, size, stride, quality, tag):
         Y.append(rgb)
         if len(Y) % 200 == 0:
             print(f"    {tag} {mode}: {len(Y)} frames ({time.time() - t0:.0f} s)")
-    if len(Y) < 50:
+    if len(Y) < min(50, n):
         raise SystemExit(f"only {len(Y)} frames from {source}; need a longer video or smaller --stride")
     X, Y = np.stack(X), np.stack(Y)
     OUT.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(cache, X=X, Y=Y)
     return X, Y
+
+
+def make_pairs_multi(sources, mode, n, size, stride, quality, tag):
+    """Several sources ("a.mp4,b.mp4,kodak/"): n frames split evenly between them, concatenated.
+    More, and more varied, training scenes make a stronger attacker (GUIDE.md B17)."""
+    parts = [s for s in str(sources).split(",") if s]
+    if len(parts) == 1:
+        return make_pairs(parts[0], mode, n, size, stride, quality, tag)
+    X, Y = [], []
+    for i, s in enumerate(parts):
+        k = n // len(parts) + (1 if i < n % len(parts) else 0)
+        try:
+            x, y = make_pairs(s, mode, k, size, stride, quality, tag)
+        except SystemExit as e:                      # a short source: use what it has, say so
+            print(f"    skipped {s}: {e}")
+            continue
+        X.append(x)
+        Y.append(y)
+    if not X:
+        raise SystemExit(f"no usable {tag} source among {parts}")
+    return np.concatenate(X), np.concatenate(Y)
 
 
 # ----------------------------------------------------------------- metrics
@@ -195,7 +216,8 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--train-source", required=True, help="video file / webcam:N / synthetic (synthetic: testing only)")
+    ap.add_argument("--train-source", required=True,
+                    help="video file, image folder or several joined by commas; 'synthetic' for testing only")
     ap.add_argument("--test-source", required=True, help="a DIFFERENT video for evaluation")
     ap.add_argument("--modes", nargs="+", default=["E1", "E2", "E4", "E5"])
     ap.add_argument("--size", default="160x128", help="WxH, multiples of 16")
@@ -209,8 +231,10 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--out", help="output folder (default sim_out/learned_attack); use one per train/test pair")
     a = ap.parse_args()
-    if a.train_source == a.test_source and a.train_source != "synthetic":
-        raise SystemExit("use different videos for training and testing (otherwise the network memorises the scene)")
+    overlap = set(a.train_source.split(",")) & set(a.test_source.split(",")) - {"synthetic"}
+    if overlap:
+        raise SystemExit(f"use different videos for training and testing (shared: {overlap}); "
+                         "otherwise the network memorises the scene")
     size = tuple(int(v) for v in a.size.split("x"))
     global OUT
     if a.out:
@@ -220,8 +244,8 @@ def main():
     results = json.loads(res_file.read_text()) if res_file.exists() else {}
     for mode in a.modes:
         print(f"== {mode}: building data")
-        Xtr, Ytr = make_pairs(a.train_source, mode, a.frames, size, a.stride, a.quality, "train")
-        Xte, Yte = make_pairs(a.test_source, mode, a.test_frames, size, a.stride, a.quality, "test")
+        Xtr, Ytr = make_pairs_multi(a.train_source, mode, a.frames, size, a.stride, a.quality, "train")
+        Xte, Yte = make_pairs_multi(a.test_source, mode, a.test_frames, size, a.stride, a.quality, "test")
         print(f"== {mode}: training on {len(Xtr)} frames, testing on {len(Xte)}")
         results[mode] = train_and_eval(mode, Xtr, Ytr, Xte, Yte, a)
         res_file.write_text(json.dumps(results, indent=2))

@@ -181,6 +181,8 @@ def main():
     jigsaw_table(root, out, missing)
     learned_table(root, out, missing)
     include(root, out, missing, "format_compliance.md", "Format compliance: decoders that open the protected stream")
+    include(root, out, missing, "standard_metrics/*.md", "Standard image-encryption metrics (experiments/standard_metrics.py)")
+    include(root, out, missing, "restart_interval/*.md", "E5 restart interval and the non-zero counting attack (experiments/restart_interval.py)")
     if missing:
         out += ["## Not found (run these to complete the tables)", ""] + [f"* {m}" for m in missing]
     dest = Path(a.out) if a.out else root / "paper_tables.md"

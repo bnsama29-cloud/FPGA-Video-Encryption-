@@ -10,3 +10,14 @@ Use this table to check that everybody has the same files. For the paper, descri
 | jailer.mp4 | movie trailer (fast cuts) | 1280x720 | 24.0 | 3469 | 1e7872045377b45d |
 | denzel.mp4 | talking head / motivational | 1280x720 | 25.0 | 3081 | 2e81680e4acd7587 |
 | challenge.mp4 | talking head / study-challenge talk | 1280x640 | 25.0 | 3008 | 7b1f785fd90ae05e |
+
+## Open clips (used from 14 Oct, citable)
+
+Downloaded by `future_work/kaggle/kaggle_remaining.py`. All CC-BY 3.0, credit as below in the paper:
+
+* Big Buck Bunny, (c) copyright 2008 Blender Foundation, www.bigbuckbunny.org
+* Sintel (trailer), (c) copyright Blender Foundation, durian.blender.org
+* Tears of Steel, (CC) Blender Foundation, mango.blender.org (live action)
+* Kodak Lossless True Color Image Suite (24 images), released by Eastman Kodak for unrestricted use
+
+Frames from these may appear in the paper's figures; frames from the four clips above may not.

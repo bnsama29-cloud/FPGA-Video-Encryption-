@@ -1,4 +1,4 @@
-"""Video sources for the simulated camera: synthetic scene, video file or webcam."""
+"""Video sources for the simulated camera: synthetic scene, video file, webcam or a folder of images."""
 import time
 
 import numpy as np
@@ -76,7 +76,44 @@ class VideoFile:
         return self.cv2.cvtColor(f, self.cv2.COLOR_BGR2RGB)
 
 
+class ImageFolder:
+    """Still images of a folder (e.g. the Kodak set) as frames, sorted by name. Each image is
+    centre-cropped to the target aspect ratio, then resized, so nothing is stretched."""
+    EXT = (".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".ppm")
+
+    def __init__(self, path, width, height, loop=True):
+        import cv2
+        from pathlib import Path
+        self.cv2, self.size, self.loop = cv2, (width, height), loop
+        self.files = sorted(p for p in Path(path).iterdir() if p.suffix.lower() in self.EXT)
+        if not self.files:
+            raise RuntimeError(f"no images in {path!r}")
+        self.i = 0
+
+    def read(self):
+        if self.i >= len(self.files):
+            if not self.loop:
+                return None
+            self.i = 0
+        img = self.cv2.imread(str(self.files[self.i]))
+        self.i += 1
+        w, h = self.size
+        H, W = img.shape[:2]
+        if W * h > H * w:                       # too wide: crop the sides
+            nw = H * w // h
+            img = img[:, (W - nw) // 2:(W - nw) // 2 + nw]
+        else:                                   # too tall: crop top and bottom
+            nh = W * h // w
+            img = img[(H - nh) // 2:(H - nh) // 2 + nh]
+        img = self.cv2.resize(img, self.size, interpolation=self.cv2.INTER_AREA)
+        return self.cv2.cvtColor(img, self.cv2.COLOR_BGR2RGB)
+
+
 def open_source(spec, width, height, loop=True):
+    """'synthetic' | a video file | 'webcam:N' | a folder of images."""
+    from pathlib import Path
     if spec in ("synthetic", "", None):
         return Synthetic(width, height)
+    if Path(str(spec)).is_dir():
+        return ImageFolder(spec, width, height, loop)
     return VideoFile(spec, width, height, loop)

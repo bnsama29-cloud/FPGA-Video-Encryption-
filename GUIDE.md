@@ -83,6 +83,12 @@ pip install -r requirements.txt
 | `python -m future_work.figures.paper_tables --root <results>` | every paper table from result files |
 | `cd paper && make` | build the paper PDF (`make tables` first after new results) |
 
+**The remaining GPU/CPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_remaining.py` (~1.5 h, GPU T4,
+Internet on, your clips dataset attached). It does B2, B4, B5, B13, B15, B16 and B17 below and writes
+`remaining_results.zip`; after it, the simulation side is complete and only Vivado (§4.1) and the board
+(§4.2) remain. It downloads open Blender Foundation clips (CC-BY 3.0) and the Kodak images; if a download
+is blocked, upload those files as a Kaggle dataset instead (URLs at the top of the script).
+
 **Re-running all the simulation results:** paste `future_work/kaggle/kaggle_complete.py` into one
 Kaggle cell (Internet on, GPU T4, clips as a private dataset), then *Save & Run All*. It takes ~4 h
 with `PARALLEL = 1` and writes `results.zip`. Unzip it into `paper/data/` and run `cd paper && make`.
@@ -165,6 +171,11 @@ step 4 lists the likely errors).
 metric, the paper says so; the playability, integrity and zero-cycle claims stand anyway.
 
 ### 4.3 Polish that makes the claims stronger
+
+**Scripted and ready (14 Oct): B2, B4, B5, B13, B15, B16, B17** — new `experiments/restart_interval.py`,
+`experiments/standard_metrics.py`, multi-source `learned_attack.py`, image-folder sources; all run by
+`future_work/kaggle/kaggle_remaining.py`. What is left for them is running it and putting the numbers
+into the paper.
 
 P1 = the paper is weak without it, P2 = clearly stronger, P3 = future-work section of the paper.
 
