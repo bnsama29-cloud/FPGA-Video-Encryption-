@@ -109,11 +109,15 @@ def safe(name):
 SOURCES = {}
 if REPO.exists():
     shutil.rmtree(REPO)
+def has_fixes(repo):
+    text = lambda f: (repo / "experiments" / f).read_text() if (repo / "experiments" / f).exists() else ""
+    return "raster_solve" in text("restart_interval.py") and "no_ciphertext_prior" in text("learned_attack.py")
+
+
 for b in BRANCHES:
-    if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
-            "raster_solve" in (REPO / "experiments" / "restart_interval.py").read_text() and \
-            "no_ciphertext_prior" in (REPO / "experiments" / "learned_attack.py").read_text():
+    if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and has_fixes(REPO):
         break
+    print(f"  branch {b} does not have the fixed experiments yet, trying the next one")
     shutil.rmtree(REPO, ignore_errors=True)
 else:
     raise SystemExit("no branch with the fixed experiments (bug #16, learned control): push / merge first")
