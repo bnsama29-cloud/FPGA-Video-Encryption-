@@ -1,0 +1,222 @@
+% References for the conference draft.
+% Each entry says how it was checked (14 Oct 2026). Before submission, open every DOI/URL once more
+% and complete the two fields marked TODO from IEEE Xplore. Do not add an entry you have not read.
+
+% ---- standards and ciphers ------------------------------------------------------------
+@techreport{sp800232,
+  author      = {Meltem S{\"o}nmez Turan and Kerry A. McKay and Donghoon Chang and Jinkeon Kang and John Kelsey},
+  title       = {Ascon-Based Lightweight Cryptography Standards for Constrained Devices: Authenticated Encryption, Hash, and Extendable Output Functions},
+  institution = {National Institute of Standards and Technology},
+  type        = {NIST Special Publication},
+  number      = {800-232},
+  month       = aug,
+  year        = {2025},
+  doi         = {10.6028/NIST.SP.800-232}
+}
+% checked: csrc.nist.gov news item (title, Aug 2025) + citation record (authors, DOI)
+
+@article{ascon,
+  author  = {Christoph Dobraunig and Maria Eichlseder and Florian Mendel and Martin Schl{\"a}ffer},
+  title   = {Ascon v1.2: Lightweight Authenticated Encryption and Hashing},
+  journal = {Journal of Cryptology},
+  volume  = {34},
+  number  = {3},
+  pages   = {33},
+  year    = {2021},
+  doi     = {10.1007/s00145-021-09398-9}
+}
+% checked: ascon.isec.tugraz.at/publications
+
+@article{gross2017,
+  author  = {Hannes Gro{\ss} and Erich Wenger and Christoph Dobraunig and Christoph Ehrenh{\"o}fer},
+  title   = {Ascon Hardware Implementations and Side-Channel Evaluation},
+  journal = {Microprocessors and Microsystems},
+  volume  = {52},
+  pages   = {470--479},
+  year    = {2017}
+}
+% checked: ascon.isec.tugraz.at/publications
+
+@article{kurian2025,
+  author  = {Meera {Gladis Kurian} and Yuhua Chen},
+  title   = {Ascon on {FPGA}: Post-Quantum Safe Authenticated Encryption with Replay Protection for {IoT}},
+  journal = {Electronics},
+  volume  = {14},
+  number  = {13},
+  pages   = {2668},
+  year    = {2025},
+  doi     = {10.3390/electronics14132668}
+}
+% checked: mdpi.com/2079-9292/14/13/2668
+
+@techreport{t81,
+  author      = {{ITU-T}},
+  title       = {Information Technology -- Digital Compression and Coding of Continuous-Tone Still Images -- Requirements and Guidelines},
+  institution = {International Telecommunication Union},
+  type        = {Recommendation},
+  number      = {T.81},
+  year        = {1992}
+}
+% standard reference (ISO/IEC 10918-1)
+
+@article{wallace1992,
+  author  = {Gregory K. Wallace},
+  title   = {The {JPEG} Still Picture Compression Standard},
+  journal = {IEEE Transactions on Consumer Electronics},
+  volume  = {38},
+  number  = {1},
+  pages   = {xviii--xxxiv},
+  year    = {1992}
+}
+% standard reference
+
+@techreport{rfc3711,
+  author      = {Mark Baugher and David McGrew and Mats Naslund and Elisabetta Carrara and Karl Norrman},
+  title       = {The Secure Real-time Transport Protocol ({SRTP})},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {3711},
+  month       = mar,
+  year        = {2004}
+}
+% standard reference (replay window used by our feedback channel)
+
+% ---- selective encryption of images and video ------------------------------------------
+@inproceedings{vandroogenbroeck2002,
+  author    = {Marc {Van Droogenbroeck} and Rapha{\"e}l Benedetti},
+  title     = {Techniques for a Selective Encryption of Uncompressed and Compressed Images},
+  booktitle = {Proc. Advanced Concepts for Intelligent Vision Systems (ACIVS)},
+  address   = {Ghent, Belgium},
+  pages     = {90--97},
+  month     = sep,
+  year      = {2002}
+}
+% checked: telecom.uliege.be/publi (authors' institution page: "Raphael Benedetti"; some citations
+% write "Benedett" -- use the spelling printed on the PDF)
+
+@inproceedings{puech2005,
+  author    = {William Puech and Jos{\'e} Marconi Rodrigues},
+  title     = {Crypto-Compression of Medical Images by Selective Encryption of {DCT}},
+  booktitle = {Proc. 13th European Signal Processing Conference (EUSIPCO)},
+  address   = {Antalya, Turkey},
+  year      = {2005}
+}
+% checked: HAL lirmm-00106485 + EUSIPCO 2005 programme (pages TODO: from the EURASIP library)
+
+@article{massoudi2008,
+  author  = {Ayoub Massoudi and Fr{\'e}d{\'e}ric Lefebvre and Christophe {De Vleeschouwer} and Beno{\^\i}t Macq and Jean-Jacques Quisquater},
+  title   = {Overview on Selective Encryption of Image and Video: Challenges and Perspectives},
+  journal = {EURASIP Journal on Information Security},
+  volume  = {2008},
+  pages   = {179290},
+  year    = {2008},
+  doi     = {10.1155/2008/179290}
+}
+% checked: jis-eurasipjournals.springeropen.com/articles/10.1155/2008/179290
+
+@article{auer2013,
+  author  = {Stefan Auer and Alexander Bliem and Dominik Engel and Andreas Unterweger},
+  title   = {Bitstream-Based {JPEG} Encryption in Real-time},
+  journal = {International Journal of Digital Crime and Forensics},
+  volume  = {5},
+  number  = {3},
+  pages   = {1--14},
+  year    = {2013},
+  doi     = {10.4018/jdcf.2013070101}
+}
+% checked: pure.fh-ooe.at record (four authors)
+
+@misc{hirose2024,
+  author       = {Mare Hirose and Shoko Imaizumi and Hitoshi Kiya},
+  title        = {On the Security of Bitstream-level {JPEG} Encryption with Restart Markers},
+  howpublished = {arXiv:2410.06522},
+  year         = {2024}
+}
+% checked: arxiv.org/abs/2410.06522 (preprint; an Electronics 2024 journal version is cited in our
+% phase-1 review -- if you cite that one, take volume/article number from the publisher page)
+
+@article{lin2024,
+  author  = {Ruiyuan Lin and Sheng Liu and Jun Jiang and Shujun Li and Chengqing Li and C.-C. Jay Kuo},
+  title   = {Recovering Sign Bits of {DCT} Coefficients in Digital Images as an Optimization Problem},
+  journal = {Journal of Visual Communication and Image Representation},
+  pages   = {104045},
+  year    = {2024},
+  doi     = {10.1016/j.jvcir.2023.104045}
+}
+% checked: arXiv 2211.01096 (DOI) + authors' GitHub (journal, year). Volume TODO from ScienceDirect.
+
+@article{boyadjis2017,
+  author  = {Benoit Boyadjis and Cyril Bergeron and B{\'e}atrice Pesquet-Popescu and Fr{\'e}d{\'e}ric Dufaux},
+  title   = {Extended Selective Encryption of {H.264/AVC} ({CABAC})- and {HEVC}-Encoded Video Streams},
+  journal = {IEEE Transactions on Circuits and Systems for Video Technology},
+  volume  = {27},
+  number  = {4},
+  year    = {2017}
+}
+% checked: title/abstract (infona IEEE record 7370952), volume/issue from our verified phase-1 list.
+% TODO: pages and DOI from IEEE Xplore.
+
+% ---- hardware JPEG encryption ---------------------------------------------------------------
+@article{kishore2015,
+  author  = {B. Kishore and B. K. {Shreyamsha Kumar} and Chidamber R. Patil},
+  title   = {{FPGA} Based Simple and Fast {JPEG} Encryptor},
+  journal = {Journal of Real-Time Image Processing},
+  volume  = {10},
+  number  = {3},
+  pages   = {551--559},
+  year    = {2015},
+  doi     = {10.1007/s11554-012-0282-5}
+}
+% checked: link.springer.com/article/10.1007/s11554-012-0282-5 (online 2012, issue Sept. 2015)
+
+@inproceedings{bagbaba2015,
+  author    = {Ahmet {\c{C}}a{\u{g}}r{\i} Ba{\u{g}}baba and Berna {\"O}rs},
+  title     = {Hardware Implementation of Novel Image Compression-Encryption System on a {FPGA}},
+  booktitle = {Proc. 9th International Conference on Electrical and Electronics Engineering (ELECO)},
+  address   = {Bursa, Turkey},
+  pages     = {1159--1163},
+  year      = {2015}
+}
+% checked: avesis.itu.edu.tr record (first names: check the PDF; the record gives initials A. C.)
+
+% ---- attacks and methods used in the evaluation ------------------------------------------------
+@inproceedings{pomeranz2011,
+  author    = {Dolev Pomeranz and Michal Shemesh and Ohad Ben-Shahar},
+  title     = {A Fully Automated Greedy Square Jigsaw Puzzle Solver},
+  booktitle = {Proc. IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {9--16},
+  year      = {2011},
+  doi       = {10.1109/CVPR.2011.5995331}
+}
+% checked: mlanthology.org/cvpr/2011
+
+@inproceedings{unet,
+  author    = {Olaf Ronneberger and Philipp Fischer and Thomas Brox},
+  title     = {{U-Net}: Convolutional Networks for Biomedical Image Segmentation},
+  booktitle = {Proc. Medical Image Computing and Computer-Assisted Intervention (MICCAI)},
+  series    = {LNCS},
+  volume    = {9351},
+  pages     = {234--241},
+  year      = {2015}
+}
+% standard reference
+
+@article{ssim,
+  author  = {Zhou Wang and Alan C. Bovik and Hamid R. Sheikh and Eero P. Simoncelli},
+  title   = {Image Quality Assessment: From Error Visibility to Structural Similarity},
+  journal = {IEEE Transactions on Image Processing},
+  volume  = {13},
+  number  = {4},
+  pages   = {600--612},
+  year    = {2004}
+}
+% standard reference
+
+@book{sutton2018,
+  author    = {Richard S. Sutton and Andrew G. Barto},
+  title     = {Reinforcement Learning: An Introduction},
+  edition   = {2nd},
+  publisher = {MIT Press},
+  year      = {2018}
+}
+% standard reference (epsilon-greedy, optimistic initial values, sample-average updates)

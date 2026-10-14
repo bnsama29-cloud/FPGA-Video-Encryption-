@@ -1,0 +1,1482 @@
+[
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4304,
+   "tag-mismatch": 270,
+   "malformed": 15,
+   "replay": 287
+  },
+  "latency_ms_median": 78,
+  "latency_ms_p95": 125,
+  "mean_cost": 0.1886,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1898,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.485,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.03462839126587,
+    "end": 18.03498649597168
+   },
+   {
+    "type": "replay",
+    "start": 57.04295992851257,
+    "end": 63.043700218200684
+   },
+   {
+    "type": "bitflip",
+    "start": 102.00111293792725,
+    "end": 108.00228500366211
+   },
+   {
+    "type": "replay",
+    "start": 147.00690126419067,
+    "end": 153.00817441940308
+   },
+   {
+    "type": "bitflip",
+    "start": 192.02198195457458,
+    "end": 198.0240364074707
+   },
+   {
+    "type": "replay",
+    "start": 237.02713179588318,
+    "end": 243.02738881111145
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0331537723541,
+    "end": 288.03436636924744
+   },
+   {
+    "type": "replay",
+    "start": 327.03938913345337,
+    "end": 333.03949332237244
+   },
+   {
+    "type": "bitflip",
+    "start": 372.04721426963806,
+    "end": 378.04748344421387
+   },
+   {
+    "type": "replay",
+    "start": 417.0026345252991,
+    "end": 423.0044946670532
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 1
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4325,
+   "tag-mismatch": 278,
+   "malformed": 12,
+   "replay": 284
+  },
+  "latency_ms_median": 70,
+  "latency_ms_p95": 125,
+  "mean_cost": 0.1617,
+  "mean_cost_calm": 0.1364,
+  "mean_enc_fraction": 0.1619,
+  "mean_leakage_under_attack": 0.0492,
+  "mean_time_to_mitigate_s": 1.316,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.034678220748901,
+    "end": 18.036391496658325
+   },
+   {
+    "type": "replay",
+    "start": 57.04259467124939,
+    "end": 63.044353008270264
+   },
+   {
+    "type": "bitflip",
+    "start": 102.05022287368774,
+    "end": 108.05044794082642
+   },
+   {
+    "type": "replay",
+    "start": 147.00570559501648,
+    "end": 153.0077567100525
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01046800613403,
+    "end": 198.0111105442047
+   },
+   {
+    "type": "replay",
+    "start": 237.01917839050293,
+    "end": 243.02135586738586
+   },
+   {
+    "type": "bitflip",
+    "start": 282.02435421943665,
+    "end": 288.02485704421997
+   },
+   {
+    "type": "replay",
+    "start": 327.03158688545227,
+    "end": 333.03177881240845
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0397777557373,
+    "end": 378.04049468040466
+   },
+   {
+    "type": "replay",
+    "start": 417.04776191711426,
+    "end": 423.0481204986572
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 1
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4291,
+   "tag-mismatch": 269,
+   "malformed": 14,
+   "replay": 282
+  },
+  "latency_ms_median": 79,
+  "latency_ms_p95": 125,
+  "mean_cost": 0.1886,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1898,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.454,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.033363580703735,
+    "end": 18.034157752990723
+   },
+   {
+    "type": "replay",
+    "start": 57.041672229766846,
+    "end": 63.04326891899109
+   },
+   {
+    "type": "bitflip",
+    "start": 102.00050354003906,
+    "end": 108.00124549865723
+   },
+   {
+    "type": "replay",
+    "start": 147.02282643318176,
+    "end": 153.02356696128845
+   },
+   {
+    "type": "bitflip",
+    "start": 192.0231430530548,
+    "end": 198.02359437942505
+   },
+   {
+    "type": "replay",
+    "start": 237.02956318855286,
+    "end": 243.02965331077576
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0376892089844,
+    "end": 288.0381062030792
+   },
+   {
+    "type": "replay",
+    "start": 327.0561547279358,
+    "end": 333.0573465824127
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0038378238678,
+    "end": 378.00589323043823
+   },
+   {
+    "type": "replay",
+    "start": 417.01065135002136,
+    "end": 423.0123941898346
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 2
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4326,
+   "tag-mismatch": 272,
+   "malformed": 15,
+   "replay": 279
+  },
+  "latency_ms_median": 72,
+  "latency_ms_p95": 128,
+  "mean_cost": 0.161,
+  "mean_cost_calm": 0.137,
+  "mean_enc_fraction": 0.1611,
+  "mean_leakage_under_attack": 0.0542,
+  "mean_time_to_mitigate_s": 1.353,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032756090164185,
+    "end": 18.033113718032837
+   },
+   {
+    "type": "replay",
+    "start": 57.04330015182495,
+    "end": 63.04543471336365
+   },
+   {
+    "type": "bitflip",
+    "start": 102.0002281665802,
+    "end": 108.00178265571594
+   },
+   {
+    "type": "replay",
+    "start": 147.00719785690308,
+    "end": 153.0090320110321
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01653218269348,
+    "end": 198.01742148399353
+   },
+   {
+    "type": "replay",
+    "start": 237.0241572856903,
+    "end": 243.0260453224182
+   },
+   {
+    "type": "bitflip",
+    "start": 282.030996799469,
+    "end": 288.03144001960754
+   },
+   {
+    "type": "replay",
+    "start": 327.0382900238037,
+    "end": 333.03967690467834
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0461676120758,
+    "end": 378.047443151474
+   },
+   {
+    "type": "replay",
+    "start": 417.0059678554535,
+    "end": 423.00727581977844
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 2
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4300,
+   "tag-mismatch": 276,
+   "replay": 282,
+   "malformed": 11
+  },
+  "latency_ms_median": 79,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.1871,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1883,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.48,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.035269021987915,
+    "end": 18.036564111709595
+   },
+   {
+    "type": "replay",
+    "start": 57.04228973388672,
+    "end": 63.04265809059143
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04928064346313,
+    "end": 108.05122804641724
+   },
+   {
+    "type": "replay",
+    "start": 147.0064332485199,
+    "end": 153.0075912475586
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01593852043152,
+    "end": 198.01661109924316
+   },
+   {
+    "type": "replay",
+    "start": 237.0243422985077,
+    "end": 243.02500891685486
+   },
+   {
+    "type": "bitflip",
+    "start": 282.03237557411194,
+    "end": 288.03425335884094
+   },
+   {
+    "type": "replay",
+    "start": 327.04199385643005,
+    "end": 333.0436489582062
+   },
+   {
+    "type": "bitflip",
+    "start": 372.00049471855164,
+    "end": 378.0005302429199
+   },
+   {
+    "type": "replay",
+    "start": 417.0086226463318,
+    "end": 423.0096900463104
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 3
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4325,
+   "tag-mismatch": 268,
+   "malformed": 22,
+   "replay": 281
+  },
+  "latency_ms_median": 70,
+  "latency_ms_p95": 128,
+  "mean_cost": 0.1617,
+  "mean_cost_calm": 0.1376,
+  "mean_enc_fraction": 0.1618,
+  "mean_leakage_under_attack": 0.0593,
+  "mean_time_to_mitigate_s": 1.323,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.0361967086792,
+    "end": 18.036673307418823
+   },
+   {
+    "type": "replay",
+    "start": 57.0451922416687,
+    "end": 63.04684567451477
+   },
+   {
+    "type": "bitflip",
+    "start": 102.00124955177307,
+    "end": 108.00327754020691
+   },
+   {
+    "type": "replay",
+    "start": 147.01084423065186,
+    "end": 153.01206755638123
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01819276809692,
+    "end": 198.0182752609253
+   },
+   {
+    "type": "replay",
+    "start": 237.02412295341492,
+    "end": 243.02485752105713
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0318965911865,
+    "end": 288.0327081680298
+   },
+   {
+    "type": "replay",
+    "start": 327.04037380218506,
+    "end": 333.0417821407318
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0453636646271,
+    "end": 378.0458776950836
+   },
+   {
+    "type": "replay",
+    "start": 417.0044574737549,
+    "end": 423.00502705574036
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 3
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4291,
+   "malformed": 18,
+   "tag-mismatch": 266,
+   "replay": 279
+  },
+  "latency_ms_median": 80,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.1882,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1894,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.464,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.033058404922485,
+    "end": 18.033806085586548
+   },
+   {
+    "type": "replay",
+    "start": 57.04008865356445,
+    "end": 63.04067635536194
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04839563369751,
+    "end": 108.05002331733704
+   },
+   {
+    "type": "replay",
+    "start": 147.00462412834167,
+    "end": 153.00538635253906
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01482582092285,
+    "end": 198.01567721366882
+   },
+   {
+    "type": "replay",
+    "start": 237.02141165733337,
+    "end": 243.02151346206665
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0325334072113,
+    "end": 288.03380942344666
+   },
+   {
+    "type": "replay",
+    "start": 327.0426592826843,
+    "end": 333.04467272758484
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0496017932892,
+    "end": 378.0496461391449
+   },
+   {
+    "type": "replay",
+    "start": 417.0048773288727,
+    "end": 423.0065104961395
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 4
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4325,
+   "tag-mismatch": 278,
+   "malformed": 11,
+   "replay": 281
+  },
+  "latency_ms_median": 71,
+  "latency_ms_p95": 127,
+  "mean_cost": 0.1616,
+  "mean_cost_calm": 0.1378,
+  "mean_enc_fraction": 0.1618,
+  "mean_leakage_under_attack": 0.0492,
+  "mean_time_to_mitigate_s": 1.339,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032130479812622,
+    "end": 18.033565044403076
+   },
+   {
+    "type": "replay",
+    "start": 57.03922462463379,
+    "end": 63.03970146179199
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04510974884033,
+    "end": 108.04609441757202
+   },
+   {
+    "type": "replay",
+    "start": 147.0006160736084,
+    "end": 153.0011990070343
+   },
+   {
+    "type": "bitflip",
+    "start": 192.00639176368713,
+    "end": 198.0073344707489
+   },
+   {
+    "type": "replay",
+    "start": 237.0149531364441,
+    "end": 243.01513004302979
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0273549556732,
+    "end": 288.02906823158264
+   },
+   {
+    "type": "replay",
+    "start": 327.02731680870056,
+    "end": 333.0288350582123
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0354516506195,
+    "end": 378.0369920730591
+   },
+   {
+    "type": "replay",
+    "start": 417.04327034950256,
+    "end": 423.04487776756287
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 4
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4295,
+   "tag-mismatch": 277,
+   "malformed": 9,
+   "replay": 281
+  },
+  "latency_ms_median": 80,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.1871,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1882,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.449,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.034745931625366,
+    "end": 18.035813093185425
+   },
+   {
+    "type": "replay",
+    "start": 57.045374155044556,
+    "end": 63.04737329483032
+   },
+   {
+    "type": "bitflip",
+    "start": 102.00319170951843,
+    "end": 108.00455260276794
+   },
+   {
+    "type": "replay",
+    "start": 147.0106599330902,
+    "end": 153.01159143447876
+   },
+   {
+    "type": "bitflip",
+    "start": 192.0206823348999,
+    "end": 198.02104783058167
+   },
+   {
+    "type": "replay",
+    "start": 237.0291428565979,
+    "end": 243.0294976234436
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0342650413513,
+    "end": 288.034898519516
+   },
+   {
+    "type": "replay",
+    "start": 327.04020261764526,
+    "end": 333.04097986221313
+   },
+   {
+    "type": "bitflip",
+    "start": 372.05091547966003,
+    "end": 378.05106472969055
+   },
+   {
+    "type": "replay",
+    "start": 417.01044940948486,
+    "end": 423.01205372810364
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 5
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4326,
+   "tag-mismatch": 266,
+   "malformed": 22,
+   "replay": 284
+  },
+  "latency_ms_median": 71,
+  "latency_ms_p95": 127,
+  "mean_cost": 0.1627,
+  "mean_cost_calm": 0.1385,
+  "mean_enc_fraction": 0.1629,
+  "mean_leakage_under_attack": 0.0492,
+  "mean_time_to_mitigate_s": 1.414,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.031755447387695,
+    "end": 18.033111572265625
+   },
+   {
+    "type": "replay",
+    "start": 57.041616439819336,
+    "end": 63.041791677474976
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04905223846436,
+    "end": 108.05039834976196
+   },
+   {
+    "type": "replay",
+    "start": 147.00696730613708,
+    "end": 153.00735116004944
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01217460632324,
+    "end": 198.01382088661194
+   },
+   {
+    "type": "replay",
+    "start": 237.01959204673767,
+    "end": 243.0200490951538
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0250070095062,
+    "end": 288.0252604484558
+   },
+   {
+    "type": "replay",
+    "start": 327.0321066379547,
+    "end": 333.0337677001953
+   },
+   {
+    "type": "bitflip",
+    "start": 372.04083585739136,
+    "end": 378.04288721084595
+   },
+   {
+    "type": "replay",
+    "start": 417.04755449295044,
+    "end": 423.0492510795593
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 5
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4309,
+   "tag-mismatch": 272,
+   "malformed": 13,
+   "replay": 283
+  },
+  "latency_ms_median": 77,
+  "latency_ms_p95": 124,
+  "mean_cost": 0.1871,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1883,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.434,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.035858631134033,
+    "end": 18.036757230758667
+   },
+   {
+    "type": "replay",
+    "start": 57.04596662521362,
+    "end": 63.046133041381836
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04942584037781,
+    "end": 108.05013155937195
+   },
+   {
+    "type": "replay",
+    "start": 147.00858068466187,
+    "end": 153.00913405418396
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01589131355286,
+    "end": 198.01635265350342
+   },
+   {
+    "type": "replay",
+    "start": 237.02189326286316,
+    "end": 243.02366256713867
+   },
+   {
+    "type": "bitflip",
+    "start": 282.04294061660767,
+    "end": 288.0435667037964
+   },
+   {
+    "type": "replay",
+    "start": 327.0344190597534,
+    "end": 333.03578090667725
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0388021469116,
+    "end": 378.0397856235504
+   },
+   {
+    "type": "replay",
+    "start": 417.0493037700653,
+    "end": 423.0501456260681
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 6
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4328,
+   "tag-mismatch": 275,
+   "malformed": 12,
+   "replay": 283
+  },
+  "latency_ms_median": 72,
+  "latency_ms_p95": 128,
+  "mean_cost": 0.1625,
+  "mean_cost_calm": 0.138,
+  "mean_enc_fraction": 0.1627,
+  "mean_leakage_under_attack": 0.0542,
+  "mean_time_to_mitigate_s": 1.316,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.034168481826782,
+    "end": 18.036173582077026
+   },
+   {
+    "type": "replay",
+    "start": 57.042216777801514,
+    "end": 63.042564868927
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04884433746338,
+    "end": 108.04909801483154
+   },
+   {
+    "type": "replay",
+    "start": 147.00369453430176,
+    "end": 153.00558257102966
+   },
+   {
+    "type": "bitflip",
+    "start": 192.0087695121765,
+    "end": 198.0106828212738
+   },
+   {
+    "type": "replay",
+    "start": 237.01248145103455,
+    "end": 243.01410150527954
+   },
+   {
+    "type": "bitflip",
+    "start": 282.02039217948914,
+    "end": 288.02153873443604
+   },
+   {
+    "type": "replay",
+    "start": 327.02664494514465,
+    "end": 333.02820920944214
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0366311073303,
+    "end": 378.03723311424255
+   },
+   {
+    "type": "replay",
+    "start": 417.0418679714203,
+    "end": 423.04331135749817
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 6
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4316,
+   "tag-mismatch": 266,
+   "malformed": 19,
+   "replay": 286
+  },
+  "latency_ms_median": 77,
+  "latency_ms_p95": 123,
+  "mean_cost": 0.1886,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1898,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.453,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.03512191772461,
+    "end": 18.0356924533844
+   },
+   {
+    "type": "replay",
+    "start": 57.043126583099365,
+    "end": 63.04485845565796
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04759001731873,
+    "end": 108.04954361915588
+   },
+   {
+    "type": "replay",
+    "start": 147.00538325309753,
+    "end": 153.00608253479004
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01314520835876,
+    "end": 198.01505780220032
+   },
+   {
+    "type": "replay",
+    "start": 237.0206413269043,
+    "end": 243.02103471755981
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0269753932953,
+    "end": 288.02700090408325
+   },
+   {
+    "type": "replay",
+    "start": 327.03375792503357,
+    "end": 333.0347354412079
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0400621891022,
+    "end": 378.04125332832336
+   },
+   {
+    "type": "replay",
+    "start": 417.044908285141,
+    "end": 423.0467281341553
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 7
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4323,
+   "tag-mismatch": 276,
+   "malformed": 16,
+   "replay": 286
+  },
+  "latency_ms_median": 70,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.162,
+  "mean_cost_calm": 0.1379,
+  "mean_enc_fraction": 0.1622,
+  "mean_leakage_under_attack": 0.0492,
+  "mean_time_to_mitigate_s": 1.329,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032734870910645,
+    "end": 18.034571170806885
+   },
+   {
+    "type": "replay",
+    "start": 57.0394766330719,
+    "end": 63.040690898895264
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04496645927429,
+    "end": 108.04648470878601
+   },
+   {
+    "type": "replay",
+    "start": 147.00392889976501,
+    "end": 153.00578832626343
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01102352142334,
+    "end": 198.01206469535828
+   },
+   {
+    "type": "replay",
+    "start": 237.01751017570496,
+    "end": 243.01896595954895
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0242738723755,
+    "end": 288.02619457244873
+   },
+   {
+    "type": "replay",
+    "start": 327.0312192440033,
+    "end": 333.03246235847473
+   },
+   {
+    "type": "bitflip",
+    "start": 372.03876519203186,
+    "end": 378.0405547618866
+   },
+   {
+    "type": "replay",
+    "start": 417.0493824481964,
+    "end": 423.0499792098999
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 7
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4304,
+   "tag-mismatch": 273,
+   "malformed": 10,
+   "replay": 284
+  },
+  "latency_ms_median": 79,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.1889,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1902,
+  "mean_leakage_under_attack": 0.0047,
+  "mean_time_to_mitigate_s": 0.451,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.036762952804565,
+    "end": 18.0376455783844
+   },
+   {
+    "type": "replay",
+    "start": 57.042221546173096,
+    "end": 63.044058084487915
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04879522323608,
+    "end": 108.04957103729248
+   },
+   {
+    "type": "replay",
+    "start": 147.00763058662415,
+    "end": 153.00822043418884
+   },
+   {
+    "type": "bitflip",
+    "start": 192.0119743347168,
+    "end": 198.01342797279358
+   },
+   {
+    "type": "replay",
+    "start": 237.02257800102234,
+    "end": 243.0241665840149
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0310320854187,
+    "end": 288.0315954685211
+   },
+   {
+    "type": "replay",
+    "start": 327.05372166633606,
+    "end": 333.0541887283325
+   },
+   {
+    "type": "bitflip",
+    "start": 372.04285049438477,
+    "end": 378.0438184738159
+   },
+   {
+    "type": "replay",
+    "start": 417.04804039001465,
+    "end": 423.04849433898926
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 8
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4331,
+   "tag-mismatch": 269,
+   "malformed": 15,
+   "replay": 285
+  },
+  "latency_ms_median": 71,
+  "latency_ms_p95": 129,
+  "mean_cost": 0.1608,
+  "mean_cost_calm": 0.137,
+  "mean_enc_fraction": 0.161,
+  "mean_leakage_under_attack": 0.0593,
+  "mean_time_to_mitigate_s": 1.311,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.035132884979248,
+    "end": 18.03540539741516
+   },
+   {
+    "type": "replay",
+    "start": 57.00058674812317,
+    "end": 63.00195503234863
+   },
+   {
+    "type": "bitflip",
+    "start": 102.00666689872742,
+    "end": 108.00797581672668
+   },
+   {
+    "type": "replay",
+    "start": 147.01445412635803,
+    "end": 153.01629281044006
+   },
+   {
+    "type": "bitflip",
+    "start": 192.02078890800476,
+    "end": 198.02230525016785
+   },
+   {
+    "type": "replay",
+    "start": 237.0273826122284,
+    "end": 243.0276072025299
+   },
+   {
+    "type": "bitflip",
+    "start": 282.033145904541,
+    "end": 288.03522086143494
+   },
+   {
+    "type": "replay",
+    "start": 327.04033613204956,
+    "end": 333.0423312187195
+   },
+   {
+    "type": "bitflip",
+    "start": 372.00029468536377,
+    "end": 378.0020775794983
+   },
+   {
+    "type": "replay",
+    "start": 417.0115945339203,
+    "end": 423.01324582099915
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 8
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4303,
+   "tag-mismatch": 275,
+   "malformed": 11,
+   "replay": 282
+  },
+  "latency_ms_median": 78,
+  "latency_ms_p95": 124,
+  "mean_cost": 0.1878,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1891,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.461,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032337427139282,
+    "end": 18.032767295837402
+   },
+   {
+    "type": "replay",
+    "start": 57.039135694503784,
+    "end": 63.03937268257141
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04773044586182,
+    "end": 108.0497624874115
+   },
+   {
+    "type": "replay",
+    "start": 147.0083065032959,
+    "end": 153.00952219963074
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01911616325378,
+    "end": 198.02034997940063
+   },
+   {
+    "type": "replay",
+    "start": 237.02637004852295,
+    "end": 243.0272114276886
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0424864292145,
+    "end": 288.0440950393677
+   },
+   {
+    "type": "replay",
+    "start": 327.039922952652,
+    "end": 333.0402331352234
+   },
+   {
+    "type": "bitflip",
+    "start": 372.04731607437134,
+    "end": 378.04741764068604
+   },
+   {
+    "type": "replay",
+    "start": 417.00451159477234,
+    "end": 423.00507402420044
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 9
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4327,
+   "tag-mismatch": 279,
+   "malformed": 9,
+   "replay": 282
+  },
+  "latency_ms_median": 70,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.1623,
+  "mean_cost_calm": 0.1386,
+  "mean_enc_fraction": 0.1626,
+  "mean_leakage_under_attack": 0.0542,
+  "mean_time_to_mitigate_s": 1.312,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032946586608887,
+    "end": 18.03358745574951
+   },
+   {
+    "type": "replay",
+    "start": 57.039183139801025,
+    "end": 63.040318727493286
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04824876785278,
+    "end": 108.04830479621887
+   },
+   {
+    "type": "replay",
+    "start": 147.0080463886261,
+    "end": 153.00820803642273
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01528239250183,
+    "end": 198.0165078639984
+   },
+   {
+    "type": "replay",
+    "start": 237.02409505844116,
+    "end": 243.02481698989868
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0301864147186,
+    "end": 288.0310571193695
+   },
+   {
+    "type": "replay",
+    "start": 327.03591084480286,
+    "end": 333.0359420776367
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0439507961273,
+    "end": 378.04436588287354
+   },
+   {
+    "type": "replay",
+    "start": 417.0021734237671,
+    "end": 423.0036406517029
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 9
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4293,
+   "tag-mismatch": 272,
+   "malformed": 16,
+   "replay": 279
+  },
+  "latency_ms_median": 83,
+  "latency_ms_p95": 128,
+  "mean_cost": 0.1882,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1895,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.466,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032137155532837,
+    "end": 18.03288745880127
+   },
+   {
+    "type": "replay",
+    "start": 57.038318395614624,
+    "end": 63.03998398780823
+   },
+   {
+    "type": "bitflip",
+    "start": 102.04751443862915,
+    "end": 108.04906630516052
+   },
+   {
+    "type": "replay",
+    "start": 147.0019555091858,
+    "end": 153.00337672233582
+   },
+   {
+    "type": "bitflip",
+    "start": 192.00756430625916,
+    "end": 198.00926637649536
+   },
+   {
+    "type": "replay",
+    "start": 237.0187132358551,
+    "end": 243.02044320106506
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0246732234955,
+    "end": 288.0254991054535
+   },
+   {
+    "type": "replay",
+    "start": 327.03308057785034,
+    "end": 333.03385615348816
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0412404537201,
+    "end": 378.04211163520813
+   },
+   {
+    "type": "replay",
+    "start": 417.04735374450684,
+    "end": 423.0483787059784
+   }
+  ],
+  "scenario": "learning",
+  "policy": "threshold",
+  "seed": 10
+ },
+ {
+  "windows": 461,
+  "frames": {
+   "ok": 4332,
+   "tag-mismatch": 267,
+   "malformed": 15,
+   "replay": 285
+  },
+  "latency_ms_median": 71,
+  "latency_ms_p95": 126,
+  "mean_cost": 0.1612,
+  "mean_cost_calm": 0.1373,
+  "mean_enc_fraction": 0.1614,
+  "mean_leakage_under_attack": 0.0593,
+  "mean_time_to_mitigate_s": 1.347,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "attacks": [
+   {
+    "type": "bitflip",
+    "start": 12.032279253005981,
+    "end": 18.032307624816895
+   },
+   {
+    "type": "replay",
+    "start": 57.038658618927,
+    "end": 63.03994822502136
+   },
+   {
+    "type": "bitflip",
+    "start": 102.0485451221466,
+    "end": 108.04901003837585
+   },
+   {
+    "type": "replay",
+    "start": 147.00457668304443,
+    "end": 153.00591015815735
+   },
+   {
+    "type": "bitflip",
+    "start": 192.01233434677124,
+    "end": 198.0143871307373
+   },
+   {
+    "type": "replay",
+    "start": 237.01915884017944,
+    "end": 243.02066159248352
+   },
+   {
+    "type": "bitflip",
+    "start": 282.0300874710083,
+    "end": 288.0312969684601
+   },
+   {
+    "type": "replay",
+    "start": 327.0384211540222,
+    "end": 333.0391266345978
+   },
+   {
+    "type": "bitflip",
+    "start": 372.0441417694092,
+    "end": 378.0446808338165
+   },
+   {
+    "type": "replay",
+    "start": 417.0548143386841,
+    "end": 423.05586314201355
+   }
+  ],
+  "scenario": "learning",
+  "policy": "bandit",
+  "seed": 10
+ }
+]

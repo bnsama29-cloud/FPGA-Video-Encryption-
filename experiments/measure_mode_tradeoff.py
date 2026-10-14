@@ -7,7 +7,7 @@ For each mode E0..E4 and each frame it computes what an eavesdropper WITHOUT the
 key gets, two ways: (a) decoding the scrambled stream as a normal viewer would,
 (b) the replacement attack (model/jpeg.py :: replacement_attack_jpeg) -- and keeps
 the better of the two. (E5 also shuffles the MCUs; an attacker who solves the
-jigsaw would do better than this -- see HELP_GUIDE.md.)
+jigsaw would do better than this -- future_work/attacks/jigsaw_attack.py measures that.)
   leakage   = SSIM(original, best attacker image) on luma, clipped to 0..1
   edge_leak = correlation of Sobel edge maps (sign/DC encryption leaks outlines)
   cost      = encrypted bits / payload bits (keystream needed per frame)

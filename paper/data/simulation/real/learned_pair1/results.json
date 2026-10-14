@@ -1,0 +1,66 @@
+{
+  "E1": {
+    "replacement_attack": {
+      "psnr": 20.76996114561699,
+      "ssim": 0.5339986255876551,
+      "edge_corr": 0.38636179139053867
+    },
+    "learned_attack": {
+      "psnr": 24.91172205504209,
+      "ssim": 0.7173127085785551,
+      "edge_corr": 0.533733608813591
+    },
+    "train_frames": 1000,
+    "test_frames": 400,
+    "epochs": 25,
+    "device": "cuda"
+  },
+  "E2": {
+    "replacement_attack": {
+      "psnr": 7.957984939921468,
+      "ssim": 0.09018191833332535,
+      "edge_corr": 0.4065071680357019
+    },
+    "learned_attack": {
+      "psnr": 19.056904905848345,
+      "ssim": 0.42434937059286865,
+      "edge_corr": 0.32764501071201274
+    },
+    "train_frames": 1000,
+    "test_frames": 400,
+    "epochs": 25,
+    "device": "cuda"
+  },
+  "E4": {
+    "replacement_attack": {
+      "psnr": 8.045927450466408,
+      "ssim": 0.09963546265362759,
+      "edge_corr": 0.3786750025572295
+    },
+    "learned_attack": {
+      "psnr": 19.101831960234453,
+      "ssim": 0.43421367435226715,
+      "edge_corr": 0.33991664116051906
+    },
+    "train_frames": 1000,
+    "test_frames": 400,
+    "epochs": 25,
+    "device": "cuda"
+  },
+  "E5": {
+    "replacement_attack": {
+      "psnr": 8.073709971208917,
+      "ssim": 0.0790623652011884,
+      "edge_corr": -0.007556837548586033
+    },
+    "learned_attack": {
+      "psnr": 17.347442459236216,
+      "ssim": 0.33557407839570863,
+      "edge_corr": -0.020779385458137047
+    },
+    "train_frames": 1000,
+    "test_frames": 400,
+    "epochs": 25,
+    "device": "cuda"
+  }
+}

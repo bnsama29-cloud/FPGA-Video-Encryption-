@@ -1,0 +1,8044 @@
+{
+  "windows": 461,
+  "episodes": [
+    {
+      "type": "bitflip",
+      "start": 12.035858631134033,
+      "end": 18.036757230758667,
+      "duration": 6.000898599624634,
+      "rx_rejected": 58,
+      "rx_first_rejection_s": 0.114,
+      "sender_aware_s": 0.4,
+      "time_to_mitigate_s": 0.4,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 1
+    },
+    {
+      "type": "replay",
+      "start": 57.04596662521362,
+      "end": 63.046133041381836,
+      "duration": 6.000166416168213,
+      "rx_rejected": 57,
+      "rx_first_rejection_s": 0.093,
+      "sender_aware_s": 0.399,
+      "time_to_mitigate_s": 0.399,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 0
+    },
+    {
+      "type": "bitflip",
+      "start": 102.04942584037781,
+      "end": 108.05013155937195,
+      "duration": 6.000705718994141,
+      "rx_rejected": 57,
+      "rx_first_rejection_s": 0.083,
+      "sender_aware_s": 0.454,
+      "time_to_mitigate_s": 0.454,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 1
+    },
+    {
+      "type": "replay",
+      "start": 147.00858068466187,
+      "end": 153.00913405418396,
+      "duration": 6.000553369522095,
+      "rx_rejected": 55,
+      "rx_first_rejection_s": 0.08,
+      "sender_aware_s": 0.475,
+      "time_to_mitigate_s": 0.475,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 0
+    },
+    {
+      "type": "bitflip",
+      "start": 192.01589131355286,
+      "end": 198.01635265350342,
+      "duration": 6.0004613399505615,
+      "rx_rejected": 55,
+      "rx_first_rejection_s": 0.182,
+      "sender_aware_s": 0.487,
+      "time_to_mitigate_s": 0.487,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 1
+    },
+    {
+      "type": "replay",
+      "start": 237.02189326286316,
+      "end": 243.02366256713867,
+      "duration": 6.001769304275513,
+      "rx_rejected": 56,
+      "rx_first_rejection_s": 0.05,
+      "sender_aware_s": 0.448,
+      "time_to_mitigate_s": 0.448,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 0
+    },
+    {
+      "type": "bitflip",
+      "start": 282.04294061660767,
+      "end": 288.0435667037964,
+      "duration": 6.000626087188721,
+      "rx_rejected": 57,
+      "rx_first_rejection_s": 0.07,
+      "sender_aware_s": 0.393,
+      "time_to_mitigate_s": 0.393,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 1
+    },
+    {
+      "type": "replay",
+      "start": 327.0344190597534,
+      "end": 333.03578090667725,
+      "duration": 6.001361846923828,
+      "rx_rejected": 57,
+      "rx_first_rejection_s": 0.16,
+      "sender_aware_s": 0.444,
+      "time_to_mitigate_s": 0.444,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 0
+    },
+    {
+      "type": "bitflip",
+      "start": 372.0388021469116,
+      "end": 378.0397856235504,
+      "duration": 6.000983476638794,
+      "rx_rejected": 58,
+      "rx_first_rejection_s": 0.069,
+      "sender_aware_s": 0.432,
+      "time_to_mitigate_s": 0.432,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 1
+    },
+    {
+      "type": "replay",
+      "start": 417.0493037700653,
+      "end": 423.0501456260681,
+      "duration": 6.000841856002808,
+      "rx_rejected": 58,
+      "rx_first_rejection_s": 0.068,
+      "sender_aware_s": 0.406,
+      "time_to_mitigate_s": 0.406,
+      "mean_leakage_during": 0.0,
+      "modes_during": "5555555",
+      "rekeys": 0
+    }
+  ],
+  "frames": {
+    "ok": 4309,
+    "tag-mismatch": 272,
+    "malformed": 13,
+    "replay": 283
+  },
+  "latency_ms_median": 77,
+  "latency_ms_p95": 124,
+  "mean_cost": 0.1871,
+  "mean_cost_calm": 0.135,
+  "mean_enc_fraction": 0.1883,
+  "mean_leakage_under_attack": 0.0,
+  "mean_time_to_mitigate_s": 0.434,
+  "mitigated_episodes": "10/10",
+  "false_alarm_windows": 0,
+  "calm_windows": 301,
+  "timeline": [
+    {
+      "t": 1.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 8,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 2.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 3.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 4.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 5.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 6.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 7.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 8.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 9.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 10.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 11.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 12.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 8,
+        "lost": 0,
+        "tag_fail": 2,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 3,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 13.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 10,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 14.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 15.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 16.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 17.52,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 10,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 18.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 2,
+        "lost": 0,
+        "tag_fail": 7,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 19.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 20.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 21.47,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 22.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 23.47,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 24.49,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 25.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 26.55,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 27.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 28.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 29.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 30.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 31.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 32.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 33.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 34.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 35.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 36.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 37.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 38.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 39.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 40.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 41.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 42.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 43.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 44.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 45.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 46.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 47.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 48.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 49.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 50.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 51.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 52.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 53.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 54.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 55.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 56.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 57.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 3,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 58.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 59.49,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 60.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 61.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 62.52,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 63.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 7,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 64.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 65.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 66.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 67.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 68.51,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 69.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 70.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 71.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 72.53,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 73.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 74.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 75.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 76.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 77.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 78.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 79.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 80.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 81.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 82.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 83.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 84.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 85.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 86.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 87.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 88.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 89.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 90.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 91.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 92.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 93.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 94.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 95.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 96.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 97.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 98.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 99.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 100.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 101.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 102.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 7,
+        "lost": 0,
+        "tag_fail": 3,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 103.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 104.52,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 8,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 8,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 105.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 10,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 106.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 107.49,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 10,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 108.53,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 2,
+        "lost": 0,
+        "tag_fail": 7,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 109.47,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 110.57,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 111.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 112.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 113.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 114.53,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 115.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 116.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 117.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 118.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 119.52,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 120.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 121.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 122.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 123.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 124.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 125.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 126.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 127.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 128.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 129.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 130.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 131.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 132.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 133.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 134.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 135.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 136.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 137.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 138.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 139.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 140.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 141.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 142.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 143.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 144.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 145.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 146.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 147.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 3,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 148.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 149.53,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 150.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 151.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 152.54,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 8,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 8,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 153.49,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 7,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 3,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 154.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 155.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 156.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 157.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 158.53,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 159.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 160.53,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 161.47,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 162.52,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 163.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 164.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 165.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 166.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 167.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 168.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 169.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 170.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 171.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 172.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 173.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 174.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 175.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 176.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 177.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 178.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 179.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 180.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 181.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 182.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 183.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 184.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 185.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 186.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 187.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 188.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 189.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 190.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 191.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 192.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 7,
+        "lost": 0,
+        "tag_fail": 3,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 193.52,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 194.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 8,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 8,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 195.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 196.53,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 8,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 197.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 198.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 3,
+        "lost": 0,
+        "tag_fail": 6,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 199.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 200.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 201.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 202.49,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 203.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 204.53,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 205.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 206.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 207.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 208.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 14,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 209.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 210.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 211.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 212.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 213.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 214.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 215.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 216.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 217.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 218.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 219.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 220.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 221.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 222.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 223.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 224.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 225.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 226.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 227.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 228.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 229.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 230.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 231.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 232.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 233.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 234.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 235.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 236.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 237.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 2,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 238.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 239.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 240.55,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 241.51,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 242.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 243.54,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 8,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 244.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 245.51,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 246.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 247.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 248.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 249.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 250.51,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 251.54,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 8,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 252.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 253.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 254.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 255.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 256.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 257.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 258.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 259.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 260.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 261.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 262.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 263.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 264.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 265.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 266.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 267.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 268.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 269.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 270.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 271.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 272.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 273.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 274.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 275.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 276.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 277.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 278.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 279.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 280.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 281.44,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 282.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 7,
+        "lost": 0,
+        "tag_fail": 2,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 283.52,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 8,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 284.51,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 285.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 286.49,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 287.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 288.5,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 3,
+        "lost": 0,
+        "tag_fail": 6,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 289.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 290.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 291.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 292.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 293.47,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 294.51,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 295.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 296.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 297.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 298.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 299.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 300.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 301.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 302.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 303.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 304.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 305.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 306.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 307.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 308.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 309.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 310.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 311.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 312.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 313.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 314.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 315.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 316.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 317.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 318.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 319.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 320.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 321.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 322.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 323.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 324.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 325.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 326.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 327.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 3,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 328.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 329.51,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 330.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 331.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 8,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 332.53,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 333.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 334.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 335.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 336.53,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 337.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 338.54,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 339.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 340.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 341.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 342.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 343.49,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 344.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 345.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 346.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 347.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 348.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 349.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 350.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 351.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 352.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 353.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 354.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 355.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 356.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 357.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 358.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 359.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 360.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 361.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 362.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 363.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 364.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 365.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 366.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 367.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 368.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 369.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 370.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 371.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 372.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 7,
+        "lost": 0,
+        "tag_fail": 3,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 373.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 374.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 375.44,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 8,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 7,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 376.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 10,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 377.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 0,
+        "lost": 0,
+        "tag_fail": 9,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 8,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 378.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 3,
+        "lost": 0,
+        "tag_fail": 6,
+        "replay": 0,
+        "malformed": 1,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 379.51,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 380.48,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 381.49,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 382.46,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 383.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 384.49,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 385.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 386.48,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 387.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 388.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 13,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 389.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 390.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 391.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 392.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 393.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 394.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 395.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 396.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 397.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 398.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 399.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 400.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 401.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 402.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 403.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 404.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 405.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 406.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 407.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 408.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 409.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 410.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 411.47,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 412.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 413.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 414.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 415.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 416.45,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 417.46,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 2,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 4,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 418.53,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 419.45,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 420.48,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 10,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 421.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 422.53,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 9,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 6,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 423.47,
+      "mode": "E5",
+      "threat": 1.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 8,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 5,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 424.5,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 425.44,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 426.52,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 427.49,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 428.45,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 429.53,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 430.49,
+      "mode": "E5",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 431.53,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 8,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 432.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 12,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 433.46,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 14,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 434.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 435.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 436.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 437.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 438.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 439.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 440.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 441.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 442.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 443.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 444.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 445.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 446.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 447.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 448.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 449.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 11,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 450.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 9,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 451.5,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 452.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 453.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 454.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 455.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 456.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 457.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 458.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 459.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 460.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    },
+    {
+      "t": 461.51,
+      "mode": "E2",
+      "threat": 0.0,
+      "counts": {
+        "ok": 10,
+        "lost": 0,
+        "tag_fail": 0,
+        "replay": 0,
+        "malformed": 0,
+        "stale_epoch": 0,
+        "junk": 0,
+        "fb_ok": 2,
+        "fb_forged": 0,
+        "fb_replay": 0
+      }
+    }
+  ],
+  "attacks": [
+    {
+      "type": "bitflip",
+      "start": 12.035858631134033,
+      "end": 18.036757230758667
+    },
+    {
+      "type": "replay",
+      "start": 57.04596662521362,
+      "end": 63.046133041381836
+    },
+    {
+      "type": "bitflip",
+      "start": 102.04942584037781,
+      "end": 108.05013155937195
+    },
+    {
+      "type": "replay",
+      "start": 147.00858068466187,
+      "end": 153.00913405418396
+    },
+    {
+      "type": "bitflip",
+      "start": 192.01589131355286,
+      "end": 198.01635265350342
+    },
+    {
+      "type": "replay",
+      "start": 237.02189326286316,
+      "end": 243.02366256713867
+    },
+    {
+      "type": "bitflip",
+      "start": 282.04294061660767,
+      "end": 288.0435667037964
+    },
+    {
+      "type": "replay",
+      "start": 327.0344190597534,
+      "end": 333.03578090667725
+    },
+    {
+      "type": "bitflip",
+      "start": 372.0388021469116,
+      "end": 378.0397856235504
+    },
+    {
+      "type": "replay",
+      "start": 417.0493037700653,
+      "end": 423.0501456260681
+    }
+  ],
+  "scenario": "learning",
+  "policy": "threshold"
+}
