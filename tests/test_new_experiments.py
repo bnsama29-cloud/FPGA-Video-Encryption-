@@ -88,3 +88,30 @@ def test_image_folder_source(tmp_path):
     first, second = src.read(), src.read()
     assert first.shape == (240, 320, 3) and first.max() == 0 and second.min() == 255
     assert src.read() is None
+
+
+def test_restart_overhead_reference_has_no_markers_and_no_secure_segment():
+    """Bug log #16: the overhead was measured against the deployed E4 file, which carries the APP11
+    segment that the restart-interval variants lack, so large N showed a negative overhead."""
+    an = analyse_frame(make_image(160, 112, "scene"))
+    ref = ri.encode_ri(an, len(an.quant), ctr=2, shuffle=False)[0]
+    assert b"\xff\xdd" not in ref.split(b"\xff\xda")[0], "reference must not declare a restart interval"
+    assert b"\xff\xeb" not in ref, "reference must not carry the APP11 secure segment"
+    for n in (1, 4, 32):
+        assert len(ri.encode_ri(an, n, ctr=2)[0]) > len(ref), f"N={n}: restart markers must cost bytes"
+
+
+def test_raster_solver_reassembles_large_plain_segments():
+    """Sanity check of the any-N solver: on UNENCRYPTED segments of a textured frame it must chain
+    clearly more true successors than chance, or its E5 numbers would say nothing."""
+    img = make_image(320, 240, "scene")
+    plain = dec(package_frame(analyse_frame(img)).jpeg)
+    tiles, rows, cols = ri.tiles_of(plain)
+    n = 32
+    groups = ri.groups_of(rows * cols, n)
+    order = ri._shuffle_order(KEY, 7, 3, len(groups))
+    shown = np.concatenate([np.arange(groups[g].start, groups[g].stop) for g in order])
+    seq = ri.raster_solve(tiles[shown], ri.segments_of(order, n, rows * cols), cols)
+    succ = sum(order[b] == order[a] + 1 for a, b in zip(seq, seq[1:])) / (len(seq) - 1)
+    assert sorted(seq) == list(range(len(groups)))
+    assert succ > 2 / (len(groups) - 1), f"successors {succ:.2f}, chance {1 / (len(groups) - 1):.2f}"
