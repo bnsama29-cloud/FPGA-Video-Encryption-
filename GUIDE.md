@@ -29,12 +29,12 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 | Post-route resources / timing / power | ⏳ **next** | `python vivado/run_vivado_day.py` |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
 | Simulation results, private clips | ✅ (Kaggle, 47/47 steps) | `paper/data/simulation/` |
-| Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps, 74.5 min) · ⏳ one short rerun (B20, B21) | `paper/data/extra/` (README there says where each file came from) |
+| Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps + rerun 9/9 steps) | `paper/data/extra/` (README there says where each file came from) |
 | PYNQ-Z2 overlay + board tests | ⏳ scripts ready, not yet run | `future_work/board/` |
 | Paper | 📝 full 6-page draft with a real (open-licence) frame in Fig. 2; 8 red TODOs | `paper/main.tex` → `paper/main.pdf` |
 
-**Rough position: ~60 % of the project.** Simulation is done except one ~1 h Kaggle rerun; the Vivado
-day, the board and the paper are left, in that order.
+**Rough position: ~60 % of the project.** The simulation side is finished. The Vivado day, the board
+and the paper are left, in that order.
 
 The headline results (generated tables in `paper/tables/`, inputs in `paper/data/`):
 
@@ -49,10 +49,12 @@ The headline results (generated tables in `paper/tables/`, inputs in `paper/data
 * **Learned attacker (U-Net).** Four train/test setups, the largest with 2,609 frames from 3 clips,
   tested on 800 frames of 3 unseen clips. It **breaks E1** (edge correlation 0.69, SSIM 0.79). Under E2/E4
   it gets no more outline than the plain replacement attack (0.40). Under E5 the edge correlation stays
-  ≤ 0.044 but SSIM rises 0.14 → 0.36 (brightness/colour prior; the control that separates the two is B21).
-* **Restart interval (E5 with N MCUs per segment).** Overhead 10–23 % at N = 1, 0.5 % at N = 32; the
-  non-zero counting attack is defeated for every N (≤ 0.08), but a beam-search solver chains 15–41 % of the
-  10 segments at N = 32 (chance 11 %). So we keep N = 1 and do not claim larger N is safe.
+  at the level of a no-ciphertext control (0.037 vs 0.036: no outline from the stream), but SSIM beats
+  that control by 0.11 in the 3 → 3 setup (0.34 vs 0.23) and not at all in the open-clip setup (0.21 vs 0.21) —
+  most likely frame-level brightness/colour statistics, which a block permutation does not hide (B25).
+* **Restart interval (E5 with N MCUs per segment), 8 sources.** Overhead 8–23 % at N = 1, 0.5 % at N = 32;
+  the non-zero counting attack is defeated for every N (≤ 0.08), but a beam-search solver chains 15–41 % of
+  the 10 segments at N = 32 (chance 11 %). So we keep N = 1 and do not claim larger N is safe.
 * **Standard metrics.** Key sensitivity is good (E5: 77.5–99.5 % pixels change with a 1-bit key change);
   adjacent-pixel correlation stays 0.88–0.92 and entropy rises only under E5 — expected for a
   format-compliant scheme, and written as such in the paper.
@@ -206,8 +208,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 
 | # | Item | P | Owner | Time | Spec |
 |---|---|---|---|---|---|
-| B20 | **Rerun the restart interval on Sintel / Tears of Steel / Kodak** with the fixed script (bug #16) | P1 | 5 | 10 min Kaggle | below |
-| B21 | **No-ciphertext control + CI for the learned attack** | P1 | 5 | 1 h Kaggle | below |
+| B25 | **Global-statistics control for E5** (does frame brightness/colour explain the U-Net's SSIM gain?) | P2 | 5 | ½ d | below |
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
@@ -225,7 +226,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B18 | Throughput toward 1 pixel/clock and a higher clock | P3 | 1 | 1 week | below |
 | B19 | Area: fewer BRAM/DSP, shared Ascon core (B7) | P3 | 1 | 2–4 d | below |
 
-**B20 – Restart interval on the open sources.** The Kaggle numbers for Sintel, Tears of Steel and Kodak
+**B20 – Restart interval on the open sources. ✅ done 14 Oct (rerun; Table VI now over 8 sources).** The Kaggle numbers for Sintel, Tears of Steel and Kodak
 were made before bug #16 was fixed (overhead measured against a file with the APP11 segment; no
 any-N solver). They are kept as `*.prefix16.*.txt` and read by nothing.
 
@@ -235,7 +236,9 @@ any-N solver). They are kept as `*.prefix16.*.txt` and read by nothing.
 
 **Done when** Table VI is built from 8 sources and `make test` passes.
 
-**B21 – What does the network get without the ciphertext?** Under E5 the U-Net raises SSIM from 0.14 to
+**B21 – What does the network get without the ciphertext? ✅ done 14 Oct.** Result: E5 edge correlation
+0.037 [0.028, 0.046] = control 0.036, so no outline comes from the stream; SSIM beats the control by 0.11 in
+P4 (0.34 vs 0.23) and by 0.00 in P3. The paper states both. Original spec, for the record: Under E5 the U-Net raises SSIM from 0.14 to
 0.36 without any outline (edge ≤ 0.044). Part of that is just "typical video" (black letterbox bars,
 average brightness), which no encryption can hide. `learned_attack.py` now also scores the per-pixel
 median of the training frames (the best constant picture under its L1 loss) and gives a 95 %
@@ -248,6 +251,18 @@ bootstrap interval for the learned edge correlation.
    look at `examples_E5.png` (open clips only) and describe what it recovers; do not hide it.
 
 **Done when** Table V or the text carries the control, and the TODO is gone.
+
+**B25 – Global-statistics control.** The U-Net beats the no-ciphertext prior under E5 by 0.11 SSIM in P4.
+The likely reason: shuffled blocks still carry the frame's brightness and colour histogram (and DC size
+categories), just not their positions. Test it instead of assuming it:
+
+1. In `learned_attack.py`, add a second control: a picture filled with the *true* per-frame mean colour
+   of the original (an oracle of frame-level statistics), and a third: the mean colour of the attacker's
+   E5 replacement picture (what the stream really reveals at frame level).
+2. If the U-Net's E5 SSIM is close to the oracle's, the paper can say "frame-level statistics only".
+   If it is clearly above, look at `examples_E5.png` (open clips) for what else it recovers.
+
+**Done when** the two extra rows are in Table V (or the text) and "we attribute" becomes "we measured".
 
 **B22 – E1 after the U-Net result.** The U-Net undoes sign-only encryption (edge 0.69, SSIM 0.79 on
 unseen clips). E2 is already the default minimum level, so nothing is insecure by default, but:
@@ -369,15 +384,17 @@ us near the commercial cores plus one ~1 K-LUT Ascon.
 * the rules on originality, citations and disclosure of AI assistance.
 
 Placeholders that wait for results are marked `\TODO{...}` in red. The PDF lists them, so nothing
-unfinished slips through. **The draft is exactly 6 pages**: anything added must be paid for with text
-cut elsewhere (the standard-metrics table and the two plots already moved to the repository).
+unfinished slips through. **The draft is exactly 6 pages with no slack** (the last reference ends at the bottom of page 6):
+anything added must be paid for with text cut elsewhere (the standard-metrics table, the two plots and
+two restart-interval rows already moved to the repository).
 
 | Paper part | Waits for | Owner |
 |---|---|---|
 | Table III hardware (now a Yosys estimate) | 4.1 Vivado | 1 |
 | §VI board results (now a placeholder) | 4.2 A1–A6 | 1 + 4 |
 | Fig. 2 with a real frame | ✅ Sintel (B2); redraw at paper size in the B20 run | 4 |
-| No-ciphertext control in "Learned attacker" | B21 | 5 |
+| No-ciphertext control in "Learned attacker" | ✅ B21 | 5 |
+| "we attribute the gain to frame statistics" → measured | B25 | 5 |
 | Software baseline row on the ARM | A3 + B1 | 2 |
 | Threat model paragraph | B3 | 2 |
 | Proof-reading, own wording, plagiarism check | everything | all |
@@ -415,7 +432,8 @@ cut elsewhere (the standard-metrics table and the two plots already moved to the
 | Resources / timing / power on the Zynq-7020 | Vivado | ⏳ (Yosys estimate only, labelled as such) |
 | E1–E4 leak an outline sketch, E5 does not (8 sources incl. open films + Kodak) | mode trade-off + jigsaw | ✅ |
 | A trained network does not recover E5 outlines | learned attack, 4 setups, up to 2,609 training frames | ✅ |
-| E5 gives an attacker nothing beyond the video prior | needs the no-ciphertext control | ⏳ B21 — do not claim yet |
+| No outline comes from the E5 stream (U-Net edge = no-ciphertext control) | learned attack + control, P3/P4 | ✅ |
+| E5 hides everything beyond the video prior | U-Net SSIM 0.11 above the control in P4 | ❌ **do not claim**; frame-level statistics leak (B25) |
 | A trained network breaks E1 | learned attack P1–P4 | ✅ (a result to state, not hide) |
 | E5 defeats the non-zero counting attack | restart_interval.py, NZCA ≤ 0.08 for all N | ✅ |
 | Longer restart intervals are as safe as N = 1 | beam solver finds 15–41 % successors at N = 32 | ❌ **do not claim** |

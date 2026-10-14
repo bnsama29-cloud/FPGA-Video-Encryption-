@@ -226,6 +226,22 @@ Source & {' & '.join(MODES)} & Jig.\ (\%) & Oracle \\
                                if m in R[t] else "--" for t, _ in setups)
             a_ = big[m]["replacement_attack"]
             lr.append(f"{m} & {a_['ssim']:.2f} / {a_['edge_corr']:.2f} & {cells} \\\\")
+        ctrl = " & ".join(f"{R[t]['E5']['no_ciphertext_prior']['ssim']:.2f} / {R[t]['E5']['no_ciphertext_prior']['edge_corr']:.2f}"
+                          if "no_ciphertext_prior" in R[t].get("E5", {}) else "--" for t, _ in setups)
+        if "no_ciphertext_prior" in big["E5"]:
+            lr.append("\\midrule")
+            lr.append(f"No key, no stream & -- & {ctrl} \\\\")
+            c = big["E5"]["no_ciphertext_prior"]
+            macro("CtrlSsimBig", f"{c['ssim']:.2f}")
+            macro("CtrlEdgeBig", f"{c['edge_corr']:.3f}")
+            lo, hi = big["E5"]["learned_edge_corr_ci95"]
+            macro("LearnEfiveCiLo", f"{lo:.3f}")
+            macro("LearnEfiveCiHi", f"{hi:.3f}")
+            macro("LearnEfiveGain", f"{big['E5']['learned_attack']['ssim'] - c['ssim']:.2f}")
+            op = R.get("P3", {}).get("E5", {})
+            if "no_ciphertext_prior" in op:
+                macro("OpenEfiveSsim", f"{op['learned_attack']['ssim']:.2f}")
+                macro("OpenCtrlSsim", f"{op['no_ciphertext_prior']['ssim']:.2f}")
         e5 = [R[t]["E5"]["learned_attack"]["edge_corr"] for t, _ in setups if "E5" in R[t]]
         macro("LearnEfiveEdgeMax", f"{max(abs(x) for x in e5):.3f}")
         macro("LearnSsimMax", f"{max(R[t][m]['learned_attack']['ssim'] for t, _ in setups[:2] for m in ('E2', 'E4')):.2f}")
@@ -242,6 +258,7 @@ Source & {' & '.join(MODES)} & Jig.\ (\%) & Oracle \\
         macro("LearnEoneSsim", f"{L('E1', 'ssim'):.2f}")
         macro("ReplEoneEdge", f"{big['E1']['replacement_attack']['edge_corr']:.2f}")
         macro("LearnEtwoFourEdge", f"{max(L('E2', 'edge_corr'), L('E4', 'edge_corr')):.2f}")
+        macro("LearnEtwoFourEdgeMin", f"{min(L('E2', 'edge_corr'), L('E4', 'edge_corr')):.2f}")
         macro("ReplEtwoFourEdge", f"{max(big[m]['replacement_attack']['edge_corr'] for m in ('E2', 'E4')):.2f}")
         macro("LearnEfiveEdgeBig", f"{L('E5', 'edge_corr'):.3f}")
         macro("LearnEfiveSsimBig", f"{L('E5', 'ssim'):.2f}")
@@ -249,7 +266,7 @@ Source & {' & '.join(MODES)} & Jig.\ (\%) & Oracle \\
         macro("LearnEtwoFourSsimBig", f"{max(L('E2', 'ssim'), L('E4', 'ssim')):.2f}")
     head = " & ".join(t for t, _ in setups)
     write("tab_learned.tex", rf"""\begin{{table}}[t]
-\caption{{U-Net reconstruction, SSIM / edge corr.\ on unseen test clips. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B, P3: Sintel$\rightarrow$Tears of Steel, P4: three clips$\rightarrow$three others. Repl.: replacement attack, P4 test set.}}
+\caption{{U-Net reconstruction, SSIM / edge corr.\ on unseen test clips. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B, P3: Sintel$\rightarrow$Tears of Steel, P4: three clips$\rightarrow$three others. Repl.: replacement attack, P4 test set. Last row: the median training frame, scored without looking at the stream.}}
 \label{{tab:learned}}
 \centering\small\setlength{{\tabcolsep}}{{3pt}}
 \begin{{tabular}}{{ll{'c' * len(setups)}}}
@@ -317,7 +334,7 @@ def restart_interval():
     if not files:
         return
     avg = lambda v, k: st.mean(f[v][k]["mean"] for f in files.values() if v in f and k in f[v])
-    show = ["E5 N=1", "E5 N=2", "E5 N=4", "E5 N=8", "E5 N=10", "E5 N=32"]
+    show = ["E5 N=1", "E5 N=4", "E5 N=8", "E5 N=10", "E5 N=32"]
     rows = [f"E4 (no shuffle) & -- & -- & -- & {avg('E4', 'edge_nzca'):.2f} & -- \\\\"]
     for v in show:
         segs = avg(v, "segments")
@@ -345,7 +362,7 @@ $N$ & Segments & Perm.\ bits & Overhead (\%) & NZCA & Succ.\ (chance) \\
     nz4 = [f["E4"]["edge_nzca"]["mean"] for f in files.values()]
     macro("RiNzcaEfourMin", f"{min(nz4):.2f}")
     macro("RiNzcaEfourMax", f"{max(nz4):.2f}")
-    macro("RiNzcaEfiveMax", f"{max(abs(f[v]['edge_nzca']['mean']) for f in files.values() for v in show):.2f}")
+    macro("RiNzcaEfiveMax", f"{max(abs(x['edge_nzca']['mean']) for f in files.values() for k, x in f.items() if k.startswith('E5')):.2f}")
     real = [f for k, f in files.items() if k != "Synthetic"]
     s32 = [f["E5 N=32"]["raster_successors"]["mean"] for f in real]
     macro("RiSuccThirtyTwoMin", f"{min(s32):.2f}")
