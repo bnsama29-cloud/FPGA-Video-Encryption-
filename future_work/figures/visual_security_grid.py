@@ -68,11 +68,11 @@ def main():
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(3, 5, figsize=(13, 7.6), facecolor=SURFACE)
+    fig, axes = plt.subplots(3, 5, figsize=(7.0, 4.2), facecolor=SURFACE)   # sized for 0.7\textwidth: labels stay >= 5 pt
     rows = [
-        ("Plays in any viewer, no key", [("original", "Original")] + [(f"wire_{m}", m) for m in MODES]),
-        ("Eavesdropper's best effort", [("plain", "Unprotected JPEG")]
-         + [(f"attack_{m}", f"{m} replacement attack" + (" + jigsaw" if m == "E5" else "")) for m in MODES]),
+        ("Any viewer, no key", [("original", "Original")] + [(f"wire_{m}", m) for m in MODES]),
+        ("Eavesdropper", [("plain", "Unprotected")]
+         + [(f"attack_{m}", f"{m} attack" + (" + jigsaw" if m == "E5" else "")) for m in MODES]),
         ("Key holder", [("original", "Original")] + [(f"decrypted_{m}", f"{m} decrypted") for m in MODES]),
     ]
     for r, (label, cells) in enumerate(rows):
@@ -85,16 +85,16 @@ def main():
                 sp.set_visible(False)
             sub = ""
             if r == 1:
-                sub = f"\nedge corr {edge_corr(c[key], c['original']):.2f}"
+                sub = f"\nedge corr. {edge_corr(c[key], c['original']):.2f}"
             if r == 2 and k > 0:
                 sub = "\nbit-exact" if c[f"exact_{MODES[k - 1]}"] else "\nNOT bit-exact"
-            ax.set_title(title + sub, fontsize=9, color=INK)
+            ax.set_title(title + sub, fontsize=7, color=INK, pad=2)
             if k == 0:
-                ax.set_ylabel(label, fontsize=10, color=INK2)
-    fig.tight_layout()
+                ax.set_ylabel(label, fontsize=7, color=INK2)
+    fig.tight_layout(pad=0.3, h_pad=0.4, w_pad=0.2)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out / "visual_security_grid.png", dpi=160)
+    fig.savefig(out / "visual_security_grid.png", dpi=300)
     fig.savefig(out / "visual_security_grid.pdf")
     plt.close(fig)
     print(f"written {out}/visual_security_grid.png / .pdf")

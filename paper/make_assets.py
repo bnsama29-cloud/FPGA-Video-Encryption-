@@ -138,20 +138,30 @@ def sources(rel):
 
 
 def leakage():
+    jig = {"Synthetic": DATA / "future_work_results" / "jigsaw.json"}
+    jig.update({k: v for k, v in sources("jigsaw/jigsaw.json").items() if k != "Synthetic"})
+    js = {n: J(p)["summary"] for n, p in jig.items()}
+    for n, x in js.items():
+        if n != "Synthetic":
+            macros.setdefault("_nb", []).append(100 * x["neighbour_accuracy"]["mean"])
+            macros.setdefault("_oracle", []).append(x["edge_corr_perfect_placement"]["mean"])
     srcs = sources("mode_tradeoff.json")
     data = {k: J(v)["modes"] for k, v in srcs.items()}
     names = list(data)
     real = [n for n in names if n != "Synthetic"]
     video = [n for n in real if n != "Kodak"]
-    rows = [f"Enc.\\ share & " + " & ".join(f"{data['Synthetic'][m]['cost']:.2f}" for m in MODES) + " \\\\", "\\midrule"]
-    rows += [f"{n} & " + " & ".join(f"{data[n][m]['edge_corr']:.2f}" for m in MODES) + " \\\\" for n in names]
+    jcell = lambda n: (f"{100 * js[n]['neighbour_accuracy']['mean']:.1f} & {js[n]['edge_corr_perfect_placement']['mean']:.2f}"
+                       if n in js else "-- & --")
+    rows = [f"Enc.\\ share & " + " & ".join(f"{data['Synthetic'][m]['cost']:.2f}" for m in MODES) + " & & \\\\", "\\midrule"]
+    c2 = lambda v: f"{v:.2f}".replace("-0.00", "0.00")
+    rows += [f"{n} & " + " & ".join(c2(data[n][m]['edge_corr']) for m in MODES) + f" & {jcell(n)} \\\\" for n in names]
     write("tab_leakage.tex", rf"""\begin{{table}}[t]
-\caption{{Outline leakage: edge correlation between the original and the eavesdropper's best keyless reconstruction (decode or replacement attack; 0 = no outline), up to 20 frames per source; frames without edges are skipped. The first row is the fraction of payload bits encrypted.}}
+\caption{{Outline leakage: edge correlation between the original and the eavesdropper's best keyless reconstruction (decode or replacement attack; 0 = no outline), up to 20 frames per source; frames without edges are skipped. The first row is the fraction of payload bits encrypted. Jig.: share of neighbour pairs a greedy jigsaw solver restores under E5 (8 frames; Sintel 3); Oracle: edge correlation if every E5 block were put back in place, i.e.\ the outline E5 hides.}}
 \label{{tab:leakage}}
 \centering\small\setlength{{\tabcolsep}}{{4pt}}
-\begin{{tabular}}{{l{'r' * len(MODES)}}}
+\begin{{tabular}}{{l{'r' * len(MODES)}rr}}
 \toprule
-Source & {' & '.join(MODES)} \\
+Source & {' & '.join(MODES)} & Jig.\ (\%) & Oracle \\
 \midrule
 {chr(10).join(rows)}
 \bottomrule
@@ -198,29 +208,6 @@ Source & {' & '.join(MODES)} \\
     fig.savefig(FIG / "fig_leakage.pdf")
     plt.close(fig)
 
-    jig = {"Synthetic": DATA / "future_work_results" / "jigsaw.json"}
-    jig.update({k: v for k, v in sources("jigsaw/jigsaw.json").items() if k != "Synthetic"})
-    jr = []
-    for n, p in jig.items():
-        s = J(p)["summary"]
-        f = lambda k: f"{s[k]['mean']:.3f}"
-        jr.append(f"{n} & {100 * s['neighbour_accuracy']['mean']:.1f} & {f('edge_corr_solved')} & {f('edge_corr_perfect_placement')} \\\\")
-        if n != "Synthetic":
-            macros.setdefault("_nb", []).append(100 * s["neighbour_accuracy"]["mean"])
-            macros.setdefault("_oracle", []).append(s["edge_corr_perfect_placement"]["mean"])
-    write("tab_jigsaw.tex", rf"""\begin{{table}}[t]
-\caption{{E5 against a greedy jigsaw solver (8 frames per source; Sintel: 3). ``Oracle'' places every block correctly, which is the outline E5 hides.}}
-\label{{tab:jigsaw}}
-\centering\small
-\begin{{tabular}}{{lrrr}}
-\toprule
-Source & Correct neighbours (\%) & Edge corr. solved & Edge corr. oracle \\
-\midrule
-{chr(10).join(jr)}
-\bottomrule
-\end{{tabular}}
-\end{{table}}
-""")
     macro("JigsawNeighboursMax", f"{max(macros.pop('_nb')):.1f}")
     o = macros.pop("_oracle")
     macro("JigsawOracleMin", f"{min(o):.2f}")
@@ -262,7 +249,7 @@ Source & Correct neighbours (\%) & Edge corr. solved & Edge corr. oracle \\
         macro("LearnEtwoFourSsimBig", f"{max(L('E2', 'ssim'), L('E4', 'ssim')):.2f}")
     head = " & ".join(t for t, _ in setups)
     write("tab_learned.tex", rf"""\begin{{table}}[t]
-\caption{{Keyless reconstruction by a U-Net, SSIM / edge correlation on test clips never seen in training. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B (\LearnTrain{{}} training frames, \LearnEpochs{{}} epochs); P3: Sintel$\rightarrow$Tears of Steel; P4: Trailer A, Talk A and Sintel $\rightarrow$ Trailer B, Talk B and Tears of Steel (\LearnBigTrain{{}} frames, wider network, \LearnBigEpochs{{}} epochs). ``Repl.'' is the replacement attack on the P4 test set.}}
+\caption{{U-Net reconstruction, SSIM / edge corr.\ on unseen test clips. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B, P3: Sintel$\rightarrow$Tears of Steel, P4: three clips$\rightarrow$three others. Repl.: replacement attack, P4 test set.}}
 \label{{tab:learned}}
 \centering\small\setlength{{\tabcolsep}}{{3pt}}
 \begin{{tabular}}{{ll{'c' * len(setups)}}}
@@ -337,7 +324,7 @@ def restart_interval():
         rows.append(f"{v.split("=")[-1]} & {segs:.0f} & {avg(v, 'key_space_perm_bits'):.0f} & {avg(v, 'overhead_pct'):.1f} & "
                     f"{avg(v, 'edge_nzca'):.2f} & {avg(v, 'raster_successors'):.2f} ({1 / (segs - 1):.2f}) \\\\")
     write("tab_restart.tex", rf"""\begin{{table}}[t]
-\caption{{E5 with $N$ macroblocks per restart segment, mean over {len(files)} sources at 320$\times$240. Overhead: bytes over the same E4 coefficients without markers. NZCA: correlation of the per-block count of non-zero coefficients with the original's block edge energy. Succ.: share of segments a beam-search solver chains to their true successor (chance in brackets).}}
+\caption{{E5 with $N$ macroblocks per restart segment, mean over {len(files)} sources. Overhead vs.\ E4 without markers; NZCA correlation; Succ.: segments chained to their true successor by a beam-search solver (chance).}}
 \label{{tab:restart}}
 \centering\small\setlength{{\tabcolsep}}{{3.5pt}}
 \begin{{tabular}}{{lccccc}}

@@ -3,7 +3,7 @@ After this, the only remaining simulation-side work is the Vivado day.
 
 RERUN = True (the default since 14 Oct 2026): the full run is done (paper/data/extra). Only two things
 are repeated, with the scripts fixed after it (GUIDE.md B20, B21; docs/TESTING.md bug #16):
-  * restart interval on the open sources (Sintel, Tears of Steel, Kodak): ~5 min
+  * restart interval on the open sources (Sintel, Tears of Steel, Kodak) and the real-frame figure: ~5 min
   * both learned attacks (L1_open, L2_all) with the new no-ciphertext control and bootstrap CI: ~60 min
 Set RERUN = False to run everything again from scratch (~1.5 h).
 
@@ -171,6 +171,9 @@ if RUN["per_source"]:
                 sh(f"python experiments/restart_interval.py --video '{p}' --frames {max(2, (min(n_frames, 24) if img else n_frames) // 3)} "
                    f"--stride {1 if img else 150} --intervals 1 2 4 5 8 10 32 --name {name} "
                    f"--out {base}/restart_interval --save-images", name, "restart interval, fixed (B20)", tail=11)
+                if not img:                         # the paper figure, now sized for 0.7\textwidth
+                    sh(f"python -m future_work.figures.visual_security_grid --video '{p}' --frame 300 --out {base}/grid",
+                       name, "visual-security figure, paper size (B2)", tail=1)
                 checkpoint()
             continue
         stride = 1 if img else (10 if p == "synthetic" else 150)
