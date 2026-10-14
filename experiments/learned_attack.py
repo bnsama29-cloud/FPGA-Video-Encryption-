@@ -17,7 +17,13 @@ Steps (all in one command, cached in sim_out/learned_attack/):
             (6 input channels) -- and the original (target).
   2. train: a small U-Net, L1 loss, AdamW, mixed precision on CUDA.
   3. eval:  on the TEST video only: PSNR / SSIM / edge correlation of
-            (a) the replacement attack (no learning) and (b) the network output.
+            (a) the replacement attack (no learning), (b) the network output, and
+            (c) a no-ciphertext control: the per-pixel median of the TRAINING targets, the best
+                constant picture under the L1 loss. What (b) gains over (c) comes from the
+                ciphertext; what (c) already scores is only the prior of "typical video"
+                (dark letterbox bars, average brightness), which encryption cannot hide.
+            The learned edge correlation is reported with a 95 % bootstrap interval over the test
+            frames, so a small value can be told apart from zero.
 Use DIFFERENT videos for --train-source and --test-source (different scenes), or
 the network just memorises the background and the result means nothing.
 Writes results.json, results.md and examples_<mode>.png (original | attack | network).
@@ -126,6 +132,13 @@ def scores(pred, target):
                 edge_corr=edge_corr(pred, target))
 
 
+def bootstrap_ci(values, n=2000, seed=0):
+    """95 % percentile-bootstrap interval of the mean."""
+    v = np.asarray(values, dtype=np.float64)
+    means = v[np.random.default_rng(seed).integers(0, len(v), (n, len(v)))].mean(axis=1)
+    return [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))]
+
+
 # ------------------------------------------------------------------ model
 def build_unet(torch, nn, base=32):
     def block(i, o):
@@ -194,7 +207,8 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
         print(f"    {mode} epoch {ep + 1}/{a.epochs}: L1 {tot / n:.4f} ({time.time() - t0:.0f} s)")
     torch.save(net.state_dict(), OUT / f"unet_{mode}.pt")
     net.eval()
-    base, learned, examples = [], [], []
+    prior_img = np.median(Ytr, axis=0).astype(np.uint8)          # no-ciphertext control
+    base, learned, prior, examples = [], [], [], []
     with torch.no_grad():
         for i in range(0, len(Xte), a.batch):
             x = to_tensor(torch, Xte[i:i + a.batch], dev)
@@ -205,12 +219,15 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
                 k = i + j
                 base.append(scores(Xte[k, :, :, 3:6], Yte[k]))
                 learned.append(scores(pr, Yte[k]))
+                prior.append(scores(prior_img, Yte[k]))
                 if k in (0, len(Xte) // 2, len(Xte) - 1):
                     examples.append(np.hstack([Yte[k], Xte[k, :, :, 3:6], pr]))
     cv2.imwrite(str(OUT / f"examples_{mode}.png"), cv2.cvtColor(np.vstack(examples), cv2.COLOR_RGB2BGR))
     mean = lambda rows, key: float(np.mean([r[key] for r in rows]))
     return {"replacement_attack": {k: mean(base, k) for k in ("psnr", "ssim", "edge_corr")},
             "learned_attack": {k: mean(learned, k) for k in ("psnr", "ssim", "edge_corr")},
+            "no_ciphertext_prior": {k: mean(prior, k) for k in ("psnr", "ssim", "edge_corr")},
+            "learned_edge_corr_ci95": bootstrap_ci([r["edge_corr"] for r in learned]),
             "train_frames": int(n), "test_frames": int(len(Xte)), "epochs": a.epochs, "device": dev}
 
 
@@ -249,12 +266,15 @@ def main():
         print(f"== {mode}: training on {len(Xtr)} frames, testing on {len(Xte)}")
         results[mode] = train_and_eval(mode, Xtr, Ytr, Xte, Yte, a)
         res_file.write_text(json.dumps(results, indent=2))
-    lines = ["| Mode | Replacement attack PSNR / SSIM / edge corr | Learned attack PSNR / SSIM / edge corr |",
-             "|---|---|---|"]
+    lines = ["| Mode | Replacement attack PSNR / SSIM / edge corr | Learned attack PSNR / SSIM / edge corr "
+             "| Learned edge corr 95 % CI | No-ciphertext control PSNR / SSIM / edge corr |",
+             "|---|---|---|---|---|"]
     for m, r in results.items():
-        b, l = r["replacement_attack"], r["learned_attack"]
+        b, l, c = r["replacement_attack"], r["learned_attack"], r["no_ciphertext_prior"]
+        lo, hi = r["learned_edge_corr_ci95"]
         lines.append(f"| {m} | {b['psnr']:.2f} dB / {b['ssim']:.3f} / {b['edge_corr']:.3f} "
-                     f"| {l['psnr']:.2f} dB / {l['ssim']:.3f} / {l['edge_corr']:.3f} |")
+                     f"| {l['psnr']:.2f} dB / {l['ssim']:.3f} / {l['edge_corr']:.3f} | [{lo:.3f}, {hi:.3f}] "
+                     f"| {c['psnr']:.2f} dB / {c['ssim']:.3f} / {c['edge_corr']:.3f} |")
     (OUT / "results.md").write_text("\n".join(lines) + "\n")
     print("\n" + "\n".join(lines) + f"\n\nwritten {OUT}/")
 

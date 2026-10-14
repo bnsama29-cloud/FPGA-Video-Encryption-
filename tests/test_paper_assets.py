@@ -22,7 +22,7 @@ def test_every_macro_in_the_text_is_defined():
 
 def test_committed_tables_match_the_data(tmp_path):
     copy = tmp_path / "paper"
-    shutil.copytree(PAPER, copy, ignore=shutil.ignore_patterns("*.pdf", "*.aux", "*.log", "*.bbl", "*.blg"))
+    shutil.copytree(PAPER, copy, ignore=shutil.ignore_patterns("main.pdf", "*.aux", "*.log", "*.bbl", "*.blg"))
     for f in (copy / "tables").glob("*.tex"):
         f.unlink()
     subprocess.run([sys.executable, str(copy / "make_assets.py")], check=True, capture_output=True)

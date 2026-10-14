@@ -31,6 +31,7 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 | run the Vivado flow (XSim, post-route numbers, PYNQ overlay) | [docs/VIVADO_ONE_DAY.md](docs/VIVADO_ONE_DAY.md) |
 | read or build the conference paper | [paper/README.md](paper/README.md) |
 | see every result table | [paper/data/paper_tables.md](paper/data/paper_tables.md) |
+| see the open-data, standard-metric and restart-interval results | [paper/data/extra/README.md](paper/data/extra/README.md) |
 | understand the contract (registers, nonce, tag, file format) | [docs/INTERFACES.md](docs/INTERFACES.md) |
 | give Claude the project context | [docs/TEAM_CONTEXT.md](docs/TEAM_CONTEXT.md) + GUIDE.md |
 

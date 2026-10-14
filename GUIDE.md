@@ -19,7 +19,7 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 
 ---
 
-## 1. Where the project stands (14 Oct 2026)
+## 1. Where the project stands (14 Oct 2026, after the open-data run)
 
 | Part | State | Evidence |
 |---|---|---|
@@ -28,20 +28,34 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 | Vivado testbench | ✅ in Icarus · ⏳ in Vivado XSim | `make xsim-icarus`, then `docs/VIVADO_ONE_DAY.md` |
 | Post-route resources / timing / power | ⏳ **next** | `python vivado/run_vivado_day.py` |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
-| Simulation results for the paper | ✅ complete (Kaggle run, 14 Oct, 47/47 steps + one clip rerun) | `paper/data/paper_tables.md` |
+| Simulation results, private clips | ✅ (Kaggle, 47/47 steps) | `paper/data/simulation/` |
+| Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps, 74.5 min) · ⏳ one short rerun (B20, B21) | `paper/data/extra/` (README there says where each file came from) |
 | PYNQ-Z2 overlay + board tests | ⏳ scripts ready, not yet run | `future_work/board/` |
-| Paper | 📝 first full draft | `paper/main.tex` → `paper/main.pdf` |
+| Paper | 📝 full 6-page draft with a real (open-licence) frame in Fig. 2; 8 red TODOs | `paper/main.tex` → `paper/main.pdf` |
 
-**Rough position: ~55 % of the project.** The simulation is done; the Vivado day, the board and the
-paper are left, in that order.
+**Rough position: ~60 % of the project.** Simulation is done except one ~1 h Kaggle rerun; the Vivado
+day, the board and the paper are left, in that order.
 
-The headline results, all in `paper/data/paper_tables.md`:
+The headline results (generated tables in `paper/tables/`, inputs in `paper/data/`):
 
 * **Encryption cost.** It adds 0 cycles in RTL; the estimate is 199 fps at 640×480 if 100 MHz closes.
 * **Attack suite.** 11/11 attacks are mitigated in 0.91 ± 0.02 s, with 0/375 false alarms (3 runs).
-  Benign impairments give 0/447 false alarms.
-* **Outline leakage.** E1–E4 leak an outline sketch (edge correlation 0.27–0.58 on four real clips).
-  E5 removes it (−0.004…0.017), also against a jigsaw solver and a trained U-Net attacker.
+  Benign impairments give 0/447 false alarms. With a trailer, a talking head or Tears of Steel as the
+  source: 11/11 each (one run each), no false alarms.
+* **Outline leakage** on 8 sources (synthetic, 4 private clips, Sintel, Tears of Steel, Kodak):
+  E1–E4 leak an outline sketch (edge correlation 0.25–0.58); E5 removes it (−0.005…0.017). The
+  private-clip numbers were reproduced exactly on a second machine.
+* **Jigsaw solver on E5:** at most 2.2 % of neighbour pairs restored (synthetic), ≤ 1.7 % on real sources.
+* **Learned attacker (U-Net).** Four train/test setups, the largest with 2,609 frames from 3 clips,
+  tested on 800 frames of 3 unseen clips. It **breaks E1** (edge correlation 0.69, SSIM 0.79). Under E2/E4
+  it gets no more outline than the plain replacement attack (0.40). Under E5 the edge correlation stays
+  ≤ 0.044 but SSIM rises 0.14 → 0.36 (brightness/colour prior; the control that separates the two is B21).
+* **Restart interval (E5 with N MCUs per segment).** Overhead 10–23 % at N = 1, 0.5 % at N = 32; the
+  non-zero counting attack is defeated for every N (≤ 0.08), but a beam-search solver chains 15–41 % of the
+  10 segments at N = 32 (chance 11 %). So we keep N = 1 and do not claim larger N is safe.
+* **Standard metrics.** Key sensitivity is good (E5: 77.5–99.5 % pixels change with a 1-bit key change);
+  adjacent-pixel correlation stays 0.88–0.92 and entropy rises only under E5 — expected for a
+  format-compliant scheme, and written as such in the paper.
 * **Bandit vs threshold over 10 seeds.** The bandit encrypts 14 % fewer bits (10/10 seeds) but
   reacts 0.88 s slower and leaks more under attack (0/10 seeds better). This is a trade-off, not a
   win.
@@ -83,11 +97,12 @@ pip install -r requirements.txt
 | `python -m future_work.figures.paper_tables --root <results>` | every paper table from result files |
 | `cd paper && make` | build the paper PDF (`make tables` first after new results) |
 
-**The remaining GPU/CPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_remaining.py` (~1.5 h, GPU T4,
-Internet on, your clips dataset attached). It does B2, B4, B5, B13, B15, B16 and B17 below and writes
-`remaining_results.zip`; after it, the simulation side is complete and only Vivado (§4.1) and the board
-(§4.2) remain. It downloads open Blender Foundation clips (CC-BY 3.0) and the Kodak images; if a download
-is blocked, upload those files as a Kaggle dataset instead (URLs at the top of the script).
+**The remaining GPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_remaining.py` (GPU T4, Internet on,
+your clips dataset attached). With `RERUN = True` (the default now) it only repeats what the fixes of
+14 Oct changed — the restart interval on the open sources and both learned attacks with the new
+no-ciphertext control (B20, B21, ~1 h). `RERUN = False` repeats the whole open-data run (~1.5 h). It
+uses the first branch in `BRANCHES` that has the fixed experiments. Unzip `remaining_results.zip`, copy
+`extra/` over `paper/data/extra/` (keep the README), run `python paper/make_assets.py`, `cd paper && make`.
 
 **Re-running all the simulation results:** paste `future_work/kaggle/kaggle_complete.py` into one
 Kaggle cell (Internet on, GPU T4, clips as a private dataset), then *Save & Run All*. It takes ~4 h
@@ -172,34 +187,97 @@ metric, the paper says so; the playability, integrity and zero-cycle claims stan
 
 ### 4.3 Polish that makes the claims stronger
 
-**Scripted and ready (14 Oct): B2, B4, B5, B13, B15, B16, B17** — new `experiments/restart_interval.py`,
-`experiments/standard_metrics.py`, multi-source `learned_attack.py`, image-folder sources; all run by
-`future_work/kaggle/kaggle_remaining.py`. What is left for them is running it and putting the numbers
-into the paper.
-
 P1 = the paper is weak without it, P2 = clearly stronger, P3 = future-work section of the paper.
+Every item has a **Done when** line: that is the test the reviewer of the pull request checks.
+
+**Done on 14 Oct (open-data run, `paper/data/extra/`):**
+
+| # | Item | Result | Where in the paper |
+|---|---|---|---|
+| B2 | Open, citable data | Sintel trailer + Tears of Steel (CC BY 3.0) and Kodak; Fig. 2 now shows a Sintel frame | §V setup, Fig. 2, Tab. IV |
+| B4 | Learned attack on more data | P3 (open clips) and P4 (3 → 3 clips, 2,609 frames, wider U-Net, 35 epochs) | Tab. V |
+| B5 | Restart-interval study | N = 1, 2, 4, 5, 8, 10, 32 with `experiments/restart_interval.py` (E5(N) built from the model's own blocks; the model itself stays at N = 1) | Tab. VI |
+| B13 | Standard image-encryption metrics | `experiments/standard_metrics.py` on 8 sources | §V text (table in the repo) |
+| B15 | Non-zero counting attack | block-level NZCA correlation per N | Tab. VI |
+| B16 | Standard image set | Kodak 24 in every leakage/jigsaw/metrics run | Tab. IV |
+| B17 (part) | Stronger learned attacker | multi-clip training done; GAN-style attack still open (B17 below) | Tab. V |
+
+**Open items:**
 
 | # | Item | P | Owner | Time | Spec |
 |---|---|---|---|---|---|
+| B20 | **Rerun the restart interval on Sintel / Tears of Steel / Kodak** with the fixed script (bug #16) | P1 | 5 | 10 min Kaggle | below |
+| B21 | **No-ciphertext control + CI for the learned attack** | P1 | 5 | 1 h Kaggle | below |
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
-| B2 | **Open, citable test clips** instead of the movie trailers | P1 | 4 | ½ d | below |
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
-| B4 | Learned attack on more data | P2 | 5 | 1 d GPU | below |
-| B5 | E5 restart-interval study (N = 1, 2, 4, 8) | P2 | 5 | 1 d | below |
+| B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
+| B14 | **Comparison table in the paper** | P1 | 1 + 2 | ½ d after 4.1 | below; §7 has the numbers |
+| B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
+| B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |
 | B7 | Shared vs separate Ascon core (area vs throughput) | P2 | 1 | 2 d | below |
 | B8 | Ascon-XOF128 KDF with official vectors | P2 | 2 | 1 d | below |
-| B9 | Stronger jigsaw solver (MST / learned compatibility) | P2 | 5 | 2–3 d | below |
-| B10 | Simulated-clock scenarios (seconds instead of real time) for 100-seed studies | P3 | 3 | 2 d | below |
+| B9 | Stronger jigsaw solver for N = 1 (MST / learned compatibility) | P2 | 5 | 2–3 d | below |
+| B17 | Learned attacker trained on a large public corpus; GAN-style attack | P2 | 5 | 2 d GPU | below |
+| B10 | Simulated-clock scenarios for 100-seed studies | P3 | 3 | 2 d | below |
 | B11 | Multi-receiver prototype (per-receiver tags) | P3 | 4 + 3 | 3 d | below |
 | B12 | Masked Ascon, ROI encryption, H.264/HEVC | P3 | – | future | paper §VII only |
-| B13 | **Standard image-encryption metrics**: key space, key sensitivity, histogram, entropy, adjacent-pixel correlation, NPCR/UACI | P1 | 5 | 1 d | below; reviewers in this field ask for them (§7) |
-| B14 | **Comparison table in the paper** (prior FPGA JPEG encryptors, Ascon cores, commercial JPEG cores) | P1 | 1 + 2 | ½ d after 4.1 | below; §7 has the numbers |
-| B15 | **Non-zero counting attack (NZCA)** and restart intervals 2–32, as in Hirose et al. | P2 | 5 | 1 d | below; joins B5 |
-| B16 | **Leakage on a standard image set** (Kodak 24 or UCID) besides video | P2 | 4 + 5 | ½ d | below |
-| B17 | **Stronger learned attackers**: large training set, GAN-style attack | P2 | 5 | 2 d GPU | extends B4; §7 |
-| B18 | **Throughput toward 1 pixel/clock and a higher clock** | P3 | 1 | 1 week | below; commercial cores do 1 px/clk at 150–166 MHz |
-| B19 | **Area: fewer BRAM/DSP**, shared Ascon core (B7) | P3 | 1 | 2–4 d | below; ours ~25 BRAM36 / 24 DSP vs 2–16 BRAM in commercial cores |
+| B18 | Throughput toward 1 pixel/clock and a higher clock | P3 | 1 | 1 week | below |
+| B19 | Area: fewer BRAM/DSP, shared Ascon core (B7) | P3 | 1 | 2–4 d | below |
+
+**B20 – Restart interval on the open sources.** The Kaggle numbers for Sintel, Tears of Steel and Kodak
+were made before bug #16 was fixed (overhead measured against a file with the APP11 segment; no
+any-N solver). They are kept as `*.prefix16.*.txt` and read by nothing.
+
+1. Run `kaggle_remaining.py` with `RERUN = True` (it also redraws the Fig. 2 grid at paper size).
+2. Copy `extra/{sintel_trailer,tearsofsteel,kodak}/restart_interval/` and `.../grid/` into `paper/data/extra/`.
+3. `python paper/make_assets.py` — Table VI's caption then says "mean over 8 sources".
+
+**Done when** Table VI is built from 8 sources and `make test` passes.
+
+**B21 – What does the network get without the ciphertext?** Under E5 the U-Net raises SSIM from 0.14 to
+0.36 without any outline (edge ≤ 0.044). Part of that is just "typical video" (black letterbox bars,
+average brightness), which no encryption can hide. `learned_attack.py` now also scores the per-pixel
+median of the training frames (the best constant picture under its L1 loss) and gives a 95 %
+bootstrap interval for the learned edge correlation.
+
+1. Rerun P3 and P4 (the `RERUN` Kaggle run does both).
+2. In the paper, replace the red TODO in "Learned attacker": report the control's SSIM next to the
+   network's, and say whether the E5 edge interval contains 0.
+3. If the network beats the control clearly under E5 (SSIM gap > 0.05 or edge interval above 0),
+   look at `examples_E5.png` (open clips only) and describe what it recovers; do not hide it.
+
+**Done when** Table V or the text carries the control, and the TODO is gone.
+
+**B22 – E1 after the U-Net result.** The U-Net undoes sign-only encryption (edge 0.69, SSIM 0.79 on
+unseen clips). E2 is already the default minimum level, so nothing is insecure by default, but:
+
+1. `docs/INTERFACES.md` and the dashboard legend: describe E1 as "visual degradation only, not
+   confidential against a trained attacker".
+2. `link/defence.py`: check that no policy can select E1 when `min_mode` ≥ E2 (add a test that the
+   bandit never picks a level below the minimum over 10 seeds).
+3. Paper §III-C: one sentence in the protection-level paragraph pointing to the result.
+
+**Done when** the three changes are merged with a test.
+
+**B23 – Recognition test.** Correlations need the picture to be in the right place; a person looking
+at the screen does not. The Kodak picture at N = 32 shows whole strips of windows although its
+correlation is 0.02 (`paper/data/extra/kodak/restart_interval/kodak_frame0/`).
+
+1. New `experiments/recognition.py`: run an off-the-shelf detector (OpenCV DNN face detector, or a
+   torchvision Faster R-CNN "person" class) on the original and on the attacker's picture per mode
+   (E2, E4, E5 N = 1, E5 N = 32, U-Net output), on the open clips and talking-head clips.
+2. Report detection recall relative to the original (fraction of originals' detections that are
+   also found in the attacker's picture, IoU ≥ 0.3 for E1–E4; for shuffled modes count any detection).
+3. Expectation (not a result): E1 high, E2/E4 low-to-medium on outlines, E5 N = 1 near zero.
+
+**Done when** a table per mode exists in `sim_out/recognition/` and a sentence is in §V.
+
+**B24 – More frames and intervals.** Leakage uses 20 frames per source (standard metrics and restart
+interval 5–6). Raise to 60 frames for leakage, 20 for the rest, and give a 95 % bootstrap interval
+per cell (reuse `bootstrap_ci` from `learned_attack.py`). The table then shows "0.34 [0.30, 0.38]".
+
+**Done when** `measure_mode_tradeoff.py` writes intervals and `make_assets.py` prints them.
 
 **B1 – Selective encryption in C.** The current software baseline is Python (~140 ms/frame), which a
 reviewer will dismiss.
@@ -213,15 +291,7 @@ reviewer will dismiss.
    the test first).
 5. Add a row to `bench_software_codecs.py` and run it on the ARM (A3).
 
-**B2 – Open clips.** The trailers are copyrighted: they cannot be shown in the paper, and the repo must
-never contain them (`*.mp4` is ignored; `future_work/clips_manifest.md` lists hashes only).
-
-1. Pick 4 clips with an open licence: a surveillance-style scene, a talking head, outdoor motion
-   and an indoor scene. Good sources are public research datasets with a clear licence, or
-   CC-BY footage.
-2. Note the licence and source of each in the manifest.
-3. Rerun the real-video part of `kaggle_complete.py` (`RUN = dict(... only real_video=True)`).
-4. Update `paper/data/`, and then the paper can show a real frame in Fig. 2.
+**Done when** the C path is byte-identical on 100 frames and has an ARM timing row.
 
 **B3 – Threat model.** One page, in `docs/THREAT_MODEL.md` and in paper §III:
 
@@ -233,21 +303,10 @@ never contain them (`*.mp4` is ignored; `future_work/clips_manifest.md` lists ha
   (key, nonce) never repeats as long as the random base is fresh. Say what happens on reboot
   without persistent state: there is a new random base, and the collision probability is ~2⁻⁴⁸
   per pair of sessions.
-* **What we do not hide:** which coefficients are non-zero (the sketch leak, closed only by E5),
-  frame sizes and timing.
+* **What we do not hide:** which coefficients are non-zero (closed only by E5), frame sizes and timing,
+  and the brightness/colour statistics a trained network learns (B21).
 
-**B4 – More data for the learned attack.** Train on 3–4 clips and test on held-out ones (after B2).
-Report PSNR, SSIM and edge correlation per mode. Current result: the network recovers brightness and
-colour layout (SSIM up to 0.43 in E2/E4) but no outline in E5 (edge correlation ≈ 0). Say exactly
-that.
-
-**B5 – Restart interval.** Add `restart_interval` N (now fixed at 1) to the following, then plot
-overhead and leakage (`measure_mode_tradeoff.py` + `jigsaw_attack.py`) for N = 1, 2, 4, 8, keeping
-`make test-model` green:
-
-* `model/entropy.py :: run_length_encode` (reset every N MCUs);
-* `mcu_segments` (N MCUs per segment);
-* `model/jpeg.py :: package_frame / receive_frame / replacement_attack_jpeg` (DRI = N).
+**Done when** the paper's TODO in §III-A is replaced and `docs/THREAT_MODEL.md` exists.
 
 **B6 – E5 in RTL.** Keep the model as the referee: add a mode-5 path to `model/hw.py` first, then the
 cocotb test, then the RTL.
@@ -258,16 +317,26 @@ cocotb test, then the RTL.
 3. The keyed shuffle reorders whole segments. Either do it on the ARM, with the tag computed on the
    ARM, or use a BRAM reorder buffer before the tag unit.
 
+Keep N = 1: the restart study (Tab. VI) shows that N = 32 is partly solvable.
+**Done when** `tb/test_top.py` passes for E5 byte for byte.
+
 **B7 – Shared Ascon core.** Today the keystream and the tag each have a core. Build a variant with one
 time-shared core plus an arbiter. Measure LUTs (Vivado, `vivado_ooc.tcl`) and cycles per pixel
-(`benchmark_crypto.py --rtl`). Report it as an ablation.
+(`benchmark_crypto.py --rtl`). Report it as an ablation. **Done when** both variants have a row.
 
 **B8 – XOF KDF.** Replace the AEAD-tag-as-PRF KDF in `link/keys.py` with Ascon-XOF128 (SP 800-232 §5),
-checked against the official XOF KATs. This is protocol-only: no RTL change.
+checked against the official XOF KATs. This is protocol-only: no RTL change. **Done when** the KATs pass.
 
-**B9 – Stronger jigsaw.** Implement a minimum-spanning-tree solver with Mahalanobis gradient
-compatibility, or a learned pair score trained on *unencrypted* tiles from other clips. **Gate:** it
-must beat the current solver on plain tiles (`tests/test_future_work.py`) before its E5 numbers count.
+**B9 – Stronger jigsaw for N = 1.** Two solvers exist: greedy region growing
+(`future_work/attacks/jigsaw_attack.py`) and the beam-search raster solver in
+`experiments/restart_interval.py` (good for few, long segments; at chance for N = 1). Implement a
+minimum-spanning-tree solver with Mahalanobis gradient compatibility, or a learned pair score
+trained on *unencrypted* tiles from other clips. **Gate:** it must beat the current solver on plain
+tiles (`tests/test_future_work.py`) before its E5 numbers count.
+
+**B17 – Larger learned attacker.** Train on a public video corpus with a clear licence (check the
+licence before downloading) and add an adversarial (GAN-style) loss, as in the ITN/GAN attacks of
+Sirichotedumrong & Kiya (§7). Report with the B21 control. **Done when** a P5 column exists.
 
 **B10 – Simulated clock.** Run `link/` nodes on a virtual clock (one process, event queue) so a
 462 s scenario takes seconds. Keep the real-time version for latency numbers; use the fast one only
@@ -276,34 +345,10 @@ for policy statistics (100+ seeds).
 **B11 – Multi-receiver.** Encrypt once, then compute one tag per receiver key (a few µs of Ascon
 each). The channel fans out to N receiver processes. Removing a receiver means rekeying the others.
 
-**B13 – Standard metrics.** Image-encryption papers almost always report a common set of metrics;
-reviewers expect them even though selective encryption is a different setting. Add
-`experiments/standard_metrics.py`, run it per mode on the synthetic scene + Kodak (B16), and report it.
-Write in the paper why pixel-scrambling metrics alone do not prove security for a format-compliant
-scheme (Massoudi et al.), and keep edge correlation and the attacks as the main evidence.
-
-| Metric | What to compute |
-|---|---|
-| Key space | 128-bit key; the E5 permutation adds log2(n_MCU!) |
-| Key sensitivity | flip one key bit → decrypt → SSIM / percentage of differing pixels vs the original |
-| Histograms and entropy | of the no-key decoded image |
-| Adjacent-pixel correlation | horizontal / vertical / diagonal, 2000 pairs |
-| NPCR / UACI | between the no-key decodes under two keys that differ in one bit |
-| Encryption time per frame | from the RTL cycles (already done) |
-
 **B14 – Comparison table.** After the Vivado day, add Table "Comparison with related designs" to §II or
 §IV: device, LUT, FF, BRAM, DSP, clock, pixels/s, encryption, authentication, format compliance. Use
 the rows of §7 and cite each source. Compare like with like, and mark which numbers are post-route
-and which are estimates.
-
-**B15 – NZCA and restart interval.** Hirose et al. reconstruct outlines by counting non-zero
-coefficients per block, and find that large restart intervals reveal outlines. Implement NZCA as a
-third keyless attacker in `experiments/measure_mode_tradeoff.py`. Then rerun it for restart intervals
-1, 2, 4, 8, 32 (needs B5), so our E5 result becomes directly comparable to theirs.
-
-**B16 – Standard images.** The Kodak set (24 images, free to use) or UCID (1338 images, used by
-Hirose et al.) makes leakage numbers comparable with image-encryption papers. Run
-`measure_mode_tradeoff.py` on an image folder; this needs a small `--images DIR` option.
+and which are estimates. The paper is at the 6-page limit: shorten §VI text to make room.
 
 **B18 – Throughput.** At 1.64 cycles/pixel and 100 MHz we reach ~61 Mpixel/s. Commercial JPEG cores
 reach 1 pixel/clock at 150–166 MHz on 7-series parts, i.e. 1080p60. Find the stage that limits us
@@ -324,13 +369,15 @@ us near the commercial cores plus one ~1 K-LUT Ascon.
 * the rules on originality, citations and disclosure of AI assistance.
 
 Placeholders that wait for results are marked `\TODO{...}` in red. The PDF lists them, so nothing
-unfinished slips through.
+unfinished slips through. **The draft is exactly 6 pages**: anything added must be paid for with text
+cut elsewhere (the standard-metrics table and the two plots already moved to the repository).
 
 | Paper part | Waits for | Owner |
 |---|---|---|
 | Table III hardware (now a Yosys estimate) | 4.1 Vivado | 1 |
 | §VI board results (now a placeholder) | 4.2 A1–A6 | 1 + 4 |
-| Fig. 2 with a real frame | B2 | 4 |
+| Fig. 2 with a real frame | ✅ Sintel (B2); redraw at paper size in the B20 run | 4 |
+| No-ciphertext control in "Learned attacker" | B21 | 5 |
 | Software baseline row on the ARM | A3 + B1 | 2 |
 | Threat model paragraph | B3 | 2 |
 | Proof-reading, own wording, plagiarism check | everything | all |
@@ -353,6 +400,7 @@ unfinished slips through.
 
 * Merge open pull requests, and keep CI green before each merge.
 * Rename `challenge .mp4` (trailing space) in the Kaggle dataset; the script is fixed anyway.
+* Big Buck Bunny's download URL returns 404 (14 Oct); it was removed from `OPEN_CLIPS`.
 * Every bug found on the board gets a row in `docs/TESTING.md` §8.
 
 ---
@@ -365,8 +413,13 @@ unfinished slips through.
 | Key holder recovers the frame bit-exactly | tests + figure row 3 | ✅ |
 | Encryption adds 0 cycles to the encoder | `benchmark_crypto.py --rtl` | ✅ RTL simulation |
 | Resources / timing / power on the Zynq-7020 | Vivado | ⏳ (Yosys estimate only, labelled as such) |
-| E1–E4 leak an outline sketch, E5 does not (synthetic + 4 real clips) | mode trade-off + jigsaw | ✅ |
-| A trained network does not recover E5 outlines | learned attack, 2 train/test pairs | ✅ (more data: B4) |
+| E1–E4 leak an outline sketch, E5 does not (8 sources incl. open films + Kodak) | mode trade-off + jigsaw | ✅ |
+| A trained network does not recover E5 outlines | learned attack, 4 setups, up to 2,609 training frames | ✅ |
+| E5 gives an attacker nothing beyond the video prior | needs the no-ciphertext control | ⏳ B21 — do not claim yet |
+| A trained network breaks E1 | learned attack P1–P4 | ✅ (a result to state, not hide) |
+| E5 defeats the non-zero counting attack | restart_interval.py, NZCA ≤ 0.08 for all N | ✅ |
+| Longer restart intervals are as safe as N = 1 | beam solver finds 15–41 % successors at N = 32 | ❌ **do not claim** |
+| Standard metrics show security | they assume full-image ciphers | ❌ report for comparability only |
 | 11 active attacks detected and mitigated in < 1 s on average, no false alarms | full_suite × 3, benign × 3 | ✅ simulation · ⏳ board (A6) |
 | Bandit: fewer encrypted bits, slower reaction | policy_seeds, 10 seeds, paired | ✅ |
 | Faster / lower energy than software on the same board | A2–A4 (+ B1) | ⏳ |
@@ -408,7 +461,7 @@ Numbers are copied from each source. Ours are RTL simulation and a Yosys estimat
 
 | Work | Platform | Area | Speed | Encryption | Authentication | Format compliant | Security evaluation |
 |---|---|---|---|---|---|---|---|
-| **Ours** | Zynq-7020 (RTL sim) | ~5.7 K LUT, 2.8 K FF, 25 BRAM36, 24 DSP (Yosys est.) | 1.64 cycles/px → ~199 fps VGA if 100 MHz closes; 0 extra cycles for encryption | Ascon-AEAD128 keystream on signs/amplitudes (+ keyed MCU shuffle in E5) | per-frame 128-bit tag over metadata + scan, replay window, ratchet | yes, 4 decoders | edge leakage on synthetic + 4 clips, jigsaw, U-Net; 11 active attacks, 10-seed policy study |
+| **Ours** | Zynq-7020 (RTL sim) | ~5.7 K LUT, 2.8 K FF, 25 BRAM36, 24 DSP (Yosys est.) | 1.64 cycles/px → ~199 fps VGA if 100 MHz closes; 0 extra cycles for encryption | Ascon-AEAD128 keystream on signs/amplitudes (+ keyed MCU shuffle in E5) | per-frame 128-bit tag over metadata + scan, replay window, ratchet | yes, 4 decoders | edge leakage on 8 sources (incl. open films + Kodak), jigsaw, U-Net (4 setups), NZCA + restart interval, key sensitivity/NPCR/UACI/entropy; 11 active attacks, 10-seed policy study |
 | Kishore et al. 2015 [JRTIP] | FPGA JPEG encoder | +~1 % hardware for the encryption stage | not quoted here | lightweight block/symbol scrambling | no | yes (claimed) | visual |
 | Bağbaba & Örs 2015 [ELECO] | FPGA | – | – | TEA on DC (+5 AC) coefficients | no | – | PSNR |
 | Gladis Kurian & Chen 2025 [Electronics] | Artix-7 100T | 3.5–5.3 K LUT, 4.3 K FF, 32 BRAM, 0 DSP | 100 MHz; replay check ~0.8 µs | Ascon-128 (messages, not video) | AEAD + Bloom-filter replay check | n/a | false-positive rate |
@@ -438,10 +491,9 @@ Numbers are copied from each source. Ours are RTL simulation and a Yosys estimat
 | Throughput ~2.5× below commercial JPEG cores, which reach 1 px/clk at 150 MHz | B18 |
 | Each of our Ascon blocks (~1.4–1.7 K LUT, est.) is larger than published round-based Ascon cores (~0.8–1.1 K LUT) | B7, B19 |
 | More BRAM/DSP than commercial encoders | B19 |
-| The standard image-encryption metrics are missing | B13 |
-| No restart-interval study and no NZCA | B5, B15 |
-| Our learned attacker is small next to the ITN/GAN attacks in the literature | B17 |
-| No standard image set | B16 |
+| Adjacent-pixel correlation and entropy are far from full-cipher values (by design; must be explained, not hidden) | §V text ✅ |
+| Our learned attacker is still small next to the ITN/GAN attacks in the literature | B17, B21 |
+| Leakage cells rest on 5–20 frames per source | B24 |
 
 **Sources:**
 

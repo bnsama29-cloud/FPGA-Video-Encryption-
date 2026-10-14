@@ -137,14 +137,19 @@ def learned_table(root, out, missing):
         missing.append("learned attack results")
         return
     out += ["## Learned (neural) attacker vs the plain replacement attack", "",
-            "| Run | Mode | Train / test frames | Device | Replacement PSNR / SSIM / edge | Learned PSNR / SSIM / edge |",
-            "|---|---|---|---|---|---|"]
+            "(no-ciphertext control: the median training frame, i.e. what a network can score without "
+            "looking at the stream; older result files do not have it)", "",
+            "| Run | Mode | Train / test frames | Device | Replacement PSNR / SSIM / edge | Learned PSNR / SSIM / edge "
+            "| Learned edge 95 % CI | No-ciphertext control PSNR / SSIM / edge |",
+            "|---|---|---|---|---|---|---|---|"]
+    trio = lambda x: f"{x['psnr']:.2f} / {x['ssim']:.3f} / {x['edge_corr']:.3f}" if x else "–"
     for p in files:
         for m, r in json.loads(p.read_text()).items():
-            a, b = r["replacement_attack"], r["learned_attack"]
+            ci = r.get("learned_edge_corr_ci95")
             tag = p.parent.name + (" (pipeline test only)" if r.get("train_frames", 0) < 500 else "")
             out.append(f"| {tag} | {m} | {r.get('train_frames')} / {r.get('test_frames')} | {r.get('device')} | "
-                       f"{a['psnr']:.2f} / {a['ssim']:.3f} / {a['edge_corr']:.3f} | {b['psnr']:.2f} / {b['ssim']:.3f} / {b['edge_corr']:.3f} |")
+                       f"{trio(r['replacement_attack'])} | {trio(r['learned_attack'])} | "
+                       f"{f'[{ci[0]:.3f}, {ci[1]:.3f}]' if ci else '–'} | {trio(r.get('no_ciphertext_prior'))} |")
     out.append("")
 
 

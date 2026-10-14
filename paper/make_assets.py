@@ -17,10 +17,13 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 SIM = DATA / "simulation"
+EXTRA = DATA / "extra"                         # open data, standard metrics, restart interval, stronger U-Net
 TAB = HERE / "tables"
 FIG = HERE / "figures"
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 CLIP_LABEL = {"avengers": "Trailer A", "jailer": "Trailer B", "denzel": "Talk A", "challenge": "Talk B"}  # display order
+OPEN_LABEL = {"sintel_trailer": "Sintel", "tearsofsteel": "Tears of Steel", "kodak": "Kodak"}          # CC BY / Kodak set
+ALL_LABEL = {"synthetic": "Synthetic", **CLIP_LABEL, **OPEN_LABEL}
 BLUE, ORANGE = "#2a78d6", "#eb6834"            # validated categorical slots 1-2 (CVD ΔE 24.7)
 INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e1e0d9", "#ffffff"
 macros = {}
@@ -121,25 +124,44 @@ Block & LUT & FF & BRAM36 & DSP \\
 
 
 # ---------------------------------------------------------------- leakage, jigsaw, learned
+def sources(rel):
+    """{label: path} of a per-source result file, in display order: synthetic, private clips, open data."""
+    out = {}
+    for key, label in ALL_LABEL.items():
+        for base in ((SIM, SIM / "real" / key, EXTRA / key) if key == "synthetic" else (SIM / "real" / key, EXTRA / key)):
+            if key == "synthetic" and base == SIM and rel != "mode_tradeoff.json":
+                continue
+            if (base / rel).exists():
+                out[label] = base / rel
+                break
+    return out
+
+
 def leakage():
-    srcs = {"Synthetic": SIM / "mode_tradeoff.json"}
-    for clip, label in CLIP_LABEL.items():                  # fixed column order: Trailer A, B, Talk A, B
-        if (SIM / "real" / clip / "mode_tradeoff.json").exists():
-            srcs[label] = SIM / "real" / clip / "mode_tradeoff.json"
+    jig = {"Synthetic": DATA / "future_work_results" / "jigsaw.json"}
+    jig.update({k: v for k, v in sources("jigsaw/jigsaw.json").items() if k != "Synthetic"})
+    js = {n: J(p)["summary"] for n, p in jig.items()}
+    for n, x in js.items():
+        if n != "Synthetic":
+            macros.setdefault("_nb", []).append(100 * x["neighbour_accuracy"]["mean"])
+            macros.setdefault("_oracle", []).append(x["edge_corr_perfect_placement"]["mean"])
+    srcs = sources("mode_tradeoff.json")
     data = {k: J(v)["modes"] for k, v in srcs.items()}
     names = list(data)
     real = [n for n in names if n != "Synthetic"]
-    rows = []
-    for m in MODES:
-        cells = " & ".join(f"{data[n][m]['edge_corr']:.2f}" for n in names)
-        rows.append(f"{m} & {data['Synthetic'][m]['cost']:.3f} & {cells} \\\\")
+    video = [n for n in real if n != "Kodak"]
+    jcell = lambda n: (f"{100 * js[n]['neighbour_accuracy']['mean']:.1f} & {js[n]['edge_corr_perfect_placement']['mean']:.2f}"
+                       if n in js else "-- & --")
+    rows = [f"Enc.\\ share & " + " & ".join(f"{data['Synthetic'][m]['cost']:.2f}" for m in MODES) + " & & \\\\", "\\midrule"]
+    c2 = lambda v: f"{v:.2f}".replace("-0.00", "0.00")
+    rows += [f"{n} & " + " & ".join(c2(data[n][m]['edge_corr']) for m in MODES) + f" & {jcell(n)} \\\\" for n in names]
     write("tab_leakage.tex", rf"""\begin{{table}}[t]
-\caption{{Outline leakage: edge correlation between the original and the eavesdropper's best keyless reconstruction (decode or replacement attack), 20 frames per source (0 = no outline). ``Enc.'' is the fraction of payload bits encrypted.}}
+\caption{{Outline leakage: edge correlation between the original and the eavesdropper's best keyless reconstruction (decode or replacement attack; 0 = no outline), up to 20 frames per source; frames without edges are skipped. The first row is the fraction of payload bits encrypted. Jig.: share of neighbour pairs a greedy jigsaw solver restores under E5 (8 frames; Sintel 3); Oracle: edge correlation if every E5 block were put back in place, i.e.\ the outline E5 hides.}}
 \label{{tab:leakage}}
-\centering\small\setlength{{\tabcolsep}}{{3.5pt}}
-\begin{{tabular}}{{ll{'r' * len(names)}}}
+\centering\small\setlength{{\tabcolsep}}{{4pt}}
+\begin{{tabular}}{{l{'r' * len(MODES)}rr}}
 \toprule
-Mode & Enc. & {' & '.join(names)} \\
+Source & {' & '.join(MODES)} & Jig.\ (\%) & Oracle \\
 \midrule
 {chr(10).join(rows)}
 \bottomrule
@@ -148,7 +170,10 @@ Mode & Enc. & {' & '.join(names)} \\
 """)
     e14 = [data[n][m]["edge_corr"] for n in real for m in ("E1", "E2", "E3", "E4")]
     e5 = [data[n]["E5"]["edge_corr"] for n in real]
-    macro("NumClips", str(len(real)))
+    macro("NumClips", str(len([n for n in video if n in CLIP_LABEL.values()])))
+    macro("NumOpenClips", str(len([n for n in video if n in OPEN_LABEL.values()])))
+    macro("NumVideoClips", str(len(video)))
+    macro("NumSources", str(len(names)))
     macro("LeakEOneFourMin", f"{min(e14):.2f}")
     macro("LeakEOneFourMax", f"{max(e14):.2f}")
     macro("LeakEFiveMin", f"{min(e5):.3f}")
@@ -183,67 +208,151 @@ Mode & Enc. & {' & '.join(names)} \\
     fig.savefig(FIG / "fig_leakage.pdf")
     plt.close(fig)
 
-    jig = {"Synthetic": DATA / "future_work_results" / "jigsaw.json"}
-    for clip, label in CLIP_LABEL.items():
-        if (SIM / "real" / clip / "jigsaw" / "jigsaw.json").exists():
-            jig[label] = SIM / "real" / clip / "jigsaw" / "jigsaw.json"
-    jr = []
-    for n, p in jig.items():
-        s = J(p)["summary"]
-        f = lambda k: f"{s[k]['mean']:.3f}"
-        jr.append(f"{n} & {100 * s['neighbour_accuracy']['mean']:.1f} & {f('edge_corr_solved')} & {f('edge_corr_perfect_placement')} \\\\")
-        if n != "Synthetic":
-            macros.setdefault("_nb", []).append(100 * s["neighbour_accuracy"]["mean"])
-            macros.setdefault("_oracle", []).append(s["edge_corr_perfect_placement"]["mean"])
-    write("tab_jigsaw.tex", rf"""\begin{{table}}[t]
-\caption{{E5 against a greedy jigsaw solver (8 frames per source). ``Oracle'' places every block correctly, which is the outline E5 hides.}}
-\label{{tab:jigsaw}}
-\centering\small
-\begin{{tabular}}{{lrrr}}
-\toprule
-Source & Correct neighbours (\%) & Edge corr. solved & Edge corr. oracle \\
-\midrule
-{chr(10).join(jr)}
-\bottomrule
-\end{{tabular}}
-\end{{table}}
-""")
     macro("JigsawNeighboursMax", f"{max(macros.pop('_nb')):.1f}")
     o = macros.pop("_oracle")
     macro("JigsawOracleMin", f"{min(o):.2f}")
     macro("JigsawOracleMax", f"{max(o):.2f}")
 
-    lr = []
-    pairs = sorted((SIM / "real").glob("learned_pair*/results.json"))
-    for i, p in enumerate(pairs, 1):
-        for m, r in J(p).items():
-            a, b = r["replacement_attack"], r["learned_attack"]
-            lr.append(f"P{i} & {m} & {a['psnr']:.1f} / {a['ssim']:.2f} / {a['edge_corr']:.2f} & "
-                      f"{b['psnr']:.1f} / {b['ssim']:.2f} / {b['edge_corr']:.2f} \\\\")
-            if m == "E5":
-                macros.setdefault("_e5edge", []).append(b["edge_corr"])
-            if m in ("E2", "E4"):
-                macros.setdefault("_ssim", []).append(b["ssim"])
-    if pairs:
-        r0 = J(pairs[0])["E2"]
+    setups = [(f"P{i}", p) for i, p in enumerate(sorted((SIM / "real").glob("learned_pair*/results.json")), 1)]
+    for tag, name in (("P3", "learned_L1_open"), ("P4", "learned_L2_all")):
+        if (EXTRA / name / "results.json").exists():
+            setups.append((tag, EXTRA / name / "results.json"))
+    R = {t: J(p) for t, p in setups}
+    if R:
+        big = R[setups[-1][0]]
+        lr = []
+        for m in big:
+            cells = " & ".join(f"{R[t][m]['learned_attack']['ssim']:.2f} / {R[t][m]['learned_attack']['edge_corr']:.2f}"
+                               if m in R[t] else "--" for t, _ in setups)
+            a_ = big[m]["replacement_attack"]
+            lr.append(f"{m} & {a_['ssim']:.2f} / {a_['edge_corr']:.2f} & {cells} \\\\")
+        e5 = [R[t]["E5"]["learned_attack"]["edge_corr"] for t, _ in setups if "E5" in R[t]]
+        macro("LearnEfiveEdgeMax", f"{max(abs(x) for x in e5):.3f}")
+        macro("LearnSsimMax", f"{max(R[t][m]['learned_attack']['ssim'] for t, _ in setups[:2] for m in ('E2', 'E4')):.2f}")
+        r0 = R["P1"]["E2"] if "P1" in R else big["E2"]
         macro("LearnTrain", str(r0["train_frames"]))
         macro("LearnTest", str(r0["test_frames"]))
         macro("LearnEpochs", str(r0["epochs"]))
-        macro("LearnEfiveEdgeMax", f"{max(abs(x) for x in macros.pop('_e5edge')):.3f}")
-        macro("LearnSsimMax", f"{max(macros.pop('_ssim')):.2f}")
+        b2 = big["E2"]
+        macro("LearnBigTrain", f"{b2['train_frames']:,}".replace(",", "{,}"))
+        macro("LearnBigTest", str(b2["test_frames"]))
+        macro("LearnBigEpochs", str(b2["epochs"]))
+        L = lambda m, k: big[m]["learned_attack"][k]
+        macro("LearnEoneEdge", f"{L('E1', 'edge_corr'):.2f}")
+        macro("LearnEoneSsim", f"{L('E1', 'ssim'):.2f}")
+        macro("ReplEoneEdge", f"{big['E1']['replacement_attack']['edge_corr']:.2f}")
+        macro("LearnEtwoFourEdge", f"{max(L('E2', 'edge_corr'), L('E4', 'edge_corr')):.2f}")
+        macro("ReplEtwoFourEdge", f"{max(big[m]['replacement_attack']['edge_corr'] for m in ('E2', 'E4')):.2f}")
+        macro("LearnEfiveEdgeBig", f"{L('E5', 'edge_corr'):.3f}")
+        macro("LearnEfiveSsimBig", f"{L('E5', 'ssim'):.2f}")
+        macro("ReplEfiveSsimBig", f"{big['E5']['replacement_attack']['ssim']:.2f}")
+        macro("LearnEtwoFourSsimBig", f"{max(L('E2', 'ssim'), L('E4', 'ssim')):.2f}")
+    head = " & ".join(t for t, _ in setups)
     write("tab_learned.tex", rf"""\begin{{table}}[t]
-\caption{{Keyless reconstruction by a U-Net trained on one clip and tested on another (P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B). Entries: PSNR (dB) / SSIM / edge correlation.}}
+\caption{{U-Net reconstruction, SSIM / edge corr.\ on unseen test clips. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B, P3: Sintel$\rightarrow$Tears of Steel, P4: three clips$\rightarrow$three others. Repl.: replacement attack, P4 test set.}}
 \label{{tab:learned}}
-\centering\small\setlength{{\tabcolsep}}{{4pt}}
-\begin{{tabular}}{{llcc}}
+\centering\small\setlength{{\tabcolsep}}{{3pt}}
+\begin{{tabular}}{{ll{'c' * len(setups)}}}
 \toprule
-Pair & Mode & Replacement attack & Learned attack \\
+Mode & Repl. & {head} \\
 \midrule
-{chr(10).join(lr) if lr else r"\multicolumn{4}{c}{\TODO{learned attack results missing}} \\"}
+{chr(10).join(lr) if R else r"\multicolumn{6}{c}{\TODO{learned attack results missing}} \\"}
 \bottomrule
 \end{{tabular}}
 \end{{table}}
 """)
+
+
+# ---------------------------------------------------------------- standard metrics, restart interval
+def standard_metrics():
+    files = {}
+    for key, label in ALL_LABEL.items():
+        p = EXTRA / key / "standard_metrics" / f"{key}.json"
+        if p.exists():
+            files[label] = J(p)["summary"]
+    if not files:
+        return
+    lv = ["plain JPEG"] + MODES[1:]
+    avg = lambda m, k: st.mean(f[m][k] for f in files.values())
+    corr = lambda m: st.mean((f[m]["corr_h"] + f[m]["corr_v"] + f[m]["corr_d"]) / 3 for f in files.values())
+    rows = []
+    for m in lv:
+        if m == "plain JPEG":
+            rows.append(f"plain & -- & -- & -- & {avg(m, 'entropy'):.2f} & {corr(m):.2f} \\\\")
+        else:
+            rows.append(f"{m} & {avg(m, 'wrong_key_ssim'):.2f} & {avg(m, 'npcr_key'):.1f} / {avg(m, 'uaci_key'):.1f} & "
+                        f"{avg(m, 'npcr_plain'):.1f} & {avg(m, 'entropy'):.2f} & {corr(m):.2f} \\\\")
+    write("tab_stdmetrics.tex", rf"""\begin{{table}}[t]
+\caption{{Standard image-encryption metrics, mean over {len(files)} sources (5--6 frames each). Wrong key: the receiver's output with a key that differs in one bit, compared with the original (SSIM) and with the right decryption (NPCR/UACI, \%). 1-pixel: NPCR between two ciphertexts of frames that differ in one pixel, same key and nonce. Ideal values for a full-image cipher: NPCR 99.6, UACI 33.5, entropy 8, adjacent correlation 0.}}
+\label{{tab:std}}
+\centering\small\setlength{{\tabcolsep}}{{3pt}}
+\begin{{tabular}}{{lccccc}}
+\toprule
+Level & Wrong-key SSIM & NPCR / UACI & 1-pixel NPCR & Entropy & Adj.\ corr. \\
+\midrule
+{chr(10).join(rows)}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+    macro("StdSources", str(len(files)))
+    e5 = [f["E5"] for f in files.values()]
+    macro("StdNpcrEfiveMin", f"{min(x['npcr_key'] for x in e5):.1f}")
+    macro("StdNpcrEfiveMax", f"{max(x['npcr_key'] for x in e5):.1f}")
+    macro("StdWrongSsimEfiveMax", f"{max(x['wrong_key_ssim'] for x in e5):.2f}")
+    macro("StdNpcrEone", f"{avg('E1', 'npcr_key'):.0f}")
+    macro("StdCorrMin", f"{min(corr(m) for m in MODES[1:]):.2f}")
+    macro("StdCorrMax", f"{max(corr(m) for m in MODES[1:]):.2f}")
+    macro("StdEntropyPlain", f"{avg('plain JPEG', 'entropy'):.2f}")
+    macro("StdEntropyEfive", f"{avg('E5', 'entropy'):.2f}")
+    macro("StdPixelNpcrMax", f"{max(avg(m, 'npcr_plain') for m in MODES[1:]):.0f}")
+
+
+def restart_interval():
+    files = {}
+    for key, label in ALL_LABEL.items():
+        p = EXTRA / key / "restart_interval" / f"{key}.json"
+        if p.exists():
+            files[label] = J(p)["summary"]
+    if not files:
+        return
+    avg = lambda v, k: st.mean(f[v][k]["mean"] for f in files.values() if v in f and k in f[v])
+    show = ["E5 N=1", "E5 N=2", "E5 N=4", "E5 N=8", "E5 N=10", "E5 N=32"]
+    rows = [f"E4 (no shuffle) & -- & -- & -- & {avg('E4', 'edge_nzca'):.2f} & -- \\\\"]
+    for v in show:
+        segs = avg(v, "segments")
+        rows.append(f"{v.split("=")[-1]} & {segs:.0f} & {avg(v, 'key_space_perm_bits'):.0f} & {avg(v, 'overhead_pct'):.1f} & "
+                    f"{avg(v, 'edge_nzca'):.2f} & {avg(v, 'raster_successors'):.2f} ({1 / (segs - 1):.2f}) \\\\")
+    write("tab_restart.tex", rf"""\begin{{table}}[t]
+\caption{{E5 with $N$ macroblocks per restart segment, mean over {len(files)} sources. Overhead vs.\ E4 without markers; NZCA correlation; Succ.: segments chained to their true successor by a beam-search solver (chance).}}
+\label{{tab:restart}}
+\centering\small\setlength{{\tabcolsep}}{{3.5pt}}
+\begin{{tabular}}{{lccccc}}
+\toprule
+$N$ & Segments & Perm.\ bits & Overhead (\%) & NZCA & Succ.\ (chance) \\
+\midrule
+{chr(10).join(rows)}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+    macro("RiSources", str(len(files)))
+    ov1 = [f["E5 N=1"]["overhead_pct"]["mean"] for f in files.values()]
+    macro("RiOverheadOneMin", f"{min(ov1):.0f}")
+    macro("RiOverheadOneMax", f"{max(ov1):.0f}")
+    macro("RiOverheadThirtyTwo", f"{avg('E5 N=32', 'overhead_pct'):.1f}")
+    macro("RiOverheadFour", f"{avg('E5 N=4', 'overhead_pct'):.1f}")
+    nz4 = [f["E4"]["edge_nzca"]["mean"] for f in files.values()]
+    macro("RiNzcaEfourMin", f"{min(nz4):.2f}")
+    macro("RiNzcaEfourMax", f"{max(nz4):.2f}")
+    macro("RiNzcaEfiveMax", f"{max(abs(f[v]['edge_nzca']['mean']) for f in files.values() for v in show):.2f}")
+    real = [f for k, f in files.items() if k != "Synthetic"]
+    s32 = [f["E5 N=32"]["raster_successors"]["mean"] for f in real]
+    macro("RiSuccThirtyTwoMin", f"{min(s32):.2f}")
+    macro("RiSuccThirtyTwoMax", f"{max(s32):.2f}")
+    macro("RiChanceThirtyTwo", f"{1 / (avg('E5 N=32', 'segments') - 1):.2f}")
+    macro("RiSegThirtyTwo", f"{avg('E5 N=32', 'segments'):.0f}")
+    macro("RiSuccSmallMax", f"{max(f[v]['raster_successors']['mean'] for f in real for v in ('E5 N=1', 'E5 N=2', 'E5 N=4', 'E5 N=8')):.2f}")
 
 
 # ---------------------------------------------------------------- protocol + defence
@@ -291,9 +400,11 @@ Attack & Mitigated & First rejection & Mitigated after \\
     fb = eps.get("fb_drop", [])
     if fb:
         macro("FbDropTtm", f"{st.mean(e['time_to_mitigate_s'] for e in fb):.1f}")
-    real = {p.parent.name.replace("scenario_", ""): J(p) for p in SIM.glob("real/scenario_*/summary.json")}
+    real = {p.parent.name.replace("scenario_", ""): J(p) for p in
+            list(SIM.glob("real/scenario_*/summary.json")) + list(EXTRA.glob("scenario_*/summary.json"))}
     for k, v in real.items():
-        tag = {"trailer": "Trailer", "talking": "Talk"}.get(k, k)
+        tag = {"trailer": "Trailer", "talking": "Talk", "open": "Open"}.get(k, k)
+        macro(f"Real{tag}Lat", f"{v['latency_ms_median']:.0f}")
         macro(f"Real{tag}Ttm", f"{v['mean_time_to_mitigate_s']:.2f}")
         macro(f"Real{tag}Mit", v["mitigated_episodes"].replace("/", "/"))
         macro(f"Real{tag}False", f"{v['false_alarm_windows']}/{v['calm_windows']}")
@@ -386,7 +497,10 @@ def misc():
         if jt:
             macro("TurboFps", f"{jt['fps']:.0f}")
             macro("TurboMs", f"{jt['ms_per_frame']:.2f}")
-    src = DATA / "future_work_results" / "visual_security_grid.pdf"
+    src = EXTRA / "sintel_trailer" / "grid" / "visual_security_grid.pdf"      # a real, openly licensed frame
+    if not src.exists():
+        src = DATA / "future_work_results" / "visual_security_grid.pdf"       # synthetic fallback
+    macro("GridSource", "sintel" if "sintel" in str(src) else "synthetic")
     if src.exists():
         shutil.copy(src, FIG / "fig_visual_grid.pdf")
 
@@ -396,6 +510,8 @@ def main():
     FIG.mkdir(exist_ok=True)
     hardware()
     leakage()
+    standard_metrics()
+    restart_interval()
     protocol()
     misc()
     lines = ["% generated by paper/make_assets.py from paper/data -- do not edit"]

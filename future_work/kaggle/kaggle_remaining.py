@@ -1,6 +1,12 @@
 """Every remaining task that a Kaggle GPU T4 can do, in one run (GUIDE.md B2, B4, B5, B13, B15, B16, B17).
 After this, the only remaining simulation-side work is the Vivado day.
 
+RERUN = True (the default since 14 Oct 2026): the full run is done (paper/data/extra). Only two things
+are repeated, with the scripts fixed after it (GUIDE.md B20, B21; docs/TESTING.md bug #16):
+  * restart interval on the open sources (Sintel, Tears of Steel, Kodak) and the real-frame figure: ~5 min
+  * both learned attacks (L1_open, L2_all) with the new no-ciphertext control and bootstrap CI: ~60 min
+Set RERUN = False to run everything again from scratch (~1.5 h).
+
 HOW TO RUN (one Kaggle account)
   1. Notebook settings: Internet ON, Accelerator GPU T4.
   2. + Add Input -> your private clips dataset (the four test clips). Optional, if downloads are blocked:
@@ -24,15 +30,18 @@ Frames from the copyrighted test clips are never saved as images; only numbers a
 """
 # ============================ SETTINGS =======================================
 QUICK = False
+RERUN = True                               # only the steps listed above (see the docstring)
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
-BRANCHES = ["main", "paper-and-cleanup"]   # the first one that has the new experiments is used
+BRANCHES = ["main", "results-open-data"]   # the first one that has the fixed experiments is used
 OPEN_CLIPS = {                              # CC-BY 3.0, (c) Blender Foundation -- cite them in the paper
-    "bigbuckbunny": "https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4",
+    # Big Buck Bunny's 320x180 file returned HTTP 404 on 14 Oct 2026, so it is no longer listed
     "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
     "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
 }
 KODAK_URL = "http://r0k.us/graphics/kodak/kodak/kodim{:02d}.png"   # 24 images, released for unrestricted use
 RUN = dict(open_clips=True, kodak=True, per_source=True, attack_suite=True, learned=True)
+if RERUN:
+    RUN.update(attack_suite=False)
 # =============================================================================
 
 import glob, json, os, pathlib, re, shutil, subprocess, sys, time, urllib.request
@@ -43,6 +52,9 @@ WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "
 WORK.mkdir(parents=True, exist_ok=True)
 REPO_URL = os.environ.get("REPO_URL", REPO_URL)
 QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
+RERUN = os.environ.get("RERUN", str(RERUN)) == "True"
+if not RERUN:
+    RUN.update(attack_suite=True)
 REPO, DATA, OUT = WORK / "repo", WORK / "opendata", "sim_out/extra"
 ENV = {**os.environ, "PYTHONUNBUFFERED": "1"}
 LOG = []
@@ -97,13 +109,18 @@ def safe(name):
 SOURCES = {}
 if REPO.exists():
     shutil.rmtree(REPO)
+def has_fixes(repo):
+    text = lambda f: (repo / "experiments" / f).read_text() if (repo / "experiments" / f).exists() else ""
+    return "raster_solve" in text("restart_interval.py") and "no_ciphertext_prior" in text("learned_attack.py")
+
+
 for b in BRANCHES:
-    if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
-            (REPO / "experiments" / "restart_interval.py").exists():
+    if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and has_fixes(REPO):
         break
+    print(f"  branch {b} does not have the fixed experiments yet, trying the next one")
     shutil.rmtree(REPO, ignore_errors=True)
 else:
-    raise SystemExit("no branch with experiments/restart_interval.py: merge the pull request first")
+    raise SystemExit("no branch with the fixed experiments (bug #16, learned control): push / merge first")
 sh("python -m pip install -q cryptography scikit-image opencv-python-headless pillow matplotlib tomli numpy",
    "setup", "pip install", tail=2)
 try:
@@ -149,6 +166,16 @@ if RUN["per_source"]:
     for name, s in SOURCES.items():
         p, img = s["path"], s.get("images")
         base = f"{OUT}/{name}"
+        if RERUN:                                   # only the restart interval, only where it is missing
+            if s["kind"] == "open" and name != "synthetic":
+                sh(f"python experiments/restart_interval.py --video '{p}' --frames {max(2, (min(n_frames, 24) if img else n_frames) // 3)} "
+                   f"--stride {1 if img else 150} --intervals 1 2 4 5 8 10 32 --name {name} "
+                   f"--out {base}/restart_interval --save-images", name, "restart interval, fixed (B20)", tail=11)
+                if not img:                         # the paper figure, now sized for 0.7\textwidth
+                    sh(f"python -m future_work.figures.visual_security_grid --video '{p}' --frame 300 --out {base}/grid",
+                       name, "visual-security figure, paper size (B2)", tail=1)
+                checkpoint()
+            continue
         stride = 1 if img else (10 if p == "synthetic" else 150)
         nf = min(n_frames, 24) if img else n_frames
         sh(f"python experiments/measure_mode_tradeoff.py --video '{p}' --frames {nf} --stride {stride} "
