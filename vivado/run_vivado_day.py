@@ -60,8 +60,8 @@ def run(name, cmd, check=None, dry=False):
     print(f"--> {'PASS' if ok else 'FAIL'} in {dt / 60:.1f} min   (log: {log.relative_to(ROOT)})", flush=True)
     if not ok:
         errs = [line for line in out.splitlines() if "ERROR" in line][:3]
-        if errs:
-            print("first errors:\n  " + "\n  ".join(errs))
+        print("first errors:\n  " + "\n  ".join(errs) if errs else
+              "first lines of the log:\n  " + "\n  ".join(out.splitlines()[:8]))
     return out
 
 

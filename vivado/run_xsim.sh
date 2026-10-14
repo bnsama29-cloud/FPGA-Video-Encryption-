@@ -10,8 +10,8 @@ cd "$(dirname "$0")/xsim_work" || { echo "run python vivado/gen_xsim_vectors.py 
 xvlog -prj xsim_abs.prj -i "$(cd ../../rtl/include && pwd)"
 xelab -debug typical -top tb_secure_jpeg_top -snapshot tb_snap
 if [ "$1" = "gui" ]; then
-    xsim tb_snap -gui -testplusarg VEC_DIR=.
+    xsim tb_snap -gui
 else
-    xsim tb_snap -R -testplusarg VEC_DIR=. | tee xsim_run.log
+    xsim tb_snap -R | tee xsim_run.log
     grep -q "XSIM RESULT: PASS" xsim_run.log
 fi
