@@ -7,7 +7,7 @@ REM   4. vivado\run_xsim.bat          (batch, prints XSIM RESULT: PASS/FAIL)
 REM      vivado\run_xsim.bat gui      (waveform GUI)
 REM   5. python vivado\check_xsim_output.py
 cd /d "%~dp0xsim_work" || (echo run python vivado\gen_xsim_vectors.py first & exit /b 1)
-call xvlog -prj ..\xsim.prj -i ..\..\rtl\include || exit /b 1
+call xvlog -prj xsim_abs.prj -i "%~dp0..\rtl\include" || exit /b 1
 call xelab -debug typical -top tb_secure_jpeg_top -snapshot tb_snap || exit /b 1
 if "%1"=="gui" (
     call xsim tb_snap -gui -testplusarg VEC_DIR=.

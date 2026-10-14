@@ -26,7 +26,7 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 | Golden model + contract v2 | ✅ done | `model/`, `docs/INTERFACES.md`, 1089 Ascon KATs |
 | RTL (E0–E4) | ✅ bit-exact with the model in cocotb + Icarus, 0 extra cycles for encryption | `tb/`, `make test` |
 | Vivado testbench | ✅ in Icarus · ⏳ in Vivado XSim | `make xsim-icarus`, then `docs/VIVADO_ONE_DAY.md` |
-| Post-route resources / timing / power | ⏳ **next** | `python vivado/run_vivado_day.py` |
+| Post-route resources / timing / power | ⏳ first run done (≈ 47 MHz, bug #17 fixed) → **re-run** | `python vivado/run_vivado_day.py` |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
 | Simulation results, private clips | ✅ (Kaggle, 47/47 steps) | `paper/data/simulation/` |
 | Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps + rerun 9/9 steps) | `paper/data/extra/` (README there says where each file came from) |
@@ -155,8 +155,13 @@ This runs:
 * the PYNQ-Z2 overlay;
 * the paper table in `sim_out/vivado/vivado_tables.md`.
 
-The block design script has not run in Vivado yet; expect one or two small fixes (the guide's
-step 4 lists the likely errors).
+**First run done (14 Oct, Vivado 2026.1, 58 min).** Synthesis and implementation work; the encoder
+closed only at ≈ 47 MHz because of a one-clock DCT (bug #17, now pipelined, tests green), and XSim,
+the Python check and the block design's include file were fixed (bug #18). **Next:** re-run on the
+new RTL from a normal Command Prompt (not `exec` in the Vivado GUI):
+`python vivado\run_vivado_day.py --fmax --jobs 2` (skip `--blocks` unless per-block timing is needed;
+the top run already writes the per-block area). The block design has not got past `create_bd_cell`
+yet; expect more small fixes there.
 
 **Done when** WNS ≥ 0, `secure_jpeg.bit` + `.hwh` are committed, and the table is copied into
 `paper/data/vivado/`. Then **replace the Yosys estimate in the paper** (Table III).
@@ -371,7 +376,10 @@ reach 1 pixel/clock at 150–166 MHz on 7-series parts, i.e. 1080p60. Find the s
 work for the paper; just state the gap honestly.
 
 **B19 – Area.** Yosys estimates 25 BRAM36 and 24 DSP. Check in Vivado where they go (line buffers,
-Huffman tables, the DCT multipliers). BRAM-light line buffers and a shared Ascon core (B7) would bring
+Huffman tables, the DCT multipliers). Arithmetic says 24 of the BRAM36 are the colour-conversion line
+buffers of `rgb2ycbcr_block.v`, sized for 2048-pixel lines (`LOG_MAXW = 11`) and double-buffered:
+LOG_MAXW 10 (1024 px) would need 12, 9 (512 px) 6. A `LOG_MAXW` sweep in Vivado (BRAM, LUT, power
+per point) is a cheap memory-optimisation experiment. BRAM-light line buffers and a shared Ascon core (B7) would bring
 us near the commercial cores plus one ~1 K-LUT Ascon.
 
 ### 4.4 The paper (all, drafting now; final by 15 Dec)

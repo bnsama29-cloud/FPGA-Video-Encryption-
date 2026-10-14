@@ -119,9 +119,24 @@ def main():
     (out / "pixels.hex").write_text("".join(f"{v:08x}\n" for v in pix))
     (out / "expect_scan.hex").write_text("".join(f"{v:02x}\n" for v in exp))
     (out / "frames.json").write_text(json.dumps(dict(key=a.key, session_id=a.session, frames=meta), indent=2))
+    write_abs_prj(out)
     print(f"{len(meta)} frames, {len(pix)} pixels, {len(exp)} scan bytes -> {out}/")
     if len(pix) > 640 * 480 * 4:
         print("NOTE: more pixels than the testbench's MAXPIX; raise it with -generic_top / -P")
+
+
+def write_abs_prj(out):
+    """xsim.prj with absolute paths (bug #18): xvlog on Windows resolves the relative paths
+    of a .prj against the .prj file's folder, not the working folder, so the shared
+    vivado/xsim.prj (relative to xsim_work/, also read by the Makefile and the tests) broke
+    there. run_xsim.bat / run_xsim.sh use this generated copy instead."""
+    base = ROOT / "vivado" / "xsim_work"           # what the paths in vivado/xsim.prj are relative to
+    lines = []
+    for line in (ROOT / "vivado" / "xsim.prj").read_text().splitlines():
+        f = line.split()
+        if len(f) == 3 and f[0] == "verilog":
+            lines.append(f"verilog {f[1]} {(base / f[2]).resolve().as_posix()}")
+    (out / "xsim_abs.prj").write_text("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":

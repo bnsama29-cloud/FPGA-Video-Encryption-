@@ -7,7 +7,7 @@
 #   python vivado/check_xsim_output.py # rebuild JPEGs, run the receiver, save images
 set -e
 cd "$(dirname "$0")/xsim_work" || { echo "run python vivado/gen_xsim_vectors.py first"; exit 1; }
-xvlog -prj ../xsim.prj -i ../../rtl/include
+xvlog -prj xsim_abs.prj -i "$(cd ../../rtl/include && pwd)"
 xelab -debug typical -top tb_secure_jpeg_top -snapshot tb_snap
 if [ "$1" = "gui" ]; then
     xsim tb_snap -gui -testplusarg VEC_DIR=.
