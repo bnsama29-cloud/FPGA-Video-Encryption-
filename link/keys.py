@@ -12,8 +12,8 @@ nonce under the same key. We reuse the one primitive that is already verified in
 Python (1089 KATs) and in RTL, so no second core is needed on the FPGA. The tag
 of a sponge-based AEAD is a PRF under the usual assumptions. SP 800-232 also
 defines Ascon-XOF128 / Ascon-CXOF128, the textbook choice for key derivation;
-swapping it in (with its official test vectors) is listed as an improvement in
-HELP_GUIDE.md.
+swapping it in (with its official test vectors) is listed as improvement B8 in
+GUIDE.md.
 
 Rekeying needs no handshake: the sender moves to epoch e+1 and the epoch is in
 the authenticated session id of every frame, so the receiver ratchets forward

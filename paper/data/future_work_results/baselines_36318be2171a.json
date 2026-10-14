@@ -1,0 +1,85 @@
+{
+  "host": "36318be2171a",
+  "machine": "x86_64",
+  "processor": "x86_64",
+  "python": "3.13.15",
+  "opencv": "4.14.0",
+  "sizes": {
+    "320x240": {
+      "jpeg (libjpeg-turbo)": {
+        "ms_per_frame": 0.27651329999571317,
+        "fps": 3616.462571657505,
+        "bytes": 8337.9,
+        "playable": true
+      },
+      "jpeg + full AES-128-GCM": {
+        "ms_per_frame": 0.2799621999952251,
+        "fps": 3571.910779444709,
+        "bytes": 8353.9,
+        "playable": false
+      },
+      "jpeg + full ChaCha20-Poly1305": {
+        "ms_per_frame": 0.2843089400039389,
+        "fps": 3517.3005814947137,
+        "bytes": 8353.9,
+        "playable": false
+      },
+      "jpeg + selective E2 (Python, after encoding)": {
+        "ms_per_frame": 55.12908720000269,
+        "fps": 18.139244649056174,
+        "bytes": 8363.1,
+        "playable": true
+      },
+      "jpeg + selective E4 (Python, after encoding)": {
+        "ms_per_frame": 61.2057974999675,
+        "fps": 16.338321545447243,
+        "bytes": 8371.4,
+        "playable": true
+      },
+      "FPGA encoder + in-pipeline encryption (from cycles/pixel)": {
+        "ms_per_frame": 1.25952,
+        "fps": 793.9532520325204,
+        "bytes": null,
+        "playable": true
+      }
+    },
+    "640x480": {
+      "jpeg (libjpeg-turbo)": {
+        "ms_per_frame": 0.954962139996951,
+        "fps": 1047.1619325172335,
+        "bytes": 19511.5,
+        "playable": true
+      },
+      "jpeg + full AES-128-GCM": {
+        "ms_per_frame": 0.9613279399968633,
+        "fps": 1040.227749963517,
+        "bytes": 19527.5,
+        "playable": false
+      },
+      "jpeg + full ChaCha20-Poly1305": {
+        "ms_per_frame": 0.9686855399991146,
+        "fps": 1032.3267548733245,
+        "bytes": 19527.5,
+        "playable": false
+      },
+      "jpeg + selective E2 (Python, after encoding)": {
+        "ms_per_frame": 142.69296693998967,
+        "fps": 7.008053875707523,
+        "bytes": 19549.6,
+        "playable": true
+      },
+      "jpeg + selective E4 (Python, after encoding)": {
+        "ms_per_frame": 150.90108753998948,
+        "fps": 6.626857475331286,
+        "bytes": 19547.8,
+        "playable": true
+      },
+      "FPGA encoder + in-pipeline encryption (from cycles/pixel)": {
+        "ms_per_frame": 5.03808,
+        "fps": 198.4883130081301,
+        "bytes": null,
+        "playable": true
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+policy,mitigated,mean_time_to_mitigate_s,mean_leakage_under_attack,mean_cost,mean_cost_calm,false_alarm_windows,calm_windows,latency_ms_median,latency_ms_p95
+threshold,10/10,0.455,0.0,0.1875,0.135,0,301,79,125
+bandit,10/10,1.549,0.0589,0.162,0.1384,0,301,72,127

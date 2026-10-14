@@ -31,7 +31,7 @@ BRANCH = "main"               # everything is merged into main
 PAIRS = None                  # learned attack (train, test) clip pairs; None = automatic
 # =============================================================================
 
-import glob, json, os, pathlib, shutil, signal, statistics, subprocess, sys, time
+import glob, json, os, pathlib, re, shutil, signal, statistics, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 
 T_START = time.time()
@@ -136,7 +136,8 @@ sh("nproc; free -g | head -2", "setup", "machine", tail=4)
 roots = [os.environ["CLIPS_DIR"]] if os.environ.get("CLIPS_DIR") else ["/kaggle/input"]
 found = sorted({f for r in roots for e in ("mp4", "mkv", "avi", "mov", "webm")
                 for f in glob.glob(f"{r}/**/*.{e}", recursive=True)})
-CLIPS = {pathlib.Path(f).stem: f for f in found}
+# folder-safe names: a file called "challenge .mp4" (space) broke the unquoted --out paths in run 1
+CLIPS = {re.sub(r"[^A-Za-z0-9_-]+", "_", pathlib.Path(f).stem.strip()).strip("_"): f for f in found}
 print("clips found:", list(CLIPS) or "none (real-video part will be skipped)")
 
 

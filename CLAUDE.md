@@ -1,6 +1,6 @@
 # Project rules for Claude Code
 
-Team members work in roles 1-5. If the user says which role they have (or asks what to do next), read `docs/TEAM_CONTEXT.md` first: it holds the project state, the contract, the measured results and each role's step-by-step tasks.
+Team members work in roles 1-5. If the user says which role they have (or asks what to do next), read `docs/TEAM_CONTEXT.md` (project state, contract, results) and `GUIDE.md` (every remaining task with owner, steps and the claim-evidence checklist) first.
 
 Hardware JPEG/MJPEG encoder with in-loop selective encryption (Ascon-AEAD128, NIST SP 800-232) for a PYNQ-Z2 (xc7z020clg400-1, 100 MHz). Student team project (RVCE); explain changes so the team can defend them.
 
@@ -14,7 +14,7 @@ Hardware JPEG/MJPEG encoder with in-loop selective encryption (Ascon-AEAD128, NI
 ## Commands (activate the venv first: `source .venv/bin/activate`)
 - `make test` full regression (~40 s). Must pass before you say a task is done.
 - `RUN_SLOW=1 python -m pytest tests/` adds the end-to-end link test; `make xsim-icarus` runs the Vivado testbench.
-- System simulation: `python -m link.run_all` (dashboard on :8000). Experiments: `experiments/*.py` (see HELP_GUIDE.md).
+- System simulation: `python -m link.run_all` (dashboard on :8000). Experiments: `experiments/*.py` (see GUIDE.md §2).
 - `make one T=tb/<file>.py::<test> SEED=<n>` one test; `make waves T=...` with FST waveforms in `sim_build/<top>/`.
 - `make bundle T=...` collects a failure into `debug_bundle.md`.
 - Vivado (needs Vivado on PATH): `python vivado/run_vivado_day.py` (XSim, post-route OOC, block design, tables); guide `docs/VIVADO_ONE_DAY.md`; board test `python -m future_work.board.first_contact`.
@@ -33,3 +33,8 @@ Hardware JPEG/MJPEG encoder with in-loop selective encryption (Ascon-AEAD128, NI
 ## System layer (link/) and experiments
 - Nodes talk UDP only; never import one node from another. Shared code lives in `link/wire.py`, `keys.py`, `feedback.py`, `defence.py`.
 - Every claim in the paper must come from a script in `experiments/` that writes its numbers to `sim_out/`; never type numbers by hand.
+
+## Paper (`paper/`)
+- `paper/data/` is the result snapshot the paper is built from; `paper/make_assets.py` turns it into `paper/tables/*.tex` and `paper/figures/`. Never edit generated tables.
+- Cite only references verified in `paper/refs.bib` (each entry says how it was checked). Never invent a reference, a page number or a result; mark unknowns `\TODO{}`.
+- Claims follow GUIDE.md §5: only ✅ rows may be stated as results.

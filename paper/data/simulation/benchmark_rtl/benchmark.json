@@ -1,0 +1,158 @@
+{
+  "320x240": {
+    "plain JPEG (no protection)": {
+      "ms": 36.31249399998637,
+      "bytes_encrypted": 0.0,
+      "out_bytes": 8395.0,
+      "playable": true
+    },
+    "in-encoder E2 (golden model, Python)": {
+      "ms": 70.33871849999969,
+      "bytes_encrypted": 995.2,
+      "out_bytes": 8437.0,
+      "playable": true
+    },
+    "software selective E2 after encoding": {
+      "ms": 62.33204640000167,
+      "bytes_encrypted": 995.2,
+      "out_bytes": 8437.0,
+      "playable": true
+    },
+    "in-encoder E4 (golden model, Python)": {
+      "ms": 75.59524399999304,
+      "bytes_encrypted": 2177.9125,
+      "out_bytes": 8442.0,
+      "playable": true
+    },
+    "software selective E4 after encoding": {
+      "ms": 67.08004139999844,
+      "bytes_encrypted": 2177.9125,
+      "out_bytes": 8442.0,
+      "playable": true
+    },
+    "in-encoder E5 (golden model, Python)": {
+      "ms": 97.2489021999877,
+      "bytes_encrypted": 2381.8375,
+      "out_bytes": 9427.0,
+      "playable": true
+    },
+    "software selective E5 after encoding": {
+      "ms": 84.7929401999977,
+      "bytes_encrypted": 2381.8375,
+      "out_bytes": 9427.0,
+      "playable": true
+    },
+    "full-stream Ascon-AEAD128 (Python)": {
+      "ms": 22.959922799992682,
+      "bytes_encrypted": 8395.0,
+      "out_bytes": 8411.0,
+      "playable": false
+    },
+    "full-stream AES-128-GCM (OpenSSL)": {
+      "ms": 0.011033354999483436,
+      "bytes_encrypted": 8395.0,
+      "out_bytes": 8411.0,
+      "playable": false
+    },
+    "full-stream ChaCha20-Poly1305 (OpenSSL)": {
+      "ms": 0.007252484999753506,
+      "bytes_encrypted": 8395.0,
+      "out_bytes": 8411.0,
+      "playable": false
+    }
+  },
+  "640x480": {
+    "plain JPEG (no protection)": {
+      "ms": 134.01817160000746,
+      "bytes_encrypted": 0.0,
+      "out_bytes": 19931.9,
+      "playable": true
+    },
+    "in-encoder E2 (golden model, Python)": {
+      "ms": 219.04288730000872,
+      "bytes_encrypted": 2322.55,
+      "out_bytes": 19981.8,
+      "playable": true
+    },
+    "software selective E2 after encoding": {
+      "ms": 150.5955063999977,
+      "bytes_encrypted": 2322.55,
+      "out_bytes": 19981.8,
+      "playable": true
+    },
+    "in-encoder E4 (golden model, Python)": {
+      "ms": 229.18963240001062,
+      "bytes_encrypted": 4523.5875,
+      "out_bytes": 19987.0,
+      "playable": true
+    },
+    "software selective E4 after encoding": {
+      "ms": 162.3329574999957,
+      "bytes_encrypted": 4523.5875,
+      "out_bytes": 19987.0,
+      "playable": true
+    },
+    "in-encoder E5 (golden model, Python)": {
+      "ms": 316.10858130001134,
+      "bytes_encrypted": 5556.7,
+      "out_bytes": 24198.4,
+      "playable": true
+    },
+    "software selective E5 after encoding": {
+      "ms": 248.27982149999457,
+      "bytes_encrypted": 5556.7,
+      "out_bytes": 24198.4,
+      "playable": true
+    },
+    "full-stream Ascon-AEAD128 (Python)": {
+      "ms": 55.38129959999765,
+      "bytes_encrypted": 19931.9,
+      "out_bytes": 19947.9,
+      "playable": false
+    },
+    "full-stream AES-128-GCM (OpenSSL)": {
+      "ms": 0.007682749999560201,
+      "bytes_encrypted": 19931.9,
+      "out_bytes": 19947.9,
+      "playable": false
+    },
+    "full-stream ChaCha20-Poly1305 (OpenSSL)": {
+      "ms": 0.013625720000050023,
+      "bytes_encrypted": 19931.9,
+      "out_bytes": 19947.9,
+      "playable": false
+    }
+  },
+  "rtl": {
+    "size": "160x128",
+    "clock_mhz": 100.0,
+    "cycles": {
+      "E0": 33515,
+      "E1": 33517,
+      "E2": 33513,
+      "E3": 33517,
+      "E4": 33510
+    },
+    "cycles_per_pixel": {
+      "E0": 1.636474609375,
+      "E1": 1.636572265625,
+      "E2": 1.636376953125,
+      "E3": 1.636572265625,
+      "E4": 1.63623046875
+    },
+    "fps_640x480": {
+      "E0": 198.91590829976627,
+      "E1": 198.90403874650676,
+      "E2": 198.92777926973613,
+      "E3": 198.90403874650676,
+      "E4": 198.94558838157764
+    },
+    "extra_cycles_vs_E0": {
+      "E0": 0,
+      "E1": 2,
+      "E2": -2,
+      "E3": 2,
+      "E4": -5
+    }
+  }
+}

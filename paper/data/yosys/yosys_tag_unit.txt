@@ -1,0 +1,28 @@
+
+7. Printing statistics.
+
+=== tag_unit ===
+
+        +----------Local Count, excluding submodules.
+        | 
+     1951 wires
+     6687 wire bits
+       41 public wires
+     1950 public wire bits
+       12 ports
+      607 port bits
+     3540 cells
+        2   $scopeinfo
+        1   BUFG
+        7   CARRY4
+     1194   FDRE
+       10   FDSE
+      477   IBUF
+       10   INV
+      104   LUT2
+      567   LUT3
+      275   LUT4
+      475   LUT5
+      288   LUT6
+      130   OBUF
+

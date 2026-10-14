@@ -49,7 +49,7 @@ Steps 1, 2, 4 and 5 can all be done by one command: `python vivado/run_vivado_da
 3. **The repo and Python.**
    * Keep the repo in a path **without spaces**, e.g. `C:\work\fpga-video-encryption-` or `~/fpga`.
    * Run `git pull` on `main`.
-   * Create the Python environment as in `HELP_GUIDE.md` §2.
+   * Create the Python environment as in `GUIDE.md` §2.
    * `pip install -r requirements.txt`.
 4. **Check:** open a new terminal, then
    ```
@@ -107,7 +107,7 @@ Then `vivado/parse_reports.py` writes the paper table to `sim_out/vivado/vivado_
 * **LUT / FF / BRAM / DSP** and % of the chip. The Yosys estimate was ~5.3 K LUTs (~10 %); Vivado's
   number is the one to report.
 * **Power** (`power.txt`): Vivado's *vectorless estimate*. Report it as an estimate; real power comes
-  from the board (REMAINING_WORK.md, A4).
+  from the board (GUIDE.md §4.2, A4).
 
 **If WNS < 0:**
 
@@ -223,7 +223,7 @@ git push -u origin vivado-results        (then open a pull request on GitHub)
 If the gate passes and time is left:
 
 * **ARM baseline:** `python3 -m future_work.baselines.bench_software_codecs --sizes 320x240 640x480`.
-* **Power:** with a USB power meter, measure idle, ARM encoding and FPGA encoding (see REMAINING_WORK.md, A4).
+* **Power:** with a USB power meter, measure idle, ARM encoding and FPGA encoding (see GUIDE.md §4.2, A4).
 
 ---
 
@@ -236,4 +236,4 @@ If the gate passes and time is left:
 | Overlay for the board | `future_work/board/overlay/` |
 | Bit-exact on hardware, real fps (if board) | `sim_out/board/first_contact.md` |
 
-What comes after this day is in **`docs/REMAINING_WORK.md`**.
+What comes after this day is in **`GUIDE.md` §4**.
