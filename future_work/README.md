@@ -32,7 +32,8 @@ future_work/
 │   └── paper_tables.py           ✅  every result table from the result files (paper/data/paper_tables.md)
 ├── kaggle/
 │   ├── kaggle_complete.py    ✅  the whole simulation (all roles, 10 seeds, real video) in one Kaggle cell
-│   └── kaggle_remaining.py   ✅  the remaining GPU/CPU tasks (open clips, Kodak, standard metrics, restart interval, stronger learned attack)
+│   └── kaggle_remaining.py   ✅  open clips, Kodak, standard metrics, restart interval, stronger learned attack;
+│                                 RERUN = True repeats only what the 14 Oct fixes changed (GUIDE B20, B21)
 ├── clips_manifest.md             test clips by hash (the clips themselves are never committed)
 └── results/                      generated outputs (not in git)
 ```

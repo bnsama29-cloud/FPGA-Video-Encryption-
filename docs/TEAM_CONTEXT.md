@@ -153,12 +153,17 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 - **The complete simulation result set.** One Kaggle run on 14 Oct (`future_work/kaggle/kaggle_complete.py`):
   3 repeats of every attack suite, 10 seeds of the policy study, 4 real clips, and a learned attack
   on a GPU. The snapshot is in `paper/data/`; every table is in **`paper/data/paper_tables.md`**.
+- **The open-data run** (14 Oct, `future_work/kaggle/kaggle_remaining.py`, 39/39 steps): Sintel trailer,
+  Tears of Steel (CC BY 3.0) and Kodak; standard image-encryption metrics; E5 restart interval
+  N = 1–32 with the non-zero counting attack; U-Net trained on 3 clips and tested on 3 others; the
+  attack suite with an open clip. Snapshot in `paper/data/extra/` (its README gives the provenance).
+  A short rerun is pending (GUIDE B20, B21).
 
 **Not done yet.**
 
 - Vivado post-route numbers and the overlay (`docs/VIVADO_ONE_DAY.md`).
 - Everything on the board (GUIDE A1–A8).
-- The P1 polish items (GUIDE B1–B3).
+- The P1 polish items (GUIDE B1, B3, B20–B22) and the rest of GUIDE §4.3.
 - Finishing the paper (`paper/`, first full draft exists).
 
 **Where to find what.**
@@ -169,7 +174,8 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 | Resources (until Vivado) | Yosys estimate, `paper/data/yosys/` |
 | Attack reaction, false alarms, latency | §Reaction (3 runs each) |
 | Bandit vs threshold | §Bandit vs threshold over seeds (10 seeds) |
-| Leakage per mode, jigsaw, learned attack | §Leakage, §E5 against the jigsaw solver, §Learned |
+| Leakage per mode, jigsaw, learned attack | §Leakage, §E5 against the jigsaw solver, §Learned; open data in `paper/data/extra/` |
+| Standard metrics, restart interval, NZCA | `paper/data/extra/<source>/standard_metrics/`, `.../restart_interval/`; tables via `paper/make_assets.py` |
 | Decoders that open the stream | §Format compliance |
 
 **Bugs found and fixed:** `docs/TESTING.md` §8 (bug log). It makes good report material.
@@ -178,14 +184,15 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 
 ## 5. Honest limitations and claims to avoid (the paper must respect these)
 
-- **The sketch leak.** Sign and amplitude encryption never hides *which* coefficients are non-zero, so E1–E4 all leak an edge sketch, and E3/E4 don't reduce it. E5 hides block positions; a greedy jigsaw solver and a trained U-Net both fail to restore the outline (edge correlation ≈ 0), but a stronger solver is still to be tried (GUIDE B9).
-- **E5 overhead.** E5 costs 13–21% bitrate at restart interval 1, and the RTL doesn't support it yet.
+- **The sketch leak.** Sign and amplitude encryption never hides *which* coefficients are non-zero, so E1–E4 all leak an edge sketch, and E3/E4 don't reduce it. E5 hides block positions; a greedy jigsaw solver and a trained U-Net both fail to restore the outline (edge correlation ≤ 0.044), but a stronger solver is still to be tried (GUIDE B9). E5 also defeats the non-zero counting attack (NZCA).
+- **E5 overhead.** E5 costs 12–21% bitrate at restart interval 1 (10–23% per clip at 320×240), and the RTL doesn't support it yet. Longer intervals are cheap (0.5% at N = 32) but **not** safe: a beam-search solver re-chains 15–41% of the 10 segments (chance 11%). Keep N = 1.
 - **Passive eavesdroppers are invisible.** The defence reacts only to *active* attacks; a passive eavesdropper is handled only by the floor mode (E2).
 - **Loss vs jamming.** The receiver can't tell benign loss from partial jamming. Only near-total suppression (≥90% frame loss) escalates.
 - **Reaction time.** It is bounded by the 1 s decision window plus the 0.5 s heartbeat.
-- **Learned attacker.** A U-Net recovers coarse brightness and colour layout from E2–E5 streams (SSIM up to ~0.43) but no outline under E5. Say exactly that, not "nothing leaks".
+- **Learned attacker.** A U-Net **breaks E1** (edge corr. 0.69, SSIM 0.79 on unseen clips). It recovers coarse brightness and colour from E2–E5 (SSIM up to ~0.43; E5 0.36 in the 3→3 setup) but no outline under E5 (edge ≤ 0.044). How much of the SSIM is the video prior is pending (GUIDE B21). Say exactly that, not "nothing leaks".
+- **Standard metrics.** Key sensitivity is good, but adjacent-pixel correlation (0.88–0.92) and entropy stay far from full-cipher values: format-compliant encryption keeps 8×8 structure. Report them for comparability, never as proof of security.
 - **Bandit.** Over 10 seeds it encrypts fewer bits but reacts slower and leaks more under attack: a trade-off, not an improvement.
-- **Test clips.** The four real clips are copyrighted trailers / talking-head videos: numbers only, no frames in the paper, until GUIDE B2 replaces them.
+- **Test clips.** The four private clips are copyrighted trailers / talking-head videos: numbers only, never frames. Pictures in the paper come only from the open films (Sintel, Tears of Steel) or the synthetic scene.
 - **KDF.** It uses Ascon-AEAD128 as a PRF instead of Ascon-XOF128.
 - **No side-channel protection** of the Ascon cores.
 - **Speed argument.** On a PC, full-stream AES-GCM is almost free. So the argument must be:

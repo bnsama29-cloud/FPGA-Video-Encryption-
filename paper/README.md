@@ -43,7 +43,7 @@ make             # main.pdf (pdflatex + bibtex)
 | Author block | author order, initials, e-mails; whether the mentor is a co-author | team + mentor |
 | §III-A | nonce-uniqueness argument, reboot behaviour | GUIDE.md B3 |
 | §IV | XSim result; Table III post-route numbers | GUIDE.md 4.1 |
-| Fig. 2 | an openly licensed real frame instead of the synthetic one | GUIDE.md B2 |
+| §V "Learned attacker" | no-ciphertext control for the E5 SSIM | GUIDE.md B21 |
 | §VI, last paragraph | ARM baseline, FPGA fps, energy per frame | GUIDE.md A1–A4, B1 |
 | Acknowledgment | AI-assistance disclosure (below) | team |
 | refs.bib | 3 small gaps marked `TODO` (pages/volume for Puech, Lin, Boyadjis) | IEEE Xplore / ScienceDirect |
@@ -68,8 +68,11 @@ NIST, arXiv, or the authors' institutional page. Before submission:
 * **Plagiarism check.** Run the final PDF through the plagiarism checker your institution provides
   (RVCE library: Turnitin or iThenticate) before submission; most IEEE conferences also check with
   iThenticate (CrossCheck). Paraphrasing a source is still citing it.
-* **Figures and tables** are all our own, generated from our data. The movie trailers we tested on
-  are copyrighted: the paper reports numbers only and shows no frames from them (GUIDE.md B2).
+* **Figures and tables** are all our own, generated from our data. The four private clips we tested on
+  are copyrighted: the paper reports numbers only and shows no frames from them. Fig. 2 shows a frame
+  of the Sintel trailer (© Blender Foundation, CC BY 3.0); the licence requires the attribution that
+  is in its caption. Keep it there.
+* **Page limit.** The draft is exactly 6 pages; check `pdfinfo main.pdf` after every edit.
 * **AI assistance.** IEEE's policy is that AI-generated content (text, code, figures) must be
   disclosed in the acknowledgments, naming the tool and the sections where it was used; AI tools
   cannot be listed as authors. Check the specific conference's call for papers as well. Fill in the
