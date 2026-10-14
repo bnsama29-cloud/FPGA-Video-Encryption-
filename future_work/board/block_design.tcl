@@ -4,13 +4,14 @@
 #   vivado -mode gui   -source future_work/board/block_design.tcl          (to inspect the diagram)
 #   vivado -mode batch -source future_work/board/block_design.tcl -tclargs 50   (FCLK0 = 50 MHz
 #                                                         if timing fails at 100 MHz)
+#   ... -tclargs 100 4                                   (FCLK0 = 100 MHz, 4 parallel jobs)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
 #
-# STATUS: NOT yet run in Vivado (no Vivado where it was written); reviewed against the
-# Vivado 2019.2-2024.x Tcl API. Expect to fix small things on the first run (an IP
-# version, a pin name). Guide: docs/VIVADO_ONE_DAY.md step 4. Paste the FIRST
+# STATUS: first run in Vivado 2026.1 on 14 Oct 2026 stopped at create_bd_cell (header file
+# not in the project, fixed above); the steps after it have still never run. Expect to fix
+# small things (an IP version, a pin name). Guide: docs/VIVADO_ONE_DAY.md step 4. Paste the FIRST
 # "ERROR:" line of vivado.log into Claude together with docs/TEAM_CONTEXT.md.
 #
 # What it builds:
@@ -25,6 +26,9 @@ set projdir [file join $root future_work board vivado_proj]
 set outdir  [file join $root future_work board overlay]
 set part    xc7z020clg400-1
 set fclk    [expr {[llength $argv] > 0 ? [lindex $argv 0] : 100}]
+# parallel jobs for the IP/out-of-context synthesis runs: each needs ~2 GB for the xc7z020,
+# so 2 suits an 8 GB laptop (second argument; run_vivado_day.py --jobs passes it)
+set jobs    [expr {[llength $argv] > 1 ? [lindex $argv 1] : 2}]
 
 create_project pynq_secure_jpeg $projdir -part $part -force
 # PYNQ-Z2 board files give the exact PS presets (DDR, MIO). They are used automatically
@@ -41,6 +45,14 @@ if {$bp ne ""} {
 
 add_files [glob [file join $root rtl *.v]]
 add_files [file join $root future_work board sjpeg_bd_top.v]
+# The RTL `include`s generated headers (dct_coeffs.vh, ...). A module reference
+# (create_bd_cell -type module) only accepts them when they are project files of type
+# "Verilog Header" (first Vivado run: ERROR [filemgmt 56-591], bug #18).
+set vh [glob -nocomplain [file join $root rtl include *.vh]]
+if {[llength $vh] > 0} {
+    add_files -norecurse $vh
+    set_property file_type {Verilog Header} [get_files $vh]
+}
 set_property include_dirs [file join $root rtl include] [get_filesets sources_1]
 update_compile_order -fileset sources_1
 
@@ -113,7 +125,7 @@ set bd [get_files system.bd]
 add_files -norecurse [make_wrapper -files $bd -top]
 set_property top system_wrapper [current_fileset]
 update_compile_order -fileset sources_1
-launch_runs impl_1 -to_step write_bitstream -jobs 4
+launch_runs impl_1 -to_step write_bitstream -jobs $jobs
 wait_on_run impl_1
 
 file mkdir $outdir

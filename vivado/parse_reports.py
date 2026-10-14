@@ -159,7 +159,7 @@ def tables(results):
 def main():
     folders = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / "sim_build").glob("vivado_*")) + \
         [p for p in [ROOT / "future_work" / "board" / "overlay"] if p.exists()]
-    folders = [f for f in folders if f.is_dir()]
+    folders = [f for f in folders if f.is_dir() and f.name != "vivado_logs"]   # logs are not a design
     if not folders:
         sys.exit("no report folders: run vivado/vivado_ooc.tcl (or vivado/run_vivado_day.py) first")
     results = [read_folder(f) for f in folders]

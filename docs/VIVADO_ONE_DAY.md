@@ -13,8 +13,21 @@ together with `docs/TEAM_CONTEXT.md` if anything fails.
 **Status of the scripts:**
 
 * `vivado/run_xsim.*` and `vivado/vivado_ooc.tcl` are straightforward; `vivado_ooc.tcl` was improved for this day.
-* The block design script (`future_work/board/block_design.tcl`) has **not been run in Vivado yet**.
+* The block design script (`future_work/board/block_design.tcl`) has **not finished a run in Vivado yet**.
   Expect one or two small fixes there (step 4 says how).
+
+**First real run (Vivado 2026.1, Windows laptop, i5-1135G7 / 8 GB, 14 Oct 2026), 58 min in total.**
+What it found is logged as bugs #17 and #18 in `docs/TESTING.md`:
+
+* Every per-block run passed and the tool times were: top 19 min, each block 3–6 min, fmax re-run 6 min.
+* **Timing:** the encoder closed only at 21.5 ns (≈ 47 MHz) because the DCT did 8 multiplies and
+  8 additions in one clock (quantiser: −1.2 ns). Both are now pipelined (bit-exact, tests green);
+  the post-route numbers must be **re-run** with the new RTL.
+* XSim (path resolution on Windows), the Python packages and the block design's include file were
+  fixed; the block design has not got past `create_bd_cell` yet.
+* **Run it from a normal Command Prompt** after `settings64.bat` (or from the "Vivado Tcl Shell"),
+  **not** with `exec python ...` in the Vivado GUI's Tcl console: that uses Vivado's own Python
+  (no Pillow), shows nothing until the end, and keeps the GUI's ~1 GB in memory.
 * Without Vivado, everything was checked only here: the report parser (on reports in Vivado's
   format), the one-command driver (dry run) and the board script (golden-model mock).
 
@@ -37,10 +50,14 @@ Steps 1, 2, 4 and 5 can all be done by one command: `python vivado/run_vivado_da
 1. **Vivado.** Use the free *Vivado ML Standard* edition from amd.com → Support → Downloads (it
    needs a free AMD account). The free edition includes the PYNQ-Z2's chip (xc7z020).
    * In the installer choose **Vivado**, then **Vivado ML Standard**.
-   * Under devices, tick **only SoCs → Zynq-7000**. This keeps the install to roughly 30–40 GB instead of 100+.
+   * Under devices, tick **only SoCs → Zynq-7000** (in the 2026.1 installer it is under *SoCs*, not
+     *7 Series*). This keeps the install to roughly 30–40 GB instead of 100+.
    * **Version:** 2022.1 matches the PYNQ v3.0 image (check the release notes of the image on your SD
      card); any 2020.2 or newer is fine for the paper numbers.
-   * No licence file is needed for this device.
+   * Licence: Vivado 2026.1 refused to start without one. On amd.com/support → *Product Licensing*,
+     tick **Vivado Basic Tier License, Node Locked** and **Vitis HLS License** (both *No Charge*, no
+     end date), host ID type *Ethernet address* (the NIC ID shown by *Vivado License Manager → View
+     Host Information*), then *Load License* in the License Manager. Do not take the 60-day trial.
    * If a college lab PC already has Vivado 2020.2+, use it and skip the install.
 2. **PYNQ-Z2 board files** (exact PS settings). Download the board files from the PYNQ GitHub
    repository or TUL's PYNQ-Z2 page, and copy the `pynq-z2` folder into
@@ -164,7 +181,8 @@ python vivado/run_vivado_day.py --steps ooc parse --blocks --fmax
 
 | First-run error (typical) | Fix |
 |---|---|
-| `module reference ... could not find include file` | Settings → General → Verilog include directories: add `rtl/include`, then re-run |
+| `[filemgmt 56-591] Given include File ... dct_coeffs.vh needs to be added to the project` | fixed in the script (bug #18): `rtl/include/*.vh` are added as *Verilog Header* |
+| Out of memory / laptop freezes during the block design | `--jobs 1` (default 2) and close the browser |
 | `apply_bd_automation ... invalid -config` | Do the connection automation in the GUI and copy the journal's command into the script |
 | `[BD 41-...] pin already connected` | Delete the duplicate `connect_bd_net` line (the automation already wired it) |
 | `IP ... is locked / version` | Tools → Report IP Status → Upgrade, then re-run |

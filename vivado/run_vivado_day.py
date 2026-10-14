@@ -9,6 +9,9 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
     python vivado/run_vivado_day.py --steps ooc --blocks --fmax # + per-block runs, confirm fmax
     python vivado/run_vivado_day.py --dry-run        # only print what it would run
     python vivado/run_vivado_day.py --steps bd --fclk 50        # overlay at 50 MHz
+    python vivado/run_vivado_day.py --steps bd --jobs 1         # less RAM (8 GB laptops: 1-2)
+Run it from a normal terminal with YOUR Python (numpy + pillow), not with `exec` from the
+Vivado Tcl console: that uses Vivado's bundled Python and hides all output until the end.
 
 Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just run):
   xsim   golden-model vectors -> XSim self-checking testbench -> "XSIM RESULT: PASS"
@@ -93,7 +96,7 @@ def step_ooc(a):
 
 
 def step_bd(a):
-    vivado("block_design", "future_work/board/block_design.tcl", str(a.fclk), r"RESULT overlay", a.dry_run)
+    vivado("block_design", "future_work/board/block_design.tcl", f"{a.fclk} {a.jobs}", r"RESULT overlay", a.dry_run)
     overlay = ROOT / "future_work" / "board" / "overlay"
     if not a.dry_run:
         have = [f.name for f in overlay.glob("secure_jpeg.*")] if overlay.exists() else []
@@ -107,6 +110,26 @@ def step_parse(a):
                             f"--out sim_out/paper_tables.md")
 
 
+def check_python():
+    """The XSim step runs the golden model, which needs numpy and Pillow. Fail in seconds, not
+    after an hour of Vivado runs (bug #18: `exec python ...` typed in the Vivado Tcl console
+    starts Vivado's bundled Python, which has numpy but not Pillow)."""
+    missing = []
+    for mod, pkg in (("numpy", "numpy"), ("PIL", "pillow")):
+        try:
+            __import__(mod)
+        except ImportError:
+            missing.append(pkg)
+    if missing:
+        vivado_py = "vivado" in sys.executable.lower() or "xilinx" in sys.executable.lower()
+        sys.exit(f"This Python ({sys.executable}) lacks {', '.join(missing)}.\n"
+                 + ("It is Vivado's own Python: do not start this script from the Vivado Tcl console.\n"
+                    if vivado_py else "")
+                 + "Use your normal Python: open a Command Prompt, run settings64.bat (puts vivado on the\n"
+                   "PATH), cd to the repository, then once:  python -m pip install numpy pillow\n"
+                   "or skip the simulation:  --steps ooc bd parse")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
@@ -114,10 +137,13 @@ def main():
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
     ap.add_argument("--fmax", action="store_true", help="re-run the top at the clock the slack suggests")
     ap.add_argument("--fclk", type=int, default=100, help="PL clock of the overlay in MHz (block design)")
+    ap.add_argument("--jobs", type=int, default=2, help="parallel runs in the block design (each ~2 GB RAM)")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     if not a.dry_run and shutil.which("vivado") is None and shutil.which("vivado.bat") is None:
         sys.exit("vivado is not on the PATH: run settings64.bat / settings64.sh first (see the top of this file)")
+    if "xsim" in a.steps and not a.dry_run:
+        check_python()
     t0 = time.time()
     for s in a.steps:
         globals()[f"step_{s}"](a)
