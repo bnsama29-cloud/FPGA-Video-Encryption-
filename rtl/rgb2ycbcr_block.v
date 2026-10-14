@@ -28,8 +28,24 @@ module rgb2ycbcr_block #(
 );
     localparam MAXW = 1 << LOG_MAXW;
 
-    // ---------------------------------------------------- colour conversion
-    wire [7:0] r = s_data[7:0], g = s_data[15:8], b = s_data[23:16];
+    // ---------------------------------------------------- write pipeline (bug #20)
+    // The first overlay run missed 100 MHz by 3.1 ns: the DMA's output register fed the colour
+    // conversion, the clamp, the chroma average and the line-buffer write in ONE clock (the
+    // out-of-context run could not see it: its input ports have no input delay). Now:
+    //   take  the counters (wx, wy, wsel, wactive) advance exactly as before, so s_ready is unchanged
+    //   D1    registered pixel + where it goes          D2  registered Y, Cb, Cr
+    //   write line buffers / chroma sums from D2, and `full` is set when the last pixel lands there
+    // The writes happen 2 clocks after the handshake, in the same order, so the buffers
+    // end up with the same contents; the reader starts 2 clocks later.
+    reg                d1_v, d2_v;
+    reg [23:0]         d1_rgb;
+    reg                d1_sel, d2_sel, d1_last, d2_last;
+    reg [3:0]          d1_y, d2_y;
+    reg [LOG_MAXW-1:0] d1_x, d2_x;
+    reg [7:0]          d2_yp, d2_cb, d2_cr;
+
+    // ---------------------------------------------------- colour conversion (on D1)
+    wire [7:0] r = d1_rgb[7:0], g = d1_rgb[15:8], b = d1_rgb[23:16];
     wire signed [18:0] y_t  = 77 * r + 150 * g + 29 * b + 128;
     wire signed [18:0] cb_t = -43 * $signed({1'b0, r}) - 85 * $signed({1'b0, g}) + 128 * $signed({1'b0, b}) + 32896;
     wire signed [18:0] cr_t = 128 * $signed({1'b0, r}) - 107 * $signed({1'b0, g}) - 21 * $signed({1'b0, b}) + 32896;
@@ -62,23 +78,28 @@ module rgb2ycbcr_block #(
     assign s_ready = wactive && !full[wsel];
     wire take = s_valid && s_ready;
 
-    wire [9:0] cb_pair = cb_prev + cb_px;
-    wire [9:0] cr_pair = cr_prev + cr_px;
-    wire [LOG_MAXW-2:0] cx = wx[LOG_MAXW-1:1];
+    wire [9:0] cb_pair = cb_prev + d2_cb;
+    wire [9:0] cr_pair = cr_prev + d2_cr;
+    wire [LOG_MAXW-2:0] cx = d2_x[LOG_MAXW-1:1];
     wire [9:0] cb_avg = (cbsum[cx] + cb_pair + 10'd2) >> 2;
     wire [9:0] cr_avg = (crsum[cx] + cr_pair + 10'd2) >> 2;
     wire last_px_of_row = (wx == width - 12'd1) && (wy == 4'd15);
 
+    // datapath registers (no reset: qualified by d1_v / d2_v)
     always @(posedge clk) begin
-        if (take) begin
-            ybuf[{wsel, wy, wx[LOG_MAXW-1:0]}] <= y_px;
-            if (!wx[0]) begin
-                cb_prev <= cb_px; cr_prev <= cr_px;
-            end else if (!wy[0]) begin
+        d1_rgb <= s_data[23:0];
+        d1_sel <= wsel; d1_y <= wy; d1_x <= wx[LOG_MAXW-1:0]; d1_last <= last_px_of_row;
+        d2_yp <= y_px; d2_cb <= cb_px; d2_cr <= cr_px;
+        d2_sel <= d1_sel; d2_y <= d1_y; d2_x <= d1_x; d2_last <= d1_last;
+        if (d2_v) begin
+            ybuf[{d2_sel, d2_y, d2_x}] <= d2_yp;
+            if (!d2_x[0]) begin
+                cb_prev <= d2_cb; cr_prev <= d2_cr;
+            end else if (!d2_y[0]) begin
                 cbsum[cx] <= cb_pair; crsum[cx] <= cr_pair;
             end else begin
-                cbbuf[{wsel, wy[3:1], cx}] <= cb_avg[7:0];
-                crbuf[{wsel, wy[3:1], cx}] <= cr_avg[7:0];
+                cbbuf[{d2_sel, d2_y[3:1], cx}] <= cb_avg[7:0];
+                crbuf[{d2_sel, d2_y[3:1], cx}] <= cr_avg[7:0];
             end
         end
     end
@@ -106,7 +127,9 @@ module rgb2ycbcr_block #(
             wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start;
             rrow <= 8'd0; rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
+            d1_v <= 1'b0; d2_v <= 1'b0;
         end else begin
+            d1_v <= take; d2_v <= d1_v;
             // writer counters
             if (take) begin
                 if (wx == width - 12'd1) begin
@@ -139,7 +162,7 @@ module rgb2ycbcr_block #(
                 end
             end
             // buffer ownership: set by writer, cleared by reader
-            if (take && last_px_of_row) full[wsel] <= 1'b1;
+            if (d2_v && d2_last)        full[d2_sel] <= 1'b1;
             if (rd_go && last_m)        full[rsel] <= 1'b0;
         end
     end

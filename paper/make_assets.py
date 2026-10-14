@@ -79,7 +79,7 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
 
     viv = DATA / "vivado" / "vivado_results.json"
     if viv.exists():                                      # Vivado post-route: the real numbers
-        r = next(x for x in J(viv) if "secure_jpeg_top" in x["name"])
+        r = next(x for x in J(viv) if x["name"] == "secure_jpeg_top")
         u = r["util"]
         g = lambda k: f"{u[k][0]:g} ({u[k][2]:.1f}\\%)" if k in u else r"\TODO{?}"
         src = f"Vivado post-route, WNS {r['timing'].get('wns', 0):.3f}\\,ns at {1000 / r['period']:.0f}\\,MHz"
