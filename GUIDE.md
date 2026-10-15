@@ -220,10 +220,12 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
 | B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM + Kaggle (640x480 measured 1.534 cycles/px, law confirmed) | `docs/RESEARCH.md` |
 | B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model, exact on 7 sources; RTL later | `docs/RESEARCH.md` |
-| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic; Kaggle run invalid (bugs #22, #23, fixed): **rerun R3 on Kaggle** | `docs/RESEARCH.md` |
+| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic + 5 films (error 3-7x lower than fixed quality); Tears of Steel limit cycle fixed (bug #25), rerun | `docs/RESEARCH.md` |
 | B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic + 6 film clips (fixed-camera technique; static-camera clip wanted) | `docs/RESEARCH.md` |
 | B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
 | B31 | Frame-size side channel (R7: every level E0-E5 leaks the same; separability 0.95 fixed camera, 0.50-0.95 films): constant-size padding option in `link/` + static-camera clip | P1 | 2 + 5 | ✅ measured, in the paper (Discussion); padding option and FF+PI rerun open | `docs/RESEARCH.md` |
+| B33 | Research R8: chosen-plaintext attack (Li et al.) on the E5 shuffle, transferred across frames | P1 | 5 | ✅ synthetic (chance-level placement); Kaggle for clips | `docs/RESEARCH.md` |
+| B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ synthetic 0.55 for +3 %; Kaggle for clips; sender option open | `docs/RESEARCH.md` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
 | B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
@@ -458,7 +460,8 @@ two restart-interval rows already moved to the repository).
 | Bandit: fewer encrypted bits, slower reaction | policy_seeds, 10 seeds, paired | ✅ |
 | Faster / lower energy than software on the same board | A2–A4 (+ B1) | ⏳ |
 | Every level E0–E5 leaks motion through the frame size equally; constant-size frames close it (cost depends on content) | `size_leak.py`, 7 sources (fixed-camera case: synthetic only) | ✅ (E0–E5 and padding rows) |
-| Rate control + padding to a cap hides motion | `size_leak.py` FF+PI row | ⏳ rerun after bugs #22/#23 |
+| Rate control + padding to a cap hides motion | `size_leak.py` FF+PI row | ❌ **do not claim**: 0.51-0.74 and 7-30 % frames over cap on films |
+| E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ synthetic · ⏳ clips |
 | E5 in hardware | B6 | 📝 (paper says "model level") |
 
 **Claims to avoid:**

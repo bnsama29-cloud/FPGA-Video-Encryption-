@@ -1,0 +1,132 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (research-real-clips)",
+   "PASS",
+   2.0
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   9.0
+  ],
+  [
+   "synthetic",
+   "R3 bitrate regulation",
+   "PASS",
+   88.2
+  ],
+  [
+   "synthetic",
+   "R7 frame-size side channel",
+   "PASS",
+   61.6
+  ],
+  [
+   "avengers",
+   "R3 bitrate regulation",
+   "PASS",
+   64.1
+  ],
+  [
+   "avengers",
+   "R7 frame-size side channel",
+   "PASS",
+   39.1
+  ],
+  [
+   "challenge",
+   "R3 bitrate regulation",
+   "PASS",
+   91.7
+  ],
+  [
+   "challenge",
+   "R7 frame-size side channel",
+   "PASS",
+   66.8
+  ],
+  [
+   "denzel",
+   "R3 bitrate regulation",
+   "PASS",
+   80.4
+  ],
+  [
+   "denzel",
+   "R7 frame-size side channel",
+   "PASS",
+   62.0
+  ],
+  [
+   "jailer",
+   "R3 bitrate regulation",
+   "PASS",
+   60.5
+  ],
+  [
+   "jailer",
+   "R7 frame-size side channel",
+   "PASS",
+   49.3
+  ],
+  [
+   "sintel_trailer",
+   "R3 bitrate regulation",
+   "PASS",
+   58.2
+  ],
+  [
+   "sintel_trailer",
+   "R7 frame-size side channel",
+   "PASS",
+   38.5
+  ],
+  [
+   "tearsofsteel",
+   "R3 bitrate regulation",
+   "PASS",
+   63.1
+  ],
+  [
+   "tearsofsteel",
+   "R7 frame-size side channel",
+   "PASS",
+   56.3
+  ]
+ ],
+ "minutes": 14.9,
+ "quick": false,
+ "sources": {
+  "synthetic": {
+   "path": "synthetic",
+   "kind": "open"
+  },
+  "avengers": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/avengers.mp4",
+   "kind": "private"
+  },
+  "challenge": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/challenge .mp4",
+   "kind": "private"
+  },
+  "denzel": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/denzel.mp4",
+   "kind": "private"
+  },
+  "jailer": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/jailer.mp4",
+   "kind": "private"
+  },
+  "sintel_trailer": {
+   "path": "/kaggle/working/opendata/sintel_trailer.mp4",
+   "kind": "open"
+  },
+  "tearsofsteel": {
+   "path": "/kaggle/working/opendata/tearsofsteel.mov",
+   "kind": "open"
+  }
+ }
+}

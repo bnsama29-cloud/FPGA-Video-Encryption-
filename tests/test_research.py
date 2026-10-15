@@ -174,3 +174,41 @@ def test_synthetic_source_is_reproducible():
     for i in range(3):
         fa, fb = first[i], b.read()
         assert np.array_equal(fa, fb), f"frame {i} differs between two opens"
+
+
+def test_no_limit_cycle_after_a_cut_to_a_detailed_scene():
+    """Bug #25: on Tears of Steel a cut from black to a detailed scene made the frame 764 % too big;
+    with the linear error (unbounded above, -100 % below) PI and FF+PI then flipped between quality
+    5 and 95 every frame. Log-domain error and a slew limit keep the loop calm."""
+    import rate_control as RC
+    blk = [np.zeros((64, 96, 3), np.uint8)]
+    frames = blk * 20 + [make_image(96, 64, "scene", seed=s) for s in range(4)] + blk * 20 + \
+        [make_image(96, 64, "noise", seed=s) for s in range(36)]
+    prep = RC.prepare(frames)
+    for c in (RC.I, RC.PI, RC.FFPI):
+        q = RC.run(frames, c, prep)["q"]
+        jumps = [(t, round(a), round(b)) for t, (a, b) in enumerate(zip(q, q[1:])) if abs(a - b) > RC.DQ_MAX + RC.FF_MAX]
+        assert not jumps, f"{c.name}: quality jumped {jumps[:3]}"
+        tail = q[-25:]
+        flips = sum(abs(a - b) > 20 for a, b in zip(tail, tail[1:]))
+        assert flips == 0, f"{c.name}: {flips} large flips in the last 25 frames: {[round(x) for x in tail]}"
+
+
+# ---------------------------------------------------------------- R8 chosen plaintext
+def test_permutation_learned_from_one_frame_does_not_fit_the_next():
+    """E5 draws a fresh permutation per frame (frame nonce), so the chosen-plaintext attack of
+    Li et al. (learn the permutation once, reuse it) places only chance-level tiles; a key-only
+    shuffle would hand over the oracle picture."""
+    import chosen_plaintext as CP
+    r = CP.pair(make_image(160, 128, "scene", seed=4), ctr=5)
+    assert r["key-only shuffle"]["tiles_correct"] == 1.0
+    assert r["E5 (per frame)"]["tiles_correct"] <= 3 / r["n_tiles"], r["E5 (per frame)"]
+    assert r["E5 (per frame)"]["edge"] < r["key-only shuffle"]["edge"] - 0.1, r
+
+
+def test_deployable_padding_never_shrinks():
+    import size_leak as SL
+    sizes = [5, 9, 7, 12, 3, 12, 15, 4]
+    run = np.maximum.accumulate(sizes)
+    assert all(b >= a for a, b in zip(run, run[1:])) and all(r >= s for r, s in zip(run, sizes))
+    assert SL.leak(list(run), np.arange(len(sizes), dtype=float))["event_auc"] >= 0.5

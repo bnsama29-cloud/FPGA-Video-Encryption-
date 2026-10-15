@@ -7,7 +7,8 @@ HOW TO RUN (one Kaggle account)
   3. Paste this whole file into ONE code cell -> Save Version -> "Save & Run All (Commit)".
   4. Download research_results.zip from the version's Output tab and send it.
   QUICK = True first if you want a 10-minute smoke test.
-  ONLY = ["r3_rate", "r7_size"] reruns just those two (~20 min, after the fixes of bugs #22-#24);
+  ONLY = ["r3_rate", "r7_size", "r8_cpa"] reruns those (~25 min; R3 after bug #25, R7 with the
+  deployable padding rows, R8 the chosen-plaintext test of the E5 shuffle);
   ONLY = [] runs everything (~30 min on Kaggle in the first run, 15 Oct 2026).
   A clip from a STATIC camera (phone on a stand, a room, people walking in and out, 1-2 min) is the
   most useful extra input: the size side channel (R7) and change-driven coding (R4) are about fixed
@@ -22,6 +23,7 @@ WHAT IT RUNS (every number comes from a script in experiments/, as in the paper)
   R4  change-driven coding with its motion leakage and the chaff/padding defences (every video source),
       plus a threshold sweep (2, 4, 8) on the open sources
   R6  E5 with keyed DCT-domain block flips/transposes vs the jigsaw and an orientation-repair attacker
+  R8  chosen-plaintext attack on the E5 shuffle, transferred from frame t to frame t+1
   R7  the frame-size side channel of every level E0-E5 (event detection from sizes) and the padding /
       rate-control defences, including the quality-factor leak of rate control
 TIME (Kaggle, 4 CPU): ~1.5 h (iverilog build ~6 min, R1 ~15 min, R2-R4 ~5 min per source).
@@ -29,14 +31,15 @@ Frames from the private clips are never saved; only numbers (and byte-count plot
 """
 # ============================ SETTINGS =======================================
 QUICK = False
-ONLY = ["r3_rate", "r7_size"]               # [] = run everything
+ONLY = ["r3_rate", "r7_size", "r8_cpa"]     # [] = run everything
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
 BRANCHES = ["research-real-clips", "main"]  # the first one that has the fixed experiments is used
 OPEN_CLIPS = {                               # CC-BY 3.0, (c) Blender Foundation
     "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
     "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
 }
-RUN = dict(r1_stall=True, r2_lanes=True, r3_rate=True, r4_change=True, r6_transform=True, r7_size=True)
+RUN = dict(r1_stall=True, r2_lanes=True, r3_rate=True, r4_change=True, r6_transform=True, r7_size=True,
+           r8_cpa=True)
 if ONLY:
     RUN = {k: k in ONLY for k in RUN}
 # =============================================================================
@@ -51,7 +54,8 @@ QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
 REPO, DATA = WORK / "repo", WORK / "opendata"
 ENV = {**os.environ, "PYTHONUNBUFFERED": "1"}
 LOG, SOURCES = [], {}
-DIRS = ["stall_profile", "parallel_lanes", "rate_control", "change_driven", "block_transform", "size_leak"]
+DIRS = ["stall_profile", "parallel_lanes", "rate_control", "change_driven", "block_transform", "size_leak",
+        "chosen_plaintext"]
 
 
 def sh(cmd, sec, step, tail=12, cwd=None):
@@ -101,9 +105,9 @@ def safe(name):
 shutil.rmtree(REPO, ignore_errors=True)
 for b in BRANCHES:
     if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
-            "B_MIN" in (REPO / "experiments" / "rate_control.py").read_text():
+            "DQ_MAX" in (REPO / "experiments" / "rate_control.py").read_text():
         break
-    print(f"  branch {b} does not have the fixed experiments (bugs #22-#24), trying the next one")
+    print(f"  branch {b} does not have the fixed experiments (bugs #22-#25), trying the next one")
     shutil.rmtree(REPO, ignore_errors=True)
 else:
     raise SystemExit("no branch with the fixed experiments: push / merge research-real-clips first")
@@ -168,6 +172,9 @@ for name, s in SOURCES.items():
     if RUN["r7_size"]:
         sh(f"python experiments/size_leak.py --video '{p}' --frames {nf['size']} --stride 3 --name {name}",
            name, "R7 frame-size side channel", tail=14)
+    if RUN["r8_cpa"]:
+        sh(f"python experiments/chosen_plaintext.py --video '{p}' --frames {2 if QUICK else 6} --stride 150 "
+           f"--name {name}", name, "R8 chosen-plaintext shuffle", tail=6)
     checkpoint()
 
 print("\n".join(f"{s:<16}{st:<44}{r:<5}{t:>7.0f} s" for s, st, r, t in LOG))
