@@ -8,16 +8,15 @@ Where these files came from (nothing here is typed by hand):
 | `parallel_lanes/` (R2) | `experiments/parallel_lanes.py` | same run |
 | `change_driven/` (R4) | `experiments/change_driven.py` (+ thresholds 2 and 8 on the open sources) | same run |
 | `block_transform/` (R6) | `experiments/block_transform.py` | same run |
-| `rate_control/` (R3), `size_leak/` (R7), `run_log_rerun.json` | **rerun** with `ONLY = ["r3_rate", "r7_size"]`, after the fixes of bugs #22-#24 (14.9 min, 14/14 PASS). Tears of Steel's PI and FF+PI rows show the limit cycle of bug #25 (fixed after this run) | Kaggle, CPU, 15 Oct 2026 |
-| `chosen_plaintext/` (R8), `size_leak_vm/` (R7 with the deployable padding rows) | `experiments/chosen_plaintext.py`, `experiments/size_leak.py`, synthetic scene only | development VM, 15 Oct 2026 |
+| `run_log_rerun.json` | 1st **rerun** with `ONLY = ["r3_rate", "r7_size"]`, after the fixes of bugs #22-#24 (14.9 min, 14/14 PASS). Tears of Steel's PI and FF+PI rows show the limit cycle of bug #25 (fixed after this run) | Kaggle, CPU, 15 Oct 2026 |
+| `rate_control/`, `size_leak/` (with the deployable padding rows), `chosen_plaintext/` (R8), `run_log_rerun2.json` | **2nd rerun**, `ONLY = ["r3_rate", "r7_size", "r8_cpa"]`, after bug #25 (19.3 min, 27/27 PASS), 8 sources incl. `17735` (user clip, not labelled yet, so `make_assets.py` skips it). PI/FF+PI rows predate the fix of bug #26; Tears of Steel's R3 rows show that oscillation and are left out of the paper | Kaggle, CPU, 15 Oct 2026 |
 | `rate_control_before_fix/` (R3) | `experiments/rate_control.py` **before** the fixes of bugs #22 and #23 (unreachable set point on clips that open on black; estimator windup in FF+PI). Kept for the record, renamed `.txt` so no script reads them. | first run |
 
 Known limits of this snapshot (docs/TESTING.md §8):
 
 * `size_leak/` and `rate_control/` are from the rerun (after bugs #22-#24). In the first run, the
   synthetic source stamped the wall-clock time (bug #24); the clip numbers were not affected.
-* Next rerun (`ONLY = ["r3_rate", "r7_size", "r8_cpa"]`): R3 after bug #25, the deployable padding
-  rows of R7 and R8 on every source.
+* Next rerun (`ONLY = ["r3_rate", "r7_size"]`): R3 and the FF+PI row of R7 after bug #26.
 
 Sources: `synthetic` (fixed-camera corridor scene of `link/sources.py`), four copyrighted film clips
 identified by hash in `future_work/clips_manifest.md` (numbers only, never pictures), Sintel trailer and

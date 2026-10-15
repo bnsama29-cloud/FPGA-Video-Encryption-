@@ -31,7 +31,7 @@ Frames from the private clips are never saved; only numbers (and byte-count plot
 """
 # ============================ SETTINGS =======================================
 QUICK = False
-ONLY = ["r3_rate", "r7_size", "r8_cpa"]     # [] = run everything
+ONLY = ["r3_rate", "r7_size"]               # [] = run everything
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
 BRANCHES = ["research-real-clips", "main"]  # the first one that has the fixed experiments is used
 OPEN_CLIPS = {                               # CC-BY 3.0, (c) Blender Foundation
@@ -105,9 +105,9 @@ def safe(name):
 shutil.rmtree(REPO, ignore_errors=True)
 for b in BRANCHES:
     if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
-            "DQ_MAX" in (REPO / "experiments" / "rate_control.py").read_text():
+            "DU_MAX" in (REPO / "experiments" / "rate_control.py").read_text():
         break
-    print(f"  branch {b} does not have the fixed experiments (bugs #22-#25), trying the next one")
+    print(f"  branch {b} does not have the fixed experiments (bugs #22-#26), trying the next one")
     shutil.rmtree(REPO, ignore_errors=True)
 else:
     raise SystemExit("no branch with the fixed experiments: push / merge research-real-clips first")
