@@ -91,9 +91,9 @@ def test_ffpi_estimator_does_not_wind_up_when_quality_is_pinned():
     for t in range(60):                       # far over budget: q pins at QMIN and stays there
         c.last_q = c.q
         c.update(20000, 2000 if t % 20 else 1800)
-    assert RC.B_MIN <= c.th[1] <= RC.B_MAX, f"slope {c.th[1]} outside [{RC.B_MIN}, {RC.B_MAX}]"
+    assert RC.G_MIN <= c.th[1] <= RC.G_MAX, f"slope {c.th[1]} outside [{RC.G_MIN}, {RC.G_MAX}]"
     assert np.abs(c.Pm).max() < 1e4, f"covariance wound up to {np.abs(c.Pm).max():.3g}"
-    assert c.q <= RC.QMIN + RC.FF_MAX, f"feed-forward jumped to q = {c.q}"
+    assert c.q <= RC.q_of(RC.U_HI - RC.FF_MAX_U), f"feed-forward jumped to q = {c.q}"
 
 
 # ---------------------------------------------------------------- R4 change-driven
@@ -187,7 +187,8 @@ def test_no_limit_cycle_after_a_cut_to_a_detailed_scene():
     prep = RC.prepare(frames)
     for c in (RC.I, RC.PI, RC.FFPI):
         q = RC.run(frames, c, prep)["q"]
-        jumps = [(t, round(a), round(b)) for t, (a, b) in enumerate(zip(q, q[1:])) if abs(a - b) > RC.DQ_MAX + RC.FF_MAX]
+        jumps = [(t, round(a), round(b)) for t, (a, b) in enumerate(zip(q, q[1:]))
+                 if abs(RC.u_of(a) - RC.u_of(b)) > RC.DU_MAX + RC.FF_MAX_U + 1e-9]
         assert not jumps, f"{c.name}: quality jumped {jumps[:3]}"
         tail = q[-25:]
         flips = sum(abs(a - b) > 20 for a, b in zip(tail, tail[1:]))
@@ -212,3 +213,17 @@ def test_deployable_padding_never_shrinks():
     run = np.maximum.accumulate(sizes)
     assert all(b >= a for a, b in zip(run, run[1:])) and all(r >= s for r, s in zip(run, sizes))
     assert SL.leak(list(run), np.arange(len(sizes), dtype=float))["event_auc"] >= 0.5
+
+
+def test_no_oscillation_at_low_quality():
+    """Bug #26: after the fix of #25, PI and FF+PI still alternated between quality 5 and 20 on Tears of
+    Steel. Below quality 50 the quantiser scale is 5000/q, so a quality step changes the bytes far more
+    than near q = 65 where the gains were set. Acting on ln(scale) keeps the loop gain constant."""
+    import rate_control as RC
+    frames = [make_image(160, 120, "noise", seed=s % 5) for s in range(60)]
+    prep = RC.prepare(frames)
+    prep = dict(prep, b0=0.2 * prep["b0"])          # forces the loop down to quality ~10
+    for c in (RC.I, RC.PI, RC.FFPI):
+        q = RC.run(frames, c, prep)["q"][-25:]
+        swings = sum(abs(a - b) >= 5 for a, b in zip(q, q[1:]))
+        assert swings <= 2, f"{c.name}: {swings} swings of >= 5 quality steps: {[round(x) for x in q]}"

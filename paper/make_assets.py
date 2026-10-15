@@ -69,7 +69,7 @@ def size_channel():
     d = RES / "size_leak"
     if not d.exists():
         return
-    res = {f.stem: J(f)["results"] for f in sorted(d.glob("*.json"))}
+    res = {f.stem: J(f)["results"] for f in sorted(d.glob("*.json")) if f.stem in ALL_LABEL}   # labelled only
     lv = ["E0", "E1", "E2", "E3", "E4", "E5"]
     sep = {k: [v[l]["event_auc"] for l in lv] for k, v in res.items()}
     films = [k for k in res if k != "synthetic"]
@@ -141,7 +141,7 @@ def research_figures():
     # ---- R7: event separability from frame sizes, every level vs constant size, with padding cost
     d = RES / "size_leak"
     if d.exists():
-        res = {f.stem: J(f)["results"] for f in sorted(d.glob("*.json"))}
+        res = {f.stem: J(f)["results"] for f in sorted(d.glob("*.json")) if f.stem in ALL_LABEL}
         films = sorted([k for k in res if k != "synthetic"],
                        key=lambda k: -max(res[k][l]["event_auc"] for l in MODES))
         order = ["synthetic"] + films
@@ -168,12 +168,15 @@ def research_figures():
         fig.tight_layout()
         fig.savefig(FIG / "fig_size_channel.pdf")
         plt.close(fig)
-    vm = RES / "size_leak_vm" / "synthetic.json"
-    if vm.exists():
-        v = J(vm)["results"]
-        if "E2 pad-runmax" in v:
-            macro("PadRunSep", f"{v['E2 pad-runmax']['event_auc']:.2f}")
-            macro("PadRunCost", f"{100 * (v['E2 pad-runmax']['bytes_vs_E2'] - 1):.0f}")
+    if d.exists() and "E2 pad-runmax" in res["synthetic"]:       # deployable padding: largest frame so far
+        v = res["synthetic"]["E2 pad-runmax"]
+        macro("PadRunSep", f"{v['event_auc']:.2f}")
+        macro("PadRunCost", f"{100 * (v['bytes_vs_E2'] - 1):.0f}")
+        rf = [res[k]["E2 pad-runmax"] for k in res if k != "synthetic"]
+        macro("PadRunFilmSepMin", f"{min(x['event_auc'] for x in rf):.2f}")
+        macro("PadRunFilmSepMax", f"{max(x['event_auc'] for x in rf):.2f}")
+        macro("PadRunFilmCostMin", f"{100 * (min(x['bytes_vs_E2'] for x in rf) - 1):.0f}")
+        macro("PadRunFilmCostMax", f"{100 * (max(x['bytes_vs_E2'] for x in rf) - 1):.0f}")
     if d.exists():
         fr = [r["E2 FF+PI + pad-105%"] for k, r in res.items() if k != "synthetic"]
         macro("RcPadSepMax", f"{max(x['event_auc'] for x in fr):.2f}")
@@ -182,7 +185,8 @@ def research_figures():
     # ---- R3: bitrate regulation on the real clips (Tears of Steel left out: limit cycle, bug #25)
     rc = RES / "rate_control"
     if rc.exists():
-        runs = {f.stem: J(f)["results"] for f in sorted(rc.glob("*.json"))}
+        runs = {f.stem: J(f)["results"] for f in sorted(rc.glob("*.json")) if f.stem in ALL_LABEL}
+        # Tears of Steel: PI/FF+PI rows of this snapshot predate the fix of bug #26 (rerun pending)
         clips = [k for k in runs if k not in ("synthetic", "tearsofsteel")]
         m = lambda c, key: [runs[k][c]["metrics"][key] for k in clips]
         macro("RcClips", NUMWORD.get(len(clips), str(len(clips))))
@@ -258,16 +262,18 @@ def research_figures():
         macro("BtOracleMax", f"{max(v['E5']['ssim_oracle_positions'] for k, v in bt.items() if k != 'synthetic'):.2f}")
         macro("BtOracleFixed", f"{bt['synthetic']['E5']['ssim_oracle_positions']:.2f}")
     # ---- R8: chosen-plaintext permutation reused on the next frame
-    cp = RES / "chosen_plaintext" / "synthetic.json"
-    if cp.exists():
-        c = J(cp)
+    cps = {f.stem: J(f) for f in sorted((RES / "chosen_plaintext").glob("*.json")) if f.stem in ALL_LABEL}
+    if cps:
+        c = cps["synthetic"]
+        macro("CpaSources", NUMWORD.get(len(cps), str(len(cps))))
         macro("CpaTiles", str(c["n_tiles"]))
         macro("CpaPairs", NUMWORD.get(c["frames"], str(c["frames"])))
-        macro("CpaPlacedEfive", f"{100 * c['mean']['E5 (per frame)']['tiles_correct']:.1f}")
-        macro("CpaEdgeEfive", f"{c['mean']['E5 (per frame)']['edge']:.2f}".replace("-0.00", "0.00"))
-        macro("CpaEdgeKey", f"{c['mean']['key-only shuffle']['edge']:.2f}")
-        macro("CpaSsimKey", f"{c['mean']['key-only shuffle']['ssim']:.2f}")
-        macro("CpaSsimEfive", f"{c['mean']['E5 (per frame)']['ssim']:.2f}")
+        e5 = [v["mean"]["E5 (per frame)"] for v in cps.values()]
+        ko = [v["mean"]["key-only shuffle"] for v in cps.values()]
+        macro("CpaPlacedEfive", f"{100 * max(x['tiles_correct'] for x in e5):.1f}")
+        macro("CpaEdgeEfive", f"{max(abs(x['edge']) for x in e5):.2f}")
+        macro("CpaEdgeKeyMin", f"{min(x['edge'] for x in ko):.2f}")
+        macro("CpaEdgeKeyMax", f"{max(x['edge'] for x in ko):.2f}")
 
 
 # ---------------------------------------------------------------- comparison with published designs

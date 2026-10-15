@@ -11,7 +11,7 @@ steps down to 60 % (bandwidth drop) after a third of the clip and up to 120 % af
 Controllers (all causal: frame t is coded with the quality decided from frames < t):
   fixed      quality 75, no control (today's encoder)
   bang-bang  +-5 quality when the frame is more than 10 % off the budget (a thermostat)
-  (error = 100 ln(budget/size), quality changes limited to DQ_MAX per frame by the feedback loops)
+  (error = ln(budget/size); I, PI and FF+PI act on u = ln(quantiser scale), slew-limited to DU_MAX)
   I          incremental integral control: dq = Ki * error (what is often called "P" on a quality knob)
   PI         velocity-form PI, dq = Kp*(e - e_prev) + Ki*e, the usual form in motor drives
   FF+PI      PI plus feed-forward: an online model ln(bytes) = a + b*quality (recursive least squares,
@@ -51,21 +51,41 @@ from model.jpeg import analyse_frame, package_frame        # noqa: E402
 OUT = ROOT / "sim_out" / "rate_control"
 KEY = bytes(range(16))
 QMIN, QMAX, Q0 = 5, 95, 75
-KP, KI, KI_INC = 0.15, 0.20, 0.25   # set on the synthetic scene only; real clips are the test
-B_MIN, B_MAX, FF_MAX = 0.005, 0.08, 30.0   # d ln(bytes)/d quality is ~0.015 at 320x240; FF jump bound
-DQ_MAX = 15.0                       # slew limit of the feedback loop (quality steps per frame), bug #25
+# The controllers act on u = ln(quantiser scale), not on the quality number (bug #26). JPEG maps quality
+# to the table scale as 5000/q below 50 and 200 - 2q above, so one quality step changes the bytes 4x
+# more at q = 5..20 than at q = 60..75; gains tuned at q ~ 65 made PI oscillate between q 5 and 20 on
+# Tears of Steel. In u the plant is close to linear: ln(bytes) falls by ~0.4-0.5 per unit of u across
+# the whole range (an actuator linearisation, as a drive linearises a non-linear actuator).
+KI_INC_U, KP_U, KI_U = 0.7, 0.4, 0.55   # per unit of log error; equal to the old q-domain gains at q ~ 63
+G_MIN, G_MAX, FF_MAX_U = 0.1, 1.5, 1.0  # FF model slope range (d ln bytes / d(-u)) and jump bound
+DU_MAX = 0.4                            # slew limit of the feedback loops (bug #25): scale x1.5 per frame
+
+
+def u_of(q):
+    """ln of the IJG quantiser scale for quality q (model/dct_quant.py, continuous)."""
+    return math.log(5000.0 / q if q < 50 else 200.0 - 2.0 * q)
+
+
+def q_of(u):
+    sc = math.exp(u)
+    return min(QMAX, max(QMIN, 5000.0 / sc if sc > 100 else (200.0 - sc) / 2.0))
+
+
+U_LO, U_HI = u_of(QMAX), u_of(QMIN)
 
 
 def err(size, target):
-    """Control error in the log domain, 100 ln(target/size): symmetric (twice too big = half too
-    small) and matched to the plant, whose bytes grow roughly exponentially with quality. The linear
-    error 100 (target - size)/target is bounded at -100 % but unbounded above (+900 % after a cut to
-    a detailed scene), which drove PI into a limit cycle between quality 5 and 95 (bug #25)."""
-    return 100.0 * math.log(target / size)
+    """Control error in the log domain, ln(target/size): symmetric (twice too big = half too small)
+    and matched to the plant. The linear error (target - size)/target is bounded at -100 % but
+    unbounded above (+900 % after a cut to a detailed scene), which drove PI into a limit cycle
+    between quality 5 and 95 (bug #25)."""
+    return math.log(target / size)
 
 
-def step(q, dq):
-    return min(QMAX, max(QMIN, q + max(-DQ_MAX, min(DQ_MAX, dq))))
+def step(q, d):
+    """Move the quality by d units of -u (d > 0: finer quantiser, more bytes), slew-limited."""
+    u = u_of(q) - max(-DU_MAX, min(DU_MAX, d))
+    return q_of(min(U_HI, max(U_LO, u)))
 
 
 def encode(rgb, q, ctr):
@@ -96,16 +116,16 @@ class BangBang(Fixed):
 
 
 class I(Fixed):
-    """Incremental (integral-only) control: q += Ki_inc * error. Often mislabelled 'P'."""
+    """Incremental (integral-only) control: u -= Ki_inc * error. Often mislabelled 'P'."""
     name = "I"
 
     def update(self, size, target):
-        self.q = step(self.q, KI_INC * err(size, target))
+        self.q = step(self.q, KI_INC_U * err(size, target))
 
 
 class PI(Fixed):
-    """Velocity-form PI (the usual form in drives): dq = Kp*(e - e_prev) + Ki*e; saturation of q
-    is the anti-windup (nothing accumulates outside q)."""
+    """Velocity-form PI (the usual form in drives): du = -(Kp*(e - e_prev) + Ki*e); saturation of u
+    is the anti-windup (nothing accumulates outside u)."""
     name = "PI"
 
     def __init__(self):
@@ -114,18 +134,19 @@ class PI(Fixed):
 
     def update(self, size, target):
         e = err(size, target)
-        self.q = step(self.q, KP * (e - self.e_prev) + KI * e)
+        self.q = step(self.q, KP_U * (e - self.e_prev) + KI_U * e)
         self.e_prev = e
 
 
 class FFPI(PI):
-    """Feed-forward from ln(bytes) = a + b*q (RLS with forgetting) plus the velocity-form PI: the
-    model jumps the quality to the predicted value for a new budget, the PI removes the rest."""
+    """Feed-forward from ln(bytes) = a + g*v with v = -u (RLS with forgetting) plus the velocity-form
+    PI: the model jumps the quantiser scale to the predicted value for a new budget, the PI removes
+    the rest."""
     name = "FF+PI"
 
     def __init__(self, lam=0.8):
         super().__init__()
-        self.th = np.array([math.log(5000.0), 0.02])      # a, b (b > 0: more quality, more bytes)
+        self.th = np.array([math.log(5000.0) + 0.45 * math.log(50.0), 0.45])   # a, g (g > 0)
         self.Pm = np.eye(2) * 100.0
         self.lam = lam
         self.last_q = Q0
@@ -137,20 +158,22 @@ class FFPI(PI):
         # forgetting factor inflates the covariance by 1/lam per frame and b drifts to nonsense, so the
         # feed-forward then slams q between the limits. Standard remedies: update the model only when
         # the input moved (excitation), and keep b inside its physical range.
-        if self.prev_q is None or abs(self.last_q - self.prev_q) >= 1.0:
-            x = np.array([1.0, self.last_q])
+        v_last = -u_of(self.last_q)
+        if self.prev_q is None or abs(v_last + u_of(self.prev_q)) >= 0.02:
+            x = np.array([1.0, v_last])
             y = math.log(size)
             k = self.Pm @ x / (self.lam + x @ self.Pm @ x)
             self.th = self.th + k * (y - x @ self.th)
             self.Pm = (self.Pm - np.outer(k, x @ self.Pm)) / self.lam
-            self.th[1] = min(B_MAX, max(B_MIN, self.th[1]))
+            self.th[1] = min(G_MAX, max(G_MIN, self.th[1]))
         self.prev_q = self.last_q
-        b = self.th[1]
+        g = self.th[1]
         super().update(size, target)                      # PI step on the measured error
         if self.last_target is not None and target != self.last_target:
-            # budget changed: jump by the model's predicted quality difference (feed-forward), bounded
-            jump = (math.log(target) - math.log(self.last_target)) / b
-            self.q = min(QMAX, max(QMIN, self.q + max(-FF_MAX, min(FF_MAX, jump))))
+            # budget changed: jump by the model's predicted scale difference (feed-forward), bounded
+            jump = (math.log(target) - math.log(self.last_target)) / g
+            u = u_of(self.q) - max(-FF_MAX_U, min(FF_MAX_U, jump))
+            self.q = q_of(min(U_HI, max(U_LO, u)))
         self.last_target = target
         self.last_q = self.q
 
@@ -235,7 +258,7 @@ def main():
         res[cls.name] = dict(metrics=metrics(r), trace=r)
         print(cls.name, {k: (round(v, 3) if isinstance(v, float) else v) for k, v in res[cls.name]["metrics"].items()})
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / f"{name}.json").write_text(json.dumps(dict(source=name, frames=len(frames), kp=KP, ki=KI, results=res)))
+    (OUT / f"{name}.json").write_text(json.dumps(dict(source=name, frames=len(frames), gains=dict(kp_u=KP_U, ki_u=KI_U, ki_inc_u=KI_INC_U, du_max=DU_MAX), results=res)))
     f2 = lambda v, fmt: "--" if v is None else format(v, fmt)
     infeas = res["fixed"]["metrics"]["infeasible"]
     md = [f"### R3: bitrate regulation ({name}, {len(frames)} frames, budget 100 % -> 60 % -> 120 % of the "

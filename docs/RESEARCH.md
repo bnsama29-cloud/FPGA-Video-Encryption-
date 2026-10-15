@@ -15,6 +15,8 @@ leak, E0-E5 and padding rows).
 
 ## What the real clips changed (Kaggle, 15 Oct 2026)
 
+An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the paper until it is labelled and hashed in `future_work/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
+
 Important for reading the numbers: the six clips are **edited films** (shot cuts, camera motion). The
 threat model of R4 and R7 is a **fixed camera**; only the synthetic scene is one so far. A short clip
 from a phone on a stand (a room, people walking in and out) is the most useful next input.
@@ -24,7 +26,7 @@ from a phone on a stand (a room, people walking in and out) is the most useful n
 | R1 cycles/px at 640x480 (RTL) | predicted 1.541 | measured **1.534** = 65.2 Mpx/s at 100 MHz | law confirmed; in the paper |
 | R2 lanes exact | all checks OK | all checks OK on every clip | holds |
 | R2 restart cost per MCU row | 0.7 % | 0.6-2.2 % mean, up to 4.7 % on a frame | higher than estimated; still small |
-| R3 rate control (rerun) | FF+PI 1.6 % error after settling, settles in 1 frame | 5 films: fixed quality 33-62 % error, I 4.5-17 %, FF+PI 6-19 % and settles in 2-4 frames; Tears of Steel: limit cycle (bug #25, fixed after the run) | regulation works; I best in steady state, FF+PI best after a step |
+| R3 rate control (2nd rerun) | FF+PI 1.3 % error after settling (after bug #26) | 5 clips: fixed quality 33-62 %, I 5-17 %, FF+PI 6-21 %; Tears of Steel still oscillated between q 5 and 20 (bug #26: plant gain grows at low quality), fixed by controlling ln(quantiser scale); needs one more R3 run | regulation works; I best in steady state |
 | R4 change-driven bytes | 22 % of full | 41-78 % | a fixed-camera technique; modest on films |
 | R4 count leak (hidden map) | 0.95 | 0.63-0.87 | the count still leaks everywhere |
 | R4 constant 25 % + padding | 46 % bytes, SSIM 0.945 | 57-95 % bytes, SSIM 0.76-0.93 | worth it only for fixed cameras |
@@ -32,9 +34,9 @@ from a phone on a stand (a room, people walking in and out) is the most useful n
 | R6 SSIM if positions were solved | 0.55 | 0.05-0.38 | real content reveals less than the synthetic scene |
 | R7 leak, E0 ... E5 | 0.94-0.96 | 0.50-0.95 (one clip at chance) | **identical across levels on every source** (within 0.02) |
 | R7 constant-size padding | closes it, +3 % bytes | closes it, +31 ... +179 % bytes | the cost depends on how much sizes vary |
-| R7 rate control + pad to 105 % of budget | 0.51, 2 % frames over | 0.51-0.74, 7-30 % of frames over the cap | **does not hide motion on real footage**: scene cuts beat the controller |
-| R7 deployable padding (running max) | 0.55 for +3 % | Kaggle rerun pending | the practical defence for a fixed camera |
-| R8 chosen-plaintext on the E5 shuffle | learned permutation places 0.4 % of next frame's tiles (chance) | Kaggle rerun pending | per-frame permutation defeats the attack of Li et al. |
+| R7 rate control + pad to 105 % of budget | 0.51, 2 % frames over | 0.51-0.73, 13-36 % of frames over the cap | **does not hide motion on real footage**: scene cuts beat the controller |
+| R7 deployable padding (running max) | 0.54 for +3 % | 0.54-0.78 for +4 ... +71 % | the practical defence for a fixed camera; partial on edited clips |
+| R8 chosen-plaintext on the E5 shuffle | learned permutation places 0.4 % of next frame's tiles (chance) | same on all 6 clips; edge corr. <= 0.02 vs 0.28-0.47 for a key-only shuffle | per-frame permutation defeats the attack of Li et al. |
 | R7 padding to 1 KB steps | 0.50 (0.75 in a rerun, bug #24) | 0.52-0.94 | unreliable: depends on where sizes fall |
 
 Conclusions:
