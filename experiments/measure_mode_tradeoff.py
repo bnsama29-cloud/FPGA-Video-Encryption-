@@ -11,6 +11,8 @@ jigsaw would do better than this -- future_work/attacks/jigsaw_attack.py measure
   leakage   = SSIM(original, best attacker image) on luma, clipped to 0..1
   edge_leak = correlation of Sobel edge maps (sign/DC encryption leaks outlines)
   cost      = encrypted bits / payload bits (keystream needed per frame)
+Each mean comes with a 95 % percentile-bootstrap interval over the frames (GUIDE B24), so the table can
+show "0.34 [0.30, 0.38]" and a small value can be told apart from zero.
 Writes sim_out/mode_tradeoff.json and prints a [defence] snippet for configs/default.toml.
 """
 import argparse
@@ -30,6 +32,8 @@ from link.sources import open_source                     # noqa: E402
 from model.jpeg import analyse_frame, package_frame, replacement_attack_jpeg   # noqa: E402
 from model.metrics import psnr                           # noqa: E402
 from model.selective import MODES                        # noqa: E402
+sys.path.insert(0, str(ROOT / "experiments"))
+from learned_attack import bootstrap_ci                  # noqa: E402
 
 KEY = bytes(range(16))
 
@@ -100,6 +104,9 @@ def main():
         summary[m]["edge_corr_frames"] = int(sum(not np.isnan(x["edge_corr"]) for x in r))   # frames with defined edges
         summary[m]["ssim_std"] = float(np.std([x["ssim"] for x in r]))
         summary[m]["frames"] = len(r)
+        ec = [x["edge_corr"] for x in r if not np.isnan(x["edge_corr"])]
+        summary[m]["edge_corr_ci95"] = bootstrap_ci(ec) if len(ec) > 1 else None
+        summary[m]["ssim_ci95"] = bootstrap_ci([x["ssim"] for x in r]) if len(r) > 1 else None
     Path(a.out).write_text(json.dumps(dict(source=a.video, size=a.size, quality=a.quality, modes=summary), indent=2))
     print(f"\n{'mode':<5}{'leakage (SSIM)':>16}{'edge corr':>11}{'PSNR dB':>9}{'cost':>8}")
     for m, s in summary.items():
