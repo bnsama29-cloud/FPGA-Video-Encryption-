@@ -24,7 +24,7 @@ from a phone on a stand (a room, people walking in and out) is the most useful n
 | R1 cycles/px at 640x480 (RTL) | predicted 1.541 | measured **1.534** = 65.2 Mpx/s at 100 MHz | law confirmed; in the paper |
 | R2 lanes exact | all checks OK | all checks OK on every clip | holds |
 | R2 restart cost per MCU row | 0.7 % | 0.6-2.2 % mean, up to 4.7 % on a frame | higher than estimated; still small |
-| R3 rate control | FF+PI 1.4 % error, settles in 1 frame | **invalid run** (bugs #22, #23: set point "a black frame", estimator windup) | fixed; rerun R3 |
+| R3 rate control (rerun) | FF+PI 1.6 % error after settling, settles in 1 frame | 5 films: fixed quality 33-62 % error, I 4.5-17 %, FF+PI 6-19 % and settles in 2-4 frames; Tears of Steel: limit cycle (bug #25, fixed after the run) | regulation works; I best in steady state, FF+PI best after a step |
 | R4 change-driven bytes | 22 % of full | 41-78 % | a fixed-camera technique; modest on films |
 | R4 count leak (hidden map) | 0.95 | 0.63-0.87 | the count still leaks everywhere |
 | R4 constant 25 % + padding | 46 % bytes, SSIM 0.945 | 57-95 % bytes, SSIM 0.76-0.93 | worth it only for fixed cameras |
@@ -32,6 +32,9 @@ from a phone on a stand (a room, people walking in and out) is the most useful n
 | R6 SSIM if positions were solved | 0.55 | 0.05-0.38 | real content reveals less than the synthetic scene |
 | R7 leak, E0 ... E5 | 0.94-0.96 | 0.50-0.95 (one clip at chance) | **identical across levels on every source** (within 0.02) |
 | R7 constant-size padding | closes it, +3 % bytes | closes it, +31 ... +179 % bytes | the cost depends on how much sizes vary |
+| R7 rate control + pad to 105 % of budget | 0.51, 2 % frames over | 0.51-0.74, 7-30 % of frames over the cap | **does not hide motion on real footage**: scene cuts beat the controller |
+| R7 deployable padding (running max) | 0.55 for +3 % | Kaggle rerun pending | the practical defence for a fixed camera |
+| R8 chosen-plaintext on the E5 shuffle | learned permutation places 0.4 % of next frame's tiles (chance) | Kaggle rerun pending | per-frame permutation defeats the attack of Li et al. |
 | R7 padding to 1 KB steps | 0.50 (0.75 in a rerun, bug #24) | 0.52-0.94 | unreliable: depends on where sizes fall |
 
 Conclusions:
@@ -140,6 +143,20 @@ last time (conditional replenishment). Synthetic corridor scene, 60 frames:
 Runs the encoder at 125 and 150 MHz and lists, for the worst paths, the block they start and end in
 (`parse_reports.py`, "Worst setup paths"). From run 3 at 100 MHz, after the colour converter (fixed in
 run 4) the next block is `u_rle` (zig-zag/RLE, slack +0.091 ns).
+
+## R8 -- chosen-plaintext attack on the E5 shuffle (`experiments/chosen_plaintext.py`)
+
+Li et al. (J. Shanghai Jiaotong Univ. (Sci.), 2025) recover images encrypted with JPEG block-position
+shuffling by a chosen-plaintext attack: show the camera a designed picture, read where each block went
+(non-zero counts survive), and reuse that permutation. It works when the permutation depends on the
+key only. E5's permutation also depends on the frame nonce. Best case for the attacker (exact
+permutation of frame t), applied to frame t+1 (synthetic scene, 6 pairs, 300 tiles):
+
+| Attacker's picture of frame t+1 | Tiles in place | Edge corr. | SSIM |
+|---|---|---|---|
+| as seen | 0.4 % | 0.009 | 0.434 |
+| key-only shuffle (what the attack needs) | 100 % | 0.347 | 0.549 |
+| **E5, per-frame permutation** | **0.4 %** (chance) | -0.003 | 0.435 |
 
 ## R6 -- E5 hardened with keyed DCT-domain block transforms (`experiments/block_transform.py`) -- negative result
 

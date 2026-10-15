@@ -11,8 +11,12 @@ defences:
 
   E0..E5             plain sizes of the protected frames (quality 75)
   pad-1KB (E2/E5)    every frame padded up to a multiple of 1024 bytes (cheap, coarse)
-  pad-max (E2/E5)    every frame padded to the largest frame of the run (constant size; an upper bound
-                     on the cost of a constant-size stream)
+  pad-max (E2/E5)    every frame padded to the largest frame of the run (constant size; needs the
+                     future, so it is the reference, not a deployable scheme)
+  pad-runmax (E2)    deployable: every frame padded to the largest frame seen so far in the session
+                     (never shrinks; leaks only when a new maximum appears)
+  pad-win (E2)       deployable: padded to the largest of the last 100 frames (10 s at 10 frames/s;
+                     cheaper, leaks when the window maximum changes)
   FF+PI (E2)         the bitrate controller of experiments/rate_control.py holding a constant budget
                      (median E2 size); its frames are then padded to 105 % of the budget. Frames that
                      still exceed it are counted (each one leaks). Checks the hypothesis that rate
@@ -113,6 +117,10 @@ def main():
         m = max(sizes[lv])
         bm = [m] * len(frames)                       # constant size from the first frame on
         res[f"{lv} pad-max"] = dict(**leak(bm, motion), bytes_vs_E2=sum(bm) / base)
+    run = np.maximum.accumulate(sizes["E2"]).tolist()
+    res["E2 pad-runmax"] = dict(**leak(run, motion), bytes_vs_E2=sum(run) / base)
+    win = [max(sizes["E2"][max(0, t - 99):t + 1]) for t in range(len(frames))]
+    res["E2 pad-win"] = dict(**leak(win, motion), bytes_vs_E2=sum(win) / base)
     # FF+PI at a constant budget, then pad to 105 % of it
     import rate_control as RC
     budget = statistics.median(sizes["E2"])

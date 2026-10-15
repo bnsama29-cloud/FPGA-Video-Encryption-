@@ -9,5 +9,11 @@ main.pdf: main.tex refs.bib tables/numbers.tex
 tables/numbers.tex: make_assets.py $(shell find data -name '*.json' -o -name '*.md' -o -name '*.txt' | head -400)
 	$(PY) make_assets.py
 tables: ; $(PY) make_assets.py
-clean: ; rm -f *.aux *.bbl *.blg *.log *.out main.pdf
-.PHONY: tables clean
+extended.pdf: main.tex extended.tex refs.bib tables/numbers.tex
+	pdflatex -interaction=nonstopmode -halt-on-error extended.tex > build_extended.log
+	bibtex extended >> build_extended.log
+	pdflatex -interaction=nonstopmode -halt-on-error extended.tex >> build_extended.log
+	pdflatex -interaction=nonstopmode -halt-on-error extended.tex >> build_extended.log
+all: main.pdf extended.pdf
+clean: ; rm -f *.aux *.bbl *.blg *.log *.out main.pdf extended.pdf
+.PHONY: tables clean all

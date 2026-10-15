@@ -9,6 +9,7 @@ Writes  paper/tables/numbers.tex   \\newcommand macros used in the prose (e.g. \
 A missing input becomes a red \\TODO{} in the PDF instead of a made-up number.
 """
 import json
+import numpy as np
 import re
 import shutil
 import statistics as st
@@ -82,6 +83,191 @@ def size_channel():
     macro("PadFixed", f"{pad['synthetic']:.0f}")
     macro("PadFilmMin", f"{min(pad[k] for k in films):.0f}")
     macro("PadFilmMax", f"{max(pad[k] for k in films):.0f}")
+
+
+def _style():
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({"font.size": 8, "font.family": "serif", "axes.edgecolor": INK2, "axes.labelcolor": INK,
+                         "xtick.color": INK2, "ytick.color": INK2})
+    return plt
+
+
+def _clean(ax, grid="y"):
+    if grid:
+        ax.grid(axis=grid, color=GRID, lw=0.6)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+
+
+def research_figures():
+    """Figures and numbers of the research suite (paper/data/research): throughput law (R1), frame-size
+    channel (R7), bitrate regulation (R3), chosen-plaintext shuffle attack (R8)."""
+    if not RES.exists():
+        return
+    plt = _style()
+    # ---- R1: cycles per pixel against MCU rows, measured in RTL, with the fitted law and the floor
+    sc = RES / "stall_profile" / "scaling.json"
+    if sc.exists():
+        s = J(sc)
+        fig, ax = plt.subplots(figsize=(3.4, 1.9))
+        r = [p["mcu_rows"] for p in s["points"]]
+        rr = np.linspace(min(r) * 0.9, max(r) * 1.1, 100)
+        ax.axhline(1.5, color=INK2, lw=1, ls=(0, (4, 3)))
+        ax.annotate("4:2:0 floor, 1.5", (rr[0], 1.5), xytext=(0, -9), textcoords="offset points",
+                    ha="left", color=INK2, fontsize=7)
+        ax.plot(rr, 1.5 + s["a"] / rr, color=BLUE, lw=1.2, zorder=2)
+        ax.plot(r, [p["cpp"] for p in s["points"]], "o", ms=6, color=BLUE, mec=SURFACE, mew=1.5, zorder=3)
+        for i, p in enumerate(s["points"]):           # the last two points sit close: one below, one above
+            off, ha = {len(s["points"]) - 2: ((4, -9), "left"), len(s["points"]) - 1: ((0, 7), "center")}.get(
+                i, ((5, 3), "left"))
+            ax.annotate(p["size"].replace("x", "\u00d7"), (p["mcu_rows"], p["cpp"]), xytext=off, ha=ha,
+                        textcoords="offset points", fontsize=6.5, color=INK)
+        ax.annotate(f"fit 1.5 + {s['a']:.2f}/rows", (r[1], 1.5 + s["a"] / r[1]), xytext=(18, 14),
+                    textcoords="offset points", fontsize=7, color=INK2)
+        ax.set_xscale("log")
+        ax.set_xticks(r)
+        ax.set_xticklabels([str(x) for x in r])
+        ax.minorticks_off()
+        ax.set_xlabel("MCU rows per frame (16 lines each)")
+        ax.set_ylabel("cycles per pixel")
+        ax.set_ylim(1.4, 2.0)
+        _clean(ax)
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_throughput.pdf")
+        plt.close(fig)
+    # ---- R7: event separability from frame sizes, every level vs constant size, with padding cost
+    d = RES / "size_leak"
+    if d.exists():
+        res = {f.stem: J(f)["results"] for f in sorted(d.glob("*.json"))}
+        films = sorted([k for k in res if k != "synthetic"],
+                       key=lambda k: -max(res[k][l]["event_auc"] for l in MODES))
+        order = ["synthetic"] + films
+        fig, ax = plt.subplots(figsize=(3.4, 1.9))
+        for i, k in enumerate(order):
+            y = len(order) - 1 - i
+            sep = [res[k][l]["event_auc"] for l in MODES]
+            ax.plot([min(sep), max(sep)], [y, y], color=BLUE, lw=6, solid_capstyle="round", zorder=3)
+            pm = res[k]["E2 pad-max"]["event_auc"]
+            ax.plot(pm, y, "D", ms=5, color=ORANGE, mec=SURFACE, mew=1.2, zorder=4)
+            ax.plot([pm, min(sep)], [y, y], color=GRID, lw=1, zorder=1)
+            cost = 100 * (res[k]["E2 pad-max"]["bytes_vs_E2"] - 1)
+            ax.annotate(f"+{cost:.0f} %", (1.02, y), xycoords=("data", "data"), va="center", fontsize=7, color=INK)
+        ax.set_yticks(range(len(order)))
+        ax.set_yticklabels([("Fixed camera" if k == "synthetic" else ALL_LABEL.get(k, k)) for k in order][::-1])
+        ax.set_xlim(0.45, 1.13)
+        ax.set_xticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        ax.set_xlabel("motion-event separability (0.5 = chance)")
+        ax.plot([], [], color=BLUE, lw=6, label="E0\u2013E5 (all levels)")
+        ax.plot([], [], "D", ms=5, color=ORANGE, label="constant size (bytes added)")
+        ax.legend(loc="lower center", bbox_to_anchor=(0.45, 1.0), ncol=2, fontsize=6.5, frameon=False,
+                  handlelength=1.2, columnspacing=1.2)
+        _clean(ax, grid="x")
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_size_channel.pdf")
+        plt.close(fig)
+    vm = RES / "size_leak_vm" / "synthetic.json"
+    if vm.exists():
+        v = J(vm)["results"]
+        if "E2 pad-runmax" in v:
+            macro("PadRunSep", f"{v['E2 pad-runmax']['event_auc']:.2f}")
+            macro("PadRunCost", f"{100 * (v['E2 pad-runmax']['bytes_vs_E2'] - 1):.0f}")
+    if d.exists():
+        fr = [r["E2 FF+PI + pad-105%"] for k, r in res.items() if k != "synthetic"]
+        macro("RcPadSepMax", f"{max(x['event_auc'] for x in fr):.2f}")
+        macro("RcPadOverMin", f"{100 * min(x['frames_over_cap'] for x in fr):.0f}")
+        macro("RcPadOverMax", f"{100 * max(x['frames_over_cap'] for x in fr):.0f}")
+    # ---- R3: bitrate regulation on the real clips (Tears of Steel left out: limit cycle, bug #25)
+    rc = RES / "rate_control"
+    if rc.exists():
+        runs = {f.stem: J(f)["results"] for f in sorted(rc.glob("*.json"))}
+        clips = [k for k in runs if k not in ("synthetic", "tearsofsteel")]
+        m = lambda c, key: [runs[k][c]["metrics"][key] for k in clips]
+        macro("RcClips", NUMWORD.get(len(clips), str(len(clips))))
+        for c, tag in (("fixed", "Fixed"), ("I", "I"), ("FF+PI", "Ffpi")):
+            e = m(c, "settled_abs_err")
+            macro(f"Rc{tag}ErrMin", f"{min(e):.0f}")
+            macro(f"Rc{tag}ErrMax", f"{max(e):.0f}")
+        macro("RcFfpiSettleMax", str(max(x for x in m("FF+PI", "settle_frames_after_drop") if x is not None)))
+        macro("RcSynFfpiErr", f"{runs['synthetic']['FF+PI']['metrics']['settled_abs_err']:.1f}")
+        if "sintel_trailer" in runs:
+            R = runs["sintel_trailer"]
+            fig, ax = plt.subplots(figsize=(3.4, 1.9))
+            t = np.arange(len(R["fixed"]["trace"]["target"]))
+            ax.step(t, np.array(R["fixed"]["trace"]["target"]) / 1e3, where="post", color=INK, lw=1,
+                    ls=(0, (4, 3)), zorder=4)
+            for c, col in (("fixed", ORANGE), ("I", "#1baf7a"), ("FF+PI", BLUE)):
+                y = np.array(R[c]["trace"]["sizes"]) / 1e3
+                ax.plot(t, y, color=col, lw=1.1 if c != "FF+PI" else 1.4, zorder=3 if c == "FF+PI" else 2)
+            ax.legend(["budget", "fixed quality", "I", "FF+PI"], fontsize=6.5, frameon=False, ncol=4,
+                      loc="upper center", bbox_to_anchor=(0.5, 1.16), handlelength=1.4, columnspacing=1.0)
+            ax.set_xlabel("frame")
+            ax.set_ylabel("protected frame (kB)")
+            _clean(ax)
+            fig.tight_layout()
+            fig.savefig(FIG / "fig_rate_control.pdf")
+            plt.close(fig)
+    pf = RES / "stall_profile" / "profile.json"
+    if pf.exists():                       # the entropy path waits for data most of the time, in every case
+        pr = J(pf)
+        idle = [r["share"]["RLE -> selective enc"]["starve"] for r in pr]
+        macro("EntropyIdle", f"{100 * min(idle):.0f}")
+        macro("ProfileCases", str(len(pr)))
+        cpps = [r["cpp"] for r in pr]
+        macro("ProfileCppSpread", f"{max(cpps) - min(cpps):.3f}")
+    # ---- R2: parallel lanes (exactness on every source; throughput is a projection, labelled as such)
+    pl = {f.stem: J(f) for f in sorted((RES / "parallel_lanes").glob("*.json"))}
+    if pl:
+        assert all(all(v["exact"].values()) for v in pl.values()), "a lane exactness check failed"
+        macro("LaneSources", NUMWORD.get(len(pl), str(len(pl))))
+        ov = [100 * v["restart_row_overhead_mean"] for v in pl.values()]
+        macro("RestartRowMin", f"{min(ov):.1f}")
+        macro("RestartRowMax", f"{max(ov):.1f}")
+        cfg = {(c["frame"], c["lanes"], c["px_per_clk"], c["overlap"]): c for c in pl["synthetic"]["configs"]}
+        for tag, key in (("Two", ("640x480", 2, 1, True)), ("Four", ("640x480", 4, 2, True))):
+            c = cfg[key]
+            macro(f"Lane{tag}Mpix", f"{c['mpix']['100']:.0f}")
+            macro(f"Lane{tag}Lut", f"{c['area']['lut']:,}".replace(",", "{,}"))
+            macro(f"Lane{tag}Dsp", str(c["area"]["dsp"]))
+    # ---- R4: change-driven coding (hidden change map; constant 25 % with padding)
+    cd = {f.stem: J(f)["results"] for f in sorted((RES / "change_driven").glob("*.json")) if "_tau" not in f.stem}
+    if cd:
+        fl = [k for k in cd if k != "synthetic"]
+        pc = lambda k, pol, m: 100 * cd[k][pol][m]
+        macro("CdBytesFixed", f"{pc('synthetic', 'map-hidden', 'bytes_ratio'):.0f}")
+        macro("CdBytesMin", f"{min(pc(k, 'map-hidden', 'bytes_ratio') for k in fl):.0f}")
+        macro("CdBytesMax", f"{max(pc(k, 'map-hidden', 'bytes_ratio') for k in fl):.0f}")
+        macro("CdCountFixed", f"{cd['synthetic']['map-hidden']['count_corr']:.2f}")
+        macro("CdCountMin", f"{min(cd[k]['map-hidden']['count_corr'] for k in fl):.2f}")
+        macro("CdCountMax", f"{max(cd[k]['map-hidden']['count_corr'] for k in fl):.2f}")
+        macro("CdPadFixed", f"{pc('synthetic', 'constant-0.25+pad', 'bytes_ratio'):.0f}")
+        macro("CdPadMin", f"{min(pc(k, 'constant-0.25+pad', 'bytes_ratio') for k in fl):.0f}")
+        macro("CdPadMax", f"{max(pc(k, 'constant-0.25+pad', 'bytes_ratio') for k in fl):.0f}")
+        macro("CdPadSsimFixed", f"{cd['synthetic']['constant-0.25+pad']['ssim']:.3f}")
+        macro("CdPadSsimMin", f"{min(cd[k]['constant-0.25+pad']['ssim'] for k in fl):.2f}")
+        macro("CdPadSsimMax", f"{max(cd[k]['constant-0.25+pad']['ssim'] for k in fl):.2f}")
+    # ---- R6: keyed DCT-domain block transforms on top of E5 (negative result)
+    bt = {f.stem: J(f)["mean"] for f in sorted((RES / "block_transform").glob("*.json"))}
+    if bt:
+        macro("BtSources", NUMWORD.get(len(bt), str(len(bt))))
+        macro("BtNbMax", f"{100 * max(max(v['E5']['jigsaw_neighbours'], v['E5+T']['jigsaw_neighbours']) for v in bt.values()):.1f}")
+        macro("BtSsimDelta", f"{max(abs(v['E5']['ssim_oracle_positions'] - v['E5+T']['ssim_oracle_positions']) for v in bt.values()):.3f}")
+        macro("BtOracleMin", f"{min(v['E5']['ssim_oracle_positions'] for k, v in bt.items() if k != 'synthetic'):.2f}")
+        macro("BtOracleMax", f"{max(v['E5']['ssim_oracle_positions'] for k, v in bt.items() if k != 'synthetic'):.2f}")
+        macro("BtOracleFixed", f"{bt['synthetic']['E5']['ssim_oracle_positions']:.2f}")
+    # ---- R8: chosen-plaintext permutation reused on the next frame
+    cp = RES / "chosen_plaintext" / "synthetic.json"
+    if cp.exists():
+        c = J(cp)
+        macro("CpaTiles", str(c["n_tiles"]))
+        macro("CpaPairs", NUMWORD.get(c["frames"], str(c["frames"])))
+        macro("CpaPlacedEfive", f"{100 * c['mean']['E5 (per frame)']['tiles_correct']:.1f}")
+        macro("CpaEdgeEfive", f"{c['mean']['E5 (per frame)']['edge']:.2f}".replace("-0.00", "0.00"))
+        macro("CpaEdgeKey", f"{c['mean']['key-only shuffle']['edge']:.2f}")
+        macro("CpaSsimKey", f"{c['mean']['key-only shuffle']['ssim']:.2f}")
+        macro("CpaSsimEfive", f"{c['mean']['E5 (per frame)']['ssim']:.2f}")
 
 
 # ---------------------------------------------------------------- comparison with published designs
@@ -641,6 +827,7 @@ def main():
     standard_metrics()
     restart_interval()
     size_channel()
+    research_figures()
     protocol()
     misc()
     lines = ["% generated by paper/make_assets.py from paper/data -- do not edit"]

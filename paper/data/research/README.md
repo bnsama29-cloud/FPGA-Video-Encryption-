@@ -8,18 +8,16 @@ Where these files came from (nothing here is typed by hand):
 | `parallel_lanes/` (R2) | `experiments/parallel_lanes.py` | same run |
 | `change_driven/` (R4) | `experiments/change_driven.py` (+ thresholds 2 and 8 on the open sources) | same run |
 | `block_transform/` (R6) | `experiments/block_transform.py` | same run |
-| `size_leak/` (R7) | `experiments/size_leak.py` | same run |
-| `rate_control_before_fix/` (R3) | `experiments/rate_control.py` **before** the fixes of bugs #22 and #23 (unreachable set point on clips that open on black; estimator windup in FF+PI). Kept for the record, renamed `.txt` so no script reads them. | same run |
+| `rate_control/` (R3), `size_leak/` (R7), `run_log_rerun.json` | **rerun** with `ONLY = ["r3_rate", "r7_size"]`, after the fixes of bugs #22-#24 (14.9 min, 14/14 PASS). Tears of Steel's PI and FF+PI rows show the limit cycle of bug #25 (fixed after this run) | Kaggle, CPU, 15 Oct 2026 |
+| `chosen_plaintext/` (R8), `size_leak_vm/` (R7 with the deployable padding rows) | `experiments/chosen_plaintext.py`, `experiments/size_leak.py`, synthetic scene only | development VM, 15 Oct 2026 |
+| `rate_control_before_fix/` (R3) | `experiments/rate_control.py` **before** the fixes of bugs #22 and #23 (unreachable set point on clips that open on black; estimator windup in FF+PI). Kept for the record, renamed `.txt` so no script reads them. | first run |
 
 Known limits of this snapshot (docs/TESTING.md §8):
 
-* The `E2 FF+PI + pad-105%` row of every `size_leak/*.json` used the FF+PI controller before the fix of
-  bug #23. All other R7 rows (E0-E5, padding) do not use the controller and are valid.
-* The `synthetic` source stamped the wall-clock time before the fix of bug #24, so its byte counts
-  differ slightly from a rerun (it matters only for the 1 KB padding row). The clip numbers are not
-  affected.
-* A rerun of R3 and R7 (`kaggle_research.py` with `ONLY = ["r3_rate", "r7_size"]`) replaces
-  `rate_control_before_fix/` by `rate_control/` and refreshes `size_leak/`.
+* `size_leak/` and `rate_control/` are from the rerun (after bugs #22-#24). In the first run, the
+  synthetic source stamped the wall-clock time (bug #24); the clip numbers were not affected.
+* Next rerun (`ONLY = ["r3_rate", "r7_size", "r8_cpa"]`): R3 after bug #25, the deployable padding
+  rows of R7 and R8 on every source.
 
 Sources: `synthetic` (fixed-camera corridor scene of `link/sources.py`), four copyrighted film clips
 identified by hash in `future_work/clips_manifest.md` (numbers only, never pictures), Sintel trailer and

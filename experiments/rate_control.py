@@ -11,6 +11,7 @@ steps down to 60 % (bandwidth drop) after a third of the clip and up to 120 % af
 Controllers (all causal: frame t is coded with the quality decided from frames < t):
   fixed      quality 75, no control (today's encoder)
   bang-bang  +-5 quality when the frame is more than 10 % off the budget (a thermostat)
+  (error = 100 ln(budget/size), quality changes limited to DQ_MAX per frame by the feedback loops)
   I          incremental integral control: dq = Ki * error (what is often called "P" on a quality knob)
   PI         velocity-form PI, dq = Kp*(e - e_prev) + Ki*e, the usual form in motor drives
   FF+PI      PI plus feed-forward: an online model ln(bytes) = a + b*quality (recursive least squares,
@@ -52,6 +53,19 @@ KEY = bytes(range(16))
 QMIN, QMAX, Q0 = 5, 95, 75
 KP, KI, KI_INC = 0.15, 0.20, 0.25   # set on the synthetic scene only; real clips are the test
 B_MIN, B_MAX, FF_MAX = 0.005, 0.08, 30.0   # d ln(bytes)/d quality is ~0.015 at 320x240; FF jump bound
+DQ_MAX = 15.0                       # slew limit of the feedback loop (quality steps per frame), bug #25
+
+
+def err(size, target):
+    """Control error in the log domain, 100 ln(target/size): symmetric (twice too big = half too
+    small) and matched to the plant, whose bytes grow roughly exponentially with quality. The linear
+    error 100 (target - size)/target is bounded at -100 % but unbounded above (+900 % after a cut to
+    a detailed scene), which drove PI into a limit cycle between quality 5 and 95 (bug #25)."""
+    return 100.0 * math.log(target / size)
+
+
+def step(q, dq):
+    return min(QMAX, max(QMIN, q + max(-DQ_MAX, min(DQ_MAX, dq))))
 
 
 def encode(rgb, q, ctr):
@@ -86,8 +100,7 @@ class I(Fixed):
     name = "I"
 
     def update(self, size, target):
-        e = 100 * (target - size) / target
-        self.q = min(QMAX, max(QMIN, self.q + KI_INC * e))
+        self.q = step(self.q, KI_INC * err(size, target))
 
 
 class PI(Fixed):
@@ -100,8 +113,8 @@ class PI(Fixed):
         self.e_prev = 0.0
 
     def update(self, size, target):
-        e = 100 * (target - size) / target
-        self.q = min(QMAX, max(QMIN, self.q + KP * (e - self.e_prev) + KI * e))
+        e = err(size, target)
+        self.q = step(self.q, KP * (e - self.e_prev) + KI * e)
         self.e_prev = e
 
 
