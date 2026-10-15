@@ -9,9 +9,13 @@ class Synthetic:
     a door, a notice board and the usual timestamp overlay. Muted colours with real
     edges and texture, so the visual-security effect of each mode is easy to judge."""
 
-    def __init__(self, width, height):
+    T0 = 1790000000          # fixed start time (Sep 2026) for the reproducible clock
+
+    def __init__(self, width, height, live_clock=False):
+        """live_clock=True stamps the wall-clock time (the live demo); otherwise the stamp is a
+        fixed start time plus frame/10 s, so experiments give the same bytes on every run (bug #24)."""
         import cv2
-        self.cv2, self.w, self.h, self.n = cv2, width, height, 0
+        self.cv2, self.w, self.h, self.n, self.live = cv2, width, height, 0, live_clock
         w, h = width, height
         y, x = np.mgrid[0:h, 0:w]
         bg = np.zeros((h, w, 3), np.float32)
@@ -43,7 +47,8 @@ class Synthetic:
         cv2.line(img, (px + s // 4, int(h * .62) + s // 2), (px + s // 4 - step, int(h * .85)), (35, 35, 40), max(2, s // 4))
         cv2.circle(img, (px, top + s // 2), int(s * .55), (196, 150, 120), -1)
         cv2.rectangle(img, (0, 0), (w, max(14, h // 14)), (20, 20, 20), -1)
-        cv2.putText(img, f"CAM-01  CORRIDOR B  {time.strftime('%d-%m-%Y %H:%M:%S')}  #{n:05d}",
+        stamp = time.strftime('%d-%m-%Y %H:%M:%S', time.localtime() if self.live else time.gmtime(self.T0 + n // 10))
+        cv2.putText(img, f"CAM-01  CORRIDOR B  {stamp}  #{n:05d}",
                     (4, max(10, h // 14) - 4), cv2.FONT_HERSHEY_SIMPLEX, max(0.28, w / 1100), (235, 235, 235), 1,
                     cv2.LINE_AA)
         return img
@@ -109,11 +114,11 @@ class ImageFolder:
         return self.cv2.cvtColor(img, self.cv2.COLOR_BGR2RGB)
 
 
-def open_source(spec, width, height, loop=True):
-    """'synthetic' | a video file | 'webcam:N' | a folder of images."""
+def open_source(spec, width, height, loop=True, live_clock=False):
+    """'synthetic' | a video file | 'webcam:N' | a folder of images. live_clock: see Synthetic."""
     from pathlib import Path
     if spec in ("synthetic", "", None):
-        return Synthetic(width, height)
+        return Synthetic(width, height, live_clock)
     if Path(str(spec)).is_dir():
         return ImageFolder(spec, width, height, loop)
     return VideoFile(spec, width, height, loop)

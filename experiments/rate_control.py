@@ -18,8 +18,13 @@ Controllers (all causal: frame t is coded with the quality decided from frames <
              a feed-forward torque estimate plus a PI loop
 The controllers are told the next frame's budget (the link reports its bandwidth), but measure the
 frame size only after coding. Gains were set on the synthetic scene only; the real clips are the test.
+The nominal budget is the median frame size at quality 75 over the whole clip (the link is sized for
+the clip's typical rate). It used to be the median of the first 5 frames, which made the set point
+"a black frame" for clips that open on black (bug #22); frames whose budget is below their size at
+the lowest quality cannot be met by any controller and are reported as infeasible.
 
-Metrics: mean |error| %, error after settling (5 frames after each step excluded), frames more than
+Metrics: mean |error| %, error after settling (5 frames after each step and infeasible frames
+excluded), frames more than
 10 % over budget (each one is a latency/queueing risk on the link), settling time after the drop,
 overshoot from the second frame after the drop (the first is unavoidable), mean quality, mean SSIM against the original (key holder's picture).
 Frames are protected with E2 (the APP11 segment is included in the byte count).
@@ -46,6 +51,7 @@ OUT = ROOT / "sim_out" / "rate_control"
 KEY = bytes(range(16))
 QMIN, QMAX, Q0 = 5, 95, 75
 KP, KI, KI_INC = 0.15, 0.20, 0.25   # set on the synthetic scene only; real clips are the test
+B_MIN, B_MAX, FF_MAX = 0.005, 0.08, 30.0   # d ln(bytes)/d quality is ~0.015 at 320x240; FF jump bound
 
 
 def encode(rgb, q, ctr):
@@ -110,19 +116,28 @@ class FFPI(PI):
         self.Pm = np.eye(2) * 100.0
         self.lam = lam
         self.last_q = Q0
+        self.prev_q = None                                # quality of the frame before last_q
         self.last_target = None
 
     def update(self, size, target):
-        x = np.array([1.0, self.last_q])
-        y = math.log(size)
-        k = self.Pm @ x / (self.lam + x @ self.Pm @ x)
-        self.th = self.th + k * (y - x @ self.th)
-        self.Pm = (self.Pm - np.outer(k, x @ self.Pm)) / self.lam
-        a, b = self.th
+        # Estimator windup (bug #23): with q pinned at a limit every regressor is the same, the
+        # forgetting factor inflates the covariance by 1/lam per frame and b drifts to nonsense, so the
+        # feed-forward then slams q between the limits. Standard remedies: update the model only when
+        # the input moved (excitation), and keep b inside its physical range.
+        if self.prev_q is None or abs(self.last_q - self.prev_q) >= 1.0:
+            x = np.array([1.0, self.last_q])
+            y = math.log(size)
+            k = self.Pm @ x / (self.lam + x @ self.Pm @ x)
+            self.th = self.th + k * (y - x @ self.th)
+            self.Pm = (self.Pm - np.outer(k, x @ self.Pm)) / self.lam
+            self.th[1] = min(B_MAX, max(B_MIN, self.th[1]))
+        self.prev_q = self.last_q
+        b = self.th[1]
         super().update(size, target)                      # PI step on the measured error
-        if self.last_target is not None and target != self.last_target and b > 1e-3:
-            # budget changed: jump by the model's predicted quality difference (feed-forward)
-            self.q = min(QMAX, max(QMIN, self.q + (math.log(target) - math.log(self.last_target)) / b))
+        if self.last_target is not None and target != self.last_target:
+            # budget changed: jump by the model's predicted quality difference (feed-forward), bounded
+            jump = (math.log(target) - math.log(self.last_target)) / b
+            self.q = min(QMAX, max(QMIN, self.q + max(-FF_MAX, min(FF_MAX, jump))))
         self.last_target = target
         self.last_q = self.q
 
@@ -134,10 +149,16 @@ def budget(n, b0):
     return [b0 if t < n // 3 else (0.6 * b0 if t < 2 * n // 3 else 1.2 * b0) for t in range(n)]
 
 
-def run(frames, ctrl_cls):
+def prepare(frames):
+    """Nominal budget (median size at Q0 over the clip) and each frame's smallest possible size (QMIN)."""
+    return dict(b0=statistics.median(encode(f, Q0, 0)[0] for f in frames),
+                floor=[encode(f, QMIN, 0)[0] for f in frames])
+
+
+def run(frames, ctrl_cls, prep=None):
+    prep = prep or prepare(frames)
     c = ctrl_cls()
-    b0 = statistics.median(encode(f, Q0, 0)[0] for f in frames[:5])
-    tgt = budget(len(frames), b0)
+    tgt = budget(len(frames), prep["b0"])
     sizes, qs, ssims = [], [], []
     for t, f in enumerate(frames):
         if isinstance(c, FFPI):
@@ -149,14 +170,17 @@ def run(frames, ctrl_cls):
         ref = np.asarray(Image.fromarray(f).convert("L"))
         ssims.append(structural_similarity(ref, pic, data_range=255))
         c.update(size, tgt[t + 1] if t + 1 < len(tgt) else tgt[t])   # next budget is known (link report)
-    return dict(target=tgt, sizes=sizes, q=qs, ssim=ssims)
+    return dict(target=tgt, sizes=sizes, q=qs, ssim=ssims,
+                feasible=[fl <= t for fl, t in zip(prep["floor"], tgt)])
 
 
 def metrics(r):
     n = len(r["sizes"])
     err = [100 * (s - t) / t for s, t in zip(r["sizes"], r["target"])]
     steps = [n // 3, 2 * n // 3]
-    settled = [e for i, e in enumerate(err) if not any(st <= i < st + 5 for st in steps) and i >= 5]
+    feas = r.get("feasible", [True] * n)
+    settled = [e for i, e in enumerate(err)
+               if not any(st <= i < st + 5 for st in steps) and i >= 5 and feas[i]]
     drop = steps[0]
     settle = None
     for i in range(drop, steps[1] - 2):
@@ -168,7 +192,8 @@ def metrics(r):
                 over_budget=sum(e > 10 for e in err) / n,
                 settle_frames_after_drop=settle,
                 overshoot_after_drop=max(err[drop + 1:steps[1]]),   # frame `drop` is unavoidable
-                mean_q=statistics.mean(r["q"]), mean_ssim=statistics.mean(r["ssim"]))
+                mean_q=statistics.mean(r["q"]), mean_ssim=statistics.mean(r["ssim"]),
+                infeasible=1 - sum(feas) / n)
 
 
 def main():
@@ -191,14 +216,17 @@ def main():
         if i % a.stride == 0:
             frames.append(f)
     res = {}
+    prep = prepare(frames)
     for cls in CONTROLLERS:
-        r = run(frames, cls)
+        r = run(frames, cls, prep)
         res[cls.name] = dict(metrics=metrics(r), trace=r)
         print(cls.name, {k: (round(v, 3) if isinstance(v, float) else v) for k, v in res[cls.name]["metrics"].items()})
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f"{name}.json").write_text(json.dumps(dict(source=name, frames=len(frames), kp=KP, ki=KI, results=res)))
     f2 = lambda v, fmt: "--" if v is None else format(v, fmt)
-    md = [f"### R3: bitrate regulation ({name}, {len(frames)} frames, budget 100 % -> 60 % -> 120 %)", "",
+    infeas = res["fixed"]["metrics"]["infeasible"]
+    md = [f"### R3: bitrate regulation ({name}, {len(frames)} frames, budget 100 % -> 60 % -> 120 % of the "
+          f"median size at quality 75; {100 * infeas:.0f} % of frames infeasible even at quality {QMIN})", "",
           "| Controller | Mean abs. error | Error after settling | Frames >10 % over | Settling after drop (frames) | "
           "Overshoot after drop | Mean quality | Mean SSIM |", "|---|---|---|---|---|---|---|---|"]
     for k, v in res.items():

@@ -69,6 +69,33 @@ def test_controllers_follow_a_budget_step():
     assert res["FF+PI"]["settle_frames_after_drop"] is not None and res["FF+PI"]["settle_frames_after_drop"] <= 6, res
 
 
+def test_black_lead_in_does_not_make_the_budget_unreachable():
+    """Bug #22: the budget came from the first 5 frames; a clip that opens on black (Sintel, Tears
+    of Steel) got the size of a black frame as set point and every controller sat at quality 5."""
+    import rate_control as RC
+    frames = [np.zeros((64, 96, 3), np.uint8)] * 8 + [make_image(96, 64, "scene", seed=s) for s in range(30)]
+    prep = RC.prepare(frames)
+    for c in (RC.I, RC.FFPI):
+        r = RC.run(frames, c, prep)
+        m = RC.metrics(r)
+        low = sum(q <= RC.QMIN for q in r["q"]) / len(r["q"])
+        assert low < 0.2, f"{c.name}: quality at the lower limit in {100 * low:.0f} % of frames"
+        assert m["infeasible"] < 0.1, f"{c.name}: {100 * m['infeasible']:.0f} % infeasible frames"
+
+
+def test_ffpi_estimator_does_not_wind_up_when_quality_is_pinned():
+    """Bug #23: with q stuck at a limit the RLS covariance grew by 1/lambda per frame and the slope
+    went out of range, so the feed-forward slammed q between 5 and 95."""
+    import rate_control as RC
+    c = RC.FFPI()
+    for t in range(60):                       # far over budget: q pins at QMIN and stays there
+        c.last_q = c.q
+        c.update(20000, 2000 if t % 20 else 1800)
+    assert RC.B_MIN <= c.th[1] <= RC.B_MAX, f"slope {c.th[1]} outside [{RC.B_MIN}, {RC.B_MAX}]"
+    assert np.abs(c.Pm).max() < 1e4, f"covariance wound up to {np.abs(c.Pm).max():.3g}"
+    assert c.q <= RC.QMIN + RC.FF_MAX, f"feed-forward jumped to q = {c.q}"
+
+
 # ---------------------------------------------------------------- R4 change-driven
 def _moving(n=16):
     """A block over a static scene that is still for 4 frames, moves for 4, and so on, so the
@@ -133,3 +160,17 @@ def test_auc_and_constant_size_stream():
     assert leak_const["size_corr"] == 0.0 and leak_const["event_auc"] == 0.5
     leak_track = SL.leak([1000 + 100 * m for m in motion], motion)
     assert leak_track["size_corr"] > 0.99 and leak_track["event_auc"] > 0.9
+
+
+def test_synthetic_source_is_reproducible():
+    """Bug #24: the synthetic scene stamped the wall-clock time, so its bytes (and every number from
+    it) changed from run to run and host to host. Experiments now get a frame-numbered clock."""
+    from link.sources import open_source
+    import time
+    a = open_source("synthetic", 640, 480)
+    first = [a.read() for _ in range(3)]
+    time.sleep(1.1)                            # the old wall-clock stamp changes after a second
+    b = open_source("synthetic", 640, 480)
+    for i in range(3):
+        fa, fb = first[i], b.read()
+        assert np.array_equal(fa, fb), f"frame {i} differs between two opens"

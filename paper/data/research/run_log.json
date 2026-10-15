@@ -1,0 +1,318 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (research-suite)",
+   "PASS",
+   1.3
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   6.9
+  ],
+  [
+   "setup",
+   "build tools",
+   "PASS",
+   13.7
+  ],
+  [
+   "setup",
+   "Icarus Verilog 12 (~6 min)",
+   "PASS",
+   142.7
+  ],
+  [
+   "R1",
+   "stall profile, 3 images x E0/E2/E4",
+   "PASS",
+   72.1
+  ],
+  [
+   "R1",
+   "frame-size law incl. 640x480",
+   "PASS",
+   339.6
+  ],
+  [
+   "synthetic",
+   "R2 parallel lanes",
+   "PASS",
+   2.8
+  ],
+  [
+   "synthetic",
+   "R3 bitrate regulation",
+   "PASS",
+   65.2
+  ],
+  [
+   "synthetic",
+   "R4 change-driven coding",
+   "PASS",
+   27.3
+  ],
+  [
+   "synthetic",
+   "R4 threshold 2",
+   "PASS",
+   27.4
+  ],
+  [
+   "synthetic",
+   "R4 threshold 8",
+   "PASS",
+   27.3
+  ],
+  [
+   "synthetic",
+   "R6 E5 + block transforms",
+   "PASS",
+   6.7
+  ],
+  [
+   "synthetic",
+   "R7 frame-size side channel",
+   "PASS",
+   58.4
+  ],
+  [
+   "avengers",
+   "R2 parallel lanes",
+   "PASS",
+   3.3
+  ],
+  [
+   "avengers",
+   "R3 bitrate regulation",
+   "PASS",
+   47.6
+  ],
+  [
+   "avengers",
+   "R4 change-driven coding",
+   "PASS",
+   23.6
+  ],
+  [
+   "avengers",
+   "R6 E5 + block transforms",
+   "PASS",
+   8.6
+  ],
+  [
+   "avengers",
+   "R7 frame-size side channel",
+   "PASS",
+   37.3
+  ],
+  [
+   "challenge",
+   "R2 parallel lanes",
+   "PASS",
+   4.3
+  ],
+  [
+   "challenge",
+   "R3 bitrate regulation",
+   "PASS",
+   75.3
+  ],
+  [
+   "challenge",
+   "R4 change-driven coding",
+   "PASS",
+   27.8
+  ],
+  [
+   "challenge",
+   "R6 E5 + block transforms",
+   "PASS",
+   9.9
+  ],
+  [
+   "challenge",
+   "R7 frame-size side channel",
+   "PASS",
+   63.5
+  ],
+  [
+   "denzel",
+   "R2 parallel lanes",
+   "PASS",
+   3.6
+  ],
+  [
+   "denzel",
+   "R3 bitrate regulation",
+   "PASS",
+   46.1
+  ],
+  [
+   "denzel",
+   "R4 change-driven coding",
+   "PASS",
+   26.2
+  ],
+  [
+   "denzel",
+   "R6 E5 + block transforms",
+   "PASS",
+   8.7
+  ],
+  [
+   "denzel",
+   "R7 frame-size side channel",
+   "PASS",
+   59.5
+  ],
+  [
+   "jailer",
+   "R2 parallel lanes",
+   "PASS",
+   3.1
+  ],
+  [
+   "jailer",
+   "R3 bitrate regulation",
+   "PASS",
+   52.6
+  ],
+  [
+   "jailer",
+   "R4 change-driven coding",
+   "PASS",
+   23.7
+  ],
+  [
+   "jailer",
+   "R6 E5 + block transforms",
+   "PASS",
+   7.5
+  ],
+  [
+   "jailer",
+   "R7 frame-size side channel",
+   "PASS",
+   47.6
+  ],
+  [
+   "sintel_trailer",
+   "R2 parallel lanes",
+   "PASS",
+   3.2
+  ],
+  [
+   "sintel_trailer",
+   "R3 bitrate regulation",
+   "PASS",
+   37.6
+  ],
+  [
+   "sintel_trailer",
+   "R4 change-driven coding",
+   "PASS",
+   25.3
+  ],
+  [
+   "sintel_trailer",
+   "R4 threshold 2",
+   "PASS",
+   25.1
+  ],
+  [
+   "sintel_trailer",
+   "R4 threshold 8",
+   "PASS",
+   24.8
+  ],
+  [
+   "sintel_trailer",
+   "R6 E5 + block transforms",
+   "PASS",
+   8.1
+  ],
+  [
+   "sintel_trailer",
+   "R7 frame-size side channel",
+   "PASS",
+   36.4
+  ],
+  [
+   "tearsofsteel",
+   "R2 parallel lanes",
+   "PASS",
+   3.9
+  ],
+  [
+   "tearsofsteel",
+   "R3 bitrate regulation",
+   "PASS",
+   44.6
+  ],
+  [
+   "tearsofsteel",
+   "R4 change-driven coding",
+   "PASS",
+   25.1
+  ],
+  [
+   "tearsofsteel",
+   "R4 threshold 2",
+   "PASS",
+   25.4
+  ],
+  [
+   "tearsofsteel",
+   "R4 threshold 8",
+   "PASS",
+   25.0
+  ],
+  [
+   "tearsofsteel",
+   "R6 E5 + block transforms",
+   "PASS",
+   9.2
+  ],
+  [
+   "tearsofsteel",
+   "R7 frame-size side channel",
+   "PASS",
+   53.0
+  ]
+ ],
+ "minutes": 28.7,
+ "quick": false,
+ "sources": {
+  "synthetic": {
+   "path": "synthetic",
+   "kind": "open"
+  },
+  "avengers": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/avengers.mp4",
+   "kind": "private"
+  },
+  "challenge": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/challenge .mp4",
+   "kind": "private"
+  },
+  "denzel": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/denzel.mp4",
+   "kind": "private"
+  },
+  "jailer": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/jailer.mp4",
+   "kind": "private"
+  },
+  "sintel_trailer": {
+   "path": "/kaggle/working/opendata/sintel_trailer.mp4",
+   "kind": "open"
+  },
+  "tearsofsteel": {
+   "path": "/kaggle/working/opendata/tearsofsteel.mov",
+   "kind": "open"
+  }
+ }
+}

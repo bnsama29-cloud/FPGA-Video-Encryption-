@@ -1,0 +1,9 @@
+### R3: bitrate regulation (sintel_trailer, 150 frames, budget 100 % -> 60 % -> 120 %)
+
+| Controller | Mean abs. error | Error after settling | Frames >10 % over | Settling after drop (frames) | Overshoot after drop | Mean quality | Mean SSIM |
+|---|---|---|---|---|---|---|---|
+| fixed | 192.8 % | 194.1 % | 73 % | -- | +530 % | 75 | 0.989 |
+| bang-bang | 42.8 % | 43.8 % | 56 % | -- | +105 % | 21 | 0.816 |
+| I | 40.3 % | 41.2 % | 55 % | -- | +105 % | 23 | 0.810 |
+| PI | 40.7 % | 41.5 % | 57 % | -- | +105 % | 23 | 0.814 |
+| FF+PI | 40.7 % | 41.5 % | 57 % | -- | +105 % | 23 | 0.814 |

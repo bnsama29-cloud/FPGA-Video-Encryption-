@@ -7,6 +7,11 @@ HOW TO RUN (one Kaggle account)
   3. Paste this whole file into ONE code cell -> Save Version -> "Save & Run All (Commit)".
   4. Download research_results.zip from the version's Output tab and send it.
   QUICK = True first if you want a 10-minute smoke test.
+  ONLY = ["r3_rate", "r7_size"] reruns just those two (~20 min, after the fixes of bugs #22-#24);
+  ONLY = [] runs everything (~30 min on Kaggle in the first run, 15 Oct 2026).
+  A clip from a STATIC camera (phone on a stand, a room, people walking in and out, 1-2 min) is the
+  most useful extra input: the size side channel (R7) and change-driven coding (R4) are about fixed
+  cameras, and film clips with cuts and camera motion are a different case. Put it in the same dataset.
 
 WHAT IT RUNS (every number comes from a script in experiments/, as in the paper)
   R1  stall profile of the RTL (Icarus + cocotb, cycle-accurate): which link stalls, and the
@@ -24,13 +29,16 @@ Frames from the private clips are never saved; only numbers (and byte-count plot
 """
 # ============================ SETTINGS =======================================
 QUICK = False
+ONLY = ["r3_rate", "r7_size"]               # [] = run everything
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
-BRANCHES = ["research-suite", "main"]       # the first one that has the research experiments is used
+BRANCHES = ["research-real-clips", "main"]  # the first one that has the fixed experiments is used
 OPEN_CLIPS = {                               # CC-BY 3.0, (c) Blender Foundation
     "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
     "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
 }
 RUN = dict(r1_stall=True, r2_lanes=True, r3_rate=True, r4_change=True, r6_transform=True, r7_size=True)
+if ONLY:
+    RUN = {k: k in ONLY for k in RUN}
 # =============================================================================
 
 import glob, json, os, pathlib, re, shutil, subprocess, sys, time, urllib.request
@@ -93,12 +101,12 @@ def safe(name):
 shutil.rmtree(REPO, ignore_errors=True)
 for b in BRANCHES:
     if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
-            (REPO / "experiments" / "change_driven.py").exists():
+            "B_MIN" in (REPO / "experiments" / "rate_control.py").read_text():
         break
-    print(f"  branch {b} does not have the research experiments, trying the next one")
+    print(f"  branch {b} does not have the fixed experiments (bugs #22-#24), trying the next one")
     shutil.rmtree(REPO, ignore_errors=True)
 else:
-    raise SystemExit("no branch with experiments/change_driven.py: push / merge research-suite first")
+    raise SystemExit("no branch with the fixed experiments: push / merge research-real-clips first")
 sh("python -m pip install -q cocotb==2.1.0 cocotbext-axi==0.1.28 scikit-image opencv-python-headless "
    "pillow matplotlib tomli numpy", "setup", "pip install", tail=2)
 if RUN["r1_stall"]:

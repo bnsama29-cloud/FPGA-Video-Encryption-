@@ -1,0 +1,9 @@
+### R3: bitrate regulation (denzel, 150 frames, budget 100 % -> 60 % -> 120 %)
+
+| Controller | Mean abs. error | Error after settling | Frames >10 % over | Settling after drop (frames) | Overshoot after drop | Mean quality | Mean SSIM |
+|---|---|---|---|---|---|---|---|
+| fixed | 150.3 % | 153.9 % | 97 % | -- | +273 % | 75 | 0.983 |
+| bang-bang | 11.1 % | 9.5 % | 39 % | 42 | +26 % | 22 | 0.909 |
+| I | 7.6 % | 6.5 % | 35 % | 42 | +12 % | 22 | 0.908 |
+| PI | 8.3 % | 7.2 % | 37 % | 42 | +30 % | 22 | 0.909 |
+| FF+PI | 7.7 % | 7.0 % | 37 % | 42 | +30 % | 23 | 0.910 |

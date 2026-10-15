@@ -37,7 +37,7 @@ class Sender:
         if self.encoder.name == "rtl" and cfg["defence"]["max_mode"] == "E5":
             cfg["defence"]["max_mode"] = "E4"          # the RTL has no restart markers yet
         self.policy = make_policy(s["policy"], cfg, self.mode, config.policy_seed(cfg))
-        self.source = open_source(s["source"], s["width"], s["height"], s["loop"])
+        self.source = open_source(s["source"], s["width"], s["height"], s["loop"], live_clock=True)
         self.fps = float(s["fps"])
         self.ctr = 1
         self.bus = wire.Bus(cfg, "sender")
