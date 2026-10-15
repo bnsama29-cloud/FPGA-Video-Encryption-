@@ -62,6 +62,27 @@ def parse_timing(text):
     return {}
 
 
+def parse_critical(text, n=10):
+    """Blocks on the worst setup paths: [(slack, source block, destination block)] from the
+    report_timing_summary path list (block = first hierarchy level, e.g. u_conv)."""
+    out = []
+    blk = lambda pin: pin.split("/")[0] if "/" in pin else "(top)"
+    slack = src = None
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("Slack"):
+            m = re.search(r":\s*(-?[\d.]+)ns", line)
+            slack = float(m.group(1)) if m else None
+        elif line.startswith("Source:"):
+            src = blk(line.split()[1])
+        elif line.startswith("Destination:") and slack is not None and src is not None:
+            out.append((slack, src, blk(line.split()[1])))
+            slack = src = None
+            if len(out) >= n:
+                break
+    return out
+
+
 def parse_period(text, folder):
     m = re.search(r"\{0\.000\s+([\d.]+)\}\s+([\d.]+)\s+([\d.]+)", text)    # clock table: {0.000 5.000} 10.000 100.000
     if m:
@@ -116,6 +137,7 @@ def read_folder(folder):
     t = rd("timing.txt")
     r = dict(folder=str(folder), name=folder.name.replace("vivado_", ""), util=parse_utilization(rd("utilization.txt")),
              timing=parse_timing(t), power=parse_power(rd("power.txt")), hier=parse_hier(rd("utilization_hier.txt")),
+             critical=parse_critical(t),
              period=parse_period(t, folder), missing=[])
     for f in ("utilization.txt", "timing.txt", "power.txt"):
         if not (folder / f).exists():
@@ -141,6 +163,14 @@ def tables(results):
                   f"{fmt(r['fmax_mhz'], 1)} | {fmt(p.get('total'), 3)} / {fmt(p.get('dynamic'), 3)} |")
     md += ["", "Power is Vivado's vectorless estimate (confidence shown in power.txt); measure the board for real power.",
            "Est. fmax = 1000 / (period - WNS): a single-run estimate, confirm by re-running at that period.", ""]
+    crit = [r for r in results if r.get("critical")]
+    if crit:
+        md += ["### Worst setup paths (block of source -> destination)", "",
+               "| Design | Clock (MHz) | Paths (slack ns: from -> to) |", "|---|---|---|"]
+        for r in crit:
+            paths = "; ".join(f"{sl:+.3f}: {a} -> {b}" for sl, a, b in r["critical"][:5])
+            md.append(f"| {r['name']} | {fmt(1000 / r['period'], 0)} | {paths} |")
+        md.append("")
     for r in results:
         if r["hier"]:
             md += [f"### Resource breakdown: {r['name']}", "", "| Block | Module | LUT | FF | BRAM | DSP |",

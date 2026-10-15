@@ -25,8 +25,8 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 |---|---|---|
 | Golden model + contract v2 | ✅ done | `model/`, `docs/INTERFACES.md`, 1089 Ascon KATs |
 | RTL (E0–E4) | ✅ bit-exact with the model in cocotb + Icarus, 0 extra cycles for encryption | `tb/`, `make test` |
-| Vivado testbench | ✅ in Icarus · ⏳ in Vivado XSim | `make xsim-icarus`, then `docs/VIVADO_ONE_DAY.md` |
-| Post-route resources / timing / power | ⏳ first run done (≈ 47 MHz, bug #17 fixed) → **re-run** | `python vivado/run_vivado_day.py` |
+| Vivado testbench | ✅ in Icarus · ✅ in Vivado XSim 2026.1 | `make xsim-icarus`, `python vivado/run_vivado_day.py --steps xsim` |
+| Post-route resources / timing / power | ✅ encoder meets 100 MHz (run 3, in the paper) · ⏳ overlay −0.24 ns → run 4 with the extra converter stage | `python vivado/run_vivado_day.py --maxw 9 10` |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
 | Simulation results, private clips | ✅ (Kaggle, 47/47 steps) | `paper/data/simulation/` |
 | Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps + rerun 9/9 steps) | `paper/data/extra/` (README there says where each file came from) |
@@ -217,7 +217,14 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
-| B14 | **Comparison table in the paper** | P1 | 1 + 2 | ½ d after 4.1 | below; §7 has the numbers |
+| B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
+| B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM; Kaggle adds 640x480 | `docs/RESEARCH.md` |
+| B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model; RTL later | `docs/RESEARCH.md` |
+| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
+| B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
+| B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
+| B31 | Frame-size side channel (R7: every level E0-E5 reveals motion events, AUC 0.93): constant-size padding option + threat-model text | P1 | 2 + 5 | measured (synthetic); Kaggle for clips | `docs/RESEARCH.md` |
+| B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ synthetic | `docs/RESEARCH.md` |
 | B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
 | B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |

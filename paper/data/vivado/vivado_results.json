@@ -1,0 +1,207 @@
+[
+ {
+  "folder": "sim_build/vivado_secure_jpeg_top",
+  "name": "secure_jpeg_top",
+  "util": {
+   "lut": [
+    5039.0,
+    53200.0,
+    9.47
+   ],
+   "ff": [
+    2911.0,
+    106400.0,
+    2.74
+   ],
+   "bram": [
+    24.5,
+    140.0,
+    17.5
+   ],
+   "dsp": [
+    23.0,
+    220.0,
+    10.45
+   ]
+  },
+  "timing": {
+   "wns": 0.045,
+   "tns": 0.0,
+   "whs": 0.074,
+   "met": true
+  },
+  "power": {
+   "total": 0.221,
+   "dynamic": 0.116,
+   "static": 0.106,
+   "confidence": "Medium"
+  },
+  "hier": [
+   [
+    0,
+    "secure_jpeg_top",
+    "(top)",
+    5039,
+    2911,
+    24.5,
+    23
+   ],
+   [
+    1,
+    "(secure_jpeg_top)",
+    "(top)",
+    0,
+    5,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_conv",
+    "rgb2ycbcr_block",
+    759,
+    199,
+    24.0,
+    0
+   ],
+   [
+    1,
+    "u_dct",
+    "dct8x8",
+    806,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_cols",
+    "dct_stage__parameterized0",
+    505,
+    35,
+    0.0,
+    11
+   ],
+   [
+    2,
+    "u_rows",
+    "dct_stage",
+    301,
+    33,
+    0.0,
+    11
+   ],
+   [
+    1,
+    "u_enc",
+    "selective_enc",
+    82,
+    24,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_huff",
+    "huffman_enc",
+    268,
+    34,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_ks",
+    "keystream_gen",
+    952,
+    851,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_ks)",
+    "keystream_gen",
+    92,
+    266,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    860,
+    585,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_pack",
+    "bit_packer",
+    211,
+    84,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    348,
+    355,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_rle",
+    "zigzag_rle",
+    226,
+    88,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1345,
+    1072,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    376,
+    614,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    969,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    22,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 100.5
+ }
+]

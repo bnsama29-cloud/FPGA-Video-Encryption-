@@ -220,3 +220,32 @@
   year      = {2018}
 }
 % standard reference (epsilon-greedy, optimistic initial values, sample-average updates)
+
+% ---- hardware comparison (Table: comparison) ---------------------------------------------------
+@misc{logijpge,
+  author       = {{Xylon d.o.o.}},
+  title        = {{logiJPGE} Motion {JPEG} Encoder Data Sheet, v1.0},
+  howpublished = {\url{https://www.logicbricks.com/Documentation/Datasheets/IP/logiJPGE_hds.pdf}},
+  year         = {2020}
+}
+% checked 14 Oct 2026: PDF, dated 3 Jul 2020; Table 1 XC7Z020-1: 3240 LUT, 1969 FF, 16 BRAM, 30 DSP,
+% 150 MHz (Vivado 2019.2, 4:2:2, max width 2048); "150 MPix/s when running at 150 MHz".
+
+@misc{castjpeg,
+  author       = {{CAST, Inc.}},
+  title        = {{JPEG-E-S} Baseline {JPEG} Encoder, product brief},
+  howpublished = {\url{https://www.cast-inc.com/pdfs/cast_jpeg-e-s-brief-amd.pdf}},
+  note         = {Accessed 14 Oct. 2026}
+}
+% checked 14 Oct 2026: undated brief; Artix-7 (-1): 3069 LUT, 16 DSP, 2 BRAM, 166 MHz; one colour
+% sample per clock. No FF count, no year printed (hence note instead of year).
+
+@inproceedings{khairallah2023,
+  author       = {Mustafa Khairallah and Srinivasan Yadhunathan},
+  title        = {{FPGA} Implementations of Message Authentication Codes based on {Ascon-p}},
+  booktitle    = {NIST Lightweight Cryptography Workshop},
+  year         = {2023},
+  howpublished = {\url{https://csrc.nist.gov/csrc/media/Events/2023/lightweight-cryptography-workshop-2023/documents/accepted-papers/14-fpga-implementations-of-message-authentication-codes.pdf}}
+}
+% checked 14 Oct 2026: PDF (accepted paper 14); Artix-7 100T; Ascon-PRF-192, 1 round/cycle: 1031 LUT,
+% 391 FF, period 5 ns (200 MHz). Authors and affiliation (Seagate Research Group) from page 1.
