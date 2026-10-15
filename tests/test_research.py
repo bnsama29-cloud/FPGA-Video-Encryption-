@@ -103,3 +103,33 @@ def test_constant_rate_hides_the_count_and_padding_hides_the_size():
     assert sp["size_corr"] == 0.0 and sp["bytes_ratio"] < 1.0
     ov, _ = CD.run(frames, "map-visible", pre=pre)
     assert CD.summarise(ov, n, "map-visible")["count_corr"] > 0.5   # visible counts do track motion
+
+
+# ---------------------------------------------------------------- R6 block transforms
+def test_dct_domain_flips_are_exact_and_invertible(scene):
+    """A flip of the pixels equals negating odd coefficients (DCT-II), the transform keeps DC, and
+    the key holder recovers the quantised coefficients exactly."""
+    import block_transform as BT
+    from model.dct_quant import fdct
+    rng = np.random.default_rng(1)
+    px = rng.integers(0, 256, (1, 1, 8, 8)).astype(np.int64)          # fdct takes 0..255 samples
+    c = fdct(px)[0, 0]
+    c_flip = fdct(px[..., :, ::-1].copy())[0, 0]
+    assert np.abs(BT.dihedral(c, 2) - c_flip).max() <= 1, "column mirror != negating odd u (up to rounding)"
+    an = analyse_frame(scene)
+    codes = BT.block_codes(bytes(16), 1, 1, an.quant.shape[0] * 6)
+    qt = BT.apply_transform(an.quant, codes)
+    assert np.array_equal(qt[..., 0, 0], an.quant[..., 0, 0]), "DC must not change"
+    assert np.array_equal(BT.apply_transform(qt, codes, inverse=True), an.quant)
+
+
+# ---------------------------------------------------------------- R7 size side channel
+def test_auc_and_constant_size_stream():
+    import size_leak as SL
+    assert SL.auc([3, 2, 1], [True, False, False]) == 1.0
+    assert SL.auc([1, 1, 1], [True, False, False]) == 0.5
+    motion = np.array([0.0, 1, 5, 9, 2, 1, 8, 9, 1, 0, 7, 9])
+    leak_const = SL.leak([1000] * len(motion), motion)
+    assert leak_const["size_corr"] == 0.0 and leak_const["event_auc"] == 0.5
+    leak_track = SL.leak([1000 + 100 * m for m in motion], motion)
+    assert leak_track["size_corr"] > 0.99 and leak_track["event_auc"] > 0.9

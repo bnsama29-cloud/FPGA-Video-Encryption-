@@ -5,7 +5,7 @@ for the PYNQ-Z2 is unchanged by R2-R4 (they are model-level studies), and R1 onl
 Rules as everywhere: every number comes from a script that writes `sim_out/`; the golden model is the
 referee; every failure gets a bug-log row and a new approach, not a workaround.
 
-**Run everything at once:** `future_work/kaggle/kaggle_research.py` (one Kaggle cell, ~1 h, CPU only)
+**Run everything at once:** `future_work/kaggle/kaggle_research.py` (one Kaggle cell, ~1.5 h, CPU only)
 and, on the laptop with Vivado, `python vivado\run_vivado_day.py --steps ooc parse --periods 8.0 6.667`
 (R5). Status: the numbers below are from the development VM on the synthetic scene and the RTL in
 Icarus; the Kaggle run adds the real and open clips. Nothing here is in the paper yet.
@@ -97,6 +97,45 @@ last time (conditional replenishment). Synthetic corridor scene, 60 frames:
 Runs the encoder at 125 and 150 MHz and lists, for the worst paths, the block they start and end in
 (`parse_reports.py`, "Worst setup paths"). From run 3 at 100 MHz, after the colour converter (fixed in
 run 4) the next block is `u_rle` (zig-zag/RLE, slack +0.091 ns).
+
+## R6 -- E5 hardened with keyed DCT-domain block transforms (`experiments/block_transform.py`) -- negative result
+
+Motivation: plain block scrambling falls to jigsaw solvers, independent per-block keyed transforms
+stop them (Chuman and Kiya, arXiv:2207.08109). For the DCT-II, mirroring a block is negating its odd
+coefficients and transposing it is transposing them, so all 8 symmetries are exact, format-compliant
+operations on the quantised coefficients (DC unchanged; tested).
+
+Result (synthetic scene): **the transform adds almost nothing**, and the reason is instructive. A flip
+in the DCT domain *is* a pattern of sign changes, and E4/E5 already encrypt every sign (the attacker's
+replacement view drops signs anyway). Only transposition is left: with oracle tile positions, SSIM
+0.555 for E5 against 0.545 for E5+T; our jigsaw solver is at chance for both (~1 % neighbours).
+**Consequence:** E5's protection rests entirely on the block *positions* staying unsolved; an attacker
+who recovered them would see SSIM ~0.55. Stronger solvers are the threat to watch (GUIDE B9).
+
+## R7 -- the frame-size side channel of every level (`experiments/size_leak.py`)
+
+Encryption hides content, not length. Wampler et al. (IEEE 2015) detected events in encrypted
+IP-camera traffic from sizes and timing. Synthetic scene, 90 frames; the attacker only sees sizes:
+
+| Stream | Size-motion corr. | Event detection (separability, 0.5 = chance) | Bytes vs E2 |
+|---|---|---|---|
+| E0 ... E4 | 0.91-0.92 | **0.93-0.94** | 100 % |
+| E5 | 0.91 | 0.93 | 111 % |
+| E2, padded to multiples of 1 KB | 0.68 | 0.72 | 105 % |
+| **E2, constant size** (padded to the largest frame) | **0.00** | **0.50** | **103 %** |
+| E5, constant size | 0.00 | 0.50 | 114 % |
+| E2, FF+PI rate control + pad to 105 % of budget | -0.22 | 0.51 | 106 % (1 % frames over) |
+
+* **Every protection level, including E5, tells an eavesdropper when something moves.** The event
+  detector needs no training: frame size minus the smallest size of the last 30 frames.
+* Constant-size frames close the channel; on this scene for +3 % bytes. The cost on real clips (whose
+  sizes vary more) is what the Kaggle run measures.
+* Hypothesis confirmed: rate control alone does not close it -- it **moves the leak into the quality
+  factor**, which the quantisation table in the JPEG header shows in clear (separability 0.69-0.76).
+  So: fixed quality + constant-size padding, or rate control that changes quality only slowly.
+* Method note: the first detector (|size - median of the last 10|) looked for size *changes* and gave
+  AUC < 0.5, i.e. it measured the wrong thing; a person *present* makes every frame larger. The
+  background-subtraction detector and the separability max(AUC, 1-AUC) are what an attacker would use.
 
 ## Ideas considered and not pursued
 

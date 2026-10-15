@@ -223,7 +223,8 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
 | B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
 | B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
-| B31 | Frame-size side channel of plain MJPEG (found by R4): size padding option + threat-model text | P1 | 2 + 5 | after Kaggle | `docs/RESEARCH.md` |
+| B31 | Frame-size side channel (R7: every level E0-E5 reveals motion events, AUC 0.93): constant-size padding option + threat-model text | P1 | 2 + 5 | measured (synthetic); Kaggle for clips | `docs/RESEARCH.md` |
+| B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ synthetic | `docs/RESEARCH.md` |
 | B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
 | B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |

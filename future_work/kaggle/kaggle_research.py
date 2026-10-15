@@ -16,7 +16,10 @@ WHAT IT RUNS (every number comes from a script in experiments/, as in the paper)
   R3  bitrate regulation (fixed, bang-bang, I, PI, FF+PI) with budget steps    (every video source)
   R4  change-driven coding with its motion leakage and the chaff/padding defences (every video source),
       plus a threshold sweep (2, 4, 8) on the open sources
-TIME (Kaggle, 4 CPU): ~1 h (iverilog build ~6 min, R1 ~15 min, R2-R4 ~5 min per source).
+  R6  E5 with keyed DCT-domain block flips/transposes vs the jigsaw and an orientation-repair attacker
+  R7  the frame-size side channel of every level E0-E5 (event detection from sizes) and the padding /
+      rate-control defences, including the quality-factor leak of rate control
+TIME (Kaggle, 4 CPU): ~1.5 h (iverilog build ~6 min, R1 ~15 min, R2-R4 ~5 min per source).
 Frames from the private clips are never saved; only numbers (and byte-count plots) are kept.
 """
 # ============================ SETTINGS =======================================
@@ -27,7 +30,7 @@ OPEN_CLIPS = {                               # CC-BY 3.0, (c) Blender Foundation
     "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
     "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
 }
-RUN = dict(r1_stall=True, r2_lanes=True, r3_rate=True, r4_change=True)
+RUN = dict(r1_stall=True, r2_lanes=True, r3_rate=True, r4_change=True, r6_transform=True, r7_size=True)
 # =============================================================================
 
 import glob, json, os, pathlib, re, shutil, subprocess, sys, time, urllib.request
@@ -40,7 +43,7 @@ QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
 REPO, DATA = WORK / "repo", WORK / "opendata"
 ENV = {**os.environ, "PYTHONUNBUFFERED": "1"}
 LOG, SOURCES = [], {}
-DIRS = ["stall_profile", "parallel_lanes", "rate_control", "change_driven"]
+DIRS = ["stall_profile", "parallel_lanes", "rate_control", "change_driven", "block_transform", "size_leak"]
 
 
 def sh(cmd, sec, step, tail=12, cwd=None):
@@ -133,7 +136,8 @@ if RUN["r1_stall"]:
     checkpoint()
 
 # ============================ R2-R4 PER VIDEO SOURCE ==========================
-nf = dict(lanes=1 if QUICK else 4, rate=30 if QUICK else 150, change=30 if QUICK else 120)
+nf = dict(lanes=1 if QUICK else 4, rate=30 if QUICK else 150, change=30 if QUICK else 120,
+          transform=1 if QUICK else 6, size=30 if QUICK else 150)
 for name, s in SOURCES.items():
     p, opn = s["path"], s["kind"] == "open"
     if RUN["r2_lanes"]:
@@ -150,6 +154,12 @@ for name, s in SOURCES.items():
             for tau in (2, 8):
                 sh(f"python experiments/change_driven.py --video '{p}' --frames {nf['change']} --stride 3 "
                    f"--tau {tau} --name {name}_tau{tau}", name, f"R4 threshold {tau}", tail=3)
+    if RUN["r6_transform"]:
+        sh(f"python experiments/block_transform.py --video '{p}' --frames {nf['transform']} --stride 150 --name {name}",
+           name, "R6 E5 + block transforms", tail=6)
+    if RUN["r7_size"]:
+        sh(f"python experiments/size_leak.py --video '{p}' --frames {nf['size']} --stride 3 --name {name}",
+           name, "R7 frame-size side channel", tail=14)
     checkpoint()
 
 print("\n".join(f"{s:<16}{st:<44}{r:<5}{t:>7.0f} s" for s, st, r, t in LOG))
