@@ -91,3 +91,14 @@ NIST, arXiv, or the authors' institutional page. Before submission:
   limit.
 * **Format.** Most IEEE conferences use this exact template. Some require the compsoc or A4 variant;
   change only the `\documentclass` options.
+
+## Two builds from one source
+
+* `make main.pdf` -- conference version (IEEEtran `[conference]`, 6 pages).
+* `make extended.pdf` -- journal version in the **IEEE Access** format (`ieeeaccess.cls` and `access/*.png`
+  from the IEEE Access LaTeX template, unmodified except that image paths are the template's own names).
+  `extended.tex` sets `\makeextended` and `\makeaccess`; `main.tex` switches class and front matter.
+  Two workarounds live in `main.tex`, not in the class: the class redefines the TeX primitive `\year`
+  (pgf and `\today` need it), and its PANTONE spot colour is written without a colour space, so the blue
+  is redefined as its CMYK equivalent. Biographies, IEEE membership, funding and corresponding author are
+  `\TODO`s.

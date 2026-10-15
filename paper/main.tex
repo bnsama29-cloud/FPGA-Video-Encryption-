@@ -1,13 +1,28 @@
-% Conference draft -- IEEE two-column. Build: cd paper && make   (needs pdflatex + bibtex + IEEEtran)
+% One source, two papers. Build: cd paper && make all   (needs pdflatex + bibtex + IEEEtran)
+%   main.pdf      conference version, IEEEtran [conference], 6 pages
+%   extended.pdf  journal version in the IEEE Access format (extended.tex defines \makeextended and
+%                 \makeaccess before loading this file; class ieeeaccess.cls + access/*.png from the
+%                 IEEE Access LaTeX template)
 % Every number in this file comes from tables/numbers.tex or tables/tab_*.tex, which
 % paper/make_assets.py generates from paper/data/. Do not type results by hand.
+\ifdefined\makeaccess
+\documentclass{ieeeaccess}
+\else
 \documentclass[conference]{IEEEtran}
+\fi
 \IEEEoverridecommandlockouts
 \usepackage{cite}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{xcolor}
+\ifdefined\makeaccess          % ieeeaccess.cls turns the TeX primitive \year into "set the header year";
+\year{2026}                   % pgf and \today need the primitive: set the header year once, then restore it
+\ExplSyntaxOn\cs_set_eq:NN\year\tex_year:D\ExplSyntaxOff
+\providecommand\xfigwd{0pt}   % the class's captions read the width that its own \Figure macro sets
+\definecolor{accessblue}{cmyk}{1,0.3,0,0.2}   % PANTONE 3015 C as process colour: the spot-colour space
+                                             % of the class is not written correctly (title invisible)
+\fi
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 \usepackage[hidelinks]{hyperref}
@@ -16,11 +31,37 @@
 % \makeextended: every figure and table, the research extensions and the full metric discussion).
 \newif\ifextended
 \ifdefined\makeextended\extendedtrue\fi
+\newif\ifaccess
+\ifdefined\makeaccess\accesstrue\graphicspath{{access/}{./}}\fi
 \input{tables/numbers.tex}
 
 \begin{document}
 
-\title{Playable but Private: In-Encoder Selective Encryption with Ascon-AEAD128 and Attack-Adaptive Protection for MJPEG Video on an FPGA SoC}
+\newcommand{\PaperTitle}{Playable but Private: In-Encoder Selective Encryption with Ascon-AEAD128 and Attack-Adaptive Protection for MJPEG Video on an FPGA SoC}
+\newcommand{\PaperAbstract}{Small video cameras increasingly stream to networks they do not control, yet encrypting the whole stream makes it unplayable without the key and spends energy on every byte. We present a JPEG/MJPEG encoder for a Zynq-7020 FPGA SoC that encrypts only the sign and amplitude bits of selected DCT coefficients, at the entropy-coding stage and with a keystream from the NIST SP~800-232 lightweight standard Ascon-AEAD128. Huffman code lengths are untouched, so every protection level remains a valid JPEG stream, while a 128-bit tag computed over the frame metadata and the coded scan lets the receiver reject any modified, replayed or forged frame. The register-transfer-level design is verified bit-exact against a Python golden model and needs no additional clock cycles for encryption in any mode. Around the encoder we build an authenticated feedback channel, a key ratchet and an adaptive policy that raises protection when the receiver reports attacks. In a networked simulation, all \NumAttacks{} active attacks we model were mitigated in \TtmMean{}\,s on average with no false alarms, and on \NumVideoClips{} video clips and the Kodak images a keyed block shuffle removed the outline leakage that sign and amplitude encryption alone leave behind, also against a jigsaw solver and a trained neural attacker; the same network defeats sign-only encryption. We also report a negative result: a learning bandit policy saves \PolCostSave{}\,\% of encrypted bits but reacts more slowly than a fixed threshold rule.}
+\newcommand{\PaperKeywords}{selective encryption, MJPEG, Ascon, lightweight cryptography, FPGA, authenticated encryption, video surveillance}
+
+\ifaccess
+% ---------------------------------------------------------------- IEEE Access front matter
+\history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.}
+\doi{10.1109/ACCESS.2026.DOI}
+\title{\PaperTitle}
+\author{\uppercase{Aravind R}\authorrefmark{1}, \uppercase{Suhas V J}\authorrefmark{1}, \uppercase{Rishab H R}\authorrefmark{1}, \uppercase{Samarth B N}\authorrefmark{1}, \uppercase{Vijaysurya B S}\authorrefmark{1}, and \uppercase{Chetana G}\authorrefmark{1}\,\TODO{order, IEEE membership}}
+\address[1]{Department of Electronics and Communication Engineering, RV College of Engineering, Bengaluru 560059, India \TODO{e-mails}}
+\tfootnote{\TODO{funding statement, or ``This work received no external funding.''} \textcolor{red}{\textbf{Extended draft, \today. Not for distribution.}}}
+\markboth{Aravind R \headeretal: Playable but Private}{Aravind R \headeretal: Playable but Private}
+\corresp{Corresponding author: \TODO{name} (e-mail: \TODO{address}).}
+\begin{abstract}
+\PaperAbstract
+\end{abstract}
+\begin{keywords}
+\PaperKeywords
+\end{keywords}
+\titlepgskip=-21pt
+\maketitle
+\else
+% ---------------------------------------------------------------- conference front matter
+\title{\PaperTitle}
 
 \author{
 \IEEEauthorblockN{Aravind R, Suhas V J, Rishab H R, Samarth B N, Vijaysurya B S, Chetana G\,\TODO{order}}
@@ -31,12 +72,13 @@
 \maketitle
 
 \begin{abstract}
-Small video cameras increasingly stream to networks they do not control, yet encrypting the whole stream makes it unplayable without the key and spends energy on every byte. We present a JPEG/MJPEG encoder for a Zynq-7020 FPGA SoC that encrypts only the sign and amplitude bits of selected DCT coefficients, at the entropy-coding stage and with a keystream from the NIST SP~800-232 lightweight standard Ascon-AEAD128. Huffman code lengths are untouched, so every protection level remains a valid JPEG stream, while a 128-bit tag computed over the frame metadata and the coded scan lets the receiver reject any modified, replayed or forged frame. The register-transfer-level design is verified bit-exact against a Python golden model and needs no additional clock cycles for encryption in any mode. Around the encoder we build an authenticated feedback channel, a key ratchet and an adaptive policy that raises protection when the receiver reports attacks. In a networked simulation, all \NumAttacks{} active attacks we model were mitigated in \TtmMean{}\,s on average with no false alarms, and on \NumVideoClips{} video clips and the Kodak images a keyed block shuffle removed the outline leakage that sign and amplitude encryption alone leave behind, also against a jigsaw solver and a trained neural attacker; the same network defeats sign-only encryption. We also report a negative result: a learning bandit policy saves \PolCostSave{}\,\% of encrypted bits but reacts more slowly than a fixed threshold rule.
+\PaperAbstract
 \end{abstract}
 
 \begin{IEEEkeywords}
-selective encryption, MJPEG, Ascon, lightweight cryptography, FPGA, authenticated encryption, video surveillance
+\PaperKeywords
 \end{IEEEkeywords}
+\fi
 
 \section{Introduction}
 Cameras on doors, corridors and machines now send video over Wi-Fi and shared Ethernet as a matter of course. Two properties matter for such a link. Confidentiality keeps a bystander on the network from watching the scene; integrity lets the viewer trust that what it shows was captured by the camera and not edited, replayed or injected on the way. The usual answer, encrypting the transport with TLS, SRTP~\cite{rfc3711} or a VPN, provides both, but it hides the stream from every tool that is not part of the key infrastructure and costs cipher work proportional to the full bitrate.
@@ -209,5 +251,13 @@ We thank Dr.~Chetana~G for her guidance. \TODO{AI-assistance disclosure as requi
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
+
+\ifaccess
+% ---------------------------------------------------------------- IEEE Access: author biographies
+\begin{IEEEbiographynophoto}{Aravind R}
+\TODO{biography and photo (1 in $\times$ 1.25 in) of every author, as the IEEE Access template requires}
+\end{IEEEbiographynophoto}
+\EOD
+\fi
 
 \end{document}

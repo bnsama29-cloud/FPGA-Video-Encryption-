@@ -213,27 +213,27 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 
 | # | Item | P | Owner | Time | Spec |
 |---|---|---|---|---|---|
-| B25 | **Global-statistics control for E5** (does frame brightness/colour explain the U-Net's SSIM gain?) | P2 | 5 | ½ d | below |
+| B25 | **Global-statistics control for E5**: controls with the true and the revealed per-frame colour statistics in `learned_attack.py` | P2 | 5 | code ✅; numbers: `kaggle_final.py` | below |
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
 | B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
 | B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM + Kaggle (640x480 measured 1.534 cycles/px, law confirmed) | `docs/RESEARCH.md` |
 | B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model, exact on 7 sources; RTL later | `docs/RESEARCH.md` |
-| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic + 5 films (error 3-7x lower than fixed quality); Tears of Steel oscillation fixed (bugs #25, #26), rerun R3 | `docs/RESEARCH.md` |
+| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic + 6 real clips after bugs #22-#26 (error 3-7x lower than fixed quality; FF+PI settles in <= 2 frames) | `docs/RESEARCH.md` |
 | B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic + 6 film clips (fixed-camera technique; static-camera clip wanted) | `docs/RESEARCH.md` |
 | B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
 | B31 | Frame-size side channel (R7: every level E0-E5 leaks the same; separability 0.95 fixed camera, 0.50-0.95 films): constant-size padding option in `link/` + static-camera clip | P1 | 2 + 5 | ✅ measured, in the paper (Discussion); padding option and FF+PI rerun open | `docs/RESEARCH.md` |
 | B33 | Research R8: chosen-plaintext attack (Li et al.) on the E5 shuffle, transferred across frames | P1 | 5 | ✅ 7 sources (chance-level placement) | `docs/RESEARCH.md` |
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
-| B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
-| B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
+| B23 | **Recognition test**: person detection in the attacker's pictures (`experiments/recognition.py`, Faster R-CNN) | P2 | 5 | code ✅ (logic test); numbers: `kaggle_final.py` | below |
+| B24 | **More frames + 95 % intervals** for the leakage table (60 frames/source; `tab_leakage_ci.tex` in the extended paper) | P2 | 5 | code ✅; numbers: `kaggle_final.py` | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |
 | B7 | Shared vs separate Ascon core (area vs throughput) | P2 | 1 | 2 d | below |
 | B8 | Ascon-XOF128 KDF with official vectors | P2 | 2 | 1 d | below |
-| B9 | Stronger jigsaw solver for N = 1 (MST / learned compatibility) | P2 | 5 | 2–3 d | below |
-| B17 | Learned attacker trained on a large public corpus; GAN-style attack | P2 | 5 | 2 d GPU | below |
+| B9 | Stronger jigsaw solver: MST + Mahalanobis gradient compatibility (`future_work/attacks/mst_jigsaw.py`) | P2 | 5 | ✅ gate passed (plain tiles: 0.92-1.00 vs greedy 0.62-0.81); at chance on E5 (synthetic); clips: `kaggle_final.py` | below |
+| B17 | Learned attacker P5: public corpus (Big Buck Bunny, Elephants Dream, Tears of Steel; CC BY) + PatchGAN loss (`--adv`) | P2 | 5 | code ✅; numbers: `kaggle_final.py` (GPU) | below |
 | B10 | Simulated-clock scenarios for 100-seed studies | P3 | 3 | 2 d | below |
 | B11 | Multi-receiver prototype (per-receiver tags) | P3 | 4 + 3 | 3 d | below |
 | B12 | Masked Ascon, ROI encryption, H.264/HEVC | P3 | – | future | paper §VII only |

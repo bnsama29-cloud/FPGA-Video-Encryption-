@@ -26,7 +26,7 @@ from a phone on a stand (a room, people walking in and out) is the most useful n
 | R1 cycles/px at 640x480 (RTL) | predicted 1.541 | measured **1.534** = 65.2 Mpx/s at 100 MHz | law confirmed; in the paper |
 | R2 lanes exact | all checks OK | all checks OK on every clip | holds |
 | R2 restart cost per MCU row | 0.7 % | 0.6-2.2 % mean, up to 4.7 % on a frame | higher than estimated; still small |
-| R3 rate control (2nd rerun) | FF+PI 1.3 % error after settling (after bug #26) | 5 clips: fixed quality 33-62 %, I 5-17 %, FF+PI 6-21 %; Tears of Steel still oscillated between q 5 and 20 (bug #26: plant gain grows at low quality), fixed by controlling ln(quantiser scale); needs one more R3 run | regulation works; I best in steady state |
+| R3 rate control (3rd rerun) | FF+PI 1.3 % error after settling, settles in 1 frame | 6 real clips after bug #26: fixed quality 33-62 % (144 % on Tears of Steel, a third of whose frames cannot meet the budget), I 5-21 %, FF+PI 5-30 %, settling <= 2 frames; no oscillation left | regulation works; I best in steady state, FF+PI after a step |
 | R4 change-driven bytes | 22 % of full | 41-78 % | a fixed-camera technique; modest on films |
 | R4 count leak (hidden map) | 0.95 | 0.63-0.87 | the count still leaks everywhere |
 | R4 constant 25 % + padding | 46 % bytes, SSIM 0.945 | 57-95 % bytes, SSIM 0.76-0.93 | worth it only for fixed cameras |
