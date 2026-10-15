@@ -1,0 +1,88 @@
+{
+ "source": "denzel",
+ "frames": 120,
+ "tau": 4.0,
+ "refresh": 30,
+ "results": {
+  "full": {
+   "bytes_ratio": 1.0,
+   "block_share": 1.0,
+   "projected_cpp": 1.5,
+   "psnr": 35.55058309861659,
+   "ssim": 0.9829532949224549,
+   "mask_corr": null,
+   "count_corr": null,
+   "size_corr": -0.39112105466004216
+  },
+  "full+pad": {
+   "bytes_ratio": 1.398442763844014,
+   "block_share": 1.0,
+   "projected_cpp": 1.5,
+   "psnr": 35.55058309861659,
+   "ssim": 0.9829532949224549,
+   "mask_corr": null,
+   "count_corr": null,
+   "size_corr": 0.0
+  },
+  "map-visible": {
+   "bytes_ratio": 0.4066836851550009,
+   "block_share": 0.20781609195402298,
+   "projected_cpp": 1.0,
+   "psnr": 34.7993185882978,
+   "ssim": 0.9644242829336959,
+   "mask_corr": 0.5868077962900932,
+   "count_corr": 0.847522631863372,
+   "size_corr": 0.5191414699251724
+  },
+  "map-hidden": {
+   "bytes_ratio": 0.4066836851550009,
+   "block_share": 0.20781609195402298,
+   "projected_cpp": 1.0,
+   "psnr": 34.7993185882978,
+   "ssim": 0.9644242829336959,
+   "mask_corr": null,
+   "count_corr": 0.847522631863372,
+   "size_corr": 0.5191414699251724
+  },
+  "bins": {
+   "bytes_ratio": 0.4619908073478954,
+   "block_share": 0.28574712643678163,
+   "projected_cpp": 1.0,
+   "psnr": 35.05943108111636,
+   "ssim": 0.9687454147237569,
+   "mask_corr": null,
+   "count_corr": 0.7548994432363684,
+   "size_corr": 0.42485841579906763
+  },
+  "constant-0.25": {
+   "bytes_ratio": 0.4562059296386314,
+   "block_share": 0.25,
+   "projected_cpp": 1.0,
+   "psnr": 33.44766026954467,
+   "ssim": 0.9328230641528363,
+   "mask_corr": null,
+   "count_corr": 0.0,
+   "size_corr": -0.5025173237390531
+  },
+  "constant-0.25+pad": {
+   "bytes_ratio": 0.571912378504226,
+   "block_share": 0.25,
+   "projected_cpp": 1.0,
+   "psnr": 33.44766026954467,
+   "ssim": 0.9328230641528363,
+   "mask_corr": null,
+   "count_corr": 0.0,
+   "size_corr": 0.0
+  },
+  "constant-0.5": {
+   "bytes_ratio": 0.6840998694705664,
+   "block_share": 0.5,
+   "projected_cpp": 1.0,
+   "psnr": 34.391999199246804,
+   "ssim": 0.9608758319885475,
+   "mask_corr": null,
+   "count_corr": 0.0,
+   "size_corr": -0.36399111960361596
+  }
+ }
+}

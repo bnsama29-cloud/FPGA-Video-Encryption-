@@ -1,0 +1,9 @@
+### R3: bitrate regulation (tearsofsteel, 150 frames, budget 100 % -> 60 % -> 120 %)
+
+| Controller | Mean abs. error | Error after settling | Frames >10 % over | Settling after drop (frames) | Overshoot after drop | Mean quality | Mean SSIM |
+|---|---|---|---|---|---|---|---|
+| fixed | 201.6 % | 220.9 % | 83 % | -- | +163 % | 75 | 0.989 |
+| bang-bang | 45.4 % | 47.4 % | 83 % | -- | +86 % | 20 | 0.849 |
+| I | 37.8 % | 39.0 % | 80 % | -- | +86 % | 17 | 0.834 |
+| PI | 64.4 % | 68.4 % | 81 % | -- | +86 % | 21 | 0.866 |
+| FF+PI | 235.5 % | 258.6 % | 81 % | -- | +86 % | 33 | 0.877 |

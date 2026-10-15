@@ -7,8 +7,41 @@ referee; every failure gets a bug-log row and a new approach, not a workaround.
 
 **Run everything at once:** `future_work/kaggle/kaggle_research.py` (one Kaggle cell, ~1.5 h, CPU only)
 and, on the laptop with Vivado, `python vivado\run_vivado_day.py --steps ooc parse --periods 8.0 6.667`
-(R5). Status: the numbers below are from the development VM on the synthetic scene and the RTL in
-Icarus; the Kaggle run adds the real and open clips. Nothing here is in the paper yet.
+(R5). Status: the sections R1-R7 below were written from the development VM (synthetic scene, RTL in
+Icarus). The Kaggle run of 15 Oct 2026 (7 sources, 47/47 steps PASS, snapshot in
+`paper/data/research/`) tested them on four film clips and the two open Blender films; the next
+section says what held and what did not. In the paper: R1 (measured VGA throughput) and R7 (frame-size
+leak, E0-E5 and padding rows).
+
+## What the real clips changed (Kaggle, 15 Oct 2026)
+
+Important for reading the numbers: the six clips are **edited films** (shot cuts, camera motion). The
+threat model of R4 and R7 is a **fixed camera**; only the synthetic scene is one so far. A short clip
+from a phone on a stand (a room, people walking in and out) is the most useful next input.
+
+| | Synthetic (fixed camera) | Six film clips | Verdict |
+|---|---|---|---|
+| R1 cycles/px at 640x480 (RTL) | predicted 1.541 | measured **1.534** = 65.2 Mpx/s at 100 MHz | law confirmed; in the paper |
+| R2 lanes exact | all checks OK | all checks OK on every clip | holds |
+| R2 restart cost per MCU row | 0.7 % | 0.6-2.2 % mean, up to 4.7 % on a frame | higher than estimated; still small |
+| R3 rate control | FF+PI 1.4 % error, settles in 1 frame | **invalid run** (bugs #22, #23: set point "a black frame", estimator windup) | fixed; rerun R3 |
+| R4 change-driven bytes | 22 % of full | 41-78 % | a fixed-camera technique; modest on films |
+| R4 count leak (hidden map) | 0.95 | 0.63-0.87 | the count still leaks everywhere |
+| R4 constant 25 % + padding | 46 % bytes, SSIM 0.945 | 57-95 % bytes, SSIM 0.76-0.93 | worth it only for fixed cameras |
+| R6 block transforms | adds nothing | adds nothing on all 7 (jigsaw at chance for both; oracle SSIM within 0.01; size within 0.5 %) | negative result confirmed |
+| R6 SSIM if positions were solved | 0.55 | 0.05-0.38 | real content reveals less than the synthetic scene |
+| R7 leak, E0 ... E5 | 0.94-0.96 | 0.50-0.95 (one clip at chance) | **identical across levels on every source** (within 0.02) |
+| R7 constant-size padding | closes it, +3 % bytes | closes it, +31 ... +179 % bytes | the cost depends on how much sizes vary |
+| R7 padding to 1 KB steps | 0.50 (0.75 in a rerun, bug #24) | 0.52-0.94 | unreliable: depends on where sizes fall |
+
+Conclusions:
+1. **The protection level does not change the size channel at all** (E0 = E5 within 0.02 on every
+   source); content does. A fixed camera with a person walking is the worst case (0.95).
+2. Constant-size frames are the only defence that worked on every source. For a fixed camera it is
+   almost free; for footage whose size swings it costs up to 2.8x the bytes. Rate control that keeps
+   the quality slow-moving plus padding to a cap is the candidate for the middle ground (R3/R7 rerun).
+3. Change-driven coding is attractive only for fixed cameras; on films it saves 22-59 % at a visible
+   quality loss.
 
 ## Why the encoder makes ~61-65 Mpx/s
 
@@ -56,6 +89,16 @@ can never go below **1.5 cycles/pixel**. Everything else is overhead on top of t
 
 Set point: bytes per protected frame (E2), following the link's bandwidth (100 % -> 60 % -> 120 %);
 actuator: JPEG quality. Gains set on the synthetic scene only (the clips are the test).
+
+**Kaggle run, 15 Oct: two failures, two fixes.** (1) The nominal budget was the median of the first 5
+frames; Sintel and Tears of Steel open on black (1,853 bytes, headers only), so the set point was a
+black frame and every controller sat at quality 5 (bug #22). Now: median size at quality 75 over the
+clip, and frames whose budget lies below their size at quality 5 are reported as infeasible. (2) With
+the quality pinned, FF+PI's online model got no information, its covariance grew 1.25x per frame and
+the feed-forward slammed q between 5 and 95 (estimator windup, bug #23). Now: the model learns only
+when q moved, the slope stays in [0.005, 0.08], the jump is bounded. Synthetic scene after both fixes
+(150 frames): FF+PI 1.4 % error after settling, settles in 1 frame, 0 % of frames >10 % over; the
+table below is the earlier VM run. The real clips need a rerun.
 
 | Controller | Error after settling | Frames >10 % over budget | Settling after the drop | Overshoot |
 |---|---|---|---|---|

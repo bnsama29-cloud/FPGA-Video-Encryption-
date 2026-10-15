@@ -1,0 +1,151 @@
+{
+ "source": "jailer",
+ "frames": 6,
+ "mean": {
+  "E5": {
+   "jigsaw_neighbours": 0.009734513274336283,
+   "edge_shown": -0.016993882360352076,
+   "edge_jigsaw": 0.028441140142148106,
+   "edge_oracle_positions": 0.43902356644367585,
+   "ssim_oracle_positions": 0.048515206944160345
+  },
+  "E5+T": {
+   "jigsaw_neighbours": 0.006489675516224189,
+   "edge_shown": -0.017270635126722268,
+   "edge_jigsaw": -0.007732100758969935,
+   "edge_oracle_positions": 0.4456207475676929,
+   "ssim_oracle_positions": 0.04856028048618556,
+   "edge_oracle_positions_repaired": 0.4842340404974997,
+   "ssim_oracle_positions_repaired": 0.058580394283646635,
+   "size_vs_E5_pct": -0.11991469302568743
+  }
+ },
+ "per_frame": [
+  {
+   "E5": {
+    "size": 3013,
+    "jigsaw_neighbours": 0.0,
+    "edge_jigsaw": 0.0,
+    "edge_shown": 0.0,
+    "edge_oracle_positions": 0.0,
+    "ssim_oracle_positions": 0.0003967236513950688
+   },
+   "E5+T": {
+    "size": 3013,
+    "jigsaw_neighbours": 0.0,
+    "edge_jigsaw": 0.0,
+    "edge_shown": 0.0,
+    "edge_oracle_positions": 0.0,
+    "ssim_oracle_positions": 0.0003967236513950688,
+    "edge_oracle_positions_repaired": 0.0,
+    "ssim_oracle_positions_repaired": 0.0003967236513950688,
+    "size_vs_E5_pct": 0.0
+   }
+  },
+  {
+   "E5": {
+    "size": 4899,
+    "jigsaw_neighbours": 0.0017699115044247787,
+    "edge_jigsaw": 0.017649817291934655,
+    "edge_shown": -0.012741076241904297,
+    "edge_oracle_positions": 0.5333661214310328,
+    "ssim_oracle_positions": -0.0015217209766151478
+   },
+   "E5+T": {
+    "size": 4894,
+    "jigsaw_neighbours": 0.008849557522123894,
+    "edge_jigsaw": 0.021268653932371668,
+    "edge_shown": -0.014648096073147482,
+    "edge_oracle_positions": 0.5572959244112747,
+    "ssim_oracle_positions": 0.0004829993154108414,
+    "edge_oracle_positions_repaired": 0.6247419801781068,
+    "ssim_oracle_positions_repaired": 0.010627184833366487,
+    "size_vs_E5_pct": -0.10206164523371974
+   }
+  },
+  {
+   "E5": {
+    "size": 5167,
+    "jigsaw_neighbours": 0.0017699115044247787,
+    "edge_jigsaw": 0.06451152539287368,
+    "edge_shown": -0.051150016054663336,
+    "edge_oracle_positions": 0.6278781278383356,
+    "ssim_oracle_positions": -0.004058565949879256
+   },
+   "E5+T": {
+    "size": 5169,
+    "jigsaw_neighbours": 0.0035398230088495575,
+    "edge_jigsaw": -0.0430463174737388,
+    "edge_shown": -0.05187717193712857,
+    "edge_oracle_positions": 0.6256259376940984,
+    "ssim_oracle_positions": -0.004169011859259684,
+    "edge_oracle_positions_repaired": 0.6420191531405721,
+    "ssim_oracle_positions_repaired": -0.003854678695289212,
+    "size_vs_E5_pct": 0.038707180181929424
+   }
+  },
+  {
+   "E5": {
+    "size": 8690,
+    "jigsaw_neighbours": 0.04247787610619469,
+    "edge_jigsaw": -0.035414005981148015,
+    "edge_shown": -0.014394608603091203,
+    "edge_oracle_positions": 0.43252498360378616,
+    "ssim_oracle_positions": 0.14642737702217828
+   },
+   "E5+T": {
+    "size": 8679,
+    "jigsaw_neighbours": 0.012389380530973451,
+    "edge_jigsaw": 0.01633114445969259,
+    "edge_shown": -0.010437093564990882,
+    "edge_oracle_positions": 0.4632852732761466,
+    "ssim_oracle_positions": 0.14552748311419997,
+    "edge_oracle_positions_repaired": 0.4532361028536896,
+    "ssim_oracle_positions_repaired": 0.18737577763638805,
+    "size_vs_E5_pct": -0.12658227848101333
+   }
+  },
+  {
+   "E5": {
+    "size": 4156,
+    "jigsaw_neighbours": 0.0017699115044247787,
+    "edge_jigsaw": 0.16448150055474847,
+    "edge_shown": -0.025415266102628887,
+    "edge_oracle_positions": 0.6037125922947103,
+    "ssim_oracle_positions": 0.002194419837369099
+   },
+   "E5+T": {
+    "size": 4150,
+    "jigsaw_neighbours": 0.007079646017699115,
+    "edge_jigsaw": -0.025550431502470914,
+    "edge_shown": -0.025374673224724725,
+    "edge_oracle_positions": 0.5900715692143339,
+    "ssim_oracle_positions": 0.0016192722741498306,
+    "edge_oracle_positions_repaired": 0.6988454050338804,
+    "ssim_oracle_positions_repaired": 0.004890862462277133,
+    "size_vs_E5_pct": -0.14436958614052475
+   }
+  },
+  {
+   "E5": {
+    "size": 8827,
+    "jigsaw_neighbours": 0.010619469026548672,
+    "edge_jigsaw": -0.040581996405520154,
+    "edge_shown": 0.001737672840175258,
+    "edge_oracle_positions": 0.43665957349419027,
+    "ssim_oracle_positions": 0.14765300808051404
+   },
+   "E5+T": {
+    "size": 8793,
+    "jigsaw_neighbours": 0.007079646017699115,
+    "edge_jigsaw": -0.015395653969674152,
+    "edge_shown": -0.0012867759603419396,
+    "edge_oracle_positions": 0.43744578081030366,
+    "ssim_oracle_positions": 0.14750421642121733,
+    "edge_oracle_positions_repaired": 0.4865616017787492,
+    "ssim_oracle_positions_repaired": 0.1520464958137423,
+    "size_vs_E5_pct": -0.3851818284807962
+   }
+  }
+ ]
+}

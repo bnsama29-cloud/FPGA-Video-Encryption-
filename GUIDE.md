@@ -218,13 +218,13 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
 | B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
-| B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM; Kaggle adds 640x480 | `docs/RESEARCH.md` |
-| B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model; RTL later | `docs/RESEARCH.md` |
-| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
-| B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic; Kaggle for clips | `docs/RESEARCH.md` |
+| B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM + Kaggle (640x480 measured 1.534 cycles/px, law confirmed) | `docs/RESEARCH.md` |
+| B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model, exact on 7 sources; RTL later | `docs/RESEARCH.md` |
+| B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic; Kaggle run invalid (bugs #22, #23, fixed): **rerun R3 on Kaggle** | `docs/RESEARCH.md` |
+| B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic + 6 film clips (fixed-camera technique; static-camera clip wanted) | `docs/RESEARCH.md` |
 | B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
-| B31 | Frame-size side channel (R7: every level E0-E5 reveals motion events, AUC 0.93): constant-size padding option + threat-model text | P1 | 2 + 5 | measured (synthetic); Kaggle for clips | `docs/RESEARCH.md` |
-| B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ synthetic | `docs/RESEARCH.md` |
+| B31 | Frame-size side channel (R7: every level E0-E5 leaks the same; separability 0.95 fixed camera, 0.50-0.95 films): constant-size padding option in `link/` + static-camera clip | P1 | 2 + 5 | ✅ measured, in the paper (Discussion); padding option and FF+PI rerun open | `docs/RESEARCH.md` |
+| B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test**: can a detector find faces / people in the attacker's pictures? | P2 | 5 | 1 d | below |
 | B24 | **More frames per source + confidence intervals** for the leakage table | P2 | 5 | ½ d Kaggle | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |
@@ -444,7 +444,8 @@ two restart-interval rows already moved to the repository).
 | Output stays a valid, playable JPEG/MJPEG in every mode | format compliance (4 decoders, 6 modes) | ✅ |
 | Key holder recovers the frame bit-exactly | tests + figure row 3 | ✅ |
 | Encryption adds 0 cycles to the encoder | `benchmark_crypto.py --rtl` | ✅ RTL simulation |
-| Resources / timing / power on the Zynq-7020 | Vivado | ⏳ (Yosys estimate only, labelled as such) |
+| Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder post-route out of context (run 3, provisional until run 4) · ⏳ full system, board |
+| 1.5 + a/MCU rows cycles per pixel; 65 Mpixel/s at 640x480 and 100 MHz | `stall_profile.py --scaling` (RTL, 5 frame sizes) | ✅ RTL simulation |
 | E1–E4 leak an outline sketch, E5 does not (8 sources incl. open films + Kodak) | mode trade-off + jigsaw | ✅ |
 | A trained network does not recover E5 outlines | learned attack, 4 setups, up to 2,609 training frames | ✅ |
 | No outline comes from the E5 stream (U-Net edge = no-ciphertext control) | learned attack + control, P3/P4 | ✅ |
@@ -456,6 +457,8 @@ two restart-interval rows already moved to the repository).
 | 11 active attacks detected and mitigated in < 1 s on average, no false alarms | full_suite × 3, benign × 3 | ✅ simulation · ⏳ board (A6) |
 | Bandit: fewer encrypted bits, slower reaction | policy_seeds, 10 seeds, paired | ✅ |
 | Faster / lower energy than software on the same board | A2–A4 (+ B1) | ⏳ |
+| Every level E0–E5 leaks motion through the frame size equally; constant-size frames close it (cost depends on content) | `size_leak.py`, 7 sources (fixed-camera case: synthetic only) | ✅ (E0–E5 and padding rows) |
+| Rate control + padding to a cap hides motion | `size_leak.py` FF+PI row | ⏳ rerun after bugs #22/#23 |
 | E5 in hardware | B6 | 📝 (paper says "model level") |
 
 **Claims to avoid:**
