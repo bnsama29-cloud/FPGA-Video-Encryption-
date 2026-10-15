@@ -24,6 +24,13 @@ Steps (all in one command, cached in sim_out/learned_attack/):
                 (dark letterbox bars, average brightness), which encryption cannot hide.
             The learned edge correlation is reported with a 95 % bootstrap interval over the test
             frames, so a small value can be told apart from zero.
+            Frame-level-statistics controls (GUIDE B25): (d) the flat true mean colour of each test
+            frame; (e) the control (c) recoloured to the TRUE per-channel mean and spread of each test
+            frame (an oracle of frame statistics); (f) (c) recoloured to the mean and spread of the
+            attacker's replacement picture (what the stream itself reveals at frame level). If the
+            network's SSIM is no better than (e), its gain over (c) is explained by frame statistics.
+  --adv W:  adds a PatchGAN discriminator with weight W on a least-squares adversarial loss (the
+            GAN-style attacker of GUIDE B17; 0 = plain L1 as before).
 Use DIFFERENT videos for --train-source and --test-source (different scenes), or
 the network just memorises the background and the result means nothing.
 Writes results.json, results.md and examples_<mode>.png (original | attack | network).
@@ -170,6 +177,22 @@ def build_unet(torch, nn, base=32):
     return UNet()
 
 
+def build_disc(nn, base=32):
+    """PatchGAN discriminator on (attacker input 6 ch, picture 3 ch)."""
+    return nn.Sequential(nn.Conv2d(9, base, 4, 2, 1), nn.LeakyReLU(0.2, True),
+                         nn.Conv2d(base, 2 * base, 4, 2, 1), nn.BatchNorm2d(2 * base), nn.LeakyReLU(0.2, True),
+                         nn.Conv2d(2 * base, 4 * base, 4, 2, 1), nn.BatchNorm2d(4 * base), nn.LeakyReLU(0.2, True),
+                         nn.Conv2d(4 * base, 1, 3, 1, 1))
+
+
+def recolour(img, ref):
+    """img with each channel's mean and standard deviation set to those of ref (uint8)."""
+    x, r = img.astype(np.float64), ref.astype(np.float64)
+    m, s = x.mean(axis=(0, 1)), x.std(axis=(0, 1)) + 1e-6
+    out = (x - m) / s * r.std(axis=(0, 1)) + r.mean(axis=(0, 1))
+    return np.clip(out + 0.5, 0, 255).astype(np.uint8)
+
+
 def to_tensor(torch, a, device):
     return torch.from_numpy(a).to(device).permute(0, 3, 1, 2).float().div_(255.0)
 
@@ -183,6 +206,10 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
         print("    WARNING: no CUDA GPU found, training on the CPU (slow; use --epochs 2 just to test)")
     net = build_unet(torch, nn, a.width).to(dev)
     opt = torch.optim.AdamW(net.parameters(), lr=a.lr, weight_decay=1e-4)
+    adv = getattr(a, "adv", 0.0)
+    if adv > 0:
+        disc = build_disc(nn).to(dev)
+        opt_d = torch.optim.AdamW(disc.parameters(), lr=a.lr / 2, betas=(0.5, 0.999))
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.epochs)
     use_amp = dev == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
@@ -197,10 +224,20 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
             if np.random.random() < 0.5:                       # flips keep the 8x8 grid aligned
                 x, y = x.flip(3), y.flip(3)
             with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=use_amp):
-                loss = nn.functional.l1_loss(net(x), y)
+                out = net(x)
+                loss = nn.functional.l1_loss(out, y)
+                if adv > 0:                                   # generator: make the fake look real
+                    loss = loss + adv * ((disc(torch.cat([x, out], 1)) - 1) ** 2).mean()
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.step(opt)
+            if adv > 0:                                       # then the discriminator (least squares)
+                with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=use_amp):
+                    d_loss = 0.5 * (((disc(torch.cat([x, y], 1)) - 1) ** 2).mean()
+                                    + (disc(torch.cat([x, out.detach()], 1)) ** 2).mean())
+                opt_d.zero_grad(set_to_none=True)
+                scaler.scale(d_loss).backward()
+                scaler.step(opt_d)
             scaler.update()
             tot += loss.item() * len(idx)
         sched.step()
@@ -209,6 +246,7 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
     net.eval()
     prior_img = np.median(Ytr, axis=0).astype(np.uint8)          # no-ciphertext control
     base, learned, prior, examples = [], [], [], []
+    flat, oracle, revealed = [], [], []
     with torch.no_grad():
         for i in range(0, len(Xte), a.batch):
             x = to_tensor(torch, Xte[i:i + a.batch], dev)
@@ -220,6 +258,10 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
                 base.append(scores(Xte[k, :, :, 3:6], Yte[k]))
                 learned.append(scores(pr, Yte[k]))
                 prior.append(scores(prior_img, Yte[k]))
+                flat.append(scores(np.broadcast_to(Yte[k].mean(axis=(0, 1)).round().astype(np.uint8),
+                                                   Yte[k].shape).copy(), Yte[k]))
+                oracle.append(scores(recolour(prior_img, Yte[k]), Yte[k]))
+                revealed.append(scores(recolour(prior_img, Xte[k, :, :, 3:6]), Yte[k]))
                 if k in (0, len(Xte) // 2, len(Xte) - 1):
                     examples.append(np.hstack([Yte[k], Xte[k, :, :, 3:6], pr]))
     cv2.imwrite(str(OUT / f"examples_{mode}.png"), cv2.cvtColor(np.vstack(examples), cv2.COLOR_RGB2BGR))
@@ -227,6 +269,12 @@ def train_and_eval(mode, Xtr, Ytr, Xte, Yte, a):
     return {"replacement_attack": {k: mean(base, k) for k in ("psnr", "ssim", "edge_corr")},
             "learned_attack": {k: mean(learned, k) for k in ("psnr", "ssim", "edge_corr")},
             "no_ciphertext_prior": {k: mean(prior, k) for k in ("psnr", "ssim", "edge_corr")},
+            "flat_true_mean_colour": {k: mean(flat, k) for k in ("psnr", "ssim", "edge_corr")},
+            "prior_with_true_frame_stats": {k: mean(oracle, k) for k in ("psnr", "ssim", "edge_corr")},
+            "prior_with_revealed_frame_stats": {k: mean(revealed, k) for k in ("psnr", "ssim", "edge_corr")},
+            "learned_ssim_ci95": bootstrap_ci([r["ssim"] for r in learned]),
+            "oracle_ssim_ci95": bootstrap_ci([r["ssim"] for r in oracle]),
+            "adv_weight": adv,
             "learned_edge_corr_ci95": bootstrap_ci([r["edge_corr"] for r in learned]),
             "train_frames": int(n), "test_frames": int(len(Xte)), "epochs": a.epochs, "device": dev}
 
@@ -246,6 +294,7 @@ def main():
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--width", type=int, default=32, help="U-Net base channels (32 fits an 8 GB GPU)")
     ap.add_argument("--lr", type=float, default=2e-3)
+    ap.add_argument("--adv", type=float, default=0.0, help="adversarial (PatchGAN) loss weight; 0 = L1 only")
     ap.add_argument("--out", help="output folder (default sim_out/learned_attack); use one per train/test pair")
     a = ap.parse_args()
     overlap = set(a.train_source.split(",")) & set(a.test_source.split(",")) - {"synthetic"}
@@ -267,14 +316,19 @@ def main():
         results[mode] = train_and_eval(mode, Xtr, Ytr, Xte, Yte, a)
         res_file.write_text(json.dumps(results, indent=2))
     lines = ["| Mode | Replacement attack PSNR / SSIM / edge corr | Learned attack PSNR / SSIM / edge corr "
-             "| Learned edge corr 95 % CI | No-ciphertext control PSNR / SSIM / edge corr |",
-             "|---|---|---|---|---|"]
+             "| Learned edge corr 95 % CI | No-ciphertext control PSNR / SSIM / edge corr "
+             "| Control + true frame stats SSIM / edge | Control + revealed frame stats SSIM / edge |",
+             "|---|---|---|---|---|---|---|"]
     for m, r in results.items():
         b, l, c = r["replacement_attack"], r["learned_attack"], r["no_ciphertext_prior"]
         lo, hi = r["learned_edge_corr_ci95"]
         lines.append(f"| {m} | {b['psnr']:.2f} dB / {b['ssim']:.3f} / {b['edge_corr']:.3f} "
                      f"| {l['psnr']:.2f} dB / {l['ssim']:.3f} / {l['edge_corr']:.3f} | [{lo:.3f}, {hi:.3f}] "
-                     f"| {c['psnr']:.2f} dB / {c['ssim']:.3f} / {c['edge_corr']:.3f} |")
+                     f"| {c['psnr']:.2f} dB / {c['ssim']:.3f} / {c['edge_corr']:.3f} "
+                     + ("| {:.3f} / {:.3f} | {:.3f} / {:.3f} |".format(
+                         r["prior_with_true_frame_stats"]["ssim"], r["prior_with_true_frame_stats"]["edge_corr"],
+                         r["prior_with_revealed_frame_stats"]["ssim"], r["prior_with_revealed_frame_stats"]["edge_corr"])
+                        if "prior_with_true_frame_stats" in r else "| -- | -- |"))
     (OUT / "results.md").write_text("\n".join(lines) + "\n")
     print("\n" + "\n".join(lines) + f"\n\nwritten {OUT}/")
 

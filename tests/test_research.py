@@ -227,3 +227,25 @@ def test_no_oscillation_at_low_quality():
         q = RC.run(frames, c, prep)["q"][-25:]
         swings = sum(abs(a - b) >= 5 for a, b in zip(q, q[1:]))
         assert swings <= 2, f"{c.name}: {swings} swings of >= 5 quality steps: {[round(x) for x in q]}"
+
+
+# ---------------------------------------------------------------- B23 recognition
+def test_recognition_counts_matches_hits_and_false_alarms():
+    """Logic check with a stand-in detector (the real one needs downloaded COCO weights): a detector
+    that finds a person only in pictures close to the original must give the plain JPEG full recall
+    and E5 none."""
+    import recognition as RG
+    frames = [make_image(160, 128, "scene", seed=s) for s in range(3)] + [np.zeros((128, 160, 3), np.uint8)]
+
+    def detect(imgs):
+        ref = imgs[0].astype(float)
+        if ref.std() == 0:                                # the black frame: nobody there
+            return [[] for _ in imgs]
+        close = lambda im: np.abs(im.astype(float) - ref).mean() < 8
+        return [[[10, 10, 60, 90]] if close(im) else [] for im in imgs]
+
+    r = RG.evaluate(frames, detect)
+    assert r["plain"]["recall_iou"] == 1.0 and r["plain"]["frame_hit"] == 1.0, r["plain"]
+    assert r["E5 (N=1)"]["recall_iou"] == 0.0, r["E5 (N=1)"]
+    assert r["plain"]["frames_with_person"] == 3 and r["plain"]["frames_without"] == 1
+    assert RG.iou([0, 0, 10, 10], [5, 0, 15, 10]) == 1 / 3

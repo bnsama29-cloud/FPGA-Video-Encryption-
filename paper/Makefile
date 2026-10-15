@@ -9,7 +9,7 @@ main.pdf: main.tex refs.bib tables/numbers.tex
 tables/numbers.tex: make_assets.py $(shell find data -name '*.json' -o -name '*.md' -o -name '*.txt' | head -400)
 	$(PY) make_assets.py
 tables: ; $(PY) make_assets.py
-extended.pdf: main.tex extended.tex refs.bib tables/numbers.tex
+extended.pdf: main.tex extended.tex refs.bib tables/numbers.tex ieeeaccess.cls
 	pdflatex -interaction=nonstopmode -halt-on-error extended.tex > build_extended.log
 	bibtex extended >> build_extended.log
 	pdflatex -interaction=nonstopmode -halt-on-error extended.tex >> build_extended.log

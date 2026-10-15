@@ -186,8 +186,7 @@ def research_figures():
     rc = RES / "rate_control"
     if rc.exists():
         runs = {f.stem: J(f)["results"] for f in sorted(rc.glob("*.json")) if f.stem in ALL_LABEL}
-        # Tears of Steel: PI/FF+PI rows of this snapshot predate the fix of bug #26 (rerun pending)
-        clips = [k for k in runs if k not in ("synthetic", "tearsofsteel")]
+        clips = [k for k in runs if k != "synthetic"]               # 3rd rerun: after bug #26, all clips
         m = lambda c, key: [runs[k][c]["metrics"][key] for k in clips]
         macro("RcClips", NUMWORD.get(len(clips), str(len(clips))))
         for c, tag in (("fixed", "Fixed"), ("I", "I"), ("FF+PI", "Ffpi")):
@@ -471,6 +470,28 @@ Source & {' & '.join(MODES)} & Jig.\ (\%) & Oracle \\
 \end{{tabular}}
 \end{{table}}
 """)
+    ci_modes = ["E1", "E2", "E4", "E5"]
+    if all(data[n][m].get("edge_corr_ci95") for n in names for m in ci_modes):   # B24: intervals exist
+        cell = lambda d: (f"{d['edge_corr']:.2f}".replace("-0.00", "0.00") + " {\\scriptsize[" +
+                          ", ".join(f"{v:.2f}".replace("-0.00", "0.00") for v in d["edge_corr_ci95"]) + "]}")
+        body = "\n".join(f"{n} & " + " & ".join(cell(data[n][m]) for m in ci_modes) +
+                          f" & {data[n]['E2']['frames']} \\\\" for n in names)
+        write("tab_leakage_ci.tex", rf"""\begin{{table}}[t]
+\caption{{Edge correlation of the eavesdropper's best keyless picture with 95\,\% bootstrap intervals over the frames of each source (last column: frames).}}
+\label{{tab:leakage_ci}}
+\centering\small\setlength{{\tabcolsep}}{{3pt}}
+\begin{{tabular}}{{l{'c' * len(ci_modes)}r}}
+\toprule
+Source & {' & '.join(ci_modes)} & $n$ \\
+\midrule
+{body}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+        macro("LeakFramesMax", str(max(data[n]["E2"]["frames"] for n in names)))
+    else:
+        (TAB / "tab_leakage_ci.tex").unlink(missing_ok=True)
     e14 = [data[n][m]["edge_corr"] for n in real for m in ("E1", "E2", "E3", "E4")]
     e5 = [data[n]["E5"]["edge_corr"] for n in real]
     macro("NumClips", str(len([n for n in video if n in CLIP_LABEL.values()])))

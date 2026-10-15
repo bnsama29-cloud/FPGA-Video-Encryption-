@@ -76,6 +76,20 @@ def test_jigsaw_solver_reassembles_plain_tiles():
     assert np.array_equal(assemble(tiles[order], placement, rows, cols).shape, rgb.shape)
 
 
+def test_mst_solver_beats_greedy_on_plain_tiles():
+    """GUIDE B9 gate: the stronger solver must beat the greedy one on unencrypted tiles before its E5
+    numbers count (here on two photos where greedy struggles)."""
+    from skimage import data
+    from future_work.attacks.mst_jigsaw import solve as mst
+    for img in (data.coffee(), data.rocket()):
+        rgb = cv2.resize(img, (320, 240), interpolation=cv2.INTER_AREA)
+        tiles, rows, cols = tiles_of(rgb)
+        order = np.random.default_rng(1).permutation(len(tiles))
+        _, nb_greedy = accuracies(solve(tiles[order], rows, cols), list(order), rows, cols)
+        _, nb_mst = accuracies(mst(tiles[order], rows, cols), list(order), rows, cols)
+        assert nb_mst > nb_greedy + 0.1 and nb_mst > 0.9, (nb_mst, nb_greedy)
+
+
 def test_jigsaw_fails_on_e5():
     from skimage import data
     rgb = cv2.resize(data.chelsea(), (320, 240), interpolation=cv2.INTER_AREA)

@@ -155,14 +155,19 @@ def accuracies(placement, truth, rows, cols):
     return pos_acc, good / max(1, total)
 
 
-def attack_frame(rgb, mode="E5", key=bytes(range(16)), sid=7, ctr=1, quality=75, use_attack_view=True):
+def attack_frame(rgb, mode="E5", key=bytes(range(16)), sid=7, ctr=1, quality=75, use_attack_view=True,
+                 solver="greedy"):
     """Returns dict of metrics (+ images) for one frame."""
     e = package_frame(analyse_frame(rgb, quality), key, sid, ctr, mode)
     seen = decode(replacement_attack_jpeg(e.jpeg)) if use_attack_view else decode(e.jpeg)
     tiles, rows, cols = tiles_of(seen)
     n = rows * cols
     order = _shuffle_order(key, sid, ctr, n)          # ground truth: tile at slot p belongs at order[p]
-    placement = solve(tiles, rows, cols)
+    if solver == "mst":                               # stronger solver (GUIDE B9)
+        from future_work.attacks.mst_jigsaw import solve as mst_solve
+        placement = mst_solve(tiles, rows, cols)
+    else:
+        placement = solve(tiles, rows, cols)
     solved = assemble(tiles, placement, rows, cols)
     pos_acc, nb_acc = accuracies(placement, order, rows, cols)
     unshuffled = np.empty(n, int)
@@ -184,6 +189,8 @@ def main():
     ap.add_argument("--size", default="320x240")
     ap.add_argument("--save-images", action="store_true")
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--solver", choices=["greedy", "mst"], default="greedy",
+                    help="greedy region growing, or the MST solver of mst_jigsaw.py (GUIDE B9)")
     a = ap.parse_args()
     w, h = (int(v) for v in a.size.split("x"))
     src = open_source(a.video, w, h, loop=False)
@@ -196,7 +203,7 @@ def main():
         rgb = src.read()
         if rgb is None:
             break
-        r = attack_frame(rgb, ctr=i + 1)
+        r = attack_frame(rgb, ctr=i + 1, solver=a.solver)
         imgs = r.pop("images")
         rows.append(r)
         print(f"frame {i}: position {r['position_accuracy']:.2f}, neighbours {r['neighbour_accuracy']:.2f}, "
@@ -209,7 +216,7 @@ def main():
     keys = list(rows[0])
     summary = {k: dict(mean=float(np.mean([r[k] for r in rows])), std=float(np.std([r[k] for r in rows])))
                for k in keys}
-    (out / "jigsaw.json").write_text(json.dumps(dict(source=a.video, size=a.size, frames=len(rows),
+    (out / "jigsaw.json").write_text(json.dumps(dict(source=a.video, size=a.size, frames=len(rows), solver=a.solver,
                                                      summary=summary, per_frame=rows), indent=2))
     md = ["| Metric (E5, mean ± std) | Value |", "|---|---|"] + \
          [f"| {k.replace('_', ' ')} | {v['mean']:.3f} ± {v['std']:.3f} |" for k, v in summary.items()]

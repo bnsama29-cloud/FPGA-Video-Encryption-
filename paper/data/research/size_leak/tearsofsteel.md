@@ -14,4 +14,4 @@
 | E5 pad-max | 0.00 | 0.50 | 235 % |  |
 | E2 pad-runmax | 0.47 | 0.58 | 130 % |  |
 | E2 pad-win | 0.47 | 0.58 | 130 % |  |
-| E2 FF+PI + pad-105% | 0.26 | 0.52 | 119 % | 13 % frames over cap; quality factor leaks: corr -0.39, AUC 0.53; SSIM 0.972 |
+| E2 FF+PI + pad-105% | 0.18 | 0.52 | 122 % | 14 % frames over cap; quality factor leaks: corr -0.39, AUC 0.53; SSIM 0.973 |
