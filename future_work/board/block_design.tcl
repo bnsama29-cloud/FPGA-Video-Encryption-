@@ -5,6 +5,9 @@
 #   vivado -mode batch -source future_work/board/block_design.tcl -tclargs 50   (FCLK0 = 50 MHz
 #                                                         if timing fails at 100 MHz)
 #   ... -tclargs 100 4                                   (FCLK0 = 100 MHz, 4 parallel jobs)
+#   ... -tclargs 100 2 lanes                             (contract-v3 lane encoder, 2 lanes,
+#                                                         64-bit pixel DMA; own project + overlay
+#                                                         secure_jpeg_lanes.bit/.hwh)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
@@ -29,6 +32,19 @@ set fclk    [expr {[llength $argv] > 0 ? [lindex $argv 0] : 100}]
 # parallel jobs for the IP/out-of-context synthesis runs: each needs ~2 GB for the xc7z020,
 # so 2 suits an 8 GB laptop (second argument; run_vivado_day.py --jobs passes it)
 set jobs    [expr {[llength $argv] > 1 ? [lindex $argv 1] : 2}]
+# third argument: "v2" (default, secure_jpeg_top, 32-bit pixel stream) or "lanes" (contract v3,
+# secure_jpeg_lanes_top with 2 lanes, 64-bit pixel stream = 2 pixels per DMA beat)
+set design  [expr {[llength $argv] > 2 ? [lindex $argv 2] : "v2"}]
+if {$design eq "lanes"} {
+    set projdir [file join $root future_work board vivado_proj_lanes]
+    set outname secure_jpeg_lanes
+    set bdtop   sjpeg_lanes_bd_top
+    set pxbits  64
+} else {
+    set outname secure_jpeg
+    set bdtop   sjpeg_bd_top
+    set pxbits  32
+}
 
 create_project pynq_secure_jpeg $projdir -part $part -force
 # PYNQ-Z2 board files give the exact PS presets (DDR, MIO). They are used automatically
@@ -44,7 +60,7 @@ if {$bp ne ""} {
 }
 
 add_files [glob [file join $root rtl *.v]]
-add_files [file join $root future_work board sjpeg_bd_top.v]
+add_files [file join $root future_work board ${bdtop}.v]
 # The RTL `include`s generated headers (dct_coeffs.vh, ...). A module reference
 # (create_bd_cell -type module) only accepts them when they are project files of type
 # "Verilog Header" (first Vivado run: ERROR [filemgmt 56-591], bug #18).
@@ -71,15 +87,15 @@ set_property -dict [list \
     CONFIG.PCW_IRQ_F2P_INTR {1}] $ps7
 
 # ---- our IP (RTL module reference, no packaging step needed)
-set sjpeg [create_bd_cell -type module -reference sjpeg_bd_top sjpeg]
+set sjpeg [create_bd_cell -type module -reference $bdtop sjpeg]
 
 # ---- AXI DMA, simple (register) mode
 set dma [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma dma]
 set_property -dict [list \
     CONFIG.c_include_sg {0} \
     CONFIG.c_sg_length_width {23} \
-    CONFIG.c_m_axi_mm2s_data_width {32} \
-    CONFIG.c_m_axis_mm2s_tdata_width {32} \
+    CONFIG.c_m_axi_mm2s_data_width $pxbits \
+    CONFIG.c_m_axis_mm2s_tdata_width $pxbits \
     CONFIG.c_m_axi_s2mm_data_width {32} \
     CONFIG.c_mm2s_burst_size {16} \
     CONFIG.c_s2mm_burst_size {16}] $dma
@@ -138,13 +154,16 @@ set hwh [concat [glob -nocomplain [file join $projdir pynq_secure_jpeg.gen sourc
 if {$bit eq "" || $hwh eq ""} {
     error "bitstream or .hwh not found -- open the project and check the impl_1 log"
 }
-file copy -force [lindex $bit 0] [file join $outdir secure_jpeg.bit]
-file copy -force [lindex $hwh 0] [file join $outdir secure_jpeg.hwh]
+file copy -force [lindex $bit 0] [file join $outdir ${outname}.bit]
+file copy -force [lindex $hwh 0] [file join $outdir ${outname}.hwh]
 open_run impl_1
-report_utilization    -file [file join $outdir utilization.txt]
-report_utilization    -hierarchical -hierarchical_depth 3 -file [file join $outdir utilization_hier.txt]
-report_timing_summary -max_paths 10 -file [file join $outdir timing.txt]
-report_power          -file [file join $outdir power.txt]
+# reports: overlay/ for v2 (as before), overlay/lanes/ for the lane encoder
+set rptdir [expr {$design eq "lanes" ? [file join $outdir lanes] : $outdir}]
+file mkdir $rptdir
+report_utilization    -file [file join $rptdir utilization.txt]
+report_utilization    -hierarchical -hierarchical_depth 3 -file [file join $rptdir utilization_hier.txt]
+report_timing_summary -max_paths 10 -file [file join $rptdir timing.txt]
+report_power          -file [file join $rptdir power.txt]
 set wns [get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]]
-puts "RESULT overlay fclk=${fclk}MHz WNS=${wns}ns"
-puts "Overlay in $outdir (secure_jpeg.bit + secure_jpeg.hwh). WNS must be >= 0 before using it."
+puts "RESULT overlay design=$design fclk=${fclk}MHz WNS=${wns}ns"
+puts "Overlay in $outdir (${outname}.bit + ${outname}.hwh). WNS must be >= 0 before using it."

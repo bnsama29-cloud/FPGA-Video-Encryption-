@@ -3,6 +3,8 @@
     python vivado/gen_xsim_vectors.py                       # default frame set (fast)
     python vivado/gen_xsim_vectors.py --image photo.jpg --size 320x240 --modes 2 4
     python vivado/gen_xsim_vectors.py --video clip.mp4 --frames 3 --size 160x128
+    python vivado/gen_xsim_vectors.py --v3                  # contract-v3 lane encoder (2 lanes)
+                                                            #   -> vivado/xsim_work_v3/
 
 Writes to vivado/xsim_work/ (or --out):
     commands.txt      register writes / reads, stream and check commands
@@ -69,8 +71,12 @@ def main():
     ap.add_argument("--key", default=DEFAULT_KEY)
     ap.add_argument("--session", type=lambda s: int(s, 0), default=0x5EC0_0001_C0FF_EE00)
     ap.add_argument("--ctr", type=lambda s: int(s, 0), default=(1 << 32) + 100)
-    ap.add_argument("--out", default=str(ROOT / "vivado" / "xsim_work"))
+    ap.add_argument("--v3", action="store_true",
+                    help="vectors for secure_jpeg_lanes_top (contract v3, 2 lanes, 2 pixels per beat)")
+    ap.add_argument("--out", default=None, help="default vivado/xsim_work (v2) or vivado/xsim_work_v3")
     a = ap.parse_args()
+    if a.out is None:
+        a.out = str(ROOT / "vivado" / ("xsim_work_v3" if a.v3 else "xsim_work"))
     key = bytes.fromhex(a.key)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -80,7 +86,9 @@ def main():
     r32 = lambda addr, val: cmds.append(f"R {addr:02x} {val & 0xFFFFFFFF:08x}")
 
     # session setup + register sanity checks
-    r32(VERSION, 0x5EC00200)
+    if a.v3:
+        cmds.append("M 3")
+    r32(VERSION, 0x5EC00302 if a.v3 else 0x5EC00200)
     for i in range(4):
         w32(KEY0 + 4 * i, int.from_bytes(key[4 * i:4 * i + 4], "little"))
         r32(KEY0 + 4 * i, 0)                                   # keys are write-only
@@ -98,7 +106,7 @@ def main():
                 w32(QT_DATA, hw.reciprocal(v))
             loaded_q = q
         ctr = a.ctr + n
-        e = hw.encode_frame(img, q, mode, key, ctr, a.session)
+        e = (hw.encode_frame_v3 if a.v3 else hw.encode_frame)(img, q, mode, key, ctr, a.session)
         cmds.append(f"F {n}")
         w32(WIDTH, w)
         w32(HEIGHT, h)
@@ -112,7 +120,7 @@ def main():
         p = img.astype(np.uint32)
         pix.extend((p[..., 0] | (p[..., 1] << 8) | (p[..., 2] << 16)).flatten().tolist())
         exp.extend(e["scan"])
-        meta.append(dict(index=n, name=name, width=w, height=h, quality=q, mode=mode,
+        meta.append(dict(index=n, name=name, width=w, height=h, quality=q, mode=mode, version=3 if a.v3 else 2,
                          frame_ctr=ctr, scan_bytes=len(e["scan"]), tag=t.hex()))
     cmds.append("E")
     (out / "commands.txt").write_text("\n".join(cmds) + "\n")
@@ -131,6 +139,7 @@ def write_abs_prj(out):
     vivado/xsim.prj (relative to xsim_work/, also read by the Makefile and the tests) broke
     there. run_xsim.bat / run_xsim.sh use this generated copy instead."""
     base = ROOT / "vivado" / "xsim_work"           # what the paths in vivado/xsim.prj are relative to
+    out = Path(out)
     lines = []
     for line in (ROOT / "vivado" / "xsim.prj").read_text().splitlines():
         f = line.split()

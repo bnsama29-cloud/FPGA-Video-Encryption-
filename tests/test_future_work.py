@@ -33,6 +33,28 @@ def test_driver_on_mock_is_bit_exact_with_the_model():
     assert writes[SESSION_ID_HI] == sid >> 32 and writes[FRAME_CTR_HI] == ((1 << 35) + 4) >> 32
 
 
+def test_driver_on_mock_v3_lane_overlay_is_bit_exact_with_the_model():
+    """secure_jpeg_lanes.bit (contract v3): the driver detects it from VERSION and frames match
+    model/hw.py :: encode_frame_v3 and pass the receiver."""
+    ip = SecureJpegIP(MockBackend(contract=3, lanes=2))
+    assert (ip.contract, ip.lanes) == (3, 2)
+    sid, img = 0xABCD_1234_5678, make_image(64, 80, "scene")
+    ip.setup_session(KEY, sid, 75)
+    for mode in range(5):
+        scan, tag = ip.encode(img, mode, 40 + mode)
+        jpg = ip.build_jpeg(64, 80, mode, 40 + mode, scan, tag)
+        assert jpg == hw.encode_frame_v3(img, 75, mode, KEY, 40 + mode, sid)["jpeg"]
+        assert receive_frame(jpg, KEY).ok
+
+
+def test_driver_rejects_an_unknown_bitstream():
+    class Wrong(MockBackend):
+        def read(self, addr):
+            return 0x12345678 if addr == 0x08 else super().read(addr)
+    with pytest.raises(RuntimeError):
+        SecureJpegIP(Wrong())
+
+
 def test_driver_rejects_what_the_rtl_cannot_do():
     ip = SecureJpegIP(MockBackend())
     ip.setup_session(KEY, 1)

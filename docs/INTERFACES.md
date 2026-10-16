@@ -1,4 +1,4 @@
-# Interface specification (contract v2)
+# Interface specification (contract v2, and contract v3 for the lane encoder)
 
 Every interface the team agreed in week 1 (project document §13.2), as actually implemented. If you change one, change the RTL, the model and this file in the same commit.
 
@@ -29,7 +29,7 @@ Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAX
 |---|---|---|---|
 | 0x00 | CTRL | RW | `[0]` START (write 1, self-clearing), `[3:1]` MODE: 0 off, 1 E1, 2 E2, 3 E3, 4 E4 |
 | 0x04 | STATUS | RO | `[0]` DONE, `[1]` BUSY, `[2]` TAG_VALID |
-| 0x08 | VERSION | RO | 0x5EC00200 (contract v2) |
+| 0x08 | VERSION | RO | 0x5EC00200 (contract v2, `secure_jpeg_top`); 0x5EC003LL (contract v3, `secure_jpeg_lanes_top`, LL = lanes) |
 | 0x10 | WIDTH | RW | pixels |
 | 0x14 | HEIGHT | RW | pixels |
 | 0x18 | FRAME_CTR | RW | frame counter bits [31:0]; the 63-bit counter must strictly increase |
@@ -72,7 +72,7 @@ APP11 (marker 0xFFEB) payload, 38 bytes, ignored by normal viewers:
 | Bytes | Field | Encoding |
 |---|---|---|
 | 0..3 | `"SJV1"` | ASCII identifier |
-| 4 | version | 2 (contract v2; any other value is rejected) |
+| 4 | version | 2 (contract v2) or 3 (contract v3, section 8); any other value is rejected |
 | 5 | mode | 0..4 = E0..E4 |
 | 6..13 | session_id | 64-bit big-endian |
 | 14..21 | frame_ctr | 64-bit big-endian (top bit 0) |
@@ -100,3 +100,38 @@ The GitHub golden model and the RTL repo had drifted apart: the JPEG part was th
 | DCT | one pass, 12-bit matrix | two passes, 13-bit | two passes (RTL) | ~6% of v1 golden coefficients differed by ±1 from the RTL; v2 accuracy is still within 1 of the exact DCT |
 | Quantiser | division | reciprocal multiply + clamp | reciprocal (RTL) | One DSP, no divider; the golden model now does the same |
 | KAT file | 00..0F nonces | official SP 800-232 file | official file | Both pass; the official file is the one to cite |
+
+## 8. Contract v3: parallel lanes over restart segments (16 Oct 2026)
+
+Encoder `rtl/secure_jpeg_lanes_top.v` (parameter `LANES` = 1, 2 or 4); model
+`model/hw.py :: encode_frame_v3()` = `model/jpeg.py :: encode_frame(..., segmented=True)` (proven equal
+by `tests/test_hw_equivalence.py`). Contract v2 and `secure_jpeg_top.v` are unchanged and remain the
+default; a receiver accepts both and tells them apart by the APP11 version byte.
+
+Why: one v2 pipeline consumes one sample per clock, and 4:2:0 has 1.5 samples per pixel, so it can
+never do better than 1.5 clocks per pixel (65 Mpx/s at 100 MHz). A JPEG restart marker resets the DC
+predictors and byte-aligns the stream, so the data between two markers can be coded with no knowledge
+of the rest. v3 makes every MCU row a restart segment and gives every segment its own keystream, so
+`LANES` copies of the pipeline can code segments at the same time; a merger writes them back in order.
+The bytes do not depend on `LANES` (checked on the RTL for 1, 2 and 4 lanes by `tb/test_lanes_top.py`).
+
+| Item | Contract v3 |
+|---|---|
+| Segments | segment *s* = MCU row *s*; restart interval = width/16 MCUs; the ARM writes a DRI segment (0xFFDD) with that value |
+| Scan | seg0 ‖ RST0 ‖ seg1 ‖ RST1 ‖ … ‖ seg(n−1), markers 0xFFD0 + (s mod 8), none after the last; each segment padded to a byte with 1s and stuffed on its own |
+| DC prediction | all three predictors reset to 0 at the start of every segment (T.81 F.1.2.3) |
+| Segment key | K_seg = Ascon-AEAD128 tag under (K, N_enc), AD = the 5 ASCII bytes `lanes`, empty message (`rtl/kseg_unit.v`, `segment_key()`). In v3, N_enc is used only for this derivation |
+| Segment keystream | keystream of (K_seg, nonce(s, frame_ctr, 0)), i.e. Ascon x3 = s, x4 = {frame_ctr, 0}; restarts at every segment, same bit order and selection rules as section 4 |
+| Nonce uniqueness | K_seg is unique per (K, session_id, frame_ctr), and under one K_seg the segment index *s* is unique, so no (key, nonce) pair repeats. A session uses one contract version for all its frames |
+| Tag | as v2 (section 4), but the 26-byte prefix carries version 3, and the AD scan bytes include the RST markers |
+| APP11 | version byte 3 |
+| Modes | E0–E4. E5 (keyed MCU shuffle) stays a contract-v2 model feature |
+| Pixel stream | `s_axis_tdata` 64 bits = 2 pixels per beat: `[31:0]` = left pixel `{pad, B, G, R}`, `[63:32]` = right pixel. The byte stream in memory is the same as v2's 32-bit words, so the DMA buffer does not change; only the DMA's MM2S width is 64 bits |
+| Dealer | MCU row *r* (16 lines) goes to lane *r* mod LANES; LANES is a power of two |
+| Lane | `rtl/encoder_lane.v`: `rgb2ycbcr_2px` (2 pixels per clock in, 1 sample per clock out) → the v2 DCT, quantiser, `zigzag_rle` (SEG_RESET = 1), `selective_enc` + `keystream_gen` (restarted per segment), `huffman_enc`, `bit_packer` (flushes at each segment end) → `byte_fifo` (2^LOG_FIFO bytes) |
+| Merger | `rtl/segment_merger.v`: copies segment *s* from lane *s* mod LANES, then writes 0xFF, 0xD0 + (s mod 8) |
+| Receiver | decodes and decrypts each segment on its own and re-codes the clear frame without restart markers, so the clear output is byte-identical to the v2 plain JPEG |
+
+Cost: about 0.3 % more bytes (one 2-byte marker and up to 7 padding bits per MCU row; measured
+by `experiments/parallel_lanes.py`), one extra Ascon core per lane (keystream) plus `kseg_unit`, and
+per-lane line buffers.

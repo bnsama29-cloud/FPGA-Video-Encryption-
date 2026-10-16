@@ -4,6 +4,10 @@ Transmitter (what the PYNQ-Z2 does):
     analyse_frame()  : RGB -> YCbCr 4:2:0 -> 8x8 blocks -> DCT -> quantise -> symbols
     package_frame()  : selective encryption -> Huffman/pack/stuff -> tag -> JPEG bytes
     encode_frame()   : both of the above
+    segmented=True   : contract v3 (APP11 version 3): one restart segment per MCU row, each
+                       segment with its own DC predictors and its own keystream, so the
+                       segments can be coded independently by parallel hardware lanes
+                       (rtl/secure_jpeg_lanes_top.v). The bytes do not depend on the lane count.
 
 Receiver (the laptop, key holder):
     receive_frame()  : parse -> verify tag -> replay check -> Huffman decode
@@ -83,10 +87,53 @@ def _shuffle_order(key, session_id, frame_ctr, n):
     return shuffle_order(n, ascon.Keystream(_shuffle_key(key), ascon.make_nonce(session_id, frame_ctr, 0)))
 
 
-def package_frame(an, key=None, session_id=0, frame_ctr=0, mode="E2"):
-    """key=None -> plain, standard JPEG with no secure segment (baseline a)."""
+def segment_key(key, session_id, frame_ctr):
+    """Contract v3: per-frame key of the segment keystreams,
+    K_seg = Ascon-MAC(K, N_enc(session_id, frame_ctr), AD = "lanes").
+    Under K the nonce N_enc is used only for this derivation in v3 (v2 uses it for the frame
+    keystream instead; one session never mixes versions for one counter value).
+    Segment s then uses the keystream of (K_seg, make_nonce(s, frame_ctr, 0)); K_seg is
+    unique per (key, session, frame), so no (key, nonce) pair repeats."""
+    return ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 0), b"lanes")
+
+
+def _package_segmented(an, key, session_id, frame_ctr, mode):
+    """Contract v3: restart interval = one MCU row; segment s = MCU row s."""
+    if MODES[mode].shuffle:
+        raise ValueError("E5 is contract v2 only (restart interval of one MCU)")
+    per_row = (an.width + 15) // 16
+    kseg = segment_key(key, session_id, frame_ctr) if key is not None and mode != "E0" else None
+    segs, out_syms, nbits, n_enc, ks_blocks = [], [], 0, 0, 0
+    for s, m0 in enumerate(range(0, an.n_mcu, per_row)):
+        sym = run_length_encode(an.quant[m0:m0 + per_row])      # fresh DC predictors
+        if kseg is not None:
+            ks = ascon.Keystream(kseg, ascon.make_nonce(s, frame_ctr, 0))
+            sym, n = apply_keystream(sym, ks, mode)
+            n_enc += n
+            ks_blocks += ks.blocks
+        b, n = huffman_encode(sym)
+        segs.append(b)
+        out_syms += sym
+        nbits += n
+    scan = join_restart(segs)
+    if key is None:
+        return EncodedFrame(build_jpeg(an.width, an.height, an.qy, an.qc, scan, restart_interval=per_row),
+                            scan, out_syms, nbits, 0)
+    meta = secure_meta(MODE_ID[mode], session_id, frame_ctr, version=3)
+    tag = ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 1),
+                    auth_data(meta, an.width, an.height, scan))
+    jpeg = build_jpeg(an.width, an.height, an.qy, an.qc, scan, secure_segment=meta + tag,
+                      restart_interval=per_row)
+    return EncodedFrame(jpeg, scan, out_syms, nbits, n_enc, tag, ks_blocks)
+
+
+def package_frame(an, key=None, session_id=0, frame_ctr=0, mode="E2", segmented=False):
+    """key=None -> plain, standard JPEG with no secure segment (baseline a).
+    segmented=True -> contract v3 (see the module docstring)."""
     if mode not in MODES:
         raise ValueError(f"mode must be one of {list(MODES)}")
+    if segmented:
+        return _package_segmented(an, key, session_id, frame_ctr, mode)
     shuffle = key is not None and MODES[mode].shuffle
     symbols, n_enc, ks_blocks = an.symbols, 0, 0
     if shuffle:                                   # E5: restart interval of one MCU
@@ -112,8 +159,9 @@ def package_frame(an, key=None, session_id=0, frame_ctr=0, mode="E2"):
     return EncodedFrame(jpeg, scan, symbols, nbits, n_enc, tag, ks_blocks)
 
 
-def encode_frame(rgb, key=None, session_id=0, frame_ctr=0, mode="E2", quality=DEFAULT_QUALITY):
-    return package_frame(analyse_frame(rgb, quality), key, session_id, frame_ctr, mode)
+def encode_frame(rgb, key=None, session_id=0, frame_ctr=0, mode="E2", quality=DEFAULT_QUALITY,
+                 segmented=False):
+    return package_frame(analyse_frame(rgb, quality), key, session_id, frame_ctr, mode, segmented)
 
 
 # ---------------------------------------------------------------- receiver ----
@@ -161,6 +209,8 @@ def receive_frame(jpeg, key, guard=None):
     if status == "replay":
         return ReceivedFrame(False, "replay", mode, session_id, ctr)
     n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
+    if meta[4] == 3:
+        return _receive_segmented(p, key, mode, session_id, ctr, status, n_mcu)
     shuffle = MODES[mode].shuffle
     try:
         if shuffle:
@@ -182,6 +232,32 @@ def receive_frame(jpeg, key, guard=None):
     if shuffle:                                   # back to the canonical (no-restart) coding
         symbols = run_length_encode(symbols_to_blocks(symbols, n_mcu, restart=True))
     plain_scan, _ = huffman_encode(symbols)
+    qy, qc = p.qtables()
+    plain = build_jpeg(p.width, p.height, qy, qc, plain_scan)
+    return ReceivedFrame(True, status, mode, session_id, ctr, plain, plain_scan)
+
+
+def _receive_segmented(p, key, mode, session_id, ctr, status, n_mcu):
+    """Contract v3 receiver: decode and decrypt every MCU-row segment on its own, then re-code
+    the clear frame canonically (no restart markers), so the output equals the v2 plain JPEG."""
+    per_row = (p.width + 15) // 16
+    try:
+        if MODES[mode].shuffle:
+            raise ValueError("E5 is not defined in contract v3")
+        segs = split_restart(p.scan)
+        rows = n_mcu // per_row
+        if len(segs) != rows:
+            raise ValueError(f"{len(segs)} restart segments for {rows} MCU rows")
+        kseg = segment_key(key, session_id, ctr)
+        blocks = []
+        for s, seg in enumerate(segs):
+            sym = huffman_decode(seg, per_row)
+            if mode != "E0":
+                sym, _ = apply_keystream(sym, ascon.Keystream(kseg, ascon.make_nonce(s, ctr, 0)), mode)
+            blocks.append(symbols_to_blocks(sym, per_row))
+    except ValueError as e:
+        return ReceivedFrame(False, f"malformed: {e}", mode, session_id, ctr)
+    plain_scan, _ = huffman_encode(run_length_encode(np.concatenate(blocks)))
     qy, qc = p.qtables()
     plain = build_jpeg(p.width, p.height, qy, qc, plain_scan)
     return ReceivedFrame(True, status, mode, session_id, ctr, plain, plain_scan)

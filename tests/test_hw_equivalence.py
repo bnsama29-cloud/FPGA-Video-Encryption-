@@ -140,3 +140,61 @@ def test_nonce_purposes_differ():
     b = ascon.keystream(KEY, ascon.make_nonce(SID, 2, 0), 32)
     c = ascon.keystream(KEY, ascon.make_nonce(SID, 1, 1), 32)
     assert len({a, b, c}) == 3
+
+
+# ------------------------------------------------- contract v3 (parallel lanes)
+@pytest.mark.parametrize("kind,w,h", [("scene", 64, 80), ("noise", 48, 32), ("bars", 16, 64)])
+def test_v3_hw_view_equals_golden_frame(kind, w, h):
+    """encode_frame_v3 (drives tb/test_lanes_top.py) == jpeg.encode_frame(segmented=True)."""
+    img = make_image(w, h, kind, seed=w * h)
+    for mode in range(5):
+        ctr = (1 << 40) + mode
+        a = hw.encode_frame_v3(img, 75, mode, KEY, ctr, SID)
+        b = encode_frame(img, KEY, SID, ctr, MODE_NAME[mode], 75, segmented=True)
+        assert a["scan"] == b.scan, f"{kind} mode{mode}: v3 scan differs"
+        assert a["jpeg"] == b.jpeg, f"{kind} mode{mode}: v3 file differs"
+
+
+def test_v3_bytes_do_not_depend_on_lane_count():
+    img = make_image(64, 112, "scene", seed=3)
+    ref = hw.encode_frame_v3(img, 75, 4, KEY, 9, SID, lanes=1)
+    for lanes in (2, 4, 8):
+        assert hw.encode_frame_v3(img, 75, 4, KEY, 9, SID, lanes=lanes)["jpeg"] == ref["jpeg"]
+
+
+@pytest.mark.parametrize("mode", ["E0", "E2", "E4"])
+def test_v3_receiver_returns_the_v2_plain_frame(mode):
+    """Decrypting a v3 frame gives exactly the plain contract-v2 JPEG, and it decodes to the same
+    pixels as the restart-marked frame (restart markers change no sample)."""
+    img = make_image(80, 48, "scene", seed=5)
+    v3 = encode_frame(img, KEY, SID, 77, mode, segmented=True)
+    r = receive_frame(v3.jpeg, KEY)
+    assert r.ok and r.plain_jpeg == encode_frame(img).jpeg
+    p3 = encode_frame(img, segmented=True).jpeg
+    a = np.asarray(Image.open(io.BytesIO(p3)).convert("RGB"))
+    b = np.asarray(Image.open(io.BytesIO(encode_frame(img).jpeg)).convert("RGB"))
+    assert np.array_equal(a, b)
+
+
+def test_v3_segments_use_independent_keystreams():
+    """Segment s is encrypted under (K_seg, nonce(s, ctr)): changing one segment's content must not
+    change the ciphertext of any other segment (that is what lets lanes run independently)."""
+    img = make_image(32, 64, "noise", seed=1)
+    img2 = img.copy()
+    img2[16:32] = 255 - img2[16:32]               # only MCU row 1 differs
+    a = hw.encode_frame_v3(img, 75, 4, KEY, 5, SID)["segments"]
+    b = hw.encode_frame_v3(img2, 75, 4, KEY, 5, SID)["segments"]
+    assert a[1] != b[1] and [a[i] for i in (0, 2, 3)] == [b[i] for i in (0, 2, 3)]
+
+
+def test_v3_version_byte_is_authenticated_and_e5_rejected():
+    img = make_image(32, 32, "scene")
+    jpg = bytearray(encode_frame(img, KEY, SID, 3, "E2", segmented=True).jpeg)
+    k = jpg.find(b"SJV1")
+    assert jpg[k + 4] == 3
+    jpg[k + 4] = 2
+    assert receive_frame(bytes(jpg), KEY).reason == "tag-mismatch"
+    with pytest.raises(ValueError):
+        encode_frame(img, KEY, SID, 3, "E5", segmented=True)
+    with pytest.raises(ValueError):
+        hw.encode_frame_v3(img, 75, 5, KEY, 3, SID)

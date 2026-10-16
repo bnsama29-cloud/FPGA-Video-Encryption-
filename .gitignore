@@ -24,6 +24,8 @@ hls_dct_quant/
 vivado*.log
 xsim.dir/
 vivado/xsim_work/
+vivado/xsim_work_v3/
+future_work/board/vivado_proj_lanes/
 vivado/proj/
 future_work/board/vivado_proj/
 vivado_pid*.str

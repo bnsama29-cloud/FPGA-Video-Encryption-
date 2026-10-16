@@ -1,6 +1,10 @@
 // tb_secure_jpeg_top.v -- self-checking testbench for Vivado XSim (also runs in Icarus).
 //
 // Plays a command file generated from the golden model (vivado/gen_xsim_vectors.py):
+//   M <version>          which encoder to drive: 2 = secure_jpeg_top (default, 1 pixel per beat),
+//                        3 = secure_jpeg_lanes_top (contract v3, 2 lanes, 2 pixels per beat).
+//                        Both are instantiated; the other one is held in reset. Chosen in the
+//                        vector file, not on the command line (Windows '=' problem, bug #19).
 //   W <addr> <data>      AXI4-Lite write (hex)
 //   R <addr> <expect>    AXI4-Lite read, compare (hex)
 //   S <npix>             stream the next <npix> pixels (decimal) while collecting the
@@ -36,24 +40,65 @@ module tb_secure_jpeg_top;
     wire        awready, wready, bvalid, arready, rvalid;
     wire [1:0]  bresp, rresp;
     wire [31:0] rdata;
-    reg  [31:0] s_tdata = 0;
+    reg  [63:0] s_tdata = 0;
     reg         s_tvalid = 0;
     wire        s_tready;
     wire [31:0] m_tdata;
     wire [3:0]  m_tkeep;
     wire        m_tvalid, m_tlast, irq_done;
     reg         m_tready = 0;
+    reg         v3 = 1'b0;                // 1: drive the contract-v3 lane encoder
 
+    // contract v2 encoder (1 pixel per beat)
+    wire        awready2, wready2, bvalid2, arready2, rvalid2, s_tready2;
+    wire [1:0]  bresp2, rresp2;
+    wire [31:0] rdata2, m_tdata2;
+    wire [3:0]  m_tkeep2;
+    wire        m_tvalid2, m_tlast2, irq_done2;
     secure_jpeg_top dut (
-        .clk(clk), .rst(rst),
-        .s_axil_awaddr(awaddr), .s_axil_awprot(3'd0), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
-        .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid), .s_axil_wready(wready),
-        .s_axil_bresp(bresp), .s_axil_bvalid(bvalid), .s_axil_bready(1'b1),
-        .s_axil_araddr(araddr), .s_axil_arprot(3'd0), .s_axil_arvalid(arvalid), .s_axil_arready(arready),
-        .s_axil_rdata(rdata), .s_axil_rresp(rresp), .s_axil_rvalid(rvalid), .s_axil_rready(1'b1),
-        .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid), .s_axis_tready(s_tready), .s_axis_tlast(1'b0),
-        .m_axis_tdata(m_tdata), .m_axis_tkeep(m_tkeep), .m_axis_tvalid(m_tvalid),
-        .m_axis_tready(m_tready), .m_axis_tlast(m_tlast), .irq_done(irq_done));
+        .clk(clk), .rst(rst || v3),
+        .s_axil_awaddr(awaddr), .s_axil_awprot(3'd0), .s_axil_awvalid(awvalid && !v3), .s_axil_awready(awready2),
+        .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid && !v3), .s_axil_wready(wready2),
+        .s_axil_bresp(bresp2), .s_axil_bvalid(bvalid2), .s_axil_bready(1'b1),
+        .s_axil_araddr(araddr), .s_axil_arprot(3'd0), .s_axil_arvalid(arvalid && !v3), .s_axil_arready(arready2),
+        .s_axil_rdata(rdata2), .s_axil_rresp(rresp2), .s_axil_rvalid(rvalid2), .s_axil_rready(1'b1),
+        .s_axis_tdata(s_tdata[31:0]), .s_axis_tvalid(s_tvalid && !v3), .s_axis_tready(s_tready2),
+        .s_axis_tlast(1'b0),
+        .m_axis_tdata(m_tdata2), .m_axis_tkeep(m_tkeep2), .m_axis_tvalid(m_tvalid2),
+        .m_axis_tready(m_tready && !v3), .m_axis_tlast(m_tlast2), .irq_done(irq_done2));
+
+    // contract v3 lane encoder (2 lanes, 2 pixels per beat: left pixel in bits 31:0)
+    wire        awready3, wready3, bvalid3, arready3, rvalid3, s_tready3;
+    wire [1:0]  bresp3, rresp3;
+    wire [31:0] rdata3, m_tdata3;
+    wire [3:0]  m_tkeep3;
+    wire        m_tvalid3, m_tlast3, irq_done3;
+    secure_jpeg_lanes_top #(.LANES(2), .LOG_L(1), .LOG_MAXW(10), .LOG_FIFO(10)) dut3 (
+        .clk(clk), .rst(rst || !v3),
+        .s_axil_awaddr(awaddr), .s_axil_awprot(3'd0), .s_axil_awvalid(awvalid && v3), .s_axil_awready(awready3),
+        .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid && v3), .s_axil_wready(wready3),
+        .s_axil_bresp(bresp3), .s_axil_bvalid(bvalid3), .s_axil_bready(1'b1),
+        .s_axil_araddr(araddr), .s_axil_arprot(3'd0), .s_axil_arvalid(arvalid && v3), .s_axil_arready(arready3),
+        .s_axil_rdata(rdata3), .s_axil_rresp(rresp3), .s_axil_rvalid(rvalid3), .s_axil_rready(1'b1),
+        .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid && v3), .s_axis_tready(s_tready3),
+        .s_axis_tlast(1'b0),
+        .m_axis_tdata(m_tdata3), .m_axis_tkeep(m_tkeep3), .m_axis_tvalid(m_tvalid3),
+        .m_axis_tready(m_tready && v3), .m_axis_tlast(m_tlast3), .irq_done(irq_done3));
+
+    assign awready  = v3 ? awready3  : awready2;
+    assign wready   = v3 ? wready3   : wready2;
+    assign bvalid   = v3 ? bvalid3   : bvalid2;
+    assign bresp    = v3 ? bresp3    : bresp2;
+    assign arready  = v3 ? arready3  : arready2;
+    assign rvalid   = v3 ? rvalid3   : rvalid2;
+    assign rresp    = v3 ? rresp3    : rresp2;
+    assign rdata    = v3 ? rdata3    : rdata2;
+    assign s_tready = v3 ? s_tready3 : s_tready2;
+    assign m_tdata  = v3 ? m_tdata3  : m_tdata2;
+    assign m_tkeep  = v3 ? m_tkeep3  : m_tkeep2;
+    assign m_tvalid = v3 ? m_tvalid3 : m_tvalid2;
+    assign m_tlast  = v3 ? m_tlast3  : m_tlast2;
+    assign irq_done = v3 ? irq_done3 : irq_done2;
 
     // ------------------------------------------------------------- memories
     reg [31:0] pix  [0:MAXPIX-1];
@@ -86,19 +131,21 @@ module tb_secure_jpeg_top;
         end
     endtask
 
-    // pixel source (no stalls on the input; the DUT applies its own backpressure)
+    // pixel source (no stalls on the input; the DUT applies its own backpressure).
+    // v2: one pixel per beat; v3: two (left pixel in bits 31:0). n is in pixels.
     task send_pixels(input integer n);
-        integer sent;
+        integer sent, step;
         reg hs;
         begin
             sent = 0;
-            @(negedge clk); s_tdata = pix[pix_ptr]; s_tvalid = (n > 0); #1;
+            step = v3 ? 2 : 1;
+            @(negedge clk); s_tdata = {pix[pix_ptr + 1], pix[pix_ptr]}; s_tvalid = (n > 0); #1;
             hs = s_tvalid && s_tready;
             while (sent < n) begin
                 @(negedge clk);
                 if (hs) begin
-                    sent = sent + 1;
-                    if (sent < n) s_tdata = pix[pix_ptr + sent];
+                    sent = sent + step;
+                    if (sent < n) s_tdata = {pix[pix_ptr + sent + 1], pix[pix_ptr + sent]};
                     else s_tvalid = 0;
                 end
                 #1 hs = s_tvalid && s_tready;
@@ -155,7 +202,11 @@ module tb_secure_jpeg_top;
         while (op != "E") begin
             r = $fscanf(fd, "%s", op);
             if (r != 1) op = "E";
-            if (op == "W") begin
+            if (op == "M") begin
+                r = $fscanf(fd, "%d", n);
+                v3 = (n == 3);
+                repeat (5) @(posedge clk);                    // the chosen DUT leaves reset
+            end else if (op == "W") begin
                 r = $fscanf(fd, "%h %h", a1, a2);
                 axil_write(a1[7:0], a2);
             end else if (op == "R") begin
