@@ -19,12 +19,15 @@ HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 SIM = DATA / "simulation"
 RES = DATA / "research"                       # research suite R1-R7 (Kaggle, 15 Oct 2026)
-NUMWORD = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+NUMWORD = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
 EXTRA = DATA / "extra"                         # open data, standard metrics, restart interval, stronger U-Net
+FINAL = DATA / "final"                         # last Kaggle run, 16 Oct 2026: 60-frame leakage + intervals (B24),
+                                               # MST jigsaw (B9), person detection (B23), U-Net controls (B25), P5 (B17)
 TAB = HERE / "tables"
 FIG = HERE / "figures"
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
-CLIP_LABEL = {"avengers": "Trailer A", "jailer": "Trailer B", "denzel": "Talk A", "challenge": "Talk B"}  # display order
+CLIP_LABEL = {"avengers": "Trailer A", "jailer": "Trailer B", "denzel": "Talk A", "challenge": "Talk B",
+              "17735": "Phone A"}                                           # display order; Phone A: handheld phone
 OPEN_LABEL = {"sintel_trailer": "Sintel", "tearsofsteel": "Tears of Steel", "kodak": "Kodak"}          # CC BY / Kodak set
 ALL_LABEL = {"synthetic": "Synthetic", **CLIP_LABEL, **OPEN_LABEL}
 BLUE, ORANGE = "#2a78d6", "#eb6834"            # validated categorical slots 1-2 (CVD ΔE 24.7)
@@ -275,6 +278,306 @@ def research_figures():
         macro("CpaEdgeKeyMax", f"{max(x['edge'] for x in ko):.2f}")
 
 
+
+# ---------------------------------------------------------------- final Kaggle run (16 Oct 2026)
+AQUA, YELLOW = "#1baf7a", "#eda100"              # categorical slots 3-4 (validated; slot 4 needs markers)
+
+
+def final_results():
+    """Macros, extended tables and figures from paper/data/final: MST jigsaw (B9), person detection (B23),
+    leakage intervals (B24), U-Net frame-statistics controls (B25) and the P5 attacker (B17)."""
+    if not FINAL.exists():
+        return
+    plt = _style()
+    labelled = [k for k in ALL_LABEL if (FINAL / k).exists()]
+    # ---- B9: MST solver on E5, and the gate on plain tiles
+    mst = {k: J(FINAL / k / "jigsaw_mst" / "jigsaw.json")["summary"] for k in labelled
+           if (FINAL / k / "jigsaw_mst" / "jigsaw.json").exists()}
+    if mst:
+        macro("MstSources", NUMWORD.get(len(mst), str(len(mst))))
+        macro("MstNbMax", f"{100 * max(v['neighbour_accuracy']['mean'] for v in mst.values()):.1f}")
+        macro("MstEdgeMax", f"{max(abs(v['edge_corr_solved']['mean']) for v in mst.values()):.2f}")
+    gate = FINAL / "jigsaw_gate.json"
+    if gate.exists() and mst:
+        g = J(gate)["photos"]
+        nb = lambda sv: [v[sv]["neighbours"] for v in g.values()]
+        macro("GatePhotos", NUMWORD.get(len(g), str(len(g))))
+        macro("GateGreedyMin", f"{min(nb('greedy')):.2f}")
+        macro("GateMstMin", f"{min(nb('mst')):.2f}")
+        greedy_e5 = {k: J(p_)["summary"]["neighbour_accuracy"]["mean"] for k, p_ in sources("jigsaw/jigsaw.json").items()}
+        fig, ax = plt.subplots(figsize=(3.4, 2.0))
+        names = list(g) + ["E5 tiles"]
+        yg = nb("greedy") + [st.mean(greedy_e5.values()) if greedy_e5 else 0]
+        ym = nb("mst") + [st.mean(v["neighbour_accuracy"]["mean"] for v in mst.values())]
+        x = np.arange(len(names))
+        ax.bar(x - 0.19, yg, 0.36, color=ORANGE, label="greedy", edgecolor=SURFACE, linewidth=1)
+        ax.bar(x + 0.19, ym, 0.36, color=BLUE, label="MST (Gallagher)", edgecolor=SURFACE, linewidth=1)
+        ax.axvline(len(g) - 0.5, color=INK2, lw=0.8, ls=(0, (3, 3)))
+        ax.set_xticks(x)
+        ax.set_xticklabels([n[:10] for n in names], rotation=35, ha="right", fontsize=6.5)
+        ax.set_ylabel("neighbours restored")
+        ax.set_ylim(0, 1.08)
+        ax.legend(fontsize=6.5, frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.45, 1.2))
+        ax.annotate(f"{yg[-1]:.2f} / {ym[-1]:.2f}", (x[-1], max(yg[-1], ym[-1])), xytext=(0, 3),
+                    textcoords="offset points", ha="center", fontsize=6, color=INK)   # E5 bars are tiny
+        _clean(ax)
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_jigsaw.pdf")
+        plt.close(fig)
+    # ---- B23: person detection in the attacker's pictures
+    rec = {k: J(FINAL / k / "recognition" / f"{k}.json") for k in labelled
+           if (FINAL / k / "recognition" / f"{k}.json").exists()}
+    rec = {k: v for k, v in rec.items() if v["results"]["plain"]["persons"] > 0}
+    if rec:
+        levels = list(next(iter(rec.values()))["results"])
+        pooled = {}
+        for lv in levels:
+            gt = sum(v["results"][lv]["persons"] for v in rec.values())
+            got = sum((v["results"][lv]["recall_iou"] or 0) * v["results"][lv]["persons"] for v in rec.values())
+            pooled[lv] = got / gt
+        per = {lv: [v["results"][lv]["recall_iou"] for v in rec.values()] for lv in levels}
+        macro("RecSources", NUMWORD.get(len(rec), str(len(rec))))
+        macro("RecPersons", str(sum(v["results"]["plain"]["persons"] for v in rec.values())))
+        macro("RecPlainMin", f"{100 * min(per['plain']):.0f}")
+        macro("RecPlainMax", f"{100 * max(per['plain']):.0f}")
+        macro("RecEoneMax", f"{100 * max(per['E1']):.0f}")
+        macro("RecEonePooled", f"{100 * pooled['E1']:.0f}")
+        macro("RecEtwoFourMax", f"{100 * max(per['E2'] + per['E4']):.0f}")
+        macro("RecEfiveMax", f"{100 * max(per['E5 (N=1)'] + per['E5 (N=32)']):.0f}")
+        hit = {lv: [v["results"][lv]["frame_hit"] for v in rec.values()] for lv in levels}
+        macro("RecHitEtwoFiveMax", f"{100 * max(hit['E2'] + hit['E4'] + hit['E5 (N=1)'] + hit['E5 (N=32)']):.0f}")
+        fig, ax = plt.subplots(figsize=(3.4, 1.9))
+        xs = np.arange(len(levels))
+        ax.bar(xs, [pooled[lv] for lv in levels], 0.6, color=BLUE, edgecolor=SURFACE, linewidth=1, zorder=2)
+        for i, lv in enumerate(levels):
+            ax.plot([i] * len(per[lv]), per[lv], "o", ms=3.5, color=INK, alpha=0.55, zorder=3)
+            ax.annotate(f"{100 * pooled[lv]:.0f}%", (i, pooled[lv]), xytext=(0, 3), textcoords="offset points",
+                        ha="center", fontsize=6.5, color=INK)
+        ax.set_xticks(xs)
+        ax.set_xticklabels(["plain JPEG" if lv == "plain" else lv.replace(" (N=", "\nN=").replace(")", "")
+                            for lv in levels], fontsize=6.5)
+        ax.set_ylabel("persons found (recall)")
+        ax.set_ylim(0, 1.12)
+        _clean(ax)
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_recognition.pdf")
+        plt.close(fig)
+        body = "\n".join(f"{ALL_LABEL[k]} & {v['results']['plain']['persons']} & " +
+                         " & ".join(f"{100 * v['results'][lv]['recall_iou']:.0f}" for lv in levels) + " \\\\"
+                         for k, v in rec.items())
+        write("tab_recognition.tex", rf"""\begin{{table}}[t]
+\caption{{Person detection (Faster R-CNN, COCO) in the eavesdropper's pictures: recall (\%) of the persons found in the original frame, a detection in any attacker picture counting when it overlaps the original box (IoU $\ge$ 0.3). Sources with at least one person; 40 frames each (Kodak: 24 images).}}
+\label{{tab:recognition}}
+\centering\small\setlength{{\tabcolsep}}{{3pt}}
+\begin{{tabular}}{{lr{'r' * len(levels)}}}
+\toprule
+Source & Persons & {' & '.join('Plain' if lv == 'plain' else lv.replace('E5 (N=', 'E5/').replace(')', '') for lv in levels)} \\
+\midrule
+{body}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+    # ---- B24: leakage with intervals (figure for the extended version)
+    lk = {k: J(FINAL / k / "mode_tradeoff.json")["modes"] for k in labelled if (FINAL / k / "mode_tradeoff.json").exists()}
+    if lk and all("edge_corr_ci95" in v["E2"] for v in lk.values()):
+        fig, ax = plt.subplots(figsize=(3.4, 2.6))
+        names = list(lk)
+        marks = {"E1": ("o", BLUE), "E2": ("s", ORANGE), "E4": ("^", AQUA), "E5": ("D", YELLOW)}
+        for j, (m, (mk, col)) in enumerate(marks.items()):
+            for i, k in enumerate(names):
+                y = len(names) - 1 - i + (j - 1.5) * 0.17
+                lo, hi = lk[k][m]["edge_corr_ci95"]
+                ax.plot([lo, hi], [y, y], color=col, lw=1.2, zorder=2)
+                ax.plot(lk[k][m]["edge_corr"], y, mk, ms=3.8, color=col, mec=SURFACE, mew=0.6, zorder=3,
+                        label=m if i == 0 else None)
+        ax.axvline(0, color=INK2, lw=0.8)
+        ax.set_yticks(range(len(names)))
+        ax.set_yticklabels([ALL_LABEL[k] for k in names][::-1], fontsize=6.5)
+        ax.set_xlabel("edge correlation with 95 % interval")
+        ax.legend(fontsize=6.5, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.45, 1.0),
+                  handletextpad=0.2, columnspacing=0.8)
+        _clean(ax, grid="x")
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_leakage_ci.pdf")
+        plt.close(fig)
+    # ---- B25 + B17: learned attackers and their controls
+    L = {t: J(FINAL / n / "results.json") for t, n in (("P3", "learned_L1_open"), ("P4", "learned_L2_all"),
+                                                       ("P5", "learned_P5_corpus_gan")) if (FINAL / n / "results.json").exists()}
+    if "P4" in L and "prior_with_true_frame_stats" in L["P4"]["E5"]:
+        e5 = L["P4"]["E5"]
+        macro("CtrlTrueSsim", f"{e5['prior_with_true_frame_stats']['ssim']:.2f}")
+        macro("CtrlTrueEdge", f"{e5['prior_with_true_frame_stats']['edge_corr']:.3f}")
+        macro("CtrlTrueLo", f"{e5['oracle_ssim_ci95'][0]:.2f}")
+        macro("CtrlTrueHi", f"{e5['oracle_ssim_ci95'][1]:.2f}")
+        macro("CtrlRevSsim", f"{e5['prior_with_revealed_frame_stats']['ssim']:.2f}")
+        macro("LearnEfiveSsimLo", f"{e5['learned_ssim_ci95'][0]:.2f}")
+        macro("LearnEfiveSsimHi", f"{e5['learned_ssim_ci95'][1]:.2f}")
+        macro("FlatSsim", f"{e5['flat_true_mean_colour']['ssim']:.2f}")
+        log = J(FINAL / "run_log.json")["log"]
+        step = next((s_ for _, s_, _, _ in log if s_.startswith("L2_all")), "")
+        m_ = re.search(r"(\d+) train -> (\d+) test", step)
+        if m_:
+            macro("LearnBigTrainSrc", NUMWORD.get(int(m_.group(1)), m_.group(1)))
+            macro("LearnBigTestSrc", NUMWORD.get(int(m_.group(2)), m_.group(2)))
+    if "P5" in L:
+        p5 = L["P5"]
+        macro("PfiveEfiveSsim", f"{p5['E5']['learned_attack']['ssim']:.2f}")
+        macro("PfiveEfiveEdge", f"{p5['E5']['learned_attack']['edge_corr']:.2f}".replace("-0.00", "0.00"))
+        macro("PfiveCtrlSsim", f"{p5['E5']['no_ciphertext_prior']['ssim']:.2f}")
+        macro("PfiveCtrlTrueSsim", f"{p5['E5']['prior_with_true_frame_stats']['ssim']:.2f}")
+        macro("PfiveEoneEdge", f"{p5['E1']['learned_attack']['edge_corr']:.2f}")
+        macro("PfiveEoneSsim", f"{p5['E1']['learned_attack']['ssim']:.2f}")
+        macro("PfiveEtwoFourEdge", f"{max(p5[m]['learned_attack']['edge_corr'] for m in ('E2', 'E4')):.2f}")
+        macro("PfiveReplEtwoFourEdge", f"{max(p5[m]['replacement_attack']['edge_corr'] for m in ('E2', 'E4')):.2f}")
+        macro("PfiveTrain", f"{p5['E2']['train_frames']:,}".replace(",", "{,}"))
+        macro("PfiveTest", str(p5["E2"]["test_frames"]))
+        macro("PfiveEpochs", str(p5["E2"]["epochs"]))
+        macro("PfiveAdv", f"{p5['E2']['adv_weight']:g}")
+        corpus = J(FINAL / "run_log.json").get("corpus", {})
+        macro("PfiveCorpus", " and ".join({"elephantsdream": "Elephants Dream", "bigbuckbunny": "Big Buck Bunny"}.get(c, c)
+                                          for c in corpus) + " and Tears of Steel" if corpus else r"\TODO{corpus}")
+        log = J(FINAL / "run_log.json")["log"]
+        step = next((s_ for _, s_, _, _ in log if s_.startswith("P5")), "")
+        m_ = re.search(r"(\d+) train -> (\d+) test", step)
+        if m_:
+            macro("PfiveTestSrc", NUMWORD.get(int(m_.group(2)), m_.group(2)))
+    if L:
+        rows = []
+        for m in ("E1", "E2", "E4", "E5"):
+            cells = []
+            for t in ("P3", "P4", "P5"):
+                if t in L:
+                    r = L[t][m]
+                    cells += [f"{r['replacement_attack']['ssim']:.2f}/{r['replacement_attack']['edge_corr']:.2f}",
+                              f"{r['learned_attack']['ssim']:.2f}/{r['learned_attack']['edge_corr']:.2f}"]
+            rows.append(f"{m} & " + " & ".join(cells).replace("-0.00", "0.00") + " \\\\")
+        ctrl = []
+        for key, label in (("no_ciphertext_prior", "No stream (median frame)"),
+                           ("prior_with_revealed_frame_stats", "+ stats the stream reveals"),
+                           ("prior_with_true_frame_stats", "+ true frame stats (oracle)")):
+            cells = []
+            for t in ("P3", "P4", "P5"):
+                if t in L:
+                    r = L[t]["E5"].get(key)
+                    cells += ["", f"{r['ssim']:.2f}/{r['edge_corr']:.2f}" if r else "--"]
+            ctrl.append(f"{label} & " + " & ".join(cells).replace("-0.00", "0.00") + " \\\\")
+        tags = [t for t in ("P3", "P4", "P5") if t in L]
+        write("tab_learned_ext.tex", rf"""\begin{{table}}[t]
+\caption{{Learned attackers with controls, SSIM/edge correlation on unseen test sources. R: replacement attack; N: U-Net. P3: Sintel$\rightarrow$Tears of Steel; P4: four sources$\rightarrow$three others; P5: public corpus with an adversarial loss$\rightarrow$the Sintel trailer and the private clips. Controls use no ciphertext: the median training frame, recoloured with the frame statistics the E5 stream reveals or with the true ones.}}
+\label{{tab:learned_ext}}
+\centering\small\setlength{{\tabcolsep}}{{2.5pt}}
+\begin{{tabular}}{{l{'cc' * len(tags)}}}
+\toprule
+ & {' & '.join(rf'\multicolumn{{2}}{{c}}{{{t}}}' for t in tags)} \\
+Mode & {' & '.join('R & N' for _ in tags)} \\
+\midrule
+{chr(10).join(rows)}
+\midrule
+{chr(10).join(ctrl)}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+        if "P4" in L and "P5" in L:
+            fig, axs = plt.subplots(1, 2, figsize=(7.0, 1.9), sharey=True)
+            modes = ["E1", "E2", "E4", "E5"]
+            for ax, t in zip(axs, ("P4", "P5")):
+                r = L[t]
+                y = np.arange(len(modes))[::-1]
+                ax.plot([r[m]["replacement_attack"]["ssim"] for m in modes], y, "s", ms=5, color=ORANGE,
+                        mec=SURFACE, mew=0.8, label="replacement attack", zorder=3)
+                ax.plot([r[m]["learned_attack"]["ssim"] for m in modes], y, "o", ms=5.5, color=BLUE,
+                        mec=SURFACE, mew=0.8, label="U-Net", zorder=4)
+                for m, yy in zip(modes, y):
+                    lo, hi = r[m]["learned_ssim_ci95"]
+                    ax.plot([lo, hi], [yy, yy], color=BLUE, lw=1.2, zorder=3)
+                ax.axvline(r["E5"]["no_ciphertext_prior"]["ssim"], color=INK2, lw=1, ls=(0, (4, 3)))
+                ax.axvline(r["E5"]["prior_with_true_frame_stats"]["ssim"], color=INK, lw=1, ls=(0, (1, 2)))
+                ax.set_title(f"{t}", fontsize=8, color=INK)
+                ax.set_xlabel("SSIM on unseen sources")
+                ax.set_yticks(y)
+                ax.set_yticklabels(modes)
+                _clean(ax, grid="x")
+            axs[0].plot([], [], color=INK2, ls=(0, (4, 3)), label="no stream (median frame)")
+            axs[0].plot([], [], color=INK, ls=(0, (1, 2)), label="+ true frame statistics")
+            fig.legend(*axs[0].get_legend_handles_labels(), fontsize=6.5, frameon=False, ncol=4,
+                       loc="upper center", bbox_to_anchor=(0.5, 1.02))
+            fig.tight_layout(rect=(0, 0, 1, 0.9))
+            fig.savefig(FIG / "fig_learned.pdf")
+            plt.close(fig)
+    # ---- R4: change-driven coding, bytes against the leak of the block count (extended version)
+    cdd = {f.stem: J(f)["results"] for f in sorted((RES / "change_driven").glob("*.json"))
+           if "_tau" not in f.stem and f.stem in ALL_LABEL}
+    if cdd:
+        fig, ax = plt.subplots(figsize=(3.4, 2.2))
+        pol = [("map-hidden", "changed blocks only", BLUE, "o"), ("bins", "count rounded up", ORANGE, "s"),
+               ("constant-0.25+pad", "25 % per frame + padding", AQUA, "^")]
+        for key, lab, col, mk in pol:
+            xs = [100 * v[key]["bytes_ratio"] for v in cdd.values()]
+            ys = [max(v[key]["count_corr"] if v[key]["count_corr"] is not None else 0,
+                      v[key]["size_corr"] if v[key]["size_corr"] is not None else 0) for v in cdd.values()]
+            ax.plot(xs, ys, mk, ms=5, color=col, mec=SURFACE, mew=0.8, label=lab, ls="none")
+        ax.set_xlabel("bytes relative to full MJPEG (%)")
+        ax.set_ylabel("leak: corr. with motion")
+        ax.set_xlim(0, 105)
+        ax.set_ylim(-0.05, 1.05)
+        ax.legend(fontsize=6.3, frameon=False, loc="center left", bbox_to_anchor=(0.0, 0.42))
+        _clean(ax)
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_change_driven.pdf")
+        plt.close(fig)
+    # ---- R2: projected throughput against area of lane configurations (extended version)
+    plj = RES / "parallel_lanes" / "synthetic.json"
+    if plj.exists():
+        cf = [c for c in J(plj)["configs"] if c["frame"] == "640x480"]
+        fig, ax = plt.subplots(figsize=(3.4, 2.0))
+        # configurations with the same area sit on top of each other: label them below / above
+        offs = {(1, 1, False): ((6, -9), "left"), (1, 1, True): ((6, 2), "left"), (2, 1, False): ((6, -9), "left"),
+                (2, 1, True): ((6, 2), "left"), (2, 2, True): ((6, -3), "left"), (4, 2, True): ((-6, -3), "right")}
+        for c in sorted(cf, key=lambda c: c["lanes"] == 1 and c["px_per_clk"] == 1 and not c["overlap"]):
+            key = (c["lanes"], c["px_per_clk"], c["overlap"])
+            meas = key == (1, 1, False)
+            lab = f"{c['lanes']} lane{'s' if c['lanes'] > 1 else ''}, {c['px_per_clk']} px/clk" + \
+                  (", next frame overlaps" if c["overlap"] else "") + (" (today, measured)" if meas else "")
+            ax.plot(c["area"]["lut"] / 1000, c["mpix"]["100"], "o" if meas else "D", ms=5.5,
+                    color=BLUE if meas else ORANGE, mec=SURFACE, mew=0.8, zorder=4 if meas else 3)
+            (dx, dy), ha = offs.get(key, ((5, -3), "left"))
+            ax.annotate(lab, (c["area"]["lut"] / 1000, c["mpix"]["100"]), xytext=(dx, dy), textcoords="offset points",
+                        fontsize=5.8, color=INK, ha=ha)
+        ax.set_xlabel("LUTs (thousands)")
+        ax.set_ylabel("Mpixel/s at 100 MHz")
+        ax.set_xlim(4, 14)
+        ax.set_ylim(50, 215)
+        _clean(ax)
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_lanes.pdf")
+        plt.close(fig)
+    # ---- R1: where the cycles go (per-link transfer / stall / starve), extended version
+    pf = RES / "stall_profile" / "profile.json"
+    if pf.exists():
+        pr = next(r for r in J(pf) if r["image"] == "scene" and r["mode"] == "E2")
+        links = list(pr["share"])
+        fig, ax = plt.subplots(figsize=(3.4, 2.3))
+        y = np.arange(len(links))[::-1]
+        left = np.zeros(len(links))
+        for key, col, lab in (("transfer", BLUE, "transfer"), ("stall", ORANGE, "stalled (output not ready)"),
+                              ("starve", AQUA, "waiting for input")):
+            v = np.array([pr["share"][l][key] for l in links])
+            ax.barh(y, v, left=left, color=col, edgecolor=SURFACE, linewidth=1, label=lab, height=0.7)
+            left += v
+        ax.set_yticks(y)
+        ax.set_yticklabels([l.replace(" -> ", "→") for l in links], fontsize=6.3)
+        ax.set_xlim(0, 1)
+        ax.set_xlabel("share of clock cycles (scene, E2)")
+        ax.legend(fontsize=6.3, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.3, 1.0),
+                  handlelength=1, columnspacing=0.8)
+        _clean(ax, grid=None)
+        fig.tight_layout()
+        fig.savefig(FIG / "fig_stall.pdf")
+        plt.close(fig)
+
+
 # ---------------------------------------------------------------- comparison with published designs
 def compare(r, cores):
     """Table: this work (from vivado_results.json + the RTL cycle benchmark) next to published designs
@@ -430,7 +733,10 @@ def sources(rel):
     """{label: path} of a per-source result file, in display order: synthetic, private clips, open data."""
     out = {}
     for key, label in ALL_LABEL.items():
-        for base in ((SIM, SIM / "real" / key, EXTRA / key) if key == "synthetic" else (SIM / "real" / key, EXTRA / key)):
+        bases = (SIM, SIM / "real" / key, EXTRA / key) if key == "synthetic" else (SIM / "real" / key, EXTRA / key)
+        if rel == "mode_tradeoff.json":               # the 60-frame run with intervals replaces the older ones
+            bases = (FINAL / key,) + bases
+        for base in bases:
             if key == "synthetic" and base == SIM and rel != "mode_tradeoff.json":
                 continue
             if (base / rel).exists():
@@ -458,7 +764,7 @@ def leakage():
     c2 = lambda v: f"{v:.2f}".replace("-0.00", "0.00")
     rows += [f"{n} & " + " & ".join(c2(data[n][m]['edge_corr']) for m in MODES) + f" & {jcell(n)} \\\\" for n in names]
     write("tab_leakage.tex", rf"""\begin{{table}}[t]
-\caption{{Outline leakage: edge correlation between the original and the eavesdropper's best keyless reconstruction (decode or replacement attack; 0 = no outline), up to 20 frames per source; frames without edges are skipped. The first row is the fraction of payload bits encrypted. Jig.: share of neighbour pairs a greedy jigsaw solver restores under E5 (8 frames; Sintel 3); Oracle: edge correlation if every E5 block were put back in place, i.e.\ the outline E5 hides.}}
+\caption{{Outline leakage: edge correlation between the original and the eavesdropper's best keyless reconstruction (decode or replacement attack; 0 = no outline), up to {max(data[n]['E2'].get('frames', 0) for n in names)} frames per source; frames without edges are skipped. The first row is the fraction of payload bits encrypted. Jig.: share of neighbour pairs a greedy jigsaw solver restores under E5 (8 frames; Sintel 3); Oracle: edge correlation if every E5 block were put back in place, i.e.\ the outline E5 hides.}}
 \label{{tab:leakage}}
 \centering\small\setlength{{\tabcolsep}}{{4pt}}
 \begin{{tabular}}{{l{'r' * len(MODES)}rr}}
@@ -539,8 +845,10 @@ Source & {' & '.join(ci_modes)} & $n$ \\
 
     setups = [(f"P{i}", p) for i, p in enumerate(sorted((SIM / "real").glob("learned_pair*/results.json")), 1)]
     for tag, name in (("P3", "learned_L1_open"), ("P4", "learned_L2_all")):
-        if (EXTRA / name / "results.json").exists():
-            setups.append((tag, EXTRA / name / "results.json"))
+        for base in (FINAL, EXTRA):                    # the 16 Oct rerun has the frame-statistics controls (B25)
+            if (base / name / "results.json").exists():
+                setups.append((tag, base / name / "results.json"))
+                break
     R = {t: J(p) for t, p in setups}
     if R:
         big = R[setups[-1][0]]
@@ -590,7 +898,7 @@ Source & {' & '.join(ci_modes)} & $n$ \\
         macro("LearnEtwoFourSsimBig", f"{max(L('E2', 'ssim'), L('E4', 'ssim')):.2f}")
     head = " & ".join(t for t, _ in setups)
     write("tab_learned.tex", rf"""\begin{{table}}[t]
-\caption{{U-Net reconstruction, SSIM / edge corr.\ on unseen test clips. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B, P3: Sintel$\rightarrow$Tears of Steel, P4: three clips$\rightarrow$three others. Repl.: replacement attack, P4 test set. Last row: the median training frame, scored without looking at the stream.}}
+\caption{{U-Net reconstruction, SSIM / edge corr.\ on unseen test clips. P1: Trailer A$\rightarrow$B, P2: Talk A$\rightarrow$B, P3: Sintel$\rightarrow$Tears of Steel, P4: {macros.get('LearnBigTrainSrc', 'several')} sources$\rightarrow${macros.get('LearnBigTestSrc', 'other')} others. Repl.: replacement attack, P4 test set. Last row: the median training frame, scored without looking at the stream.}}
 \label{{tab:learned}}
 \centering\small\setlength{{\tabcolsep}}{{3pt}}
 \begin{{tabular}}{{ll{'c' * len(setups)}}}
@@ -850,6 +1158,7 @@ def main():
     TAB.mkdir(exist_ok=True)
     FIG.mkdir(exist_ok=True)
     hardware()
+    final_results()          # first: the learned-attack caption uses its source counts
     leakage()
     standard_metrics()
     restart_interval()
