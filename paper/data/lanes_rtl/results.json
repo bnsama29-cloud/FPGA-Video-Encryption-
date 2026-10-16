@@ -1,0 +1,128 @@
+{
+ "v2_measured_clocks_per_pixel": {
+  "64x48": 1.9235026041666667,
+  "128x96": 1.6890462239583333,
+  "160x128": 1.638916015625,
+  "320x240": 1.5704817708333334,
+  "640x480": 1.5344563802083333
+ },
+ "rows": [
+  {
+   "lanes": 1,
+   "width": 128,
+   "height": 96,
+   "clocks": 19773.0,
+   "clocks_per_pixel": 1.609130859375,
+   "mpx_per_s_at_100mhz": 62.14534971931422,
+   "scan_bytes": 2705,
+   "latency_clocks": 1250.0,
+   "latency_lines": 19.53125,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 2,
+   "width": 128,
+   "height": 96,
+   "clocks": 11536.0,
+   "clocks_per_pixel": 0.9388020833333334,
+   "mpx_per_s_at_100mhz": 106.51872399445215,
+   "scan_bytes": 2705,
+   "latency_clocks": 1250.0,
+   "latency_lines": 19.53125,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 4,
+   "width": 128,
+   "height": 96,
+   "clocks": 9457.0,
+   "clocks_per_pixel": 0.7696126302083334,
+   "mpx_per_s_at_100mhz": 129.9354975150682,
+   "scan_bytes": 2705,
+   "latency_clocks": 1250.0,
+   "latency_lines": 19.53125,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 1,
+   "width": 320,
+   "height": 240,
+   "clocks": 118231.0,
+   "clocks_per_pixel": 1.5394661458333334,
+   "mpx_per_s_at_100mhz": 64.95758303659784,
+   "scan_bytes": 12064,
+   "latency_clocks": 2790.0,
+   "latency_lines": 17.4375,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 2,
+   "width": 320,
+   "height": 240,
+   "clocks": 64361.0,
+   "clocks_per_pixel": 0.8380338541666666,
+   "mpx_per_s_at_100mhz": 119.3269215829462,
+   "scan_bytes": 12064,
+   "latency_clocks": 2790.0,
+   "latency_lines": 17.4375,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 4,
+   "width": 320,
+   "height": 240,
+   "clocks": 46322.0,
+   "clocks_per_pixel": 0.6031510416666667,
+   "mpx_per_s_at_100mhz": 165.79595008851086,
+   "scan_bytes": 12064,
+   "latency_clocks": 2790.0,
+   "latency_lines": 17.4375,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 1,
+   "width": 640,
+   "height": 480,
+   "clocks": 466665.0,
+   "clocks_per_pixel": 1.519091796875,
+   "mpx_per_s_at_100mhz": 65.8288065314519,
+   "scan_bytes": 43672,
+   "latency_clocks": 5401.0,
+   "latency_lines": 16.878125,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 2,
+   "width": 640,
+   "height": 480,
+   "clocks": 251109.0,
+   "clocks_per_pixel": 0.817412109375,
+   "mpx_per_s_at_100mhz": 122.33731168536373,
+   "scan_bytes": 43672,
+   "latency_clocks": 5401.0,
+   "latency_lines": 16.878125,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  },
+  {
+   "lanes": 4,
+   "width": 640,
+   "height": 480,
+   "clocks": 174822.0,
+   "clocks_per_pixel": 0.56908203125,
+   "mpx_per_s_at_100mhz": 175.72159110409444,
+   "scan_bytes": 43672,
+   "latency_clocks": 5401.0,
+   "latency_lines": 16.878125,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "log_maxw": 10
+  }
+ ]
+}

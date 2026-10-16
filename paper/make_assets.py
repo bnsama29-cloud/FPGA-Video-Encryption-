@@ -609,6 +609,7 @@ def lanes_rtl():
     f = LANES_RTL / "results.json"
     if not f.exists():
         return
+    plt = _style()
     d = J(f)
     vga = {r["lanes"]: r for r in d["rows"] if (r["width"], r["height"]) == (640, 480)}
     assert len({r["scan_bytes"] for r in vga.values()}) == 1, "lane counts gave different scans"
@@ -629,7 +630,9 @@ def lanes_rtl():
     proj = {}
     if plj.exists():
         for c in J(plj)["configs"]:
-            if c["frame"] == "640x480" and not c["overlap"] and c["px_per_clk"] == 2 and c["lanes"] in (2, 4):
+            # R2 projected 2 px/clk only together with overlapping frames (the next frame's first
+            # row arrives while the last one is coded); the RTL does not overlap frames
+            if c["frame"] == "640x480" and c["px_per_clk"] == 2 and c["lanes"] in (2, 4):
                 proj[c["lanes"]] = c["mpix"]["100"]
     for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
         if l in proj:
@@ -639,22 +642,22 @@ def lanes_rtl():
     x = np.arange(len(ls))
     mp = [vga[l]["mpx_per_s_at_100mhz"] for l in ls]
     ax.bar(x, mp, width=0.55, color=BLUE, edgecolor=SURFACE, label="measured (RTL simulation)")
-    for i, l in enumerate(ls):
-        ax.annotate(f"{mp[i]:.0f}", (i, mp[i]), xytext=(0, 2), textcoords="offset points",
-                    ha="center", va="bottom", fontsize=6.5, color=INK)
+    for i, l in enumerate(ls):                      # value inside the bar, clear of the markers above it
+        ax.annotate(f"{mp[i]:.0f}", (i, mp[i]), xytext=(0, -3), textcoords="offset points",
+                    ha="center", va="top", fontsize=6.8, color=SURFACE, fontweight="bold")
     px = [i for i, l in enumerate(ls) if l in proj]
     if px:
         ax.plot(px, [proj[ls[i]] for i in px], "D", ms=4.5, color=ORANGE, mec=SURFACE, mew=0.6, zorder=4,
-                ls="none", label="event-model projection (R2)")
+                ls="none", label="event-model projection (R2, frames overlap)")
     ax.axhline(150, color=INK2, lw=0.8, ls=(0, (3, 2)))
-    ax.text(len(ls) - 0.62, 156, "150 Mpx/s: logiJPGE at 150 MHz,\nno cipher", fontsize=5.6, color=INK2,
-            ha="right", va="bottom")
+    ax.text(-0.3, 153, "150 Mpx/s: logiJPGE at 150 MHz, no cipher", fontsize=5.8, color=INK2,
+            ha="left", va="bottom")
     ax.set_xticks(x)
-    ax.set_xticklabels([f"{l} lane{'s' if l > 1 else ''}" + (", 2 px/clk" if l > 1 else ", 2 px/clk")
-                        for l in ls], fontsize=6.5)
-    ax.set_ylabel("Mpixel/s at 100 MHz (640×480)")
-    ax.set_ylim(0, 230)
-    ax.legend(fontsize=6, frameon=False, loc="upper left")
+    ax.set_xticklabels([f"{l} lane{'s' if l > 1 else ''}" for l in ls], fontsize=6.5)
+    ax.set_xlabel("contract-v3 encoder, 2 pixels per clock in", fontsize=6.5)
+    ax.set_ylabel("Mpixel/s at 100 MHz")
+    ax.set_ylim(0, 245)
+    ax.legend(fontsize=6, frameon=False, loc="upper left", bbox_to_anchor=(0.0, 1.02))
     _clean(ax)
     fig.tight_layout()
     fig.savefig(FIG / "fig_lanes_rtl.pdf")
@@ -682,12 +685,12 @@ def compare(r, cores):
     lr_all = lanes_rows()
     for lr in lr_all:
         v = lanes_vivado(lr["lanes"]) or {}
-        rows.append(f"Ours: {lr['lanes']} lanes (v3) & Zynq-7020 & {f(v.get('lut'))} & {f(v.get('bram'), 1)} & "
-                    f"{f(v.get('dsp'))} & 100 & {lr['mpx_per_s_at_100mhz']:.0f} & sel.\\ AEAD \\\\")
+        row = (f"Ours: {lr['lanes']} lanes (v3) & Zynq-7020 & {f(v.get('lut'))} & {f(v.get('bram'), 1)} & "
+               f"{f(v.get('dsp'))} & 100 & {lr['mpx_per_s_at_100mhz']:.0f} & sel.\\ AEAD \\\\")
+        rows.append(row if lr["lanes"] == 4 else "\\ifextended " + row + " \\fi")   # 6-page limit
     if lr_all:
         pending = not all(lanes_vivado(x["lanes"]) for x in lr_all)
-        lanes_note = (" Lane rows (contract v3): throughput measured in cycle-accurate RTL simulation at 100\\,MHz"
-                      + ("; their area comes from the next Vivado run (--)" if pending else "") + ".")
+        lanes_note = (" Lanes (v3): RTL simulation at 100\\,MHz" + ("; area pending (--)" if pending else "") + ".")
     for x in J(rel)["rows"]:
         rows.append(f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
                     f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'])} & {x['crypto']} \\\\")
