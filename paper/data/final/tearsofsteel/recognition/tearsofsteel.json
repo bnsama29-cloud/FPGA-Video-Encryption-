@@ -1,0 +1,56 @@
+{
+ "source": "tearsofsteel",
+ "frames": 40,
+ "score": 0.5,
+ "iou": 0.3,
+ "results": {
+  "plain": {
+   "recall_iou": 0.9655172413793104,
+   "frame_hit": 0.9375,
+   "false_alarm": 0.16666666666666666,
+   "frames_with_person": 16,
+   "frames_without": 24,
+   "persons": 29
+  },
+  "E1": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0625,
+   "false_alarm": 0.041666666666666664,
+   "frames_with_person": 16,
+   "frames_without": 24,
+   "persons": 29
+  },
+  "E2": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.041666666666666664,
+   "frames_with_person": 16,
+   "frames_without": 24,
+   "persons": 29
+  },
+  "E4": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.0,
+   "frames_with_person": 16,
+   "frames_without": 24,
+   "persons": 29
+  },
+  "E5 (N=1)": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.041666666666666664,
+   "frames_with_person": 16,
+   "frames_without": 24,
+   "persons": 29
+  },
+  "E5 (N=32)": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.0,
+   "frames_with_person": 16,
+   "frames_without": 24,
+   "persons": 29
+  }
+ }
+}

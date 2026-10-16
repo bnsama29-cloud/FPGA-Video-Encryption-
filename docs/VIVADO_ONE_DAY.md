@@ -255,3 +255,20 @@ If the gate passes and time is left:
 | Bit-exact on hardware, real fps (if board) | `sim_out/board/first_contact.md` |
 
 What comes after this day is in **`GUIDE.md` §4**.
+
+## Run 4 (after the converter's extra stage, Oct 2026): one command
+
+```
+cd /d E:\FPGA-Video-Encryption-
+git checkout main
+git pull
+rmdir /s /q sim_build future_work\board\vivado_proj
+"C:\Xilinx\Vivado\2026.1\settings64.bat"
+py vivado\run_vivado_day.py --maxw 9 10 --periods 8.0 6.667 --jobs 2
+```
+
+It runs XSim, the encoder at 100 MHz, the clock sweep (125/150 MHz), the memory sweep, the PYNQ-Z2
+overlay and the paper tables. If the overlay misses 100 MHz it retries at 90, then 80 MHz by itself
+(`--no-fallback` to disable). At the end it writes **`vivado_results_<date>.zip`** in the repository root:
+send that one file. The bitstream stays on the laptop (`future_work\board\overlay\secure_jpeg.bit/.hwh`).
+Expect 2-3 h on an 8 GB laptop with other programs closed; use `--jobs 1` if Vivado runs out of memory.

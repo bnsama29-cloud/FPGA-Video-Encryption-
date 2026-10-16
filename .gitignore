@@ -28,3 +28,4 @@ vivado/proj/
 future_work/board/vivado_proj/
 vivado_pid*.str
 *.backup.jou
+vivado_results_*.zip

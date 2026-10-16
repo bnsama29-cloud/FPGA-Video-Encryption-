@@ -213,7 +213,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 
 | # | Item | P | Owner | Time | Spec |
 |---|---|---|---|---|---|
-| B25 | **Global-statistics control for E5**: controls with the true and the revealed per-frame colour statistics in `learned_attack.py` | P2 | 5 | code ✅; numbers: `kaggle_final.py` | below |
+| B25 | **Global-statistics control for E5** | P2 | 5 | ✅ measured: U-Net E5 SSIM 0.34 [0.33, 0.36] vs oracle of true frame statistics 0.36 [0.34, 0.37]; in the paper | below |
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
 | B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
@@ -227,13 +227,13 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B33 | Research R8: chosen-plaintext attack (Li et al.) on the E5 shuffle, transferred across frames | P1 | 5 | ✅ 7 sources (chance-level placement) | `docs/RESEARCH.md` |
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
-| B23 | **Recognition test**: person detection in the attacker's pictures (`experiments/recognition.py`, Faster R-CNN) | P2 | 5 | code ✅ (logic test); numbers: `kaggle_final.py` | below |
-| B24 | **More frames + 95 % intervals** for the leakage table (60 frames/source; `tab_leakage_ci.tex` in the extended paper) | P2 | 5 | code ✅; numbers: `kaggle_final.py` | below |
+| B23 | **Recognition test** (Faster R-CNN persons) | P2 | 5 | ✅ plain 68-100 %, E1 up to 37 %, E2/E4 <= 3 %, E5 0 %; in the paper | below |
+| B24 | **More frames + 95 % intervals** for leakage | P2 | 5 | ✅ 60 frames/source, intervals in the extended paper (Table + Fig.) | below |
 | B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |
 | B7 | Shared vs separate Ascon core (area vs throughput) | P2 | 1 | 2 d | below |
 | B8 | Ascon-XOF128 KDF with official vectors | P2 | 2 | 1 d | below |
-| B9 | Stronger jigsaw solver: MST + Mahalanobis gradient compatibility (`future_work/attacks/mst_jigsaw.py`) | P2 | 5 | ✅ gate passed (plain tiles: 0.92-1.00 vs greedy 0.62-0.81); at chance on E5 (synthetic); clips: `kaggle_final.py` | below |
-| B17 | Learned attacker P5: public corpus (Big Buck Bunny, Elephants Dream, Tears of Steel; CC BY) + PatchGAN loss (`--adv`) | P2 | 5 | code ✅; numbers: `kaggle_final.py` (GPU) | below |
+| B9 | Stronger jigsaw solver (MST + MGC) | P2 | 5 | ✅ gate 0.84-1.00 on plain tiles (greedy 0.62-1.00); E5 at chance (<= 2.5 %) on 9 sources | below |
+| B17 | Learned attacker P5 (public corpus + PatchGAN) | P2 | 5 | ✅ E5: SSIM 0.26 (below the no-stream control), edge -0.01; E1 broken (edge 0.74) | below |
 | B10 | Simulated-clock scenarios for 100-seed studies | P3 | 3 | 2 d | below |
 | B11 | Multi-receiver prototype (per-receiver tags) | P3 | 4 + 3 | 3 d | below |
 | B12 | Masked Ascon, ROI encryption, H.264/HEVC | P3 | – | future | paper §VII only |
@@ -450,8 +450,8 @@ two restart-interval rows already moved to the repository).
 | 1.5 + a/MCU rows cycles per pixel; 65 Mpixel/s at 640x480 and 100 MHz | `stall_profile.py --scaling` (RTL, 5 frame sizes) | ✅ RTL simulation |
 | E1–E4 leak an outline sketch, E5 does not (8 sources incl. open films + Kodak) | mode trade-off + jigsaw | ✅ |
 | A trained network does not recover E5 outlines | learned attack, 4 setups, up to 2,609 training frames | ✅ |
-| No outline comes from the E5 stream (U-Net edge = no-ciphertext control) | learned attack + control, P3/P4 | ✅ |
-| E5 hides everything beyond the video prior | U-Net SSIM 0.11 above the control in P4 | ❌ **do not claim**; frame-level statistics leak (B25) |
+| No outline comes from the E5 stream (U-Net no better than the true-frame-statistics oracle) | learned attack + B25 controls, P4/P5 | ✅ (the old 'edge = plain control' wording no longer holds with the 16 Oct P4) |
+| E5 hides everything beyond the video prior | U-Net SSIM above the plain control, but not above the frame-statistics oracle (B25) | ❌ **do not claim**; frame-level brightness/colour leak |
 | A trained network breaks E1 | learned attack P1–P4 | ✅ (a result to state, not hide) |
 | E5 defeats the non-zero counting attack | restart_interval.py, NZCA ≤ 0.08 for all N | ✅ |
 | Longer restart intervals are as safe as N = 1 | beam solver finds 15–41 % successors at N = 32 | ❌ **do not claim** |

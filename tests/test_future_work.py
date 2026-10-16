@@ -176,3 +176,40 @@ def test_vivado_driver_dry_run():
     for step in ("xsim_run", "ooc_secure_jpeg_top", "ooc_keystream_gen", "block_design", "parse_reports"):
         assert step in r.stdout
     assert "vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0" in r.stdout
+    assert "collect" in r.stdout
+
+
+def test_vivado_overlay_fallback_and_collect(tmp_path, monkeypatch):
+    """Run 3's overlay missed 100 MHz by 0.24 ns: the driver now retries at 90 and 80 MHz and stops at
+    the first clock that meets timing; collect packs reports and summary but never the bitstream."""
+    sys.path.insert(0, str(ROOT / "vivado"))
+    import importlib
+    import run_vivado_day as RV
+    importlib.reload(RV)
+    overlay = tmp_path / "future_work" / "board" / "overlay"
+    overlay.mkdir(parents=True)
+    monkeypatch.setattr(RV, "ROOT", tmp_path)
+    monkeypatch.setattr(RV, "LOGS", tmp_path / "sim_build" / "vivado_logs")
+    monkeypatch.setattr(RV, "RESULTS", [])
+    wns = {100: "-0.240", 90: "0.512", 80: "1.900"}
+    calls = []
+
+    def fake_vivado(name, script, args="", check=None, dry=False):
+        f = int(args.split()[0])
+        calls.append(f)
+        (overlay / "timing.txt").write_text(f"timing at {f}")
+        (overlay / "secure_jpeg.bit").write_text("bitstream")
+        RV.RESULTS.append((name, "PASS", 1.0, ""))
+        return f"RESULT overlay fclk={f}MHz WNS={wns[f]}ns"
+    monkeypatch.setattr(RV, "vivado", fake_vivado)
+    a = type("A", (), dict(fclk=100, jobs=1, dry_run=False, no_fallback=False))()
+    RV.step_bd(a)
+    assert calls == [100, 90], calls
+    assert (overlay / "timing_100MHz.txt").exists() and (overlay / "timing_90MHz.txt").exists()
+    RV.step_collect(a)
+    import zipfile
+    zips = list(tmp_path.glob("vivado_results_*.zip"))
+    assert len(zips) == 1
+    names = zipfile.ZipFile(zips[0]).namelist()
+    assert "summary.txt" in names and "overlay/timing_90MHz.txt" in names
+    assert not any(n.endswith(".bit") for n in names), names
