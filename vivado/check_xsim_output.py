@@ -2,6 +2,7 @@
 hardware produced, run the real receiver on them and save images to look at.
 
     python vivado/check_xsim_output.py                 # reads vivado/xsim_work/
+    python vivado/check_xsim_output.py --dir vivado/xsim_work_v3     # contract-v3 run
 Writes xsim_work/frame<N>_scrambled.jpg (what VLC would show) and
 xsim_work/frame<N>_decrypted.jpg (what the key holder sees).
 """
@@ -33,7 +34,7 @@ def main():
         scan = scan_all[pos:pos + fr["scan_bytes"]]
         pos += fr["scan_bytes"]
         jpg = hw.build_frame(fr["width"], fr["height"], fr["quality"], fr["mode"],
-                             fr["frame_ctr"], sid, scan, tags[fr["index"]])
+                             fr["frame_ctr"], sid, scan, tags[fr["index"]], version=fr.get("version", 2))
         r = receive_frame(jpg, key, guard)
         (d / f"frame{fr['index']}_scrambled.jpg").write_bytes(jpg)
         if r.plain_jpeg:

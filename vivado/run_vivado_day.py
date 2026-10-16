@@ -13,6 +13,9 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
     python vivado/run_vivado_day.py --maxw 9 10                 # + line-buffer memory sweep
     python vivado/run_vivado_day.py --steps ooc parse --periods 8.0 6.667   # clock sweep 125/150 MHz
     python vivado/run_vivado_day.py --maxw 9 10 --periods 8.0 6.667 --jobs 2  # run 4: everything at once
+    python vivado/run_vivado_day.py --steps xsim ooc lanes bd_lanes parse --periods 8.0 6.667
+                                         # run 5: + the contract-v3 lane encoder (OOC at 100/125/150 MHz,
+                                         #   4 lanes at 100 MHz) and its overlay (64-bit pixel DMA)
 If the overlay misses timing at --fclk, the block design is retried at 90 and then 80 MHz (--no-fallback
 turns this off). At the end, everything to send back is packed into vivado_results_<date>.zip in the
 repository root (summary, paper tables, timing/utilisation/power reports; no bitstream).
@@ -25,7 +28,10 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
   ooc    out-of-context synthesis + place + route of secure_jpeg_top at 100 MHz
          (--blocks: also the Ascon core, keystream, tag, DCT, quantiser, Huffman on their own;
           --fmax: re-run the top at the period the first run's slack suggests, to confirm fmax)
+  lanes  out-of-context runs of secure_jpeg_lanes_top (contract v3): 2 lanes at 100 MHz and at every
+         --periods clock, 4 lanes (1024-pixel lines) at 100 MHz
   bd     PYNQ-Z2 block design + bitstream -> future_work/board/overlay/secure_jpeg.bit/.hwh
+  bd_lanes  the same for the lane encoder -> overlay/secure_jpeg_lanes.bit/.hwh (reports in overlay/lanes/)
   parse  every report -> sim_out/vivado/vivado_tables.md (the paper's hardware table)
   collect  (always, last) summary + reports -> vivado_results_<date>.zip
 At the end it prints a PASS/FAIL table with the time of every step. Paste a FAIL's log
@@ -84,6 +90,11 @@ def step_xsim(a):
     sim = "vivado\\run_xsim.bat" if WIN else "bash vivado/run_xsim.sh"
     run("xsim_run", sim, check=r"XSIM RESULT: PASS", dry=a.dry_run)
     run("xsim_check", f"{sys.executable} vivado/check_xsim_output.py", dry=a.dry_run)
+    if "lanes" in a.steps or "bd_lanes" in a.steps:      # the contract-v3 lane encoder in XSim too
+        run("xsim_vectors_v3", f"{sys.executable} vivado/gen_xsim_vectors.py --v3", dry=a.dry_run)
+        run("xsim_run_v3", f"{sim} batch xsim_work_v3", check=r"XSIM RESULT: PASS", dry=a.dry_run)
+        run("xsim_check_v3", f"{sys.executable} vivado/check_xsim_output.py --dir vivado/xsim_work_v3",
+            dry=a.dry_run)
 
 
 def step_ooc(a):
@@ -107,24 +118,38 @@ def step_ooc(a):
                 print("fmax run skipped: slack at 100 MHz is too small to suggest a faster clock")
 
 
+def step_lanes(a):
+    """Contract-v3 lane encoder: area and timing (OOC). 2 lanes with 2048-pixel lines (720p), at
+    100 MHz and every --periods clock; 4 lanes with 1024-pixel lines at 100 MHz."""
+    two = "secure_jpeg_lanes_top {} LANES 2 LOG_L 1"
+    vivado("ooc_lanes2", "vivado/vivado_ooc.tcl", two.format("10.0"), r"RESULT top=", a.dry_run)
+    for per in a.periods:
+        vivado(f"ooc_lanes2_{per}ns", "vivado/vivado_ooc.tcl", two.format(per), r"RESULT top=", a.dry_run)
+    vivado("ooc_lanes4", "vivado/vivado_ooc.tcl", "secure_jpeg_lanes_top 10.0 LANES 4 LOG_L 2 LOG_MAXW 10",
+           r"RESULT top=", a.dry_run)
+
+
 FALLBACK_MHZ = (90, 80)          # overlay clocks to try when the requested one misses timing (run 3: -0.24 ns)
 
 
 def overlay_wns(out):
-    m = re.search(r"RESULT overlay fclk=(\d+)MHz WNS=(-?[\d.]+)ns", out or "")
+    m = re.search(r"RESULT overlay (?:design=\w+ )?fclk=(\d+)MHz WNS=(-?[\d.]+)ns", out or "")
     return float(m.group(2)) if m else None
 
 
-def step_bd(a):
+def step_bd(a, design="v2"):
     overlay = ROOT / "future_work" / "board" / "overlay"
+    rpt = overlay / "lanes" if design == "lanes" else overlay
+    base = "block_design_lanes" if design == "lanes" else "block_design"
     clocks = [a.fclk] + ([] if a.no_fallback else [f for f in FALLBACK_MHZ if f < a.fclk])
     for i, f in enumerate(clocks):
-        name = "block_design" if i == 0 else f"block_design_{f}MHz"
-        out = vivado(name, "future_work/board/block_design.tcl", f"{f} {a.jobs}", r"RESULT overlay", a.dry_run)
+        name = base if i == 0 else f"{base}_{f}MHz"
+        out = vivado(name, "future_work/board/block_design.tcl", f"{f} {a.jobs} {design}", r"RESULT overlay",
+                     a.dry_run)
         if a.dry_run:
             return
-        if (overlay / "timing.txt").exists():         # keep every attempt's timing report
-            shutil.copy(overlay / "timing.txt", overlay / f"timing_{f}MHz.txt")
+        if (rpt / "timing.txt").exists():             # keep every attempt's timing report
+            shutil.copy(rpt / "timing.txt", rpt / f"timing_{f}MHz.txt")
         wns = overlay_wns(out)
         if wns is not None and wns >= 0:
             print(f"overlay meets timing at {f} MHz (WNS {wns:+.3f} ns)")
@@ -133,7 +158,7 @@ def step_bd(a):
             print(f"overlay misses timing at {f} MHz (WNS {wns} ns): retrying at {clocks[i + 1]} MHz")
         else:
             print(f"overlay misses timing at {f} MHz (WNS {wns} ns) and no lower clock is left to try")
-    have = [f.name for f in overlay.glob("secure_jpeg.*")] if overlay.exists() else []
+    have = [f.name for f in overlay.glob("secure_jpeg*.*")] if overlay.exists() else []
     print(f"overlay files: {have or 'none'}")
 
 
@@ -165,7 +190,8 @@ def step_collect(a):
         for f in sorted((ROOT / "sim_out" / "vivado").glob("*")) if (ROOT / "sim_out" / "vivado").exists() else []:
             z.write(f, f"sim_out/vivado/{f.name}")
         reports = ("timing*.txt", "utilization*.txt", "power.txt")
-        for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ROOT / "future_work" / "board" / "overlay"]:
+        ov = ROOT / "future_work" / "board" / "overlay"
+        for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov, ov / "lanes"]:
             for pat in reports:
                 for f in sorted(d.glob(pat)) if d.is_dir() else []:
                     z.write(f, f"{d.name}/{f.name}")
@@ -200,7 +226,7 @@ def check_python():
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
-                    choices=["xsim", "ooc", "bd", "parse"])
+                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "parse"])
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
     ap.add_argument("--fmax", action="store_true", help="re-run the top at the clock the slack suggests")
     ap.add_argument("--fclk", type=int, default=100, help="PL clock of the overlay in MHz (block design)")
@@ -219,7 +245,10 @@ def main():
         check_python()
     t0 = time.time()
     for s in a.steps:
-        globals()[f"step_{s}"](a)
+        if s == "bd_lanes":
+            step_bd(a, "lanes")
+        else:
+            globals()[f"step_{s}"](a)
     step_collect(a)
     print("\n" + "\n".join(f"{n:<28}{st:<6}{dt / 60:>6.1f} min   {log}" for n, st, dt, log in RESULTS))
     fails = [n for n, st, *_ in RESULTS if st == "FAIL"]

@@ -3,7 +3,8 @@
 //  Offset Name        Access  Description
 //  0x00   CTRL        RW      [0] START (write 1, self-clearing) [3:1] MODE (0 off, 1..4 = E1..E4)
 //  0x04   STATUS      RO      [0] DONE [1] BUSY [2] TAG_VALID
-//  0x08   VERSION     RO      0x5EC0_0200 (contract v2)
+//  0x08   VERSION     RO      parameter: 0x5EC0_0200 (contract v2, secure_jpeg_top)
+//                             0x5EC0_03LL (contract v3, secure_jpeg_lanes_top, LL = lanes)
 //  0x10   WIDTH       RW      frame width  (multiple of 16)
 //  0x14   HEIGHT      RW      frame height (multiple of 16)
 //  0x18   FRAME_CTR   RW      frame counter bits [31:0]  (63-bit counter, in both nonces)
@@ -17,7 +18,9 @@
 //  0x50   FRAME_CTR_HI  RW    frame counter bits [62:32] (bit 31 of the register reads 0)
 // WSTRB is honoured for RW registers.
 `default_nettype none
-module axil_regs (
+module axil_regs #(
+    parameter [31:0] VERSION = 32'h5EC0_0200
+) (
     input  wire         clk,
     input  wire         rst,
     // AXI4-Lite slave
@@ -58,7 +61,6 @@ module axil_regs (
     input  wire [31:0]  out_bytes,
     input  wire [127:0] tag
 );
-    localparam [31:0] VERSION = 32'h5EC0_0200;
     reg [6:0] qt_ptr;                         // the QT_ADDR register
 
     assign s_axil_bresp = 2'b00;

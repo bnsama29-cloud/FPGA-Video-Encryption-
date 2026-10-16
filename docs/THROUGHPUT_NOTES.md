@@ -90,3 +90,20 @@ strong the paper's claims look, independent of throughput.
 
 Pick from this list and bring back the idea -- check it against the event model
 (`experiments/parallel_lanes.py`) before touching RTL.
+
+## Status, 16 Oct 2026 (evening): items 2 and 3 built
+
+The lane encoder is in RTL: `rtl/secure_jpeg_lanes_top.v` (contract v3, `docs/INTERFACES.md` §8).
+Ideas behind it, and where each one came from:
+
+| Idea | Inspiration | What it became |
+|---|---|---|
+| Parallel channels, each seeing part of the image, merged later | retina: parallel ganglion-cell pathways | LANES copies of the verified pipeline, MCU row r → lane r mod LANES |
+| Several pixels per clock on a wide stream | camera ISPs and video IP (CAST JPEG-EX-F: 1-32 samples/cycle) | 64-bit pixel stream, `rgb2ycbcr_2px.v` |
+| Independent units that can be decoded alone | JPEG restart markers (already used by E5) | one restart segment per MCU row, DC reset, byte flush |
+| Seekable cipher stream | counter-mode style keystreams | K_seg per frame, nonce = segment index |
+
+Measured (Icarus, cycle-accurate, `experiments/lanes_rtl_throughput.py`, 640x480, 100 MHz):
+1 lane 1.519 clk/px = 65.8 Mpx/s · 2 lanes 0.817 = 122.3 Mpx/s · 4 lanes 0.569 = 175.7 Mpx/s.
+Area and timing: Vivado run 5. Items still open from the list above: 1 (clock), 6 (BRAM: lanes multiply
+the line buffers), 9-11, 12-17.

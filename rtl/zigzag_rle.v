@@ -6,10 +6,15 @@
 //   o_eob (end of block), o_comp[1:0], o_flast (last symbol of the frame).
 //   ZRL (16 zeros) = run 15, size 0, eob 0.
 // DC predictors (one per component) reset on `start`.
+// SEG_RESET = 1 (contract v3, secure_jpeg_lanes_top.v): in_flast marks the end of a restart
+// segment (one MCU row) instead of the frame, and the DC predictors also reset after the
+// segment's last symbol, as T.81 requires after a restart marker (F.1.2.3).
 // Ping-pong block buffers: scanning one block while the next is written.
 // Golden model: model/hw.py :: run_length(), category(), amp_bits()
 `default_nettype none
-module zigzag_rle (
+module zigzag_rle #(
+    parameter SEG_RESET = 0
+) (
     input  wire               clk,
     input  wire               rst,
     input  wire               start,
@@ -101,6 +106,9 @@ module zigzag_rle (
                         o_eob <= 1'b1; o_run <= 4'd0; o_size <= 4'd0; o_amp <= 11'd0;
                         o_flast <= flast; o_valid <= 1'b1;
                         k <= 6'd0; run <= 6'd0;
+                        if (SEG_RESET && flast) begin
+                            pred[0] <= 12'sd0; pred[1] <= 12'sd0; pred[2] <= 12'sd0;
+                        end
                         rsel <= ~rsel;
                         full[rsel] <= 1'b0;
                     end else begin
@@ -117,6 +125,9 @@ module zigzag_rle (
                     if (k == 6'd63) begin                   // last coefficient non-zero
                         o_flast <= flast;
                         k <= 6'd0;
+                        if (SEG_RESET && flast) begin
+                            pred[0] <= 12'sd0; pred[1] <= 12'sd0; pred[2] <= 12'sd0;
+                        end
                         rsel <= ~rsel;
                         full[rsel] <= 1'b0;
                     end else

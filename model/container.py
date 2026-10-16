@@ -5,7 +5,10 @@ Frame layout:
 
 APP11 (marker 0xFFEB) secure segment payload, 38 bytes, ignored by normal viewers:
     'SJV1'      4 bytes  identifier
-    version     1 byte   (2 = contract v2; frames with another version are rejected)
+    version     1 byte   2 = contract v2 (one scan, one keystream per frame)
+                         3 = contract v3 (one restart segment per MCU row, one keystream per
+                             segment, so segments can be coded by parallel lanes)
+                         frames with another version are rejected
     mode        1 byte   0..4 = E0..E4
     session_id  8 bytes  big-endian
     frame_ctr   8 bytes  big-endian (63-bit counter)
@@ -26,6 +29,7 @@ from .entropy import (AC_CHROMA_BITS, AC_CHROMA_VALS, AC_LUMA_BITS, AC_LUMA_VALS
 SECURE_MARKER = 0xEB
 SECURE_IDENT = b"SJV1"
 SECURE_VERSION = 2
+SECURE_VERSIONS = (2, 3)
 META_LEN = 22
 TAG_LEN = 16
 
@@ -34,8 +38,8 @@ def _segment(marker, payload):
     return bytes([0xFF, marker]) + (len(payload) + 2).to_bytes(2, "big") + payload
 
 
-def secure_meta(mode_id, session_id, frame_ctr):
-    return (SECURE_IDENT + bytes([SECURE_VERSION, mode_id]) +
+def secure_meta(mode_id, session_id, frame_ctr, version=SECURE_VERSION):
+    return (SECURE_IDENT + bytes([version, mode_id]) +
             session_id.to_bytes(8, "big") + frame_ctr.to_bytes(8, "big"))
 
 
@@ -105,10 +109,11 @@ class ParsedJPEG:
         return tabs[0], tabs[1]
 
     def secure(self):
-        """Returns (meta bytes, mode_id, session_id, frame_ctr, tag) or None."""
+        """Returns (meta bytes, mode_id, session_id, frame_ctr, tag) or None.
+        The contract version is meta[4] (2 or 3)."""
         p = self.segment(SECURE_MARKER)
         if (p is None or len(p) != META_LEN + TAG_LEN or p[:4] != SECURE_IDENT
-                or p[4] != SECURE_VERSION):
+                or p[4] not in SECURE_VERSIONS):
             return None
         meta, tag = p[:META_LEN], p[META_LEN:]
         return (meta, meta[5], int.from_bytes(meta[6:14], "big"),

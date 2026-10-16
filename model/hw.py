@@ -270,23 +270,26 @@ def split_scan(jpeg):
     raise ValueError("no SOS segment")
 
 
-def tag_prefix(mode, frame_ctr, session_id, width, height):
+def tag_prefix(mode, frame_ctr, session_id, width, height, version=2):
     """The 26 bytes the tag unit absorbs before the scan bytes:
     APP11 meta (22 B: 'SJV1', version, mode, session BE, counter BE) || width || height."""
-    return container.auth_data(container.secure_meta(mode, session_id, frame_ctr), width, height, b"")
+    return container.auth_data(container.secure_meta(mode, session_id, frame_ctr, version),
+                               width, height, b"")
 
 
-def frame_tag(key, mode, frame_ctr, session_id, width, height, scan):
+def frame_tag(key, mode, frame_ctr, session_id, width, height, scan, version=2):
     """Per-frame tag = Ascon-AEAD128(K, N_mac, AD = tag_prefix || scan, P = empty)."""
     return ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 1),
-                     tag_prefix(mode, frame_ctr, session_id, width, height) + scan)
+                     tag_prefix(mode, frame_ctr, session_id, width, height, version) + scan)
 
 
-def build_frame(width, height, quality, mode, frame_ctr, session_id, scan, tag):
-    """What the ARM does after the fabric is done: headers + APP11 + scan + EOI."""
+def build_frame(width, height, quality, mode, frame_ctr, session_id, scan, tag, version=2):
+    """What the ARM does after the fabric is done: headers + APP11 + scan + EOI.
+    Contract v3 frames also carry a DRI segment (restart interval = MCUs per row)."""
     qy, qc = _tables(quality)
-    meta = container.secure_meta(mode, session_id, frame_ctr)
-    return container.build_jpeg(width, height, qy, qc, scan, secure_segment=meta + tag)
+    meta = container.secure_meta(mode, session_id, frame_ctr, version)
+    return container.build_jpeg(width, height, qy, qc, scan, secure_segment=meta + tag,
+                                restart_interval=width // 16 if version == 3 else 0)
 
 
 # ------------------------------------------------------------- full encoder
@@ -316,6 +319,45 @@ def encode_frame(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0,
     return dict(blocks=blocks, coeffs=coeffs, qcoeffs=qcoeffs, symbols=syms,
                 enc_symbols=enc_syms, keystream_bits_used=ks_bits, scan=scan,
                 tag=tag, jpeg=jpeg, width=w, height=h, recips=recips)
+
+
+# ------------------------------------------------- contract v3 (parallel lanes)
+RST_MARKERS = [bytes([0xFF, 0xD0 + i]) for i in range(8)]
+
+
+def segment_key(key, session_id, frame_ctr):
+    """K_seg = Ascon-MAC(K, N_enc, AD = b"lanes")  (rtl/kseg_unit.v)."""
+    return ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 0), b"lanes")
+
+
+def encode_frame_v3(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0, session_id=0, lanes=1):
+    """Contract v3, stage by stage like rtl/secure_jpeg_lanes_top.v: segment s = MCU row s, coded by
+    lane s mod `lanes` with fresh DC predictors and the keystream (K_seg, nonce(s, frame_ctr, 0));
+    the merger joins the segments in order with RST0..7 between them. `lanes` changes only which
+    lane codes a segment, never the bytes (the testbench checks that claim on the RTL)."""
+    if not 0 <= mode <= 4:
+        raise ValueError("contract v3 supports modes 0..4")
+    h, w = len(rgb), len(rgb[0])
+    per_row = w // 16
+    luma, chroma = quality_tables(quality)
+    recips = [[reciprocal(q) for q in luma], [reciprocal(q) for q in chroma]]
+    blocks = blocks_in_hw_order(rgb)
+    kseg = segment_key(key, session_id, frame_ctr)
+    seg_bytes, seg_lane, ks_total = [], [], 0
+    for s in range(h // 16):
+        pred = {0: 0, 1: 0, 2: 0}
+        syms = []
+        for comp, smp in blocks[s * per_row * 6:(s + 1) * per_row * 6]:
+            syms.extend(run_length(quantise(dct2d(smp), recips[0 if comp == 0 else 1]), comp, pred))
+        enc, n = selective_encrypt(syms, mode, kseg, ascon.make_nonce(s, frame_ctr, 0))
+        ks_total += n
+        seg_bytes.append(pack_bytes([huffman_bits(x) for x in enc]))
+        seg_lane.append(s % lanes)
+    scan = b"".join((RST_MARKERS[(s - 1) % 8] if s else b"") + b for s, b in enumerate(seg_bytes))
+    tag = frame_tag(key, mode, frame_ctr, session_id, w, h, scan, version=3)
+    jpeg = build_frame(w, h, quality, mode, frame_ctr, session_id, scan, tag, version=3)
+    return dict(scan=scan, tag=tag, jpeg=jpeg, segments=seg_bytes, lane_of_segment=seg_lane,
+                k_seg=kseg, keystream_bits_used=ks_total, width=w, height=h)
 
 
 # ------------------------------------------------------------- Huffman decode

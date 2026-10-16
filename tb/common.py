@@ -42,15 +42,21 @@ SOURCES = {
         "dct8x8.v", "quantiser.v", "zigzag_rle.v", "selective_enc.v",
         "huffman_enc.v", "bit_packer.v", "scan_word_packer.v", "axil_regs.v",
         "secure_jpeg_top.v"],
+    "secure_jpeg_lanes_top": ASCON + [
+        "keystream_gen.v", "tag_unit.v", "kseg_unit.v", "rgb2ycbcr_2px.v", "dct_stage.v",
+        "dct8x8.v", "quantiser.v", "zigzag_rle.v", "selective_enc.v",
+        "huffman_enc.v", "bit_packer.v", "byte_fifo.v", "encoder_lane.v", "segment_merger.v",
+        "scan_word_packer.v", "axil_regs.v", "secure_jpeg_lanes_top.v"],
 }
 
 
-def run_sim(toplevel, test_module, parameters=None, testcase=None):
-    """Build and run `toplevel` with cocotb tests from `test_module`."""
+def run_sim(toplevel, test_module, parameters=None, testcase=None, build_tag=""):
+    """Build and run `toplevel` with cocotb tests from `test_module`.
+    build_tag separates builds of one top with different parameters (e.g. "_L2")."""
     from cocotb_tools.runner import get_runner, get_results
     sim = os.getenv("SIM", "icarus")
     waves = os.getenv("WAVES", "0") == "1"
-    build_dir = ROOT / "sim_build" / toplevel
+    build_dir = ROOT / "sim_build" / (toplevel + build_tag)
     runner = get_runner(sim)
     build_args = []
     if sim == "verilator":

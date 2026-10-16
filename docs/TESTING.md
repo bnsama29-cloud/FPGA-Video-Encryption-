@@ -64,6 +64,16 @@ Timing rule for testbench code (found the hard way, see bug log): right after `a
 
 Finding for RQ1/RQ3: **E1 alone is broken** by discarding the AC coefficients (DC is in clear), which justifies E2 as the main configuration. Repeat with real photographs (`--image`) and several qualities, and add SSIM for the paper.
 
+### Contract-v3 lane encoder (`rtl/secure_jpeg_lanes_top.v`, 16 Oct 2026)
+
+| Test | What it proves |
+|---|---|
+| `tb/test_lanes_top.py` (`make test-rtl`, built for LANES = 1, 2 and 4) | scan and tag bit-exact with `model/hw.py :: encode_frame_v3` in every mode E0–E4, the same bytes for every lane count, frames with fewer MCU rows than lanes (16-line frames: lanes 1–3 get nothing), random stalls on both DMA streams, receiver round trip = the v2 plain JPEG, tamper / replay / version-downgrade detection, clocks per pixel and latency |
+| `tests/test_hw_equivalence.py` (`test_v3_*`) | model views agree; bytes independent of the lane count; one segment's content never changes another segment's ciphertext; version byte authenticated; E5 rejected in v3 |
+| `make xsim-icarus` (second half) | the Vivado XSim testbench drives the lane encoder (`M 3` in the vector file) and the receiver checks its frames |
+| `tests/test_future_work.py` (`*_v3_*`) | the PYNQ driver detects the lane bitstream from VERSION and its frames match the model |
+| `experiments/lanes_rtl_throughput.py` | measured clocks/pixel for 1, 2, 4 lanes at 128×96, 320×240, 640×480 → `sim_out/lanes_rtl/` |
+
 ## 6. Known gaps and limitations (be honest about these in the report)
 
 * **The tag covers the scan data only.** The header (quantisation tables, size) and the APP11 mode byte are not authenticated: an attacker can change them without detection (the receiver then decrypts wrongly). Fix: absorb a 16-byte header block (mode, width, height, quality ID) as associated data before the scan bytes in `tag_unit.v` and `model.ascon.mac`. Good RQ3 discussion point.
@@ -71,7 +81,8 @@ Finding for RQ1/RQ3: **E1 alone is broken** by discarding the AC coefficients (D
 * Verilator flow is not verified (cocotb 2.x needs Verilator ≥ 5.036; Ubuntu ships older). Use Icarus.
 * Simulation cannot show real DDR/DMA speed, Ethernet/VLC behaviour, measured power or timing closure; simulated throughput assumes 100 MHz is met.
 * The DCT's 8-input multiply-add is the likeliest timing-critical path; if Vivado reports negative slack, register the products (one extra pipeline stage) or lower the clock.
-* No restart markers: a single bit error in transmission corrupts the rest of a frame (the tag will reject it anyway).
+* No restart markers in contract v2: a single bit error in transmission corrupts the rest of a frame (the tag will reject it anyway). Contract v3 has one per MCU row.
+* The lane encoder's throughput is measured in simulation (Icarus, cycle-accurate) at 100 MHz with no DMA stalls; whether the PYNQ's DDR and DMA can feed 2 pixels per clock, and the area and timing of 2 and 4 lanes, come from the Vivado run and the board.
 
 ## 7. From simulation to the board (one block at a time)
 

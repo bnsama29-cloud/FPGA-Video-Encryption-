@@ -14,6 +14,12 @@ Backends
                   driver, the board sender and the network side on any laptop today.
 
     ip = SecureJpegIP(MockBackend())                   # or PynqBackend("secure_jpeg.bit")
+    ip = SecureJpegIP(MockBackend(contract=3))         # or PynqBackend("secure_jpeg_lanes.bit")
+
+Two overlays exist: secure_jpeg.bit (contract v2, rtl/secure_jpeg_top.v) and secure_jpeg_lanes.bit
+(contract v3, rtl/secure_jpeg_lanes_top.v: 2 lanes, 64-bit pixel DMA = 2 pixels per beat). The driver
+reads the VERSION register and adapts: the pixel words are the same uint32 array for both (the
+64-bit DMA just moves two of them per beat), and v3 frames get version 3 in APP11 and a DRI segment.
     ip.setup_session(key, session_id, quality=75)
     scan, tag = ip.encode(rgb, mode=2, frame_ctr=1)
     jpeg = ip.build_jpeg(rgb.shape[1], rgb.shape[0], 2, 1, scan, tag)
@@ -29,7 +35,17 @@ CTRL, STATUS, VERSION = 0x00, 0x04, 0x08
 WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
-EXPECTED_VERSION = 0x5EC00200
+EXPECTED_VERSION = 0x5EC00200          # contract v2
+V3_VERSION_BASE = 0x5EC00300           # contract v3: 0x5EC003LL, LL = number of lanes
+
+
+def contract_of(version):
+    """VERSION register -> (contract, lanes), or None for an unknown bitstream."""
+    if version == EXPECTED_VERSION:
+        return 2, 1
+    if version & 0xFFFFFF00 == V3_VERSION_BASE and version & 0xFF in (1, 2, 4):
+        return 3, version & 0xFF
+    return None
 
 
 def pixels_to_words(rgb):
@@ -41,7 +57,8 @@ def pixels_to_words(rgb):
 class MockBackend:
     """Register file + DMA emulated with the golden model (bit-exact with the RTL)."""
 
-    def __init__(self):
+    def __init__(self, contract=2, lanes=2):
+        self.contract, self.lanes = contract, lanes
         self.regs = {}
         self.qt = [0] * 128
         self.qt_ptr = 0
@@ -69,7 +86,7 @@ class MockBackend:
 
     def read(self, addr):
         if addr == VERSION:
-            return EXPECTED_VERSION
+            return EXPECTED_VERSION if self.contract == 2 else V3_VERSION_BASE + self.lanes
         if addr == STATUS:
             return 0b101 if self.done else 0
         if addr == OUT_BYTES:
@@ -92,23 +109,37 @@ class MockBackend:
         ctr = r.get(FRAME_CTR, 0) | (r.get(FRAME_CTR_HI, 0) << 32)
         mode = (r.get(CTRL, 0) >> 1) & 7
         rgb = np.stack([(words >> s) & 0xFF for s in (0, 8, 16)], -1).reshape(h, w, 3).astype(np.uint8)
-        self.out, self.tag = _encode_with_reciprocals(rgb, self.qt[:64], self.qt[64:], mode, key, ctr, sid)
+        self.out, self.tag = _encode_with_reciprocals(rgb, self.qt[:64], self.qt[64:], mode, key, ctr, sid,
+                                                      self.contract)
         self.done = True
         return self.out
 
 
-def _encode_with_reciprocals(rgb, luma_r, chroma_r, mode, key, ctr, sid):
-    """model/hw.py :: encode_frame, but with the reciprocal tables actually loaded into QT_DATA."""
+def _encode_with_reciprocals(rgb, luma_r, chroma_r, mode, key, ctr, sid, contract=2):
+    """model/hw.py :: encode_frame (v2) / encode_frame_v3 (v3), but with the reciprocal tables
+    actually loaded into QT_DATA."""
     from model import ascon
     blocks = hw.blocks_in_hw_order(rgb)
-    syms, pred = [], {0: 0, 1: 0, 2: 0}
-    for comp, smp in blocks:
-        q = hw.quantise(hw.dct2d(smp), luma_r if comp == 0 else chroma_r)
-        syms.extend(hw.run_length(q, comp, pred))
-    enc, _ = hw.selective_encrypt(syms, mode, key, ascon.make_nonce(sid, ctr, 0))
-    scan = hw.pack_bytes([hw.huffman_bits(s) for s in enc])
     h, w = rgb.shape[:2]
-    return scan, hw.frame_tag(key, mode, ctr, sid, w, h, scan)
+
+    def symbols(blks):
+        syms, pred = [], {0: 0, 1: 0, 2: 0}
+        for comp, smp in blks:
+            q = hw.quantise(hw.dct2d(smp), luma_r if comp == 0 else chroma_r)
+            syms.extend(hw.run_length(q, comp, pred))
+        return syms
+
+    if contract == 2:
+        enc, _ = hw.selective_encrypt(symbols(blocks), mode, key, ascon.make_nonce(sid, ctr, 0))
+        scan = hw.pack_bytes([hw.huffman_bits(s) for s in enc])
+        return scan, hw.frame_tag(key, mode, ctr, sid, w, h, scan)
+    per_row, kseg, segs = (w // 16) * 6, hw.segment_key(key, sid, ctr), []
+    for s in range(h // 16):
+        enc, _ = hw.selective_encrypt(symbols(blocks[s * per_row:(s + 1) * per_row]), mode, kseg,
+                                      ascon.make_nonce(s, ctr, 0))
+        segs.append(hw.pack_bytes([hw.huffman_bits(x) for x in enc]))
+    scan = b"".join((hw.RST_MARKERS[(s - 1) % 8] if s else b"") + b for s, b in enumerate(segs))
+    return scan, hw.frame_tag(key, mode, ctr, sid, w, h, scan, version=3)
 
 
 class PynqBackend:
@@ -153,9 +184,12 @@ class SecureJpegIP:
         self.quality = None
         self.session_id = None
         version = self.b.read(VERSION)
-        if version != EXPECTED_VERSION:
+        known = contract_of(version)
+        if known is None:
             raise RuntimeError(f"VERSION register reads 0x{version:08x}, expected 0x{EXPECTED_VERSION:08x} "
+                               f"(v2) or 0x{V3_VERSION_BASE + 2:08x} (v3, 2 lanes) "
                                "(wrong bitstream, or the AXI-Lite address is wrong)")
+        self.contract, self.lanes = known
 
     def setup_session(self, key, session_id, quality=75):
         for i in range(4):
@@ -193,4 +227,5 @@ class SecureJpegIP:
 
     def build_jpeg(self, width, height, mode, frame_ctr, scan, tag):
         """What the ARM does after the fabric: headers + APP11 + scan + EOI."""
-        return hw.build_frame(width, height, self.quality, mode, frame_ctr, self.session_id, scan, tag)
+        return hw.build_frame(width, height, self.quality, mode, frame_ctr, self.session_id, scan, tag,
+                              version=self.contract)

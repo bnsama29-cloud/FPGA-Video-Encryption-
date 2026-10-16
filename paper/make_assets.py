@@ -578,6 +578,89 @@ Mode & {' & '.join('R & N' for _ in tags)} \\
         plt.close(fig)
 
 
+# ---------------------------------------------------------------- contract v3: lanes in RTL
+LANES_RTL = DATA / "lanes_rtl"                  # experiments/lanes_rtl_throughput.py (Icarus, 16 Oct 2026)
+
+
+def lanes_rows(frame=(640, 480)):
+    """Measured rows of the lane encoder for one frame size, lanes > 1 (the comparison table)."""
+    f = LANES_RTL / "results.json"
+    if not f.exists():
+        return []
+    return [r for r in J(f)["rows"] if (r["width"], r["height"]) == frame and r["lanes"] > 1]
+
+
+def lanes_vivado(lanes):
+    """Post-route utilisation of the lane encoder at 100 MHz, if a Vivado run of it is in paper/data/vivado."""
+    f = DATA / "vivado" / "vivado_results.json"
+    if not f.exists():
+        return None
+    for r in J(f):
+        if r["name"].startswith("secure_jpeg_lanes_top") and f"lanes{lanes}" in r["name"] \
+                and r.get("period", 10.0) == 10.0:
+            u = r["util"]
+            return dict(lut=u["lut"][0], bram=u["bram"][0], dsp=u["dsp"][0], wns=r["timing"]["wns"])
+    return None
+
+
+def lanes_rtl():
+    """Numbers and figure of the lane encoder built in RTL (contract v3): measured clocks per pixel for
+    1, 2, 4 lanes against the event-model projection (R2) and the published 150 Mpx/s of logiJPGE."""
+    f = LANES_RTL / "results.json"
+    if not f.exists():
+        return
+    d = J(f)
+    vga = {r["lanes"]: r for r in d["rows"] if (r["width"], r["height"]) == (640, 480)}
+    assert len({r["scan_bytes"] for r in vga.values()}) == 1, "lane counts gave different scans"
+    macro("RtlLaneSizes", NUMWORD.get(len({(r["width"], r["height"]) for r in d["rows"]}), "several"))
+    for l, name in ((1, "OneLane"), (2, "TwoLanes"), (4, "FourLanes")):
+        if l in vga:
+            macro(f"Rtl{name}Mpix", f"{vga[l]['mpx_per_s_at_100mhz']:.0f}")
+            macro(f"Rtl{name}Cpp", f"{vga[l]['clocks_per_pixel']:.3f}")
+            if vga[l].get("latency_clocks"):
+                macro(f"Rtl{name}LatUs", f"{vga[l]['latency_clocks'] / 100:.0f}")
+                macro(f"Rtl{name}LatLines", f"{vga[l]['latency_lines']:.0f}")
+    if 4 in vga and 1 in vga:
+        macro("RtlFourLanesSpeedup", f"{vga[1]['clocks_per_pixel'] / vga[4]['clocks_per_pixel']:.1f}")
+        macro("RtlFourLanesFps", f"{100e6 / (vga[4]['clocks_per_pixel'] * 640 * 480):.0f}")
+        macro("RtlFourLanesHdFps", f"{100e6 / (vga[4]['clocks_per_pixel'] * 1920 * 1080):.0f}")
+    # R2 event-model projection of the same configurations (no frame overlap), to compare model and RTL
+    plj = RES / "parallel_lanes" / "synthetic.json"
+    proj = {}
+    if plj.exists():
+        for c in J(plj)["configs"]:
+            if c["frame"] == "640x480" and not c["overlap"] and c["px_per_clk"] == 2 and c["lanes"] in (2, 4):
+                proj[c["lanes"]] = c["mpix"]["100"]
+    for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
+        if l in proj:
+            macro(f"Proj{name}Mpix", f"{proj[l]:.0f}")
+    fig, ax = plt.subplots(figsize=(3.4, 2.1))
+    ls = sorted(vga)
+    x = np.arange(len(ls))
+    mp = [vga[l]["mpx_per_s_at_100mhz"] for l in ls]
+    ax.bar(x, mp, width=0.55, color=BLUE, edgecolor=SURFACE, label="measured (RTL simulation)")
+    for i, l in enumerate(ls):
+        ax.annotate(f"{mp[i]:.0f}", (i, mp[i]), xytext=(0, 2), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=6.5, color=INK)
+    px = [i for i, l in enumerate(ls) if l in proj]
+    if px:
+        ax.plot(px, [proj[ls[i]] for i in px], "D", ms=4.5, color=ORANGE, mec=SURFACE, mew=0.6, zorder=4,
+                ls="none", label="event-model projection (R2)")
+    ax.axhline(150, color=INK2, lw=0.8, ls=(0, (3, 2)))
+    ax.text(len(ls) - 0.62, 156, "150 Mpx/s: logiJPGE at 150 MHz,\nno cipher", fontsize=5.6, color=INK2,
+            ha="right", va="bottom")
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{l} lane{'s' if l > 1 else ''}" + (", 2 px/clk" if l > 1 else ", 2 px/clk")
+                        for l in ls], fontsize=6.5)
+    ax.set_ylabel("Mpixel/s at 100 MHz (640×480)")
+    ax.set_ylim(0, 230)
+    ax.legend(fontsize=6, frameon=False, loc="upper left")
+    _clean(ax)
+    fig.tight_layout()
+    fig.savefig(FIG / "fig_lanes_rtl.pdf")
+    plt.close(fig)
+
+
 # ---------------------------------------------------------------- comparison with published designs
 def compare(r, cores):
     """Table: this work (from vivado_results.json + the RTL cycle benchmark) next to published designs
@@ -595,12 +678,22 @@ def compare(r, cores):
     if cores:
         rows.append(f"Ours: one Ascon & Zynq-7020 & {min(c[3] for c in cores)}--{max(c[3] for c in cores)} & "
                     f"0 & 0 & {mhz:.0f} & -- & AEAD core \\\\")
+    lanes_note = ""
+    lr_all = lanes_rows()
+    for lr in lr_all:
+        v = lanes_vivado(lr["lanes"]) or {}
+        rows.append(f"Ours: {lr['lanes']} lanes (v3) & Zynq-7020 & {f(v.get('lut'))} & {f(v.get('bram'), 1)} & "
+                    f"{f(v.get('dsp'))} & 100 & {lr['mpx_per_s_at_100mhz']:.0f} & sel.\\ AEAD \\\\")
+    if lr_all:
+        pending = not all(lanes_vivado(x["lanes"]) for x in lr_all)
+        lanes_note = (" Lane rows (contract v3): throughput measured in cycle-accurate RTL simulation at 100\\,MHz"
+                      + ("; their area comes from the next Vivado run (--)" if pending else "") + ".")
     for x in J(rel)["rows"]:
         rows.append(f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
                     f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'])} & {x['crypto']} \\\\")
     write("tab_compare.tex", rf"""\begin{{table}}[t]
 \caption{{Comparison with published FPGA designs. Their numbers are as reported by each source; ours are
-post-route (Table~\ref{{tab:resources}}) with throughput from the RTL cycle count of a 640$\times$480 frame. Mpx/s: million pixels per second.}}
+post-route (Table~\ref{{tab:resources}}) with throughput from the RTL cycle count of a 640$\times$480 frame. Mpx/s: million pixels per second.{lanes_note}}}
 \label{{tab:compare}}
 \centering\small
 \begin{{tabular}}{{llrrrrrl}}
@@ -1163,6 +1256,7 @@ def main():
     standard_metrics()
     restart_interval()
     size_channel()
+    lanes_rtl()
     research_figures()
     protocol()
     misc()

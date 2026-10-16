@@ -163,6 +163,9 @@ new RTL from a normal Command Prompt (not `exec` in the Vivado GUI):
 the top run already writes the per-block area). The block design has not got past `create_bd_cell`
 yet; expect more small fixes there.
 
+**Run 5 (16 Oct) adds the lane encoder** (contract v3, 2 and 4 lanes, its own overlay with a 64-bit
+pixel DMA). One command for everything, in `docs/VIVADO_ONE_DAY.md` → "Run 5".
+
 **Done when** WNS ≥ 0, `secure_jpeg.bit` + `.hwh` are committed, and the table is copied into
 `paper/data/vivado/`. Then **replace the Yosys estimate in the paper** (Table III).
 
@@ -219,7 +222,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
 | B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
 | B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM + Kaggle (640x480 measured 1.534 cycles/px, law confirmed) | `docs/RESEARCH.md` |
-| B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract-v3 candidate) | P3 | 1 + 2 | ✅ model, exact on 7 sources; RTL later | `docs/RESEARCH.md` |
+| B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract v3) | P3 | 1 + 2 | ✅ model, exact on 7 sources; ✅ **RTL built** (`rtl/secure_jpeg_lanes_top.v`, 16 Oct), measured 122 / 176 Mpx/s for 2 / 4 lanes; ⏳ Vivado run 5 | `docs/INTERFACES.md` §8 |
 | B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic + 6 real clips after bugs #22-#26 (error 3-7x lower than fixed quality; FF+PI settles in <= 2 frames) | `docs/RESEARCH.md` |
 | B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic + 6 film clips (fixed-camera technique; static-camera clip wanted) | `docs/RESEARCH.md` |
 | B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
@@ -448,6 +451,10 @@ two restart-interval rows already moved to the repository).
 | Encryption adds 0 cycles to the encoder | `benchmark_crypto.py --rtl` | ✅ RTL simulation |
 | Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder post-route out of context (run 3, provisional until run 4) · ⏳ full system, board |
 | 1.5 + a/MCU rows cycles per pixel; 65 Mpixel/s at 640x480 and 100 MHz | `stall_profile.py --scaling` (RTL, 5 frame sizes) | ✅ RTL simulation |
+| Lane encoder (contract v3) bit-exact with the model for 1, 2, 4 lanes, all levels, under stalls; same bytes for every lane count | `tb/test_lanes_top.py`, `make xsim-icarus` | ✅ RTL simulation · ⏳ XSim in Vivado (run 5) |
+| 2 lanes 122 Mpixel/s, 4 lanes 176 Mpixel/s at 640x480 and 100 MHz | `experiments/lanes_rtl_throughput.py` | ✅ RTL simulation (no DMA stalls) · ⏳ board |
+| The lane encoder fits the xc7z020 and meets 100 MHz; its LUT/BRAM/DSP | Vivado run 5 (`lanes` step) | ⏳ **do not quote area until run 5** |
+| Faster than the commercial encoders | only as "more Mpixel/s at 100 MHz than logiJPGE reports at 150 MHz" | ✅ throughput only; ❌ never "better" overall (they use less BRAM and no cipher) |
 | E1–E4 leak an outline sketch, E5 does not (8 sources incl. open films + Kodak) | mode trade-off + jigsaw | ✅ |
 | A trained network does not recover E5 outlines | learned attack, 4 setups, up to 2,609 training frames | ✅ |
 | No outline comes from the E5 stream (U-Net no better than the true-frame-statistics oracle) | learned attack + B25 controls, P4/P5 | ✅ (the old 'edge = plain control' wording no longer holds with the 16 Oct P4) |

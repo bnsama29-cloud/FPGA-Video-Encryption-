@@ -272,3 +272,35 @@ overlay and the paper tables. If the overlay misses 100 MHz it retries at 90, th
 (`--no-fallback` to disable). At the end it writes **`vivado_results_<date>.zip`** in the repository root:
 send that one file. The bitstream stays on the laptop (`future_work\board\overlay\secure_jpeg.bit/.hwh`).
 Expect 2-3 h on an 8 GB laptop with other programs closed; use `--jobs 1` if Vivado runs out of memory.
+
+## Run 5 (contract-v3 lane encoder, 16 Oct 2026): one command, replaces run 4
+
+Run 4 is included: everything it did still happens, plus the new lane encoder
+(`rtl/secure_jpeg_lanes_top.v`, docs/INTERFACES.md §8).
+
+```
+cd /d E:\FPGA-Video-Encryption-
+git fetch
+git checkout lanes-v3
+git pull
+rmdir /s /q sim_build future_work\board\vivado_proj future_work\board\vivado_proj_lanes
+"C:\Xilinx\Vivado\2026.1\settings64.bat"
+py vivado\run_vivado_day.py --steps xsim ooc lanes bd bd_lanes parse --maxw 9 10 --periods 8.0 6.667 --jobs 2
+```
+
+| Step | What it gives the paper |
+|---|---|
+| xsim | both encoders bit-exact in Vivado's own simulator (v2 vectors, then v3 vectors with `M 3`) |
+| ooc | v2 encoder at 100/125/150 MHz, line-buffer sweep (as run 4) |
+| lanes | 2 lanes at 100/125/150 MHz (area + which block limits the clock), 4 lanes at 100 MHz |
+| bd | v2 overlay `secure_jpeg.bit/.hwh` (falls back to 90/80 MHz if 100 misses) |
+| bd_lanes | lane overlay `secure_jpeg_lanes.bit/.hwh`, AXI DMA with a 64-bit pixel stream; reports in `overlay\lanes\` |
+| parse | every report into `sim_out\vivado\vivado_tables.md` |
+
+Expect 4-5 h (two bitstreams and nine out-of-context runs). Leave it overnight; `--jobs 1` on an
+8 GB laptop if Vivado runs out of memory. It ends with **`vivado_results_<date>.zip`**: send that file.
+Shorter first try (about 1.5 h, only the new parts):
+`py vivado\run_vivado_day.py --steps xsim lanes bd_lanes parse --periods 8.0 --jobs 2`
+
+If something fails, the summary in the zip has the first `ERROR:` lines; the full log is in
+`sim_build\vivado_logs\<step>_vivado.log`.

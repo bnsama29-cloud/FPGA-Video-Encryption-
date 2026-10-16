@@ -15,4 +15,10 @@ verilog work ../../rtl/bit_packer.v
 verilog work ../../rtl/scan_word_packer.v
 verilog work ../../rtl/axil_regs.v
 verilog work ../../rtl/secure_jpeg_top.v
+verilog work ../../rtl/kseg_unit.v
+verilog work ../../rtl/rgb2ycbcr_2px.v
+verilog work ../../rtl/byte_fifo.v
+verilog work ../../rtl/encoder_lane.v
+verilog work ../../rtl/segment_merger.v
+verilog work ../../rtl/secure_jpeg_lanes_top.v
 verilog work ../tb_secure_jpeg_top.v
