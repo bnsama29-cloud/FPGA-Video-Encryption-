@@ -304,3 +304,26 @@ Shorter first try (about 1.5 h, only the new parts):
 
 If something fails, the summary in the zip has the first `ERROR:` lines; the full log is in
 `sim_build\vivado_logs\<step>_vivado.log`.
+
+## Run 6 (17 Oct 2026): after the timing fixes — replaces run 5
+
+Run 5 results: everything passed except the lane overlay, which missed 100 MHz by 0.13 ns, and the
+90/80 MHz retries, which stopped on a block-design clock error (docs/TESTING.md §8, bugs 27 and 28).
+Both are fixed on `lanes-v3`. The RTL changed (zig-zag/RLE pipelined), so every step is rerun.
+
+```
+cd /d E:\FPGA-Video-Encryption-
+git fetch
+git checkout lanes-v3
+git pull
+rmdir /s /q sim_build future_work\board\vivado_proj future_work\board\vivado_proj_lanes
+py vivado\run_vivado_day.py --steps xsim ooc lanes bd bd_lanes parse --maxw 9 10 --periods 8.0 6.667 --jobs 2
+```
+
+Vivado is on PATH by itself in every new Command Prompt (AutoRun runs
+`E:\FPGA\2026.1\Vivado\settings64.bat`); if `where vivado` finds nothing, run that file first.
+Run 5 took about 2 h 20 min. Send the new `vivado_results_<date>.zip`.
+
+What to look for: the `ooc_lanes2` and `ooc_lanes4` WNS should now be positive at 100 MHz, and the
+`ooc_period_8.0ns` (125 MHz) runs should be much closer to zero than run 5's -1.70 ns; the worst
+path should no longer start in `u_rle/k_reg`.

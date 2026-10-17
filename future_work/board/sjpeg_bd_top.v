@@ -8,7 +8,7 @@
 `default_nettype none
 module sjpeg_bd_top (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 clk CLK" *)
-    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axil:s_axis:m_axis, ASSOCIATED_RESET rst, FREQ_HZ 100000000" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axil:s_axis:m_axis, ASSOCIATED_RESET rst" *)
     input  wire        clk,
     (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 rst RST" *)
     (* X_INTERFACE_PARAMETER = "POLARITY ACTIVE_HIGH" *)
