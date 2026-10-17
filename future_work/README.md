@@ -31,9 +31,9 @@ future_work/
 │   ├── format_compliance.py      ✅  which decoders open each mode
 │   └── paper_tables.py           ✅  every result table from the result files (paper/data/paper_tables.md)
 ├── kaggle/
-│   ├── kaggle_complete.py    ✅  the whole simulation (all roles, 10 seeds, real video) in one Kaggle cell
-│   └── kaggle_remaining.py   ✅  open clips, Kodak, standard metrics, restart interval, stronger learned attack;
-│                                 RERUN = True repeats only what the 14 Oct fixes changed (GUIDE B20, B21)
+│   └── kaggle_runs.py            ✅  every Kaggle run in one cell; JOB = "complete" (whole simulation,
+│                                     10 seeds, real video), "remaining" (open clips, Kodak, metrics,
+│                                     restart interval, learned attack), "research" (R1-R8), "final"
 ├── clips_manifest.md             test clips by hash (the clips themselves are never committed)
 └── results/                      generated outputs (not in git)
 ```
@@ -43,4 +43,4 @@ the driver, the board sender and the network side work before the bitstream exis
 the mock are Python, not FPGA: `first_contact.py` labels them so.
 
 **Untested parts.** `block_design.tcl` and `PynqBackend` have never run on real tools or hardware. The
-first errors to expect, and their fixes, are in `docs/VIVADO_ONE_DAY.md` steps 4 and 6.
+first errors to expect, and their fixes, are in `docs/VIVADO_ONE_DAY.md` §4 and §5.

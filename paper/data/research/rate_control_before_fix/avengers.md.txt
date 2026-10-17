@@ -1,9 +1,0 @@
-### R3: bitrate regulation (avengers, 150 frames, budget 100 % -> 60 % -> 120 %)
-
-| Controller | Mean abs. error | Error after settling | Frames >10 % over | Settling after drop (frames) | Overshoot after drop | Mean quality | Mean SSIM |
-|---|---|---|---|---|---|---|---|
-| fixed | 43.0 % | 40.4 % | 54 % | 24 | +185 % | 75 | 0.982 |
-| bang-bang | 11.4 % | 10.5 % | 18 % | 5 | +64 % | 57 | 0.957 |
-| I | 8.8 % | 8.9 % | 15 % | 2 | +51 % | 56 | 0.952 |
-| PI | 9.3 % | 9.3 % | 17 % | 4 | +51 % | 56 | 0.953 |
-| FF+PI | 9.3 % | 9.3 % | 17 % | 4 | +51 % | 56 | 0.953 |

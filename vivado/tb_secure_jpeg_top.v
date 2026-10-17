@@ -1,6 +1,6 @@
 // tb_secure_jpeg_top.v -- self-checking testbench for Vivado XSim (also runs in Icarus).
 //
-// Plays a command file generated from the golden model (vivado/gen_xsim_vectors.py):
+// Plays a command file generated from the golden model (vivado/run_vivado_day.py vectors):
 //   M <version>          which encoder to drive: 2 = secure_jpeg_top (default, 1 pixel per beat),
 //                        3 = secure_jpeg_lanes_top (contract v3, 2 lanes, 2 pixels per beat).
 //                        Both are instantiated; the other one is held in reset. Chosen in the
@@ -18,7 +18,7 @@
 // working directory; see vivado/run_xsim.sh and vivado/xsim_project.tcl):
 //   commands.txt, pixels.hex (32-bit {pad,B,G,R}), expect_scan.hex (bytes)
 // Writes out_scan.hex (every scan byte the DUT produced) and out_tags.txt so
-// vivado/check_xsim_output.py can rebuild the JPEGs and run the real receiver.
+// vivado/run_vivado_day.py check can rebuild the JPEGs and run the real receiver.
 // Prints "XSIM RESULT: PASS" or "XSIM RESULT: FAIL (<n> errors)" at the end.
 `timescale 1ns / 1ps
 `default_nettype none
@@ -191,7 +191,7 @@ module tb_secure_jpeg_top;
         $sformat(fname, "%0s/out_scan.hex", vdir);    fo = $fopen(fname, "w");
         $sformat(fname, "%0s/out_tags.txt", vdir);    ft = $fopen(fname, "w");
         if (fd == 0) begin
-            $display("ERROR: %0s/commands.txt not found (run vivado/gen_xsim_vectors.py, pass +VEC_DIR=...)", vdir);
+            $display("ERROR: %0s/commands.txt not found (run vivado/run_vivado_day.py vectors, pass +VEC_DIR=...)", vdir);
             $finish;
         end
         repeat (10) @(posedge clk);

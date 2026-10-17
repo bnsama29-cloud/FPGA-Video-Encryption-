@@ -76,21 +76,21 @@ hls-csim: vectors
 # ---- Vivado XSim testbench (vivado/): same files run in Icarus here and in XSim
 XSIM_SRC = $(shell grep '^verilog' vivado/xsim.prj | awk '{print $$3}' | sed 's#^../../##; s#^../#vivado/#')
 xsim-vectors:
-	$(PY) vivado/gen_xsim_vectors.py $(ARGS)
+	$(PY) vivado/run_vivado_day.py vectors $(ARGS)
 
 xsim-icarus: xsim-vectors
 	mkdir -p sim_build && iverilog -g2005 -o sim_build/tb_xsim.vvp -Irtl/include $(XSIM_SRC)
 	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work | tee sim_build/xsim_icarus.log | grep -E "^frame|RESULT|ERROR"
-	$(PY) vivado/check_xsim_output.py
-	$(PY) vivado/gen_xsim_vectors.py --v3
+	$(PY) vivado/run_vivado_day.py check
+	$(PY) vivado/run_vivado_day.py vectors --v3
 	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work_v3 | tee sim_build/xsim_icarus_v3.log | grep -E "^frame|RESULT|ERROR"
-	$(PY) vivado/check_xsim_output.py --dir vivado/xsim_work_v3
+	$(PY) vivado/run_vivado_day.py check --dir vivado/xsim_work_v3
 
 bundle:
-	$(PY) scripts/debug_bundle.py $(T) $(if $(SEED),--seed $(SEED))
+	$(PY) scripts/tools.py bundle $(T) $(if $(SEED),--seed $(SEED))
 
 demo:
-	$(PY) scripts/encode_image.py --out sim_out/demo
+	$(PY) scripts/tools.py encode-image --out sim_out/demo
 
 clean:
 	rm -rf sim_build sim_out results.xml tb/*.result.xml debug_bundle.md hls_dct_quant .pytest_cache \

@@ -2,12 +2,14 @@
 
 On the board (Jupyter terminal or ssh), from the repo folder copied to the board:
     sudo -E python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg.bit
+    sudo -E python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit
 Without a board (tests the script itself, golden-model emulation of the IP):
     python -m future_work.board.first_contact --mock --sizes 64x48 --frames 2 --timing-frames 2
+    python -m future_work.board.first_contact --mock-lanes 2 --sizes 64x48 --frames 2 --timing-frames 2
 
 Part 1 -- bit-exactness (the gate: nothing else counts until this passes)
     For every size and mode 0..4: encode N frames on the FPGA, rebuild the JPEG on the ARM and
-    compare it with model/hw.encode_frame byte for byte, then decrypt it with the receiver.
+    compare it with model/hw.encode_frame (encode_frame_v3 for the lane bitstream) byte for byte, then decrypt it with the receiver.
     Reports the first mismatch (size, mode, frame, byte offset). If any frame differs, the board
     is wrong, not the model: check the clock, reset polarity, DMA lengths, pixel word order.
 Part 2 -- speed (only after Part 1 passed)
@@ -43,6 +45,14 @@ def first_diff(a, b):
     return next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
 
 
+def expected_jpeg(ip, rgb, quality, mode, ctr):
+    """What the golden model says this bitstream must produce: contract v2 (secure_jpeg.bit) or
+    contract v3 (secure_jpeg_lanes.bit, restart segments; the bytes do not depend on the lane count)."""
+    if ip.contract == 3:
+        return hw.encode_frame_v3(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+    return hw.encode_frame(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+
+
 def check(ip, sizes, n, source, quality):
     rows, ok_all = [], True
     for (w, h) in sizes:
@@ -53,7 +63,7 @@ def check(ip, sizes, n, source, quality):
                 ctr = 1000 * mode + i + 1
                 scan, tag = ip.encode(rgb, mode, ctr)
                 got = ip.build_jpeg(w, h, mode, ctr, scan, tag)
-                exp = hw.encode_frame(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+                exp = expected_jpeg(ip, rgb, quality, mode, ctr)
                 if got != exp or not receive_frame(got, KEY).ok:
                     bad = dict(frame=i, got_len=len(got), expected_len=len(exp), first_diff_byte=first_diff(got, exp))
                     break
@@ -89,6 +99,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--bitfile", default=str(ROOT / "future_work" / "board" / "overlay" / "secure_jpeg.bit"))
     ap.add_argument("--mock", action="store_true", help="golden-model emulation instead of the board")
+    ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
+                    help="emulate the contract-v3 lane bitstream with this many lanes (implies --mock)")
     ap.add_argument("--sizes", nargs="+", default=["320x240", "640x480"])
     ap.add_argument("--frames", type=int, default=10, help="frames per size and mode for the bit-exact check")
     ap.add_argument("--timing-frames", type=int, default=50)
@@ -99,14 +111,16 @@ def main():
     ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args()
     sizes = [tuple(int(v) for v in s.split("x")) for s in a.sizes]
+    a.mock = a.mock or bool(a.mock_lanes)
     if a.mock:
-        backend = MockBackend()
+        backend = MockBackend(contract=3, lanes=a.mock_lanes) if a.mock_lanes else MockBackend()
     else:
         from future_work.board.pynq_driver import PynqBackend
         backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes))
     ip = SecureJpegIP(backend)                      # checks the VERSION register
     ip.setup_session(KEY, SID, a.quality)
-    print(f"IP found ({'mock' if a.mock else a.bitfile}), VERSION ok. Part 1: bit-exact check", flush=True)
+    print(f"IP found ({'mock' if a.mock else a.bitfile}), VERSION ok: contract v{ip.contract}"
+          + (f", {ip.lanes} lanes" if ip.contract == 3 else "") + ". Part 1: bit-exact check", flush=True)
     ok, exact = check(ip, sizes, a.frames, a.source, a.quality)
     speed = []
     if ok:

@@ -1,6 +1,6 @@
 # paper/data/final: the last Kaggle run (16 Oct 2026)
 
-Produced by `future_work/kaggle/kaggle_final.py` (Kaggle, GPU T4, 180.9 min, 32/32 steps PASS,
+Produced by `future_work/kaggle/kaggle_runs.py (JOB = "final")` (Kaggle, GPU T4, 180.9 min, 32/32 steps PASS,
 `run_log.json`), branch `kaggle-final`. Nothing here is typed by hand.
 
 | Folder / file | Task | Script |

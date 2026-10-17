@@ -4,312 +4,453 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Secure Link Console</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
 <style>
+/* One screen, no page scroll on a laptop: attacks on the left, defence + log on the right,
+   the four live views in the middle with the graphs under them. Dark only (a control room).
+   Colours: status roles for frame verdicts (good / critical / serious + neutral for lost),
+   validated categorical steps for the single-series charts (dataviz palette, dark surface). */
 :root {
-  --wafer: #E6E9EE;
-  --panel: #F7F8FA;
-  --line: #C9CFD9;
-  --ink: #14213A;
-  --ink-2: #4A5672;
-  --ok: #0E7C7B;
-  --bad: #B3203A;
-  --atk: #C98A00;
-  --prot: #4C3FBF;
-  --lost: #8A93A6;
-  --radius-tile: 10px;
-  --radius-ctl: 6px;
+  color-scheme: dark;
+  --bg: #050608;
+  --panel: #0e1116;
+  --panel-2: #141820;
+  --line: #232a35;
+  --line-2: #2e3746;
+  --ink: #e8ecf2;
+  --ink-2: #9aa5b6;
+  --ink-3: #667085;
+  --good: #0ca30c;
+  --critical: #d03b3b;
+  --serious: #ec835a;
+  --warning: #fab219;
+  --lost: #5b6473;
+  --c-size: #3987e5;      /* frame size on the wire */
+  --c-threat: #d95926;    /* attack evidence */
+  --c-lat: #199e70;       /* latency */
+  --c-prot: #9085e9;      /* protection level */
+  --glow-prot: rgba(144, 133, 233, .35);
+  --glow-good: rgba(12, 163, 12, .35);
+  --glow-bad: rgba(208, 59, 59, .55);
+  --r: 10px;
+  --r-s: 6px;
+  --gap: 10px;
+  --mono: "Cascadia Mono", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, monospace;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--wafer); color: var(--ink); }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
 body {
-  font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-variation-settings: "wdth" 100;
-  font-size: 15px; line-height: 1.45;
-  font-feature-settings: "tnum" 1;
+  font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
+  font-size: 13px; line-height: 1.4; font-feature-settings: "tnum" 1;
+  background:
+    radial-gradient(1200px 500px at 50% -200px, rgba(57, 135, 229, .10), transparent 70%),
+    radial-gradient(800px 400px at 100% 100%, rgba(144, 133, 233, .07), transparent 70%),
+    var(--bg);
+  display: grid; grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
-:focus-visible { outline: 3px solid var(--prot); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--c-prot); outline-offset: 2px; }
 button, select, input { font: inherit; color: inherit; }
+h2 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-2); }
 
+/* ------------------------------------------------------------ header */
 header {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px;
-  padding: 18px 24px 10px;
+  display: flex; align-items: center; gap: 18px; padding: 9px 14px;
+  border-bottom: 1px solid var(--line); background: rgba(14, 17, 22, .85); backdrop-filter: blur(6px);
 }
-h1 {
-  margin: 0; font-size: 26px; font-weight: 750; letter-spacing: -0.01em;
-  font-variation-settings: "wdth" 72;
+.brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.brand .logo {
+  width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--c-prot), var(--c-size)); box-shadow: 0 0 18px var(--glow-prot);
 }
-.facts { display: flex; flex-wrap: wrap; gap: 4px 22px; color: var(--ink-2); font-size: 14px; }
-.facts b { color: var(--ink); font-weight: 650; }
-#conn { margin-left: auto; font-size: 14px; color: var(--ink-2); }
-#conn.live::before, #conn.dead::before {
-  content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%;
-  margin-right: 7px; vertical-align: 1px;
-}
-#conn.live::before { background: var(--ok); }
-#conn.dead::before { background: var(--bad); }
+.brand h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.brand small { display: block; color: var(--ink-3); font-size: 11px; font-weight: 500; }
+.facts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: 8px; }
+.fact { padding: 4px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink-2); white-space: nowrap; }
+.fact b { color: var(--ink); font-family: var(--mono); font-weight: 600; margin-left: 4px; }
+#conn { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--ink-2); white-space: nowrap; }
+#conn::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--critical); box-shadow: 0 0 10px var(--glow-bad); }
+#conn.live::before { background: var(--good); box-shadow: 0 0 10px var(--glow-good); }
+@media (prefers-reduced-motion: no-preference) { #conn.live::before { animation: beat 1.6s ease-in-out infinite; } }
+@keyframes beat { 50% { opacity: .35; } }
 
-main { padding: 6px 24px 28px; display: grid; gap: 18px; }
-
-/* ---------- the signal path: the one bold element ---------- */
-.path {
-  display: grid;
-  grid-template-columns: 1fr 44px 1.15fr 44px 1fr;
-  grid-template-rows: auto auto;
-  align-items: stretch;
+/* ------------------------------------------------------------ layout */
+.app {
+  display: grid; grid-template-columns: 250px minmax(0, 1fr) 290px; gap: var(--gap);
+  padding: var(--gap); min-height: 0;
 }
-.tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-tile); overflow: hidden; display: flex; flex-direction: column; }
-.tile figure { margin: 0; position: relative; background: #1d2433; aspect-ratio: 4 / 3; }
-.tile img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.tile img[data-empty="1"] { opacity: 0; }
-.tile .placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: #9aa4b8; font-size: 14px; text-align: center; padding: 12px; }
-.tile figcaption { padding: 10px 14px 12px; display: grid; gap: 2px; }
-.tile h2 { margin: 0; font-size: 17px; font-weight: 700; font-variation-settings: "wdth" 85; }
-.tile p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
-#tile-wire { border-color: var(--atk); border-width: 2px; }
-#tile-rx.flash-bad { box-shadow: 0 0 0 4px var(--bad); }
-.badge { position: absolute; left: 10px; top: 10px; padding: 3px 9px; border-radius: 999px; font-size: 13px; font-weight: 650; color: #fff; background: var(--ok); }
-.badge.bad { background: var(--bad); }
+.col { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 11px 12px; min-height: 0; }
+.card > h2 { margin-bottom: 9px; display: flex; align-items: center; gap: 8px; }
+.card > h2 .hint { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--ink-3); }
+
+/* ------------------------------------------------------------ left: attacks */
+.attack-card { display: flex; flex-direction: column; }
+.ctl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+label.f { display: grid; gap: 3px; color: var(--ink-3); font-size: 11px; }
+select {
+  width: 100%; padding: 5px 7px; border: 1px solid var(--line-2); border-radius: var(--r-s);
+  background: var(--panel-2); color: var(--ink);
+}
+.group { color: var(--ink-3); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin: 8px 0 5px; }
+.attacks { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.attacks button {
+  text-align: left; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: var(--r-s);
+  background: var(--panel-2); cursor: pointer; display: grid; gap: 0; position: relative; overflow: hidden;
+  transition: border-color .15s, background .15s;
+}
+.attacks button b { font-size: 12.5px; font-weight: 650; }
+.attacks button span { font-size: 10.5px; color: var(--ink-3); line-height: 1.25; }
+.attacks button:hover { border-color: var(--serious); background: #1a1712; }
+.attacks button.running { border-color: var(--warning); background: linear-gradient(90deg, rgba(250, 178, 25, .18), rgba(250, 178, 25, .04)); }
+.attacks button.running::after {
+  content: "LIVE"; position: absolute; right: 6px; top: 6px; font-size: 9px; font-weight: 800; letter-spacing: .08em;
+  color: #111; background: var(--warning); padding: 1px 4px; border-radius: 3px;
+}
+.btn {
+  padding: 7px 10px; border: 1px solid var(--line-2); border-radius: var(--r-s); background: var(--panel-2);
+  cursor: pointer; font-weight: 600; transition: border-color .15s, background .15s;
+}
+.btn:hover { border-color: var(--c-prot); }
+.btn.stop { width: 100%; border-color: rgba(208, 59, 59, .6); color: #ff8a8a; background: rgba(208, 59, 59, .08); }
+.btn.stop:hover { background: rgba(208, 59, 59, .2); }
+.how { color: var(--ink-3); font-size: 11.5px; margin: 8px 0 10px; }
+
+/* KPI tiles */
+.kpi-card { flex: 1; display: flex; flex-direction: column; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(0, 1fr); gap: 6px; flex: 1; }
+.kpi { display: flex; flex-direction: column; justify-content: center; }
+.kpi { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-s); padding: 7px 9px; }
+.kpi .v { font-family: var(--mono); font-size: 18px; font-weight: 650; line-height: 1.15; }
+.kpi .l { color: var(--ink-3); font-size: 10.5px; }
+.kpi.good .v { color: #5fd35f; }
+.kpi.bad .v { color: #ff7b7b; }
+
+/* ------------------------------------------------------------ centre */
+.centre { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--gap); min-height: 0; }
+.views {
+  display: grid; grid-template-columns: 1fr 22px 1fr 22px 1fr 14px 1fr; align-items: stretch; min-height: 0;
+  --ar: 4 / 3;
+}
+.view {
+  display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+  transition: box-shadow .25s, border-color .25s;
+}
+.view .vh { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.view .vh .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.view .vh b { font-size: 12.5px; font-weight: 650; white-space: nowrap; }
+.view .vh span { color: var(--ink-3); font-size: 11px; margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view figure { margin: 0; aspect-ratio: var(--ar); max-height: 34vh; position: relative; background: #000; }
+.view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.view img[data-empty="1"] { opacity: 0; }
+.view .placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-3); font-size: 12px; text-align: center; padding: 10px; }
+.view .foot { padding: 5px 10px; color: var(--ink-3); font-size: 11px; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#v-cam .dot { background: var(--ink-2); }
+#v-wire { border-color: rgba(250, 178, 25, .45); }
+#v-wire .dot { background: var(--warning); }
+#v-rx .dot { background: var(--good); }
+#v-rx.ok { border-color: rgba(12, 163, 12, .55); box-shadow: 0 0 22px rgba(12, 163, 12, .12); }
+#v-rx.flash-bad { border-color: var(--critical); box-shadow: 0 0 0 2px var(--critical), 0 0 26px var(--glow-bad); }
+#v-eve { border-style: dashed; border-color: rgba(236, 131, 90, .5); }
+#v-eve .dot { background: var(--serious); }
+.badge {
+  position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 650;
+  color: #fff; background: rgba(12, 163, 12, .85); backdrop-filter: blur(2px);
+}
+.badge.bad { background: rgba(208, 59, 59, .9); }
 .badge.hidden { display: none; }
+.mode-chip { position: absolute; right: 8px; top: 8px; padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: 11px; font-weight: 700; background: rgba(144, 133, 233, .9); color: #fff; }
+.mode-chip:empty { display: none; }
 
-.wire {
-  position: relative; display: flex; align-items: center; justify-content: center;
-}
-.wire::before { content: ""; position: absolute; left: 0; right: 0; top: 34%; height: 3px; background: var(--ink); }
-.wire::after {
-  content: ""; position: absolute; right: 2px; top: calc(34% - 6px);
-  border-left: 10px solid var(--ink); border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent;
-}
-.pulse { position: absolute; top: calc(34% - 4px); width: 11px; height: 11px; border-radius: 50%; background: var(--ok); left: 0; }
-.pulse.bad { background: var(--bad); }
-@media (prefers-reduced-motion: no-preference) {
-  .pulse { animation: travel 0.7s linear forwards; }
-}
-@keyframes travel { from { left: 0; } to { left: calc(100% - 14px); } }
+/* signal path between the tiles */
+.link { position: relative; }
+.link::before { content: ""; position: absolute; left: 2px; right: 4px; top: 50%; height: 2px; background: var(--line-2); }
+.link::after { content: ""; position: absolute; right: 0; top: calc(50% - 4px); border-left: 7px solid var(--line-2); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+.link.tap::before { background: repeating-linear-gradient(90deg, var(--serious) 0 4px, transparent 4px 7px); }
+.link.tap::after { border-left-color: var(--serious); }
+.pulse { position: absolute; top: calc(50% - 4px); left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); }
+.pulse.bad { background: var(--critical); box-shadow: 0 0 8px var(--critical); }
+@media (prefers-reduced-motion: no-preference) { .pulse { animation: travel .6s linear forwards; } }
+@keyframes travel { from { left: 0; } to { left: calc(100% - 9px); } }
 
-.tap {
-  grid-column: 3; grid-row: 2; display: grid; grid-template-columns: 3px 1fr; gap: 0 14px;
-  margin-top: 0; padding-top: 0;
+/* charts */
+.charts { display: grid; grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--gap); min-height: 0; }
+.chart-card { display: flex; flex-direction: column; padding: 9px 11px 7px; }
+.chart-card > h2 { margin-bottom: 4px; }
+.plot { position: relative; flex: 1; min-height: 0; }
+.plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.timeline-wrap { display: grid; grid-template-rows: minmax(0, 1fr) 58px; gap: 2px; flex: 1; min-height: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--ink-2); font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 9px; height: 9px; border-radius: 2px; background: var(--c); display: inline-block; }
+.legend i.band { background: rgba(250, 178, 25, .22); border: 1px solid rgba(250, 178, 25, .6); }
+.smalls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); min-height: 0; }
+.now { font-family: var(--mono); color: var(--ink); text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 12px; margin-left: auto; }
+.tip {
+  position: absolute; pointer-events: none; z-index: 5; padding: 6px 8px; border-radius: 6px; font-size: 11.5px;
+  background: rgba(5, 6, 8, .94); border: 1px solid var(--line-2); color: var(--ink); white-space: nowrap; display: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .5);
 }
-.tap .drop { background: var(--atk); margin-left: 50%; }
-.tap .tile { margin-top: 16px; border-style: dashed; border-color: var(--atk); }
-.ladder-cell { grid-column: 5; grid-row: 2; padding-top: 16px; }
+.tip .r { display: flex; gap: 8px; align-items: center; }
+.tip .r i { width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+.tip .r b { margin-left: auto; font-family: var(--mono); padding-left: 10px; }
+.tip .t { color: var(--ink-3); margin-bottom: 3px; }
 
-/* ---------- protection ladder ---------- */
-.ladder { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-tile); padding: 14px 16px; display: grid; gap: 12px; }
-.ladder h2 { margin: 0; font-size: 17px; font-weight: 700; font-variation-settings: "wdth" 85; }
-.rungs { display: grid; gap: 4px; }
-.rung { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 10px; padding: 5px 8px; border-radius: var(--radius-ctl); color: var(--ink-2); font-size: 13.5px; }
-.rung b { font-weight: 750; color: var(--ink-2); font-variation-settings: "wdth" 75; font-size: 15px; }
-.rung.on { background: var(--prot); color: #fff; }
+/* ------------------------------------------------------------ right */
+.ladder { display: grid; gap: 3px; }
+.rung { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 8px; padding: 4px 8px; border-radius: var(--r-s); color: var(--ink-3); border: 1px solid transparent; }
+.rung b { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+.rung.on { background: linear-gradient(90deg, rgba(144, 133, 233, .32), rgba(144, 133, 233, .08)); border-color: rgba(144, 133, 233, .7); color: var(--ink); box-shadow: 0 0 16px var(--glow-prot); }
 .rung.on b { color: #fff; }
-.rung.floor { box-shadow: inset 3px 0 0 var(--ink); }
-.meter { height: 10px; background: #dde1e8; border-radius: 999px; overflow: hidden; }
-.meter i { display: block; height: 100%; width: 0%; background: var(--atk); transition: width .3s; }
-.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13.5px; }
-.kv dt { color: var(--ink-2); }
-.kv dd { margin: 0; text-align: right; font-weight: 600; }
-.reason { font-size: 13px; color: var(--ink-2); min-height: 2.6em; }
+.rung.floor { box-shadow: inset 3px 0 0 var(--ink-3); }
+.rung.on.floor { box-shadow: inset 3px 0 0 var(--ink-3), 0 0 16px var(--glow-prot); }
+.meter { height: 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+.meter i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--warning), var(--critical)); transition: width .3s; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 8px 0 0; font-size: 12px; }
+.kv dt { color: var(--ink-3); }
+.kv dd { margin: 0; text-align: right; font-family: var(--mono); }
+.reason { margin-top: 8px; padding: 7px 9px; border-radius: var(--r-s); background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); font-size: 11.5px; min-height: 3.2em; }
+.def-card .ctl-row { margin-bottom: 6px; }
+.slider { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; color: var(--ink-3); font-size: 11px; margin-top: 6px; }
+.slider output { font-family: var(--mono); color: var(--ink); }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--c-prot); }
+.log-card { flex: 1; display: flex; flex-direction: column; min-height: 130px; }
+.log { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 0; list-style: none; font-size: 11.5px; }
+.log li { display: grid; grid-template-columns: 56px 1fr; gap: 6px; padding: 4px 0; border-top: 1px solid var(--line); }
+.log time { color: var(--ink-3); font-family: var(--mono); font-size: 10.5px; padding-top: 1px; }
+.log .atk { color: var(--warning); }
+.log .bad { color: #ff7b7b; }
+.log .def { color: #b9b1ff; }
+.log::-webkit-scrollbar { width: 8px; }
+.log::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
 
-/* ---------- lower half ---------- */
-.lower { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(280px, 1fr); gap: 18px; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-tile); padding: 14px 16px; }
-.card h2 { margin: 0 0 8px; font-size: 17px; font-weight: 700; font-variation-settings: "wdth" 85; }
-.card .sub { margin: -4px 0 10px; color: var(--ink-2); font-size: 13.5px; }
-canvas { width: 100%; height: 220px; display: block; }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
-.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
-
-.attacks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.attacks button, .ctl button {
-  text-align: left; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-ctl);
-  background: #fff; cursor: pointer; display: grid; gap: 1px;
+/* ------------------------------------------------------------ short screens: compact controls */
+@media (max-height: 900px) {
+  .attacks button span, .how, .brand small { display: none; }
+  .attacks button { padding: 5px 8px; }
+  .group { margin: 6px 0 4px; }
+  .card { padding: 9px 10px; }
+  .ladder { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .rung { grid-template-columns: 1fr; padding: 4px 0; text-align: center; }
+  .rung span { display: none; }
+  .rung.floor { box-shadow: inset 0 -2px 0 var(--ink-3); }
+  .rung.on.floor { box-shadow: inset 0 -2px 0 var(--ink-3), 0 0 16px var(--glow-prot); }
+  .mode-desc { display: block !important; }
+  .kv { margin-top: 6px; }
+  .reason { min-height: 0; margin-top: 6px; }
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .view .vh span { display: none; }
+  .kpi .v { font-size: 16px; }
 }
-.attacks button span { font-size: 12.5px; color: var(--ink-2); }
-.attacks button:hover { border-color: var(--atk); }
-.attacks button.running { background: #fbf0d4; border-color: var(--atk); }
-.group-label { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); margin-top: 6px; }
-.row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 10px; }
-.row label { font-size: 13.5px; color: var(--ink-2); display: grid; gap: 2px; }
-select, input[type=range] { accent-color: var(--prot); }
-select { padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: #fff; }
-.stop { border-color: var(--bad) !important; color: var(--bad); }
+.mode-desc { display: none; margin-top: 6px; color: var(--ink-2); font-size: 12px; }
 
-.log { max-height: 260px; overflow: auto; font-size: 13.5px; margin: 0; padding: 0; list-style: none; }
-.log li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 4px 0; border-top: 1px solid #e3e6ec; }
-.log time { color: var(--ink-2); }
-.log .atk { color: #8a5d00; font-weight: 600; }
-.log .bad { color: var(--bad); font-weight: 600; }
-.log .def { color: var(--prot); font-weight: 600; }
-
-@media (max-width: 1100px) {
-  .path { grid-template-columns: 1fr; grid-template-rows: none; gap: 10px; }
-  .wire { height: 26px; transform: rotate(90deg); width: 26px; justify-self: center; }
-  .tap, .ladder-cell { grid-column: auto; grid-row: auto; }
-  .lower { grid-template-columns: 1fr; }
+/* ------------------------------------------------------------ smaller screens: stack and scroll */
+@media (max-width: 1180px), (max-height: 620px) {
+  body { overflow: auto; display: block; }
+  .app { grid-template-columns: 1fr; }
+  .centre { grid-template-rows: auto auto; }
+  .views { grid-template-columns: 1fr 1fr; gap: var(--gap); }
+  .views .link { display: none; }
+  .view figure { aspect-ratio: 4 / 3; flex: none; }
+  .charts { grid-template-rows: 300px auto; }
+  .smalls { grid-template-columns: 1fr; }
+  .smalls .chart-card { height: 170px; }
+  .log-card { height: 320px; }
+  .facts { display: none; }
 }
-@media (max-width: 520px) {
-  header, main { padding-left: 16px; padding-right: 16px; }
-  .attacks { grid-template-columns: 1fr; }
-}
+@media (max-width: 560px) { .views { grid-template-columns: 1fr; } .attacks { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>Secure camera link</h1>
-  <div class="facts">
-    <span>Session <b id="f-session">–</b></span>
-    <span>Key epoch <b id="f-epoch">–</b></span>
-    <span>Policy <b id="f-policy">–</b></span>
-    <span><b id="f-fps">–</b> fps</span>
-    <span>Latency <b id="f-lat">–</b></span>
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+    <div><h1>Secure camera link</h1><small>Ascon-AEAD128 selective encryption · live system simulation</small></div>
   </div>
-  <span id="conn" class="dead">Waiting for the link…</span>
+  <div class="facts">
+    <span class="fact">Session<b id="f-session">–</b></span>
+    <span class="fact">Key epoch<b id="f-epoch">–</b></span>
+    <span class="fact">Policy<b id="f-policy">–</b></span>
+    <span class="fact">Rate<b id="f-fps">–</b> fps</span>
+    <span class="fact">Latency<b id="f-lat">–</b></span>
+  </div>
+  <span id="conn">Waiting for the link…</span>
 </header>
 
-<main>
-  <section class="path" aria-label="Signal path from camera to receiver">
-    <article class="tile" id="tile-cam">
-      <figure><img alt="Camera input" src="/stream/camera.mjpg" data-empty="1"><div class="placeholder">Start the sender to see the camera</div></figure>
-      <figcaption><h2>Camera</h2><p>Plain input on the board, before encryption.</p></figcaption>
-    </article>
-    <div class="wire" id="w1" aria-hidden="true"></div>
-    <article class="tile" id="tile-wire">
-      <figure><img alt="What travels on the network" src="/stream/wire.mjpg" data-empty="1"><div class="placeholder">Nothing on the wire yet</div></figure>
-      <figcaption><h2>On the wire</h2><p>The real stream. VLC plays it; without the key it stays scrambled.</p></figcaption>
-    </article>
-    <div class="wire" id="w2" aria-hidden="true"></div>
-    <article class="tile" id="tile-rx">
-      <figure><img alt="Receiver output" src="/stream/receiver.mjpg" data-empty="1"><div class="placeholder">No verified frame yet</div><span class="badge hidden" id="rx-badge"></span></figure>
-      <figcaption><h2>Receiver</h2><p>Tag verified, decrypted bit-exactly with the key.</p></figcaption>
-    </article>
+<div class="app">
+  <!-- ======================================================== left: attack console -->
+  <aside class="col" aria-label="Attack console">
+    <section class="card attack-card">
+      <h2>Attack the link</h2>
+      <div class="ctl-row">
+        <label class="f">Duration (s)
+          <select id="dur"><option>5</option><option selected>10</option><option>20</option><option>40</option></select>
+        </label>
+        <label class="f">Share of frames
+          <select id="rate"><option value="1">All</option><option value="0.5">Half</option><option value="0.2">One in five</option></select>
+        </label>
+      </div>
+      <div id="attacks"></div>
+      <p class="how">Click an attack, then watch the receiver reject frames and the protection level rise.</p>
+      <button class="btn stop" id="stop">■ Stop all attacks</button>
+    </section>
+    <section class="card kpi-card">
+      <h2>So far</h2>
+      <div class="kpis">
+        <div class="kpi good"><div class="v" id="k-ok">0</div><div class="l">frames verified</div></div>
+        <div class="kpi bad"><div class="v" id="k-rej">0</div><div class="l">frames rejected</div></div>
+        <div class="kpi"><div class="v" id="k-atk">0</div><div class="l">attacks launched</div></div>
+        <div class="kpi"><div class="v" id="k-react">–</div><div class="l">last reaction time</div></div>
+        <div class="kpi"><div class="v" id="k-hit">0</div><div class="l">frames attacked, jammed or forged</div></div>
+        <div class="kpi"><div class="v" id="k-rekey">0</div><div class="l">rekeys</div></div>
+      </div>
+    </section>
+  </aside>
 
-    <div class="tap">
-      <div class="drop" aria-hidden="true"></div>
-      <article class="tile">
-        <figure><img alt="Eavesdropper reconstruction" src="/stream/attacker.mjpg" data-empty="1"><div class="placeholder">Eavesdropper view appears after a few frames</div></figure>
-        <figcaption><h2>Eavesdropper's best guess</h2><p>Replacement attack on the intercepted bytes, no key.</p></figcaption>
+  <!-- ======================================================== centre: live views + graphs -->
+  <main class="centre">
+    <section class="views" aria-label="Signal path from camera to receiver">
+      <article class="view" id="v-cam">
+        <div class="vh"><i class="dot"></i><b>Camera</b><span>plain, before encryption</span></div>
+        <figure><img alt="Camera input" src="/stream/camera.mjpg" data-empty="1"><div class="placeholder">Start the sender to see the camera</div></figure>
+        <div class="foot" id="foot-cam">Input to the encoder</div>
       </article>
-    </div>
+      <div class="link" id="w1" aria-hidden="true"></div>
+      <article class="view" id="v-wire">
+        <div class="vh"><i class="dot"></i><b>On the wire</b><span>what VLC shows without the key</span></div>
+        <figure><img alt="What travels on the network" src="/stream/wire.mjpg" data-empty="1"><div class="placeholder">Nothing on the wire yet</div><span class="mode-chip" id="wire-mode"></span></figure>
+        <div class="foot" id="foot-wire">Valid JPEG, scrambled</div>
+      </article>
+      <div class="link" id="w2" aria-hidden="true"></div>
+      <article class="view" id="v-rx">
+        <div class="vh"><i class="dot"></i><b>Receiver</b><span>tag verified, decrypted</span></div>
+        <figure><img alt="Receiver output" src="/stream/receiver.mjpg" data-empty="1"><div class="placeholder">No verified frame yet</div><span class="badge hidden" id="rx-badge"></span></figure>
+        <div class="foot" id="foot-rx">Bit-exact with the camera's encoding</div>
+      </article>
+      <div class="link tap" aria-hidden="true"></div>
+      <article class="view" id="v-eve">
+        <div class="vh"><i class="dot"></i><b>Eavesdropper</b><span>best guess, no key</span></div>
+        <figure><img alt="Eavesdropper reconstruction" src="/stream/attacker.mjpg" data-empty="1"><div class="placeholder">Appears after a few frames</div></figure>
+        <div class="foot">Replacement attack on the intercepted bytes</div>
+      </article>
+    </section>
 
-    <div class="ladder-cell">
-      <section class="ladder" aria-label="Protection level">
-        <h2>Protection</h2>
-        <div class="rungs" id="rungs"></div>
-        <div>
-          <div class="kv"><dt>Attack evidence</dt><dd id="threat-v">0.00</dd></div>
-          <div class="meter" aria-hidden="true"><i id="threat"></i></div>
+    <section class="charts">
+      <article class="card chart-card">
+        <h2>What the receiver saw, second by second <span class="hint">last 2 min · hover for details</span></h2>
+        <div class="timeline-wrap">
+          <div class="plot" id="p-timeline"><canvas></canvas><div class="tip"></div></div>
+          <div class="plot" id="p-prot"><canvas></canvas><div class="tip"></div></div>
         </div>
-        <dl class="kv">
-          <dt>Encrypted bits</dt><dd id="k-enc">–</dd>
-          <dt>Encode time</dt><dd id="k-encms">–</dd>
-          <dt>Last heartbeat</dt><dd id="k-hb">–</dd>
-        </dl>
-        <div class="reason" id="reason">Waiting for the first defence decision.</div>
-      </section>
-    </div>
-  </section>
-
-  <section class="lower">
-    <div style="display:grid; gap:18px; min-width:0; align-content:start">
-      <article class="card">
-        <h2>What the receiver saw, second by second</h2>
-        <p class="sub">Bars are frames per window; the violet line is the protection level; amber bands are attacks.</p>
-        <canvas id="timeline" role="img" aria-label="Timeline of verified, lost and rejected frames"></canvas>
         <div class="legend">
-          <span style="--c: var(--ok)">Verified</span>
-          <span style="--c: var(--lost)">Lost</span>
-          <span style="--c: var(--bad)">Tag failed</span>
-          <span style="--c: #6b1d2e">Replay or old key</span>
-          <span style="--c: var(--prot)">Protection level</span>
-          <span style="--c: #f3dfa6">Attack running</span>
+          <span><i style="--c: var(--good)"></i>Verified</span>
+          <span><i style="--c: var(--lost)"></i>Lost</span>
+          <span><i style="--c: var(--critical)"></i>Tag failed / malformed</span>
+          <span><i style="--c: var(--serious)"></i>Replay / old key</span>
+          <span><i class="band"></i>Attack running</span>
+          <span><i style="--c: var(--c-prot)"></i>Protection level (lower strip)</span>
         </div>
       </article>
-      <article class="card">
-        <h2>Event log</h2>
-        <ul class="log" id="log"></ul>
-      </article>
-    </div>
+      <div class="smalls">
+        <article class="card chart-card"><h2>Attack evidence <span class="now" id="n-threat">–</span></h2><div class="plot" id="p-threat"><canvas></canvas><div class="tip"></div></div></article>
+        <article class="card chart-card"><h2>Frame size on the wire <span class="now" id="n-size">–</span></h2><div class="plot" id="p-size"><canvas></canvas><div class="tip"></div></div></article>
+        <article class="card chart-card"><h2>End-to-end latency <span class="now" id="n-lat">–</span></h2><div class="plot" id="p-lat"><canvas></canvas><div class="tip"></div></div></article>
+      </div>
+    </section>
+  </main>
 
-    <div style="display:grid; gap:18px; align-content:start">
-      <article class="card">
-        <h2>Attack the link</h2>
-        <p class="sub">Each attack runs for the chosen time. Watch the receiver, the log and the protection level.</p>
-        <div class="row" style="margin-top:0">
-          <label>Duration
-            <select id="dur"><option>5</option><option selected>10</option><option>20</option><option>40</option></select>
-          </label>
-          <label>Share of frames
-            <select id="rate"><option value="1">All</option><option value="0.5">Half</option><option value="0.2">One in five</option></select>
-          </label>
-          <button class="ctl stop" id="stop" style="padding:8px 12px">Stop all attacks</button>
-        </div>
-        <div class="attacks" id="attacks"></div>
-      </article>
-
-      <article class="card ctl">
-        <h2>Defence and network</h2>
-        <div class="row" style="margin-top:0">
-          <label>Policy
-            <select id="policy"><option value="fixed">Fixed</option><option value="threshold">Threshold rules</option><option value="bandit">Learning (bandit)</option></select>
-          </label>
-          <label>Protection
-            <select id="manual"><option value="">Automatic</option><option>E0</option><option>E1</option><option>E2</option><option>E3</option><option>E4</option><option>E5</option></select>
-          </label>
-          <button id="rekey" style="padding:8px 12px">Rekey now</button>
-        </div>
-        <div class="row">
-          <label>Packet loss <span id="loss-v">0%</span><input type="range" id="loss" min="0" max="30" value="0"></label>
-          <label>Delay <span id="delay-v">5 ms</span><input type="range" id="delay" min="0" max="300" value="5"></label>
-        </div>
-        <dl class="kv" style="margin-top:12px" id="bandit"></dl>
-      </article>
-    </div>
-  </section>
-</main>
+  <!-- ======================================================== right: defence + log -->
+  <aside class="col" aria-label="Defence">
+    <section class="card">
+      <h2>Protection</h2>
+      <div class="ladder" id="rungs"></div>
+      <div class="mode-desc" id="mode-desc"></div>
+      <div style="margin-top:9px">
+        <div class="kv" style="margin:0"><dt>Attack evidence</dt><dd id="threat-v">0.00</dd></div>
+        <div class="meter" aria-hidden="true"><i id="threat"></i></div>
+      </div>
+      <dl class="kv">
+        <dt>Encrypted bits</dt><dd id="k-enc">–</dd>
+        <dt>Encode time</dt><dd id="k-encms">–</dd>
+        <dt>Last heartbeat</dt><dd id="k-hb">–</dd>
+      </dl>
+      <div class="reason" id="reason">Waiting for the first defence decision.</div>
+    </section>
+    <section class="card def-card">
+      <h2>Defence and network</h2>
+      <div class="ctl-row">
+        <label class="f">Policy
+          <select id="policy"><option value="fixed">Fixed</option><option value="threshold">Threshold rules</option><option value="bandit">Learning (bandit)</option></select>
+        </label>
+        <label class="f">Protection
+          <select id="manual"><option value="">Automatic</option><option>E0</option><option>E1</option><option>E2</option><option>E3</option><option>E4</option><option>E5</option></select>
+        </label>
+      </div>
+      <button class="btn" id="rekey" style="width:100%">⟳ Rekey now</button>
+      <div class="sliders">
+        <label class="slider">Packet loss <output id="loss-v">0%</output><input type="range" id="loss" min="0" max="30" value="0"></label>
+        <label class="slider">Delay <output id="delay-v">5 ms</output><input type="range" id="delay" min="0" max="300" value="5"></label>
+      </div>
+      <dl class="kv" id="bandit"></dl>
+    </section>
+    <section class="card log-card">
+      <h2>Event log</h2>
+      <ul class="log" id="log"></ul>
+    </section>
+  </aside>
+</div>
 
 <script>
 const MODES = ["E0", "E1", "E2", "E3", "E4", "E5"];
 const MODE_TEXT = {
-  E0: "Tag only, picture in clear",
-  E1: "AC signs",
-  E2: "AC + DC signs",
-  E3: "Signs + AC amplitudes",
-  E4: "Signs + all amplitudes",
-  E5: "E4 + shuffled blocks",
+  E0: "Tag only, picture in clear", E1: "AC signs", E2: "AC + DC signs",
+  E3: "Signs + AC amplitudes", E4: "Signs + all amplitudes", E5: "E4 + shuffled blocks",
 };
 const ATTACKS = [
   ["Video path", null],
-  ["bitflip", "Flip a bit", "Modify frames in flight"],
-  ["downgrade", "Downgrade", "Claim E0 in the header"],
+  ["bitflip", "Flip a bit", "Modify frames"],
+  ["downgrade", "Downgrade", "Claim E0"],
   ["splice", "Splice", "Old picture, new header"],
-  ["inject", "Inject", "Forge extra frames"],
+  ["inject", "Inject", "Forge frames"],
   ["replay", "Replay", "Re-send old frames"],
-  ["delay", "Hold back", "Release frames late"],
+  ["delay", "Hold back", "Release late"],
   ["drop", "Jam", "Drop frames"],
-  ["flood", "Flood", "Junk packets at the receiver"],
+  ["flood", "Flood", "Junk packets"],
   ["Feedback path", null],
-  ["fb_drop", "Silence feedback", "Block heartbeats"],
-  ["fb_forge", "Forge feedback", "Fake 'all is well'"],
-  ["fb_replay", "Replay feedback", "Re-send old heartbeats"],
+  ["fb_drop", "Silence", "Block heartbeats"],
+  ["fb_forge", "Forge", "Fake 'all is well'"],
+  ["fb_replay", "Replay fb", "Old heartbeats"],
 ];
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = {
+  good: css("--good"), critical: css("--critical"), serious: css("--serious"), lost: css("--lost"),
+  size: css("--c-size"), threat: css("--c-threat"), lat: css("--c-lat"), prot: css("--c-prot"),
+  grid: "#1c222c", axis: "#667085", panel: css("--panel"), band: "rgba(250, 178, 25, .14)", bandEdge: "rgba(250, 178, 25, .55)",
+};
 const $ = (id) => document.getElementById(id);
 const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const SPAN = 120;                                    // seconds on every chart
+const now = () => Date.now() / 1000;
 
-// ---------- protection ladder
+// ---------------------------------------------------------------- protection ladder
 let floorMode = "E2";
 function drawLadder(mode) {
   $("rungs").innerHTML = MODES.slice().reverse().map((m) =>
-    `<div class="rung${m === mode ? " on" : ""}${m === floorMode ? " floor" : ""}"><b>${m}</b><span>${MODE_TEXT[m]}${m === floorMode ? " (floor)" : ""}</span></div>`).join("");
+    `<div class="rung${m === mode ? " on" : ""}${m === floorMode ? " floor" : ""}" title="${MODE_TEXT[m]}"><b>${m}</b><span>${MODE_TEXT[m]}${m === floorMode ? " · floor" : ""}</span></div>`).join("");
+  $("mode-desc").textContent = mode ? `${mode}: ${MODE_TEXT[mode]}` + (mode === floorMode ? " (floor)" : "") : "";
 }
 drawLadder(null);
 
-// ---------- attack buttons
+// ---------------------------------------------------------------- attack buttons
 const running = new Set();
-$("attacks").innerHTML = ATTACKS.map((a) => a[1] === null
-  ? `<div class="group-label">${a[0]}</div>`
-  : `<button data-type="${a[0]}"><b>${a[1]}</b><span>${a[2]}</span></button>`).join("");
+(() => {
+  let html = "", open = false;
+  for (const a of ATTACKS) {
+    if (a[1] === null) { if (open) html += "</div>"; html += `<div class="group">${a[0]}</div><div class="attacks">`; open = true; }
+    else html += `<button data-type="${a[0]}" title="${a[2]}"><b>${a[1]}</b><span>${a[2]}</span></button>`;
+  }
+  $("attacks").innerHTML = html + (open ? "</div>" : "");
+})();
 $("attacks").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-type]");
   if (!b) return;
@@ -320,122 +461,257 @@ function markAttacks() {
   document.querySelectorAll("#attacks button").forEach((b) => b.classList.toggle("running", running.has(b.dataset.type)));
 }
 
-// ---------- defence / network controls
+// ---------------------------------------------------------------- defence / network controls
 $("policy").onchange = (e) => post("/api/sender", { cmd: "policy", policy: e.target.value });
 $("manual").onchange = (e) => post("/api/sender", { cmd: "mode", mode: e.target.value || null });
 $("rekey").onclick = () => post("/api/sender", { cmd: "rekey" });
 let netTimer;
+function netLabels() { $("loss-v").textContent = $("loss").value + "%"; $("delay-v").textContent = $("delay").value + " ms"; }
 function sendNet() {
-  $("loss-v").textContent = $("loss").value + "%";
-  $("delay-v").textContent = $("delay").value + " ms";
+  netLabels();
   clearTimeout(netTimer);
   netTimer = setTimeout(() => post("/api/channel", { cmd: "impair", loss: $("loss").value / 100, delay_ms: +$("delay").value }), 200);
 }
 $("loss").oninput = sendNet; $("delay").oninput = sendNet;
 
-// ---------- images: hide placeholders once frames arrive
-// (browsers do not fire 'load' for MJPEG streams, so check the decoded size)
+// ---------------------------------------------------------------- live images: drop placeholders once frames arrive
+// (browsers fire no 'load' for MJPEG streams, so check the decoded size)
 setInterval(() => {
-  document.querySelectorAll('.tile img[data-empty="1"]').forEach((img) => {
+  document.querySelectorAll('.view img[data-empty="1"]').forEach((img) => {
     if (img.naturalWidth > 0) {
       img.dataset.empty = "0";
       const p = img.parentElement.querySelector(".placeholder");
       if (p) p.remove();
+      if (img.closest("#v-cam")) {
+        $("foot-cam").textContent = `Input to the encoder · ${img.naturalWidth}×${img.naturalHeight}`;
+        document.querySelector(".views").style.setProperty("--ar", `${img.naturalWidth} / ${img.naturalHeight}`);
+      }
     }
   });
 }, 400);
 
-// ---------- event log
+// ---------------------------------------------------------------- event log
 function log(text, cls = "") {
   const li = document.createElement("li");
-  const t = new Date().toLocaleTimeString([], { hour12: false });
-  li.innerHTML = `<time>${t}</time><span class="${cls}"></span>`;
+  li.innerHTML = `<time>${new Date().toLocaleTimeString([], { hour12: false })}</time><span class="${cls}"></span>`;
   li.lastChild.textContent = text;
   $("log").prepend(li);
   while ($("log").children.length > 200) $("log").lastChild.remove();
 }
 
-// ---------- signal-path pulses
+// ---------------------------------------------------------------- signal-path pulses
 function pulse(id, bad) {
-  const w = $(id);
   const p = document.createElement("i");
   p.className = "pulse" + (bad ? " bad" : "");
-  w.appendChild(p);
-  setTimeout(() => p.remove(), 800);
+  $(id).appendChild(p);
+  setTimeout(() => p.remove(), 700);
 }
 
-// ---------- timeline
-const series = [];          // one entry per sender defence window
-const bands = [];           // {type, start, end}
-const SPAN = 120;           // seconds shown
-function drawTimeline() {
-  const c = $("timeline"), dpr = window.devicePixelRatio || 1;
-  const W = c.clientWidth, H = c.clientHeight;
-  c.width = W * dpr; c.height = H * dpr;
-  const g = c.getContext("2d"); g.scale(dpr, dpr);
-  g.clearRect(0, 0, W, H);
-  const now = Date.now() / 1000, x0 = now - SPAN, padL = 30, padB = 18, plotW = W - padL - 6, plotH = H - padB - 8;
-  const X = (t) => padL + (t - x0) / SPAN * plotW;
+// ---------------------------------------------------------------- data kept for the charts
+const windows = [];     // one per sender defence window: {t, ok, lost, bad, rep, total, mode, threat}
+const frames = [];      // one per verified frame: {t, kb, lat, mode}
+const bands = [];       // attacks: {type, start, end}
+function trim() {
+  const x0 = now() - SPAN - 5;
+  while (windows.length && windows[0].t < x0) windows.shift();
+  while (frames.length && frames[0].t < x0) frames.shift();
+  while (bands.length && bands[0].end && bands[0].end < x0) bands.shift();
+}
+
+// ---------------------------------------------------------------- a small canvas chart with hover
+// One y-axis per chart (never two scales on one plot): the protection level gets its own strip,
+// aligned in time under the frame counts. Hover shows the nearest point; the tooltip names every value.
+function setup(id) {
+  const el = $(id), cv = el.querySelector("canvas"), tip = el.querySelector(".tip");
+  const st = { el, cv, tip, hover: null, draw: null, pick: null };
+  el.addEventListener("mousemove", (e) => { const r = cv.getBoundingClientRect(); st.hover = { x: e.clientX - r.left, y: e.clientY - r.top }; render(st); });
+  el.addEventListener("mouseleave", () => { st.hover = null; tip.style.display = "none"; render(st); });
+  return st;
+}
+function frame(st, padL, padR, padT, padB) {
+  const dpr = window.devicePixelRatio || 1, W = st.cv.clientWidth, H = st.cv.clientHeight;
+  if (W < 10 || H < 10) return null;
+  st.cv.width = Math.round(W * dpr); st.cv.height = Math.round(H * dpr);
+  const g = st.cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const t1 = now(), t0 = t1 - SPAN, pw = W - padL - padR, ph = H - padT - padB;
+  return { g, W, H, t0, t1, padL, padT, pw, ph, X: (t) => padL + (t - t0) / SPAN * pw };
+}
+function bandsOn(f, top, h) {
   for (const b of bands) {
-    const e = b.end || now;
-    if (e < x0) continue;
-    g.fillStyle = "#f3dfa6"; g.fillRect(X(Math.max(b.start, x0)), 8, X(e) - X(Math.max(b.start, x0)), plotH);
+    const e = b.end || f.t1; if (e < f.t0) continue;
+    const x1 = f.X(Math.max(b.start, f.t0)), x2 = f.X(e);
+    f.g.fillStyle = C.band; f.g.fillRect(x1, top, Math.max(1, x2 - x1), h);
+    f.g.fillStyle = C.bandEdge; f.g.fillRect(x1, top, 1, h);
   }
-  const maxN = Math.max(12, ...series.map((s) => s.total));
-  const Y = (n) => 8 + plotH - n / maxN * plotH * 0.78;
-  g.strokeStyle = "#d4d9e2"; g.lineWidth = 1; g.fillStyle = "#4A5672"; g.font = "12px Archivo, sans-serif";
-  for (const n of [0, Math.round(maxN / 2), maxN]) { g.beginPath(); g.moveTo(padL, Y(n)); g.lineTo(W - 6, Y(n)); g.stroke(); g.fillText(n, 2, Y(n) + 4); }
-  for (let s = 0; s <= SPAN; s += 30) g.fillText(s === SPAN ? "now" : `-${SPAN - s}s`, X(x0 + s) - 12, H - 3);
-  const bw = Math.max(2, plotW / SPAN - 1);
-  const cols = [["ok", "#0E7C7B"], ["lost", "#8A93A6"], ["bad", "#B3203A"], ["rep", "#6b1d2e"]];
-  for (const s of series) {
-    if (s.t < x0) continue;
-    let acc = 0;
-    for (const [k, col] of cols) {
-      if (!s[k]) continue;
-      g.fillStyle = col; g.fillRect(X(s.t) - bw, Y(acc + s[k]), bw, Y(acc) - Y(acc + s[k])); acc += s[k];
+}
+function niceMax(v, ticks) {                       // round up to 1, 2 or 5 x 10^k per tick
+  const raw = v / ticks, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p * ticks;
+}
+function yGrid(f, max, fmt, ticks = 3) {
+  const g = f.g; g.font = "10.5px " + css("--mono"); g.textAlign = "right"; g.textBaseline = "middle";
+  for (let i = 0; i <= ticks; i++) {
+    const v = max * i / ticks, y = f.padT + f.ph - (v / max) * f.ph;
+    g.strokeStyle = C.grid; g.lineWidth = 1; g.beginPath(); g.moveTo(f.padL, Math.round(y) + .5); g.lineTo(f.padL + f.pw, Math.round(y) + .5); g.stroke();
+    g.fillStyle = C.axis; g.fillText(fmt(v), f.padL - 5, y);
+  }
+}
+function xLabels(f, y) {
+  const g = f.g; g.fillStyle = C.axis; g.font = "10.5px " + css("--mono"); g.textBaseline = "alphabetic";
+  const step = f.pw < 330 ? 60 : 30;
+  for (let s = 0; s <= SPAN; s += step) { g.textAlign = s === SPAN ? "right" : s === 0 ? "left" : "center"; g.fillText(s === SPAN ? "now" : `−${SPAN - s}s`, f.X(f.t0 + s), y); }
+}
+function showTip(st, html, x, y) {
+  const t = st.tip; t.innerHTML = html; t.style.display = "block";
+  const w = t.offsetWidth, h = t.offsetHeight, W = st.el.clientWidth;
+  t.style.left = Math.min(Math.max(4, x + 12), W - w - 4) + "px";
+  t.style.top = Math.max(2, y - h - 8) + "px";
+}
+function crosshair(f, x) { f.g.strokeStyle = "rgba(232,236,242,.35)"; f.g.lineWidth = 1; f.g.beginPath(); f.g.moveTo(Math.round(x) + .5, f.padT); f.g.lineTo(Math.round(x) + .5, f.padT + f.ph); f.g.stroke(); }
+const ago = (t) => `${Math.max(0, now() - t).toFixed(0)} s ago`;
+function nearest(arr, f, x) {
+  let best = null, bd = 1e9;
+  for (const p of arr) { if (p.t < f.t0) continue; const d = Math.abs(f.X(p.t) - x); if (d < bd) { bd = d; best = p; } }
+  return bd < 24 ? best : null;
+}
+function render(st) { if (st.draw) st.draw(st); }
+
+// --- frames per window, stacked by verdict
+const KINDS = [["ok", "Verified", "good"], ["lost", "Lost", "lost"], ["bad", "Tag failed / malformed", "critical"], ["rep", "Replay / old key", "serious"]];
+const pTimeline = setup("p-timeline");
+pTimeline.draw = (st) => {
+  const f = frame(st, 34, 8, 6, 4); if (!f) return;
+  const max = niceMax(Math.max(10, ...windows.map((w) => w.total)), 3);
+  bandsOn(f, f.padT, f.ph);
+  yGrid(f, max, (v) => v.toFixed(0));
+  const g = f.g, bw = Math.max(2, f.pw / SPAN - 2), Y = (n) => f.padT + f.ph - n / max * f.ph;
+  for (const w of windows) {
+    if (w.t < f.t0) continue;
+    let acc = 0; const x = f.X(w.t) - bw;
+    for (const [k, , c] of KINDS) {
+      if (!w[k]) continue;
+      const y1 = Y(acc + w[k]), y0 = Y(acc);
+      g.fillStyle = C[c];
+      const h = Math.max(1, y0 - y1 - (acc ? 1 : 0));        // 1 px surface gap between stacked segments
+      if (acc === 0) { g.beginPath(); g.roundRect(x, y1, bw, y0 - y1, [2, 2, 0, 0]); g.fill(); }
+      else g.fillRect(x, y1, bw, h);
+      acc += w[k];
     }
   }
-  // protection level as a step line on its own scale (E0 bottom .. E4 top of the band)
-  const MY = (m) => 8 + plotH * 0.18 - (MODES.indexOf(m) / 5) * plotH * 0.16;
-  g.strokeStyle = "#4C3FBF"; g.lineWidth = 2.5; g.beginPath();
-  let prevY = null;
-  for (const s of series) {
-    if (s.t < x0) continue;
-    const x = X(s.t), y = MY(s.mode);
-    if (prevY === null) g.moveTo(x, y); else { g.lineTo(x, prevY); g.lineTo(x, y); }
-    prevY = y;
+  if (st.hover) {
+    const w = nearest(windows, f, st.hover.x);
+    if (w) {
+      crosshair(f, f.X(w.t) - bw / 2);
+      showTip(st, `<div class="t">${ago(w.t)} · ${w.mode}${w.attacks ? " · attack: " + w.attacks : ""}</div>` +
+        KINDS.map(([k, n, c]) => `<div class="r"><i style="--c:${C[c]}"></i>${n}<b>${w[k]}</b></div>`).join(""), st.hover.x, st.hover.y);
+    } else st.tip.style.display = "none";
   }
-  g.stroke();
-  if (prevY !== null) { g.fillStyle = "#4C3FBF"; g.fillText("E5", padL + 4, MY("E5") + 4); g.fillText("E0", padL + 4, MY("E0") + 4); }
+};
+// --- protection level strip, aligned in time
+const pProt = setup("p-prot");
+pProt.draw = (st) => {
+  const f = frame(st, 34, 8, 4, 15); if (!f) return;
+  const g = f.g, MY = (m) => f.padT + f.ph - MODES.indexOf(m) / 5 * f.ph;
+  bandsOn(f, f.padT, f.ph);
+  g.font = "10px " + css("--mono"); g.textAlign = "right"; g.textBaseline = "middle"; g.fillStyle = C.axis;
+  for (const m of ["E0", "E2", "E5"]) { g.fillText(m, f.padL - 5, MY(m)); g.strokeStyle = C.grid; g.beginPath(); g.moveTo(f.padL, Math.round(MY(m)) + .5); g.lineTo(f.padL + f.pw, Math.round(MY(m)) + .5); g.stroke(); }
+  const pts = windows.filter((w) => w.t >= f.t0);
+  if (pts.length) {
+    g.beginPath(); g.moveTo(f.X(pts[0].t), MY(pts[0].mode));
+    for (let i = 1; i < pts.length; i++) { g.lineTo(f.X(pts[i].t), MY(pts[i - 1].mode)); g.lineTo(f.X(pts[i].t), MY(pts[i].mode)); }
+    g.lineTo(f.padL + f.pw, MY(pts[pts.length - 1].mode));
+    g.lineTo(f.padL + f.pw, f.padT + f.ph); g.lineTo(f.X(pts[0].t), f.padT + f.ph); g.closePath();
+    g.fillStyle = "rgba(144,133,233,.12)"; g.fill();
+    g.beginPath(); g.moveTo(f.X(pts[0].t), MY(pts[0].mode));
+    for (let i = 1; i < pts.length; i++) { g.lineTo(f.X(pts[i].t), MY(pts[i - 1].mode)); g.lineTo(f.X(pts[i].t), MY(pts[i].mode)); }
+    g.lineTo(f.padL + f.pw, MY(pts[pts.length - 1].mode));
+    g.strokeStyle = C.prot; g.lineWidth = 2; g.lineJoin = "round"; g.stroke();
+  }
+  xLabels(f, f.H - 2);
+  if (st.hover) {
+    const w = nearest(windows, f, st.hover.x);
+    if (w) { crosshair(f, f.X(w.t)); showTip(st, `<div class="t">${ago(w.t)}</div><div class="r"><i style="--c:${C.prot}"></i>Protection<b>${w.mode}</b></div><div class="r">${MODE_TEXT[w.mode]}</div>`, st.hover.x, st.hover.y); }
+    else st.tip.style.display = "none";
+  }
+};
+// --- the three small single-series charts
+function lineChart(id, data, key, color, fmt, unit, fixedMax) {
+  const st = setup(id);
+  st.draw = (st) => {
+    const f = frame(st, 40, 6, 6, 15); if (!f) return;
+    const pts = data().filter((p) => p.t >= f.t0 && p[key] != null);
+    const max = fixedMax || niceMax(Math.max(1e-6, ...pts.map((p) => p[key])) * 1.05, 2);
+    bandsOn(f, f.padT, f.ph);
+    yGrid(f, max, (v) => fmt(v), 2);
+    xLabels(f, f.H - 2);
+    const g = f.g, Y = (v) => f.padT + f.ph - v / max * f.ph;
+    if (pts.length > 1) {
+      const grad = g.createLinearGradient(0, f.padT, 0, f.padT + f.ph);
+      grad.addColorStop(0, color + "55"); grad.addColorStop(1, color + "00");
+      g.beginPath(); g.moveTo(f.X(pts[0].t), f.padT + f.ph);
+      for (const p of pts) g.lineTo(f.X(p.t), Y(p[key]));
+      g.lineTo(f.X(pts[pts.length - 1].t), f.padT + f.ph); g.closePath(); g.fillStyle = grad; g.fill();
+      g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(f.X(p.t), Y(p[key])) : g.moveTo(f.X(p.t), Y(p[key])));
+      g.strokeStyle = color; g.lineWidth = 2; g.lineJoin = "round"; g.stroke();
+      const last = pts[pts.length - 1];
+      g.beginPath(); g.arc(f.X(last.t), Y(last[key]), 4, 0, 7); g.fillStyle = color; g.fill();
+      g.lineWidth = 2; g.strokeStyle = C.panel; g.stroke();
+    }
+    if (st.hover) {
+      const p = nearest(pts, f, st.hover.x);
+      if (p) {
+        crosshair(f, f.X(p.t));
+        g.beginPath(); g.arc(f.X(p.t), Y(p[key]), 4.5, 0, 7); g.fillStyle = color; g.fill(); g.lineWidth = 2; g.strokeStyle = C.panel; g.stroke();
+        showTip(st, `<div class="t">${ago(p.t)}${p.mode ? " · " + p.mode : ""}</div><div class="r"><i style="--c:${color}"></i>${unit}<b>${fmt(p[key], true)}</b></div>`, st.hover.x, st.hover.y);
+      } else st.tip.style.display = "none";
+    }
+  };
+  return st;
 }
-setInterval(drawTimeline, 1000);
-window.addEventListener("resize", drawTimeline);
+const pThreat = lineChart("p-threat", () => windows, "threat", C.threat, (v, full) => full ? v.toFixed(2) : (v === 0 || v === 1 ? v.toFixed(0) : v.toFixed(1)), "Evidence (0–1)", 1);
+const pSize = lineChart("p-size", () => frames, "kb", C.size, (v, full) => full ? v.toFixed(2) + " kB" : (v === 0 ? "0" : v.toFixed(v < 10 ? 1 : 0)), "Frame size");
+const pLat = lineChart("p-lat", () => frames, "lat", C.lat, (v, full) => full ? v.toFixed(0) + " ms" : v.toFixed(0), "Latency");
+const ALL = [pTimeline, pProt, pThreat, pSize, pLat];
+function drawAll() { trim(); ALL.forEach(render); }
+setInterval(drawAll, 1000);
+window.addEventListener("resize", drawAll);
 
-// ---------- events
-let lastMode = null, lastEpoch = null, lastPolicy = null, lastFrame = 0;
+// ---------------------------------------------------------------- events
+let lastMode = null, lastPolicy = null, lastFrame = 0, nOk = 0, nRej = 0, nAtk = 0, nRekey = 0, pending = null;
 function onEvent(ev) {
   const k = `${ev.src}.${ev.kind}`;
-  if (k === "sender.start") { $("f-session").textContent = ev.session; floorMode = ev.mode; log(`Sender started: ${ev.size[0]}×${ev.size[1]}, ${ev.encoder} encoder, ${ev.policy} policy`); }
+  if (k === "sender.start") {
+    $("f-session").textContent = ev.session; floorMode = ev.mode; drawLadder(lastMode);
+    document.querySelector(".views").style.setProperty("--ar", `${ev.size[0]} / ${ev.size[1]}`);
+    log(`Sender started: ${ev.size[0]}×${ev.size[1]}, ${ev.encoder} encoder, ${ev.policy} policy`);
+  }
   if (k === "sender.window") {
     lastFrame = Date.now();
     $("conn").className = "live"; $("conn").textContent = "Link live";
     $("f-session").textContent = ev.session; $("f-epoch").textContent = ev.epoch; $("f-policy").textContent = ev.policy;
     $("f-fps").textContent = ev.fps.toFixed(1);
     $("threat").style.width = (ev.threat * 100) + "%"; $("threat-v").textContent = ev.threat.toFixed(2);
+    $("n-threat").textContent = ev.threat.toFixed(2);
     $("k-enc").textContent = (ev.enc_fraction * 100).toFixed(1) + "% of payload";
     $("k-encms").textContent = ev.encode_ms + " ms/frame";
     $("k-hb").textContent = ev.hb_age.toFixed(1) + " s ago";
     $("reason").textContent = (ev.manual ? `Manual override ${ev.manual}. ` : "") + ev.reason;
+    $("wire-mode").textContent = ev.mode;
     drawLadder(ev.mode);
     if ($("policy").value !== ev.policy && document.activeElement !== $("policy")) $("policy").value = ev.policy;
-    if (lastMode && ev.mode !== lastMode) log(`Protection ${lastMode} → ${ev.mode}: ${ev.reason}`, "def");
+    if (lastMode && ev.mode !== lastMode) {
+      log(`Protection ${lastMode} → ${ev.mode}: ${ev.reason}`, "def");
+      // reaction time: attack start -> first escalation after it (both clocks on this machine)
+      if (pending && MODES.indexOf(ev.mode) > MODES.indexOf(lastMode)) {
+        $("k-react").textContent = (ev.t - pending).toFixed(1) + " s"; pending = null;
+      }
+    }
     if (lastPolicy && ev.policy !== lastPolicy) log(`Policy changed to ${ev.policy}`, "def");
     lastMode = ev.mode; lastPolicy = ev.policy;
     const c = ev.counts;
-    series.push({ t: ev.t, ok: c.ok, lost: c.lost, bad: c.tag_fail + c.malformed, rep: c.replay + c.stale_epoch, mode: ev.mode,
-                  total: c.ok + c.lost + c.tag_fail + c.malformed + c.replay + c.stale_epoch });
-    while (series.length > 400) series.shift();
+    windows.push({ t: ev.t, ok: c.ok, lost: c.lost, bad: c.tag_fail + c.malformed, rep: c.replay + c.stale_epoch,
+                   total: c.ok + c.lost + c.tag_fail + c.malformed + c.replay + c.stale_epoch, mode: ev.mode,
+                   threat: ev.threat, attacks: [...running].join(", ") });
     if (c.fb_forged) log(`Rejected ${c.fb_forged} forged feedback message(s)`, "bad");
     if (c.fb_replay) log(`Rejected ${c.fb_replay} replayed feedback message(s)`, "bad");
     if (c.junk > 50) log(`Receiver is being flooded: ${c.junk} junk datagrams in one second`, "bad");
@@ -444,24 +720,36 @@ function onEvent(ev) {
       Object.entries(pi.q || {}).map(([m, v]) => `<dt>Value of ${m}</dt><dd>${v.toFixed(3)}</dd>`).join("") +
       `<dt>Situations learned</dt><dd>${pi.contexts_known}</dd>` : "";
   }
-  if (k === "sender.rekey") { $("f-epoch").textContent = ev.epoch; log(`Rekeyed to epoch ${ev.epoch}: ${ev.reason}`, "def"); }
+  if (k === "sender.rekey") { nRekey++; $("k-rekey").textContent = nRekey; $("f-epoch").textContent = ev.epoch; log(`Rekeyed to epoch ${ev.epoch}: ${ev.reason}`, "def"); }
   if (k === "receiver.frame") {
     const ok = ev.verdict === "ok";
     pulse("w2", !ok);
     const b = $("rx-badge");
-    b.classList.remove("hidden");
     b.className = "badge" + (ok ? "" : " bad");
-    b.textContent = ok ? `Verified · frame ${ev.ctr} · ${ev.mode}` : `Rejected: ${ev.verdict}`;
-    if (!ok) { $("tile-rx").classList.add("flash-bad"); setTimeout(() => $("tile-rx").classList.remove("flash-bad"), 400); }
-    if (ok && ev.latency_ms != null) $("f-lat").textContent = ev.latency_ms + " ms";
+    b.textContent = ok ? `✓ Verified · #${ev.ctr} · ${ev.mode}` : `✕ Rejected: ${ev.verdict}`;
+    if (ok) {
+      nOk++; $("v-rx").classList.add("ok");
+      if (ev.latency_ms != null) { $("f-lat").textContent = ev.latency_ms + " ms"; $("n-lat").textContent = ev.latency_ms + " ms"; }
+      if (ev.bytes != null) { $("n-size").textContent = (ev.bytes / 1024).toFixed(1) + " kB"; $("foot-wire").textContent = `Valid JPEG, scrambled · ${(ev.bytes / 1024).toFixed(1)} kB`; }
+      frames.push({ t: ev.t, kb: ev.bytes != null ? ev.bytes / 1024 : null, lat: ev.latency_ms, mode: ev.mode });
+    } else {
+      nRej++; $("v-rx").classList.remove("ok"); $("v-rx").classList.add("flash-bad");
+      setTimeout(() => $("v-rx").classList.remove("flash-bad"), 400);
+    }
+    $("k-ok").textContent = nOk.toLocaleString(); $("k-rej").textContent = nRej.toLocaleString();
   }
   if (k === "receiver.session") log(`Receiver locked on to session ${ev.session}`);
   if (k === "receiver.epoch") log(`Receiver moved to key epoch ${ev.epoch}; old key erased`);
-  if (k === "channel.stats") { pulse("w1", false); }
-  if (k === "channel.attack_start") { running.add(ev.type); bands.push({ type: ev.type, start: ev.t }); markAttacks(); log(`Attack started: ${ev.type} for ${ev.duration} s`, "atk"); }
+  if (k === "channel.stats") { pulse("w1", false); $("k-hit").textContent = ((ev.attacked || 0) + (ev.dropped || 0) + (ev.injected || 0)).toLocaleString(); }
+  if (k === "channel.attack_start") {
+    running.add(ev.type); bands.push({ type: ev.type, start: ev.t }); markAttacks();
+    nAtk++; $("k-atk").textContent = nAtk; if (!pending) pending = ev.t;
+    log(`Attack started: ${ev.type} for ${ev.duration} s`, "atk");
+  }
   if (k === "channel.attack_end") {
     running.delete(ev.type); markAttacks();
     const b = [...bands].reverse().find((x) => x.type === ev.type && !x.end); if (b) b.end = ev.t;
+    if (!running.size) pending = null;
     log(`Attack ended: ${ev.type}`, "atk");
   }
   if (k === "channel.impair") log(`Network: ${(ev.loss * 100).toFixed(0)}% loss, ${ev.delay_ms} ms delay`);
@@ -469,18 +757,18 @@ function onEvent(ev) {
 function connect() {
   const es = new EventSource("/events");
   es.onmessage = (m) => { try { onEvent(JSON.parse(m.data)); } catch (e) { console.error(e); } };
-  es.onerror = () => { $("conn").className = "dead"; $("conn").textContent = "Dashboard lost the event stream, retrying"; };
+  es.onerror = () => { $("conn").className = ""; $("conn").textContent = "Dashboard lost the event stream, retrying"; };
 }
 setInterval(() => {
-  if (lastFrame && Date.now() - lastFrame > 4000) { $("conn").className = "dead"; $("conn").textContent = "No reports from the sender"; }
+  if (lastFrame && Date.now() - lastFrame > 4000) { $("conn").className = ""; $("conn").textContent = "No reports from the sender"; }
 }, 1000);
 fetch("/api/state").then((r) => r.json()).then((s) => {
   floorMode = s.config.sender.mode; drawLadder(null);
   $("policy").value = s.config.sender.policy;
-  $("loss").value = Math.round(s.config.channel.loss * 100); $("delay").value = s.config.channel.delay_ms; sendNetLabels();
+  $("loss").value = Math.round(s.config.channel.loss * 100); $("delay").value = s.config.channel.delay_ms; netLabels();
 }).catch(() => {});
-function sendNetLabels() { $("loss-v").textContent = $("loss").value + "%"; $("delay-v").textContent = $("delay").value + " ms"; }
 connect();
+drawAll();
 </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 
 | File | Produced by | Run |
 |---|---|---|
-| `vivado_results.json`, `vivado_tables.md` | `vivado/parse_reports.py` on the reports in `vivado_results_20261017_0919.zip` | Vivado 2026.1, Windows laptop, 17 Oct 2026, run 6 of `run_vivado_day.py` (`--steps xsim ooc lanes bd bd_lanes parse --maxw 9 10 --periods 8.0 6.667 --jobs 2`), 20/20 steps passed |
+| `vivado_results.json`, `vivado_tables.md` | `vivado/run_vivado_day.py parse` on the reports in `vivado_results_20261017_0919.zip` | Vivado 2026.1, Windows laptop, 17 Oct 2026, run 6 of `run_vivado_day.py` (`--steps xsim ooc lanes bd bd_lanes parse --maxw 9 10 --periods 8.0 6.667 --jobs 2`), 20/20 steps passed |
 
 Run 6 = RTL after the zig-zag/RLE pipelining and the byte-FIFO register (docs/TESTING.md bug #27) and
 the block-design clock fix (#28). Designs in the snapshot:
@@ -13,7 +13,7 @@ the block-design clock fix (#28). Designs in the snapshot:
   (LOG_MAXW = 10) at 100 MHz, out of context;
 * `overlay`: the complete PYNQ-Z2 system (Zynq PS + AXI DMA + v2 encoder), FCLK0 = 100 MHz;
 * `overlay_lanes`: the same with the 2-lane encoder and a 64-bit pixel DMA (reports from
-  `future_work/board/overlay/lanes/`; parsed with `vivado/parse_reports.py <...>/overlay/lanes`).
+  `future_work/board/overlay/lanes/`; parsed with `vivado/run_vivado_day.py parse <...>/overlay/lanes`).
 
 Out of context = I/O delays of 20 % of the period. Power is Vivado's vectorless estimate
 (confidence: medium); the overlay power includes the Zynq PS (about 1.5 W) and is not the encoder's.

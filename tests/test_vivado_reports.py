@@ -1,10 +1,10 @@
-"""vivado/parse_reports.py on report text in Vivado's format (we have no Vivado here)."""
+"""vivado/run_vivado_day.py parse on report text in Vivado's format (we have no Vivado here)."""
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "vivado"))
-import parse_reports as pr  # noqa: E402
+import run_vivado_day as pr  # noqa: E402
 
 UTIL = """
 1. Slice Logic

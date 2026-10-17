@@ -14,7 +14,7 @@
 #
 # STATUS: first run in Vivado 2026.1 on 14 Oct 2026 stopped at create_bd_cell (header file
 # not in the project, fixed above); the steps after it have still never run. Expect to fix
-# small things (an IP version, a pin name). Guide: docs/VIVADO_ONE_DAY.md step 4. Paste the FIRST
+# small things (an IP version, a pin name). Guide: docs/VIVADO_ONE_DAY.md §5. Paste the FIRST
 # "ERROR:" line of vivado.log into Claude together with docs/TEAM_CONTEXT.md.
 #
 # What it builds:

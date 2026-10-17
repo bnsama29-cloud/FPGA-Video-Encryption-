@@ -1,12 +1,12 @@
 # Creates a Vivado project with every RTL source and the XSim testbench, then
 # launches the behavioural simulation (waveforms in the GUI).
-#   python vivado/gen_xsim_vectors.py                 (first, from the repo root)
+#   python vivado/run_vivado_day.py vectors                 (first, from the repo root)
 #   vivado -mode gui -source vivado/xsim_project.tcl  (from the repo root; no spaces in the path)
 # Project goes to vivado/proj/ (not in git). Re-running recreates it.
 set root [file normalize [file join [file dirname [info script]] ..]]
 set vec  [file join $root vivado xsim_work]
 if {![file exists [file join $vec commands.txt]]} {
-    error "No vectors in $vec -- run: python vivado/gen_xsim_vectors.py"
+    error "No vectors in $vec -- run: python vivado/run_vivado_day.py vectors"
 }
 create_project secure_jpeg_sim [file join $root vivado proj] -part xc7z020clg400-1 -force
 add_files [glob [file join $root rtl *.v]]

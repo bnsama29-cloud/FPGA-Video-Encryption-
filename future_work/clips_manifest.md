@@ -14,7 +14,7 @@ Use this table to check that everybody has the same files. For the paper, descri
 
 ## Open clips (used from 14 Oct, citable)
 
-Downloaded by `future_work/kaggle/kaggle_remaining.py`. All CC-BY 3.0, credit as below in the paper:
+Downloaded by `future_work/kaggle/kaggle_runs.py (JOB = "remaining")`. All CC-BY 3.0, credit as below in the paper:
 
 * Big Buck Bunny, (c) copyright 2008 Blender Foundation, www.bigbuckbunny.org
 * Elephants Dream, (c) Blender Foundation / orange.blender.org (CC BY; P5 training corpus, 16 Oct 2026)

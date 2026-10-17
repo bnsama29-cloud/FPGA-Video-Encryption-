@@ -150,10 +150,10 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
   cycles for encryption.
 - **Vivado testbench.** Passes in Icarus.
 - **System simulation.** Feedback, ratchet, defence, 11 attacks and the dashboard.
-- **The complete simulation result set.** One Kaggle run on 14 Oct (`future_work/kaggle/kaggle_complete.py`):
+- **The complete simulation result set.** One Kaggle run on 14 Oct (`future_work/kaggle/kaggle_runs.py (JOB = "complete")`):
   3 repeats of every attack suite, 10 seeds of the policy study, 4 real clips, and a learned attack
   on a GPU. The snapshot is in `paper/data/`; every table is in **`paper/data/paper_tables.md`**.
-- **The open-data run** (14 Oct, `future_work/kaggle/kaggle_remaining.py`, 39/39 steps): Sintel trailer,
+- **The open-data run** (14 Oct, `future_work/kaggle/kaggle_runs.py (JOB = "remaining")`, 39/39 steps): Sintel trailer,
   Tears of Steel (CC BY 3.0) and Kodak; standard image-encryption metrics; E5 restart interval
   N = 1–32 with the non-zero counting attack; U-Net trained on 3 clips and tested on 3 others; the
   attack suite with an open clip. Snapshot in `paper/data/extra/` (its README gives the provenance).
