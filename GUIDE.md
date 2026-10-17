@@ -151,6 +151,8 @@ limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\bo
 
 ### 4.2 Board (critical path, deadline 12 Nov) ⏳
 
+Step by step, from the SD card to every number below: **`docs/BOARD_BRINGUP.md`**.
+
 | # | Task | Owner | Time | How | Done when |
 |---|---|---|---|---|---|
 | A1 | **Bit-exact gate on silicon** | 1 | ½ day | `sudo -E python3 -m future_work.board.first_contact --sizes 320x240 640x480` | all modes E0–E4 byte-identical with the model |
@@ -158,7 +160,7 @@ limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\bo
 | A3 | ARM baseline on the same board | 2 | ½ day | `python3 -m future_work.baselines.bench_software_codecs --sizes 320x240 640x480 --frames 30` | `baselines_<host>.md` |
 | A4 | Power and energy per frame | 1 + 5 | 1 day | USB meter: idle / ARM / FPGA per mode, 30 s averages → `future_work/baselines/power_template.csv` → `python -m future_work.baselines.energy_table <csv>` | mJ/frame, FPGA vs ARM |
 | A5 | Live link board → laptop | 3 + 4 | 1 day | board: `python3 -m future_work.board.board_sender --bitfile ... --set link.host=<laptop> --set link.bind_host=0.0.0.0`; laptop: `python -m link.run_all --no-sender --set link.bind_host=0.0.0.0 --set link.sender_host=<board>` | the dashboard shows the board's stream |
-| A6 | Attacks against the board | 3 | 1 day | `experiments/scenario.py` with `full_suite.json` and `benign.json`, 3 runs each | "on hardware" row in the reaction table |
+| A6 | Attacks against the board | 3 | 1 day | `experiments/scenario.py --external-sender <BOARD IP>` with `full_suite.json` and `benign.json`, 3 runs each (docs/BOARD_BRINGUP.md §8) | "on hardware" row in the reaction table |
 | A7 | Webcam on the board | 4 | ½ day | `--set sender.source=webcam:0` | live demo |
 | A8 | Demo video (2 min) | 4 | ½ day | calm → attack → detection → recovery | linked in the README (not in git) |
 

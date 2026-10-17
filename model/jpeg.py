@@ -293,19 +293,26 @@ def selective_encrypt_jpeg(plain_jpeg, key, session_id, frame_ctr, mode):
 def replacement_attack_jpeg(jpeg):
     """Best picture an eavesdropper WITHOUT the key gets from a protected frame:
     the encrypted values are replaced by fixed guesses (selective.replacement_attack)
-    and re-encoded as a normal JPEG. For E5 the MCUs stay in their shuffled order.
-    Works on any frame of this format; returns JPEG bytes."""
+    and re-encoded as a normal JPEG. For E5 the MCUs stay in their shuffled order; a contract-v3
+    frame keeps its restart segments (one per MCU row). Works on any frame of this format;
+    returns JPEG bytes."""
     p = parse_jpeg(jpeg)
     sec = p.secure()
     mode = MODE_NAME.get(sec[1], "E2") if sec else "E0"
     n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
     qy, qc = p.qtables()
+    v3 = bool(sec) and sec[0][4] == 3                # contract v3: one restart segment per MCU row
+    per_row = (p.width + 15) // 16
     if mode == "E0":
-        return build_jpeg(p.width, p.height, qy, qc, p.scan)
+        return build_jpeg(p.width, p.height, qy, qc, p.scan, restart_interval=per_row if v3 else 0)
     if MODES[mode].shuffle:
         syms = [s for seg in split_restart(p.scan) for s in huffman_decode(seg, 1)]
         segs, _ = encode_segments(replacement_attack(syms, mode))
         return build_jpeg(p.width, p.height, qy, qc, join_restart(segs), restart_interval=1)
+    if v3:
+        segs = [huffman_encode(replacement_attack(huffman_decode(seg, per_row), mode))[0]
+                for seg in split_restart(p.scan)]
+        return build_jpeg(p.width, p.height, qy, qc, join_restart(segs), restart_interval=per_row)
     scan, _ = huffman_encode(replacement_attack(huffman_decode(p.scan, n_mcu), mode))
     return build_jpeg(p.width, p.height, qy, qc, scan)
 

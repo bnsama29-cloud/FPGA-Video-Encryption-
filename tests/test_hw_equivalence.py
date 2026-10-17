@@ -198,3 +198,18 @@ def test_v3_version_byte_is_authenticated_and_e5_rejected():
         encode_frame(img, KEY, SID, 3, "E5", segmented=True)
     with pytest.raises(ValueError):
         hw.encode_frame_v3(img, 75, 5, KEY, 3, SID)
+
+
+def test_v3_eavesdropper_sees_exactly_what_it_sees_in_v2():
+    """The replacement attack (the dashboard's eavesdropper view, link/channel.py) on a contract-v3 frame
+    must decode, and give the same pixels as on the v2 frame: encrypted fields are replaced by fixed
+    guesses and clear fields are equal, so the restart segments must not change the picture. Before
+    17 Oct the attack decoded a v3 scan as one block and the eavesdropper view stayed empty."""
+    from model.jpeg import decode_pixels, encode_frame, replacement_attack_jpeg
+    key = bytes(range(16))
+    for kind in ("scene", "noise"):
+        img = make_image(96, 64, kind, 3)
+        for m in ("E0", "E1", "E2", "E3", "E4"):
+            a = decode_pixels(replacement_attack_jpeg(encode_frame(img, key, 7, 9, m).jpeg))
+            b = decode_pixels(replacement_attack_jpeg(encode_frame(img, key, 7, 9, m, segmented=True).jpeg))
+            assert np.array_equal(a, b), f"{kind} {m}: eavesdropper picture differs between v2 and v3"

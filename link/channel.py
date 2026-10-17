@@ -34,9 +34,8 @@ import threading
 import time
 from collections import deque
 
-from model.container import build_jpeg, parse_jpeg
-from model.entropy import huffman_decode, huffman_encode
-from model.selective import MODE_NAME, replacement_attack
+from model.container import parse_jpeg
+from model.jpeg import replacement_attack_jpeg
 
 from . import config, wire
 
@@ -167,17 +166,10 @@ class Channel:
             self.held = []
 
     def _attacker_view(self, jpeg):
-        """What an eavesdropper without the key can reconstruct (replacement attack)."""
+        """What an eavesdropper without the key can reconstruct (replacement attack,
+        model/jpeg.py :: replacement_attack_jpeg: contracts v2 and v3, every level)."""
         try:
-            p = parse_jpeg(jpeg)
-            sec = p.secure()
-            mode = MODE_NAME.get(sec[1], "E2") if sec else "E0"
-            n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
-            syms = huffman_decode(p.scan, n_mcu)
-            guess = replacement_attack(syms, mode) if mode != "E0" else syms
-            scan, _ = huffman_encode(guess)
-            qy, qc = p.qtables()
-            self.bus.preview("attacker", build_jpeg(p.width, p.height, qy, qc, scan))
+            self.bus.preview("attacker", replacement_attack_jpeg(jpeg))
         except (ValueError, IndexError, KeyError):
             pass
 
