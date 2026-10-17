@@ -2,6 +2,7 @@
 numpy>=1.24
 pillow>=10.0
 scikit-image>=0.21
+scipy>=1.10             # HiGHS LP in experiments/sign_recovery.py
 opencv-python>=4.8
 matplotlib>=3.7
 cryptography>=42        # AES-GCM / ChaCha20 baselines in experiments/benchmark_crypto.py
