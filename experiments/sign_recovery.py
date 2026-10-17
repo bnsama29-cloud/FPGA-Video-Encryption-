@@ -346,7 +346,8 @@ def main():
         for key in ("ssim_lp", "edge_lp", "ssim_repl", "edge_repl", "ssim_nokey", "edge_nokey", "sign_acc"):
             vals = [r[key] for r in rs if key in r]
             if vals:
-                m, lo, hi = bootstrap_ci(vals)
+                m = float(np.mean(vals))
+                lo, hi = bootstrap_ci(vals)
                 s[key] = dict(mean=round(m, 3), lo=round(lo, 3), hi=round(hi, 3))
         s["frames"] = len(rs)
         s["best_attack_edge"] = max(s["edge_lp"]["mean"], s["edge_repl"]["mean"], s["edge_nokey"]["mean"])
