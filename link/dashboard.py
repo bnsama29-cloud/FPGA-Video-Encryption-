@@ -169,12 +169,23 @@ def make_handler(hub):
     return H
 
 
+class QuietServer(ThreadingHTTPServer):
+    """A browser tab that closes or reloads drops its open video/event streams. Windows reports that
+    as WinError 10053/10054; it is normal, so it is not printed as an error."""
+
+    def handle_error(self, request, client_address):
+        import sys
+        if isinstance(sys.exc_info()[1], (ConnectionAbortedError, ConnectionResetError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main():
     cfg, _ = config.from_args(__doc__)
     hub = Hub(cfg)
     threading.Thread(target=hub.loop, daemon=True).start()
     port = cfg["dashboard"]["http_port"]
-    srv = ThreadingHTTPServer(("0.0.0.0", port), make_handler(hub))
+    srv = QuietServer(("0.0.0.0", port), make_handler(hub))
     srv.daemon_threads = True
     print(f"dashboard: http://localhost:{port}   (bus port {cfg['link']['bus'][0]})")
     try:
