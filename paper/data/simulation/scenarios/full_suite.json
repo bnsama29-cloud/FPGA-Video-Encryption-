@@ -1,0 +1,18 @@
+{
+  "name": "full_suite",
+  "about": "~5 minutes: every attack once, 25 s apart (detection + reaction table for the paper).",
+  "end_s": 300,
+  "steps": [
+    {"at": 12,  "attack": "bitflip",   "duration": 6},
+    {"at": 37,  "attack": "downgrade", "duration": 6},
+    {"at": 62,  "attack": "splice",    "duration": 6},
+    {"at": 87,  "attack": "inject",    "duration": 6},
+    {"at": 112, "attack": "replay",    "duration": 6},
+    {"at": 137, "attack": "delay",     "duration": 4},
+    {"at": 162, "attack": "drop",      "duration": 6},
+    {"at": 187, "attack": "flood",     "duration": 6},
+    {"at": 212, "attack": "fb_drop",   "duration": 6},
+    {"at": 237, "attack": "fb_forge",  "duration": 6},
+    {"at": 262, "attack": "fb_replay", "duration": 6}
+  ]
+}

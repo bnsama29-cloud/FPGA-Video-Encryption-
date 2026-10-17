@@ -1287,6 +1287,152 @@ def misc():
         shutil.copy(src, FIG / "fig_visual_grid.pdf")
 
 
+# ---------------------------------------------------------------- two peculiar cases (protocol section)
+GOOD, CRIT, SERIOUS, LOSTC, PROT = "#0ca30c", "#d03b3b", "#ec835a", "#b5b3aa", "#6250d6"   # status roles + violet slot
+
+
+def _windows(path):
+    import csv
+    return [{k: (v if k == "mode" else float(v)) for k, v in r.items()} for r in csv.DictReader(open(path))]
+
+
+def peculiar_cases():
+    """Case 1: three attacks with three different kinds of evidence (full_suite runs, windows.csv):
+    a bit flip fails the tag at once, holding frames back produces rejections only after the attack
+    ends, silencing feedback produces no rejected frame at all. Case 2: benign packet loss destroys
+    frames out of proportion (a frame is several UDP fragments) and still never escalates, because the
+    policy calls 5-90 % frame loss a bad network (link/defence.py :: Window.features)."""
+    import csv
+    suite = sorted(SIM.glob("runs/full_suite_threshold_rep*"))
+    benign = sorted(SIM.glob("runs/benign_threshold_rep*"))
+    if not suite or not benign:
+        return
+    plt = _style()
+    from matplotlib.patches import Patch
+    # ---------------- case 1: per-attack numbers over every run
+    eps = {}
+    for d in suite:
+        for r in csv.DictReader(open(d / "episodes.csv")):
+            eps.setdefault(r["type"], []).append(r)
+    f = lambda t, k: [float(r[k]) for r in eps[t] if r[k] not in ("", None)]
+    macro("CaseRuns", NUMWORD.get(len(suite), str(len(suite))))
+    macro("CaseBitflipFirstRej", f"{st.mean(f('bitflip', 'rx_first_rejection_s')):.2f}")
+    macro("CaseBitflipAware", f"{st.mean(f('bitflip', 'sender_aware_s')):.2f}")
+    macro("CaseDelayFirstRej", f"{st.mean(f('delay', 'rx_first_rejection_s')):.1f}")
+    macro("CaseDelayDuration", f"{st.mean(f('delay', 'duration')):.0f}")
+    macro("CaseDelayAware", f"{st.mean(f('delay', 'sender_aware_s')):.1f}")
+    macro("CaseDelayRejected", f"{min(f('delay', 'rx_rejected')):.0f}--{max(f('delay', 'rx_rejected')):.0f}")
+    macro("CaseFbdropRejected", f"{max(f('fb_drop', 'rx_rejected')):.0f}")
+    macro("CaseFbdropAware", f"{st.mean(f('fb_drop', 'sender_aware_s')):.1f}")
+    macro("CaseFbdropLeak", f"{st.mean(f('fb_drop', 'mean_leakage_during')):.2f}")
+    macro("CaseDropAware", f"{st.mean(f('drop', 'sender_aware_s')):.1f}")
+    lk = [st.mean(f(t, "mean_leakage_during")) for t in eps]
+    assert max(lk) == st.mean(f("fb_drop", "mean_leakage_during")), "fb_drop is no longer the leakiest attack"
+    # ---------------- case 1 figure: one run, 8 s before to 14 s after each start
+    W = _windows(suite[0] / "windows.csv")
+    start = {r["type"]: float(r["start"]) for r in csv.DictReader(open(suite[0] / "episodes.csv"))}
+    t_run0 = min(start.values()) - 12.0                # the scenario's first attack is at 12 s
+    cases = [("bitflip", "Bit flip in the scan"), ("delay", "Frames held back"), ("fb_drop", "Feedback silenced")]
+    tot = lambda w: sum(w[k] for k in ("ok", "lost", "tag_fail", "malformed", "stale_epoch", "replay"))
+    ymax = 5 * np.ceil(max(tot(w) for kind, _ in cases for w in W
+                           if -8 <= w["t"] - (start[kind] - t_run0) <= 14) / 5 + 0.2)
+    fig = plt.figure(figsize=(7.0, 2.25))
+    gs = fig.add_gridspec(2, 3, height_ratios=[3.2, 1], hspace=0.12, wspace=0.12)
+    for j, (kind, title) in enumerate(cases):
+        a0 = start[kind] - t_run0
+        dur = st.mean(f(kind, "duration"))
+        sel = [w for w in W if a0 - 8 <= w["t"] <= a0 + 14]
+        x = [w["t"] - a0 for w in sel]
+        ax, am = fig.add_subplot(gs[0, j]), fig.add_subplot(gs[1, j])
+        for a in (ax, am):
+            a.axvspan(0, dur, color="#eda100", alpha=0.16, lw=0)
+            a.axvline(0, color="#c98500", lw=0.8)
+        bottom = np.zeros(len(sel))
+        for key, col, lab in ((("ok",), GOOD, "verified"), (("lost",), LOSTC, "lost"),
+                              (("tag_fail", "malformed", "stale_epoch", "replay"), CRIT, "rejected (tag, replay)")):
+            v = np.array([sum(w[k] for k in key) for w in sel])
+            ax.bar(x, v, bottom=bottom, width=0.8, color=col, edgecolor=SURFACE, lw=0.4, label=lab)
+            bottom += v
+        ax.set_ylim(0, ymax)
+        ax.set_title(title, fontsize=8, pad=3)
+        ax.set_xticklabels([])
+        _clean(ax)
+        lv = [MODES.index(w["mode"]) for w in sel]
+        am.step(x, lv, where="post", color=PROT, lw=1.6)
+        am.set_ylim(1.3, 5.7)
+        am.set_yticks([2, 5]); am.set_yticklabels(["E2", "E5"])
+        am.set_xlabel("seconds after the attack starts", fontsize=7)
+        _clean(am, grid=None)
+        if j:
+            ax.set_yticklabels([]); am.set_yticklabels([])
+        else:
+            ax.set_ylabel("frames / s")
+            am.set_ylabel("level", fontsize=7)
+        ax.set_xlim(-8.5, 14.5); am.set_xlim(-8.5, 14.5)
+    h, l = fig.axes[0].get_legend_handles_labels()
+    fig.legend(h + [Patch(color="#eda100", alpha=0.3)], l + ["attack running"], loc="upper center", ncol=5,
+               frameon=False, fontsize=7, bbox_to_anchor=(0.5, 1.07))
+    fig.savefig(FIG / "fig_case_evidence.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+    # ---------------- case 2: frame loss against packet loss, benign runs
+    sc = J(SIM / "scenarios" / "benign.json")           # the steps the benign runs used (copy in paper/data)
+    segs, prev = [], dict(loss=0.0, delay_ms=5, jitter_ms=2, reorder=0.0)
+    steps = sc["steps"]
+    for i, s_ in enumerate(steps):
+        prev = {**prev, **s_["impair"]}
+        end = steps[i + 1]["at"] if i + 1 < len(steps) else sc["end_s"]
+        segs.append((s_["at"], end, dict(prev)))
+    pure = lambda c: c["reorder"] == 0            # delay and jitter do not destroy packets; reordering can
+    rows = []                                          # (segment index, packet loss, frame loss per window)
+    for d in benign:
+        Wb = _windows(d / "windows.csv")
+        for i, (a, b, c) in enumerate(segs):
+            for w in Wb:
+                n = w["ok"] + w["lost"]
+                if a + 1 <= w["t"] < b and n:
+                    rows.append((i, c["loss"], w["lost"] / n))
+    seg_mean = {i: st.mean(v for k, _, v in rows if k == i) for i in range(len(segs))}
+    # implied fragments per frame from the loss-only segments: frame loss = 1 - (1 - p)^n
+    fit = [(segs[i][2]["loss"], seg_mean[i]) for i in seg_mean if pure(segs[i][2]) and segs[i][2]["loss"] > 0]
+    n_frag = st.mean(np.log(1 - L) / np.log(1 - p) for p, L in fit)
+    six = max(fit)
+    macro("CaseSixPct", f"{100 * six[0]:.0f}")
+    macro("CaseSixFrameLoss", f"{100 * six[1]:.0f}")
+    macro("CaseAmplification", f"{six[1] / six[0]:.0f}")
+    macro("CaseFragments", f"{n_frag:.1f}")
+    macro("CaseBenignMaxThreat", f"{max(w['threat'] for d in benign for w in _windows(d / 'windows.csv')):.2f}")
+    fig, ax = plt.subplots(figsize=(3.4, 2.15))
+    ax.axhspan(0, 5, color=GOOD, alpha=0.07, lw=0)
+    ax.axhspan(5, 90, color="#eda100", alpha=0.07, lw=0)
+    ax.axhspan(90, 104, color=CRIT, alpha=0.10, lw=0)
+    for x_, y, txt, ha in ((7.3, 2.2, "normal", "right"), (7.3, 84, "degraded network: reported, no escalation", "right"),
+                           (7.3, 96.5, "suppressed: treated as jamming", "right")):
+        ax.text(x_, y, txt, fontsize=6.3, color=INK2, va="center", ha=ha)
+    pp = np.linspace(0, 7, 100)
+    ax.plot(pp, 100 * (1 - (1 - pp / 100) ** n_frag), color=INK2, lw=1, ls=(0, (4, 3)),
+            label=f"$1-(1-p)^{{{n_frag:.1f}}}$")
+    rng = np.random.default_rng(0)
+    for i, (a, b, c) in enumerate(segs):
+        pts = [100 * v for k, _, v in rows if k == i]
+        if not pts:
+            continue
+        x0 = 100 * c["loss"]
+        mk = "o" if pure(c) else "s"
+        ax.scatter(x0 + rng.uniform(-0.12, 0.12, len(pts)), pts, s=4, color=BLUE, alpha=0.25, lw=0)
+        ax.scatter([x0], [100 * seg_mean[i]], s=26, marker=mk, color=BLUE, edgecolor=SURFACE, lw=0.8, zorder=3)
+    ax.scatter([], [], s=26, marker="o", color=BLUE, label="mean of the windows")
+    ax.scatter([], [], s=26, marker="s", color=BLUE, label="with 5 % reordering")
+    ax.set_xlim(-0.4, 7.4); ax.set_ylim(0, 104)
+    ax.set_xlabel("packet loss on the network (%)")
+    ax.set_ylabel("frames lost per window (%)")
+    ax.legend(fontsize=6.3, frameon=False, loc="upper left", bbox_to_anchor=(0.0, 0.78))
+    _clean(ax)
+    fig.tight_layout()
+    fig.savefig(FIG / "fig_case_loss.pdf")
+    plt.close(fig)
+
+
 def main():
     TAB.mkdir(exist_ok=True)
     FIG.mkdir(exist_ok=True)
@@ -1299,6 +1445,7 @@ def main():
     lanes_rtl()
     research_figures()
     protocol()
+    peculiar_cases()
     misc()
     lines = ["% generated by paper/make_assets.py from paper/data -- do not edit"]
     lines += [f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in sorted(macros.items())]
