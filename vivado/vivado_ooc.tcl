@@ -10,7 +10,7 @@
 #                                                     (contract-v3 lane encoder, any number of
 #                                                      parameter/value pairs after the period)
 # Reports in sim_build/vivado_<top>[_<period>ns]/: utilization.txt, utilization_hier.txt,
-# timing.txt (WNS), power.txt (vectorless estimate). python vivado/parse_reports.py turns
+# timing.txt (WNS), power.txt (vectorless estimate). python vivado/run_vivado_day.py parse turns
 # them into the paper table.
 #
 # The clock is declared in an XDC that is read BEFORE synthesis, so synthesis is

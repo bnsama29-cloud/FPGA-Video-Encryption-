@@ -191,6 +191,22 @@ def test_first_contact_on_mock(tmp_path):
     assert "NOT the FPGA" in (tmp_path / "first_contact.md").read_text()
 
 
+def test_first_contact_checks_the_lane_bitstream_against_contract_v3(tmp_path):
+    """The lane overlay (secure_jpeg_lanes.bit) must be compared with encode_frame_v3, not the v2 bytes:
+    before 17 Oct the gate used encode_frame for every bitstream and would have failed a correct board."""
+    import json
+    from future_work.board.first_contact import expected_jpeg
+    r = subprocess.run([sys.executable, "-m", "future_work.board.first_contact", "--mock-lanes", "2", "--sizes",
+                        "32x32", "--frames", "1", "--timing-frames", "1", "--out", str(tmp_path)],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "contract v3, 2 lanes" in r.stdout
+    assert json.loads((tmp_path / "first_contact.json").read_text())["all_bit_exact"]
+    ip = SecureJpegIP(MockBackend(contract=3, lanes=2))
+    rgb = make_image(32, 32, "scene")
+    assert expected_jpeg(ip, rgb, 75, 2, 1) != hw.encode_frame(rgb, 75, 2, bytes(range(16)), 1, 0x5EC0_1234_5678)["jpeg"]
+
+
 def test_vivado_driver_dry_run():
     r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--dry-run", "--blocks"], cwd=ROOT,
                        capture_output=True, text=True)

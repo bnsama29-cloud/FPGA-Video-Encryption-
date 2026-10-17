@@ -20,7 +20,7 @@ make             # main.pdf (pdflatex + bibtex)
 ## How the numbers get into the paper
 
 1. `paper/data/` is the snapshot of the results the paper is built from. It holds:
-   * the Kaggle run of 14 Oct 2026 (`kaggle_complete.py`, 47 steps);
+   * the Kaggle run of 14 Oct 2026 (`kaggle_runs.py (JOB = "complete")`, 47 steps);
    * the one clip rerun noted in `data/run_log.json`;
    * the Yosys estimate in `data/yosys/`.
 2. `make_assets.py` turns these files into:

@@ -46,7 +46,7 @@ def rtl_cycles(size, modes):
     """Encode one frame per mode in the RTL (Icarus) and return cycles per frame."""
     w, h = size
     work = OUT / f"rtl_{w}x{h}"
-    cmd = [sys.executable, str(ROOT / "vivado" / "gen_xsim_vectors.py"), "--image", str(work / "frame.png"),
+    cmd = [sys.executable, str(ROOT / "vivado" / "run_vivado_day.py"), "vectors", "--image", str(work / "frame.png"),
            "--size", f"{w}x{h}", "--modes", *map(str, modes), "--out", str(work)]
     import cv2
     work.mkdir(parents=True, exist_ok=True)

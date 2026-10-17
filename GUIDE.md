@@ -76,7 +76,7 @@ pip install -r requirements.txt
 **Tools:**
 
 * **Icarus Verilog 12** for the RTL tests. Ubuntu 24.04: `sudo apt install iverilog`. Ubuntu 22.04
-  ships 11, so build 12 from source as `kaggle_complete.py` does.
+  ships 11, so build 12 from source as `kaggle_runs.py (JOB = "complete")` does.
 * **Verilator:** `pip install verilator`.
 * **Vivado ML Standard** (free, 2022.1 matches the PYNQ v3.0 image) for Role 1 only; see
   `docs/VIVADO_ONE_DAY.md`.
@@ -99,14 +99,14 @@ pip install -r requirements.txt
 | `python -m future_work.figures.paper_tables --root <results>` | every paper table from result files |
 | `cd paper && make` | build the paper PDF (`make tables` first after new results) |
 
-**The remaining GPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_remaining.py` (GPU T4, Internet on,
+**The remaining GPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_runs.py (JOB = "remaining")` (GPU T4, Internet on,
 your clips dataset attached). With `RERUN = True` (the default now) it only repeats what the fixes of
 14 Oct changed — the restart interval on the open sources and both learned attacks with the new
 no-ciphertext control (B20, B21, ~1 h). `RERUN = False` repeats the whole open-data run (~1.5 h). It
 uses the first branch in `BRANCHES` that has the fixed experiments. Unzip `remaining_results.zip`, copy
 `extra/` over `paper/data/extra/` (keep the README), run `python paper/make_assets.py`, `cd paper && make`.
 
-**Re-running all the simulation results:** paste `future_work/kaggle/kaggle_complete.py` into one
+**Re-running all the simulation results:** paste `future_work/kaggle/kaggle_runs.py (JOB = "complete")` into one
 Kaggle cell (Internet on, GPU T4, clips as a private dataset), then *Save & Run All*. It takes ~4 h
 with `PARALLEL = 1` and writes `results.zip`. Unzip it into `paper/data/` and run `cd paper && make`.
 
@@ -118,19 +118,19 @@ with `PARALLEL = 1` and writes `results.zip`. Unzip it into `paper/data/` and ru
 model/          golden model = the referee (Ascon, colour, DCT/quant, entropy, selective, JPEG container)
 rtl/            Verilog-2001 encoder + Ascon keystream/tag + AXI (secure_jpeg_top.v); include/ is generated
 tb/             cocotb testbenches, every block vs the model under random stalls
-vivado/         XSim testbench, run_vivado_day.py, vivado_ooc.tcl, parse_reports.py
+vivado/         XSim testbench, run_vivado_day.py (the Vivado day + vectors/check/parse tools), vivado_ooc.tcl
 hls/            Vitis HLS DCT + quantiser (same arithmetic as the RTL)
 link/           system simulation: sender, channel/attacker, receiver, feedback, keys, defence, dashboard
 experiments/    every paper number: scenarios, policies, policy_seeds, mode trade-off, crypto benchmark,
                 learned attack
 future_work/    board/ (PYNQ driver, block design, board sender, first_contact), baselines/, attacks/
-                (jigsaw), figures/ (grid, compliance, paper_tables), kaggle/kaggle_complete.py
+                (jigsaw), figures/ (grid, compliance, paper_tables), kaggle/kaggle_runs.py (every Kaggle run)
 paper/          IEEE conference draft (main.tex, refs.bib), data/ (the results it is built from),
                 make_assets.py (tables + figures from data/)
-scripts/        older golden-model tools (encode_image, run_video_eval, mjpeg_server, export_vectors)
+scripts/        tools.py: older golden-model tools (encode-image, video-eval, mjpeg-server, export-vectors, bundle)
 tests/          pytest for model, contract, system, future_work, report parsers
-docs/           INTERFACES (contract v2), TESTING (+ bug log), TEAM_CONTEXT (for Claude),
-                VIVADO_ONE_DAY, DEBUGGING_WITH_CLAUDE
+docs/           INTERFACES (contracts v2, v3), TESTING (+ bug log, debugging with Claude), TEAM_CONTEXT
+                (for Claude), VIVADO_ONE_DAY, RESEARCH (R1-R8 + throughput notes)
 ```
 
 ---
@@ -139,41 +139,15 @@ docs/           INTERFACES (contract v2), TESTING (+ bug log), TEAM_CONTEXT (for
 
 Status key: ⏳ ready to run (scripts exist) · 📝 to be written · ✅ done.
 
-### 4.1 Vivado (Role 1 leads, 1 day) ⏳
+### 4.1 Vivado ✅ (run 6, 17 Oct 2026)
 
-Follow **`docs/VIVADO_ONE_DAY.md`**. One command does most of it:
+Everything in **`docs/VIVADO_ONE_DAY.md`** (install, the one command, results, board first contact,
+troubleshooting, history of runs 1-6). Run 6 passed all 20 steps: encoder WNS +0.554 ns, 2 lanes
++0.400, 4 lanes +0.440 (out of context), v2 overlay +0.788, 2-lane overlay +0.208 ns at 100 MHz.
+Snapshot in `paper/data/vivado/`, already in the paper. At 125 MHz the colour converter is the next
+limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\board\overlay\`).
 
-```
-python vivado/run_vivado_day.py --blocks --fmax
-```
-
-This runs:
-
-* XSim;
-* post-route LUT/FF/BRAM/DSP, WNS and power at 100 MHz;
-* a per-block breakdown and fmax;
-* the PYNQ-Z2 overlay;
-* the paper table in `sim_out/vivado/vivado_tables.md`.
-
-**First run done (14 Oct, Vivado 2026.1, 58 min).** Synthesis and implementation work; the encoder
-closed only at ≈ 47 MHz because of a one-clock DCT (bug #17, now pipelined, tests green), and XSim,
-the Python check and the block design's include file were fixed (bug #18). **Next:** re-run on the
-new RTL from a normal Command Prompt (not `exec` in the Vivado GUI):
-`python vivado\run_vivado_day.py --fmax --jobs 2` (skip `--blocks` unless per-block timing is needed;
-the top run already writes the per-block area). The block design has not got past `create_bd_cell`
-yet; expect more small fixes there.
-
-**Run 5 (16 Oct) adds the lane encoder** (contract v3, 2 and 4 lanes, its own overlay with a 64-bit
-pixel DMA). One command for everything, in `docs/VIVADO_ONE_DAY.md` → "Run 5".
-
-**Run 6 (17 Oct): all done at 100 MHz.** After the zig-zag pipelining (bug #27) and the block-design
-clock fix (#28), all 20 steps pass: encoder WNS +0.554 ns, 2 lanes +0.400, 4 lanes +0.440 (out of
-context), v2 overlay +0.788, 2-lane overlay +0.208 ns. Snapshot in `paper/data/vivado/`. At 125 MHz
-the colour converter is now the limit (v2 -0.875 ns). Both bitstreams exist on the laptop
-(`future_work\board\overlay\`); next is the board (`python -m future_work.board.first_contact`).
-
-**Done when** WNS ≥ 0, `secure_jpeg.bit` + `.hwh` are committed, and the table is copied into
-`paper/data/vivado/`. Then **replace the Yosys estimate in the paper** (Table III).
+**Still to do:** commit the two `.bit` + `.hwh` pairs so teammates without Vivado can use the board.
 
 ### 4.2 Board (critical path, deadline 12 Nov) ⏳
 
@@ -251,9 +225,9 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 
 **B20 – Restart interval on the open sources. ✅ done 14 Oct (rerun; Table VI now over 8 sources).** The Kaggle numbers for Sintel, Tears of Steel and Kodak
 were made before bug #16 was fixed (overhead measured against a file with the APP11 segment; no
-any-N solver). They are kept as `*.prefix16.*.txt` and read by nothing.
+any-N solver). They were kept as `*.prefix16.*.txt` until 17 Oct 2026 (now only in git history, commit 327e237).
 
-1. Run `kaggle_remaining.py` with `RERUN = True` (it also redraws the Fig. 2 grid at paper size).
+1. Run `kaggle_runs.py (JOB = "remaining")` with `RERUN = True` (it also redraws the Fig. 2 grid at paper size).
 2. Copy `extra/{sintel_trailer,tearsofsteel,kodak}/restart_interval/` and `.../grid/` into `paper/data/extra/`.
 3. `python paper/make_assets.py` — Table VI's caption then says "mean over 8 sources".
 
@@ -497,7 +471,7 @@ two restart-interval rows already moved to the repository).
 4. **When something fails:**
    1. reproduce it with the printed SEED;
    2. run `make bundle T=...`;
-   3. paste the bundle into Claude (`docs/DEBUGGING_WITH_CLAUDE.md`);
+   3. paste the bundle into Claude (`docs/TESTING.md` §9);
    4. add a bug-log row (`docs/TESTING.md` §8).
 5. **Git.** Use one branch per task and a pull request with a reviewer. Do not commit `sim_out/`,
    videos, `.pt` or `.npz` files.

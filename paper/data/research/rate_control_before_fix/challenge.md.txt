@@ -1,9 +1,0 @@
-### R3: bitrate regulation (challenge, 150 frames, budget 100 % -> 60 % -> 120 %)
-
-| Controller | Mean abs. error | Error after settling | Frames >10 % over | Settling after drop (frames) | Overshoot after drop | Mean quality | Mean SSIM |
-|---|---|---|---|---|---|---|---|
-| fixed | 35.3 % | 34.9 % | 33 % | -- | +75 % | 75 | 0.979 |
-| bang-bang | 17.0 % | 14.7 % | 24 % | 10 | +89 % | 72 | 0.976 |
-| I | 11.1 % | 10.7 % | 16 % | 11 | +89 % | 72 | 0.973 |
-| PI | 17.5 % | 17.4 % | 25 % | 18 | +84 % | 71 | 0.972 |
-| FF+PI | 17.1 % | 17.5 % | 23 % | 1 | +76 % | 70 | 0.972 |
