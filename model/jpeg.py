@@ -4,10 +4,12 @@ Transmitter (what the PYNQ-Z2 does):
     analyse_frame()  : RGB -> YCbCr 4:2:0 -> 8x8 blocks -> DCT -> quantise -> symbols
     package_frame()  : selective encryption -> Huffman/pack/stuff -> tag -> JPEG bytes
     encode_frame()   : both of the above
-    segmented=True   : contract v3 (APP11 version 3): one restart segment per MCU row, each
-                       segment with its own DC predictors and its own keystream, so the
-                       segments can be coded independently by parallel hardware lanes
-                       (rtl/secure_jpeg_lanes_top.v). The bytes do not depend on the lane count.
+    segmented=True   : contract v3 (APP11 version 3): one restart segment per MCU row (one per
+                       MCU for E5), each segment with its own DC predictors and its own
+                       keystream, so the segments can be coded independently by parallel
+                       hardware lanes (rtl/secure_jpeg_lanes_top.v). The bytes do not depend on
+                       the lane count. E5: the fabric's raster-order frame is permuted by the
+                       ARM (arm_shuffle_v3); the tag covers the raster order.
 
 Receiver (the laptop, key holder):
     receive_frame()  : parse -> verify tag -> replay check -> Huffman decode
@@ -97,15 +99,57 @@ def segment_key(key, session_id, frame_ctr):
     return ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 0), b"lanes")
 
 
+def segment_mcus(width, mode):
+    """Contract v3 restart interval: one MCU row (E0-E4), one MCU (E5)."""
+    return 1 if MODES[mode].shuffle else (width + 15) // 16
+
+
+def permute_segments(scan, order):
+    """Transmit order: the segment at output position p is hardware segment order[p] (RST markers
+    renumbered 0..7 in output order). This is the ARM's job for E5 in contract v3."""
+    segs = split_restart(scan)
+    if sorted(order) != list(range(len(segs))):
+        raise ValueError(f"{len(segs)} restart segments for a permutation of {len(order)}")
+    return join_restart([segs[i] for i in order])
+
+
+def unpermute_segments(scan, order):
+    """Inverse of permute_segments (receiver side)."""
+    segs = split_restart(scan)
+    if len(segs) != len(order):
+        raise ValueError(f"{len(segs)} restart segments for {len(order)} MCUs")
+    natural = [None] * len(segs)
+    for pos, i in enumerate(order):
+        natural[i] = segs[pos]
+    return join_restart(natural)
+
+
+def arm_shuffle_v3(hw_jpeg, key):
+    """E5 in contract v3, the ARM's part: the fabric emits the E5 frame with its segments (one per MCU)
+    in raster order and the tag over that order; the ARM only permutes the segments with the keyed
+    order of (session, frame counter) from the APP11 segment and rebuilds the file. Frames of other
+    levels are returned unchanged."""
+    p = parse_jpeg(hw_jpeg)
+    sec = p.secure()
+    if sec is None or sec[0][4] != 3 or not MODES[MODE_NAME.get(sec[1], "E0")].shuffle:
+        return hw_jpeg
+    meta, _, session_id, ctr, tag = sec
+    n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
+    scan = permute_segments(p.scan, _shuffle_order(key, session_id, ctr, n_mcu))
+    qy, qc = p.qtables()
+    return build_jpeg(p.width, p.height, qy, qc, scan, secure_segment=meta + tag, restart_interval=1)
+
+
 def _package_segmented(an, key, session_id, frame_ctr, mode):
-    """Contract v3: restart interval = one MCU row; segment s = MCU row s."""
-    if MODES[mode].shuffle:
-        raise ValueError("E5 is contract v2 only (restart interval of one MCU)")
-    per_row = (an.width + 15) // 16
+    """Contract v3: segment s = restart interval s, coded with fresh DC predictors and its own
+    keystream (K_seg, nonce(s, frame_ctr, 0)). E0-E4: one segment per MCU row. E5: one segment per MCU,
+    encrypted like E4; the tag covers the segments in raster order (what the fabric produces), and the
+    transmitted scan carries them in the keyed E5 order (arm_shuffle_v3)."""
+    per = segment_mcus(an.width, mode)
     kseg = segment_key(key, session_id, frame_ctr) if key is not None and mode != "E0" else None
     segs, out_syms, nbits, n_enc, ks_blocks = [], [], 0, 0, 0
-    for s, m0 in enumerate(range(0, an.n_mcu, per_row)):
-        sym = run_length_encode(an.quant[m0:m0 + per_row])      # fresh DC predictors
+    for s, m0 in enumerate(range(0, an.n_mcu, per)):
+        sym = run_length_encode(an.quant[m0:m0 + per])          # fresh DC predictors
         if kseg is not None:
             ks = ascon.Keystream(kseg, ascon.make_nonce(s, frame_ctr, 0))
             sym, n = apply_keystream(sym, ks, mode)
@@ -117,13 +161,15 @@ def _package_segmented(an, key, session_id, frame_ctr, mode):
         nbits += n
     scan = join_restart(segs)
     if key is None:
-        return EncodedFrame(build_jpeg(an.width, an.height, an.qy, an.qc, scan, restart_interval=per_row),
+        return EncodedFrame(build_jpeg(an.width, an.height, an.qy, an.qc, scan, restart_interval=per),
                             scan, out_syms, nbits, 0)
     meta = secure_meta(MODE_ID[mode], session_id, frame_ctr, version=3)
     tag = ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 1),
-                    auth_data(meta, an.width, an.height, scan))
+                    auth_data(meta, an.width, an.height, scan))       # raster order (the fabric's view)
+    if MODES[mode].shuffle:
+        scan = permute_segments(scan, _shuffle_order(key, session_id, frame_ctr, len(segs)))
     jpeg = build_jpeg(an.width, an.height, an.qy, an.qc, scan, secure_segment=meta + tag,
-                      restart_interval=per_row)
+                      restart_interval=per)
     return EncodedFrame(jpeg, scan, out_syms, nbits, n_enc, tag, ks_blocks)
 
 
@@ -201,16 +247,20 @@ def receive_frame(jpeg, key, guard=None):
         return ReceivedFrame(False, "no-secure-segment")
     meta, mode_id, session_id, ctr, tag = sec
     mode = MODE_NAME.get(mode_id)
+    n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
+    try:
+        auth_scan = _authenticated_scan(p, meta, mode, key, session_id, ctr, n_mcu)
+    except ValueError as e:
+        return ReceivedFrame(False, f"malformed: {e}", mode, session_id, ctr)
     expected = ascon.mac(key, ascon.make_nonce(session_id, ctr, 1),
-                         auth_data(meta, p.width, p.height, p.scan))
+                         auth_data(meta, p.width, p.height, auth_scan))
     if not hmac.compare_digest(expected, tag) or mode is None:
         return ReceivedFrame(False, "tag-mismatch", mode, session_id, ctr)
     status = guard.check(session_id, ctr) if guard is not None else "ok"
     if status == "replay":
         return ReceivedFrame(False, "replay", mode, session_id, ctr)
-    n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
     if meta[4] == 3:
-        return _receive_segmented(p, key, mode, session_id, ctr, status, n_mcu)
+        return _receive_segmented(p, auth_scan, key, mode, session_id, ctr, status, n_mcu)
     shuffle = MODES[mode].shuffle
     try:
         if shuffle:
@@ -237,24 +287,29 @@ def receive_frame(jpeg, key, guard=None):
     return ReceivedFrame(True, status, mode, session_id, ctr, plain, plain_scan)
 
 
-def _receive_segmented(p, key, mode, session_id, ctr, status, n_mcu):
-    """Contract v3 receiver: decode and decrypt every MCU-row segment on its own, then re-code
-    the clear frame canonically (no restart markers), so the output equals the v2 plain JPEG."""
-    per_row = (p.width + 15) // 16
+def _authenticated_scan(p, meta, mode, key, session_id, ctr, n_mcu):
+    """The scan bytes the tag covers: as received, except for E5 in contract v3, where the tag covers
+    the fabric's raster order and the receiver undoes the ARM's keyed permutation first."""
+    if meta[4] == 3 and mode is not None and MODES[mode].shuffle:
+        return unpermute_segments(p.scan, _shuffle_order(key, session_id, ctr, n_mcu))
+    return p.scan
+
+
+def _receive_segmented(p, scan, key, mode, session_id, ctr, status, n_mcu):
+    """Contract v3 receiver: decode and decrypt every segment on its own (scan in raster order), then
+    re-code the clear frame canonically (no restart markers), so the output equals the v2 plain JPEG."""
+    per = segment_mcus(p.width, mode)
     try:
-        if MODES[mode].shuffle:
-            raise ValueError("E5 is not defined in contract v3")
-        segs = split_restart(p.scan)
-        rows = n_mcu // per_row
-        if len(segs) != rows:
-            raise ValueError(f"{len(segs)} restart segments for {rows} MCU rows")
+        segs = split_restart(scan)
+        if len(segs) != n_mcu // per:
+            raise ValueError(f"{len(segs)} restart segments for {n_mcu // per} segments of {per} MCUs")
         kseg = segment_key(key, session_id, ctr)
         blocks = []
         for s, seg in enumerate(segs):
-            sym = huffman_decode(seg, per_row)
+            sym = huffman_decode(seg, per)
             if mode != "E0":
                 sym, _ = apply_keystream(sym, ascon.Keystream(kseg, ascon.make_nonce(s, ctr, 0)), mode)
-            blocks.append(symbols_to_blocks(sym, per_row))
+            blocks.append(symbols_to_blocks(sym, per))
     except ValueError as e:
         return ReceivedFrame(False, f"malformed: {e}", mode, session_id, ctr)
     plain_scan, _ = huffman_encode(run_length_encode(np.concatenate(blocks)))
@@ -273,8 +328,13 @@ def verify_frame(jpeg, key):
     sec = p.secure()
     if sec is None:
         return False
-    meta, _, session_id, ctr, tag = sec
-    expected = ascon.mac(key, ascon.make_nonce(session_id, ctr, 1), auth_data(meta, p.width, p.height, p.scan))
+    meta, mode_id, session_id, ctr, tag = sec
+    n_mcu = ((p.width + 15) // 16) * ((p.height + 15) // 16)
+    try:
+        scan = _authenticated_scan(p, meta, MODE_NAME.get(mode_id), key, session_id, ctr, n_mcu)
+    except ValueError:
+        return False
+    expected = ascon.mac(key, ascon.make_nonce(session_id, ctr, 1), auth_data(meta, p.width, p.height, scan))
     return hmac.compare_digest(expected, tag)
 
 

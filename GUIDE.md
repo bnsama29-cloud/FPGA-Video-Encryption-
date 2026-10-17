@@ -214,11 +214,12 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ Kaggle 17 Oct: 29 frames, 9 source sets (Kodak, open films, private clips); in the paper | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
 | B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ✅ Kaggle 17 Oct: 7 videos; in the paper (Table XII extended, one sentence in the conference version) | `experiments/video_fingerprint.py` |
 | B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ⏳ hardware phase, after the board gate | §4.1 |
+| B39 | **SVE-Bench**: ours and four published schemes (Van Droogenbroeck, Kishore, Auer, Hirose) under the same four attacks | P1 | 5 | ✅ local synthetic · ⏳ Kaggle `JOB = "benchmark"` | `experiments/benchmark_suite.py` |
 | B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test** (Faster R-CNN persons) | P2 | 5 | ✅ plain 68-100 %, E1 up to 37 %, E2/E4 <= 3 %, E5 0 %; in the paper | below |
 | B24 | **More frames + 95 % intervals** for leakage | P2 | 5 | ✅ 60 frames/source, intervals in the extended paper (Table + Fig.) | below |
-| B6 | E5 in RTL (restart markers + keyed MCU shuffle) | P2 | 1 | 3–5 d | below |
+| B6 | E5 in RTL: contract v3 mode 5 (one segment per MCU; the ARM permutes) | P1 | 1 | ~1 week | ✅ spec + model + driver + tests (17 Oct) · ⏳ RTL: `docs/HW_TODO.md` H1 |
 | B7 | Shared vs separate Ascon core (area vs throughput) | P2 | 1 | 2 d | below |
 | B8 | Ascon-XOF128 KDF with official vectors | P2 | 2 | 1 d | below |
 | B9 | Stronger jigsaw solver (MST + MGC) | P2 | 5 | ✅ gate 0.84-1.00 on plain tiles (greedy 0.62-1.00); E5 at chance (<= 2.5 %) on 9 sources | below |
@@ -459,7 +460,7 @@ two restart-interval rows already moved to the repository).
 | E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ 7 sources |
 | The sign-recovery LP of Lin et al. recovers 88-93 % of signs in its own setting but 59 % of E1's and 49 % of E2's; it still sharpens E1's outline (edge 0.41 vs 0.33) | `sign_recovery.py` | ✅ 29 frames, 9 source sets |
 | One second of frame sizes identifies which of 7 known videos plays (98 % E1-E4, 99 % E5, chance 14 %); only constant-size frames (+81 % bytes) reach chance | `video_fingerprint.py` | ✅ 7 videos |
-| E5 in hardware | B6 | 📝 (paper says "model level") |
+| E5 in hardware | B6 | 📝 specified, modelled and rehearsed with an emulated bitstream; ⏳ RTL (H1). Until then the paper says "model level, hardware form specified" |
 
 **Claims to avoid:**
 

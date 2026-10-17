@@ -30,6 +30,7 @@ CTRL, STATUS, VERSION = 0x00, 0x04, 0x08
 WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
+E5_CAP = 0x80                  # VERSION bit 7: the RTL implements mode 5 (docs/INTERFACES.md §8.6)
 OUT_DIR = ROOT / "sim_out"
 
 
@@ -148,7 +149,7 @@ async def check_frame(dut, enc, img, quality, mode, ctr, key, sid, receiver, nam
 async def registers(dut):
     enc = await init(dut)
     got = await enc.rd(VERSION)
-    assert got == 0x5EC00300 + lanes_of(dut), f"VERSION 0x{got:08x}"
+    assert got & ~E5_CAP == 0x5EC00300 + lanes_of(dut), f"VERSION 0x{got:08x}"
 
 
 @cocotb.test()
@@ -161,6 +162,39 @@ async def frame_every_mode(dut):
     img = make_image(64, 80, "scene")
     for mode in range(5):
         await check_frame(dut, enc, img, quality, mode, (1 << 33) + mode, key, sid, rx, f"mode{mode}")
+
+
+@cocotb.test()
+async def e5_one_segment_per_mcu(dut):
+    """Mode 5 (E5 in contract v3): one restart segment per MCU, E4 fields, raster order, tag over that
+    order; then the ARM's permutation (model/hw.py :: arm_shuffle) and the receiver. Runs only when the
+    RTL sets VERSION bit 7; until then it logs that E5 is not in the RTL yet (docs/HW_TODO.md, H1)."""
+    enc = await init(dut)
+    if not (await enc.rd(VERSION)) & E5_CAP:
+        dut._log.warning("E5 not implemented in this RTL (VERSION bit 7 = 0): test not run")
+        return
+    rng = rng_for(dut)
+    key = bytes(rng.randrange(256) for _ in range(16))
+    sid, quality = rng.randrange(1 << 64), 75
+    await enc.setup_session(key, sid, quality)
+    rx = J.Receiver(key, sid)
+    if rng.random() < 0.5:
+        enc.src.set_pause_generator(itertools.cycle([rng.random() < 0.3 for _ in range(97)]))
+        enc.sink.set_pause_generator(itertools.cycle([rng.random() < 0.4 for _ in range(89)]))
+    for ctr, (w, h, kind) in enumerate([(16, 16, "bars"), (64, 80, "scene"), (48, 48, "noise")], start=200):
+        img = make_image(w, h, kind, seed=ctr)
+        scan, tag, _ = await enc.encode(img, 5, ctr)
+        model = J.encode_frame_v3(img, quality, 5, key, ctr, sid, lanes=lanes_of(dut))
+        if scan != model["scan"]:
+            i = first_diff(scan, model["scan"])
+            raise AssertionError(f"E5 {w}x{h}: scan differs at byte {i}: hw {scan[i:i+8].hex()} "
+                                 f"model {model['scan'][i:i+8].hex()}")
+        assert tag == model["tag"], f"E5 {w}x{h}: tag mismatch"
+        fabric = J.build_frame(w, h, quality, 5, ctr, sid, scan, tag, version=3)
+        sent = J.arm_shuffle(fabric, key, sid, ctr)
+        verdict, clear = rx.process(sent)
+        assert verdict == "ok", f"E5 {w}x{h}: receiver said {verdict}"
+        assert J.split_scan(clear)[1] == J.encode_frame(img, quality, 0, key, ctr, sid)["scan"]
 
 
 @cocotb.test()

@@ -125,7 +125,7 @@ The bytes do not depend on `LANES` (checked on the RTL for 1, 2 and 4 lanes by `
 | Nonce uniqueness | K_seg is unique per (K, session_id, frame_ctr), and under one K_seg the segment index *s* is unique, so no (key, nonce) pair repeats. A session uses one contract version for all its frames |
 | Tag | as v2 (section 4), but the 26-byte prefix carries version 3, and the AD scan bytes include the RST markers |
 | APP11 | version byte 3 |
-| Modes | E0–E4. E5 (keyed MCU shuffle) stays a contract-v2 model feature |
+| Modes | E0–E4, and E5 as specified in §8.6 (one segment per MCU + keyed permutation on the ARM) |
 | Pixel stream | `s_axis_tdata` 64 bits = 2 pixels per beat: `[31:0]` = left pixel `{pad, B, G, R}`, `[63:32]` = right pixel. The byte stream in memory is the same as v2's 32-bit words, so the DMA buffer does not change; only the DMA's MM2S width is 64 bits |
 | Dealer | MCU row *r* (16 lines) goes to lane *r* mod LANES; LANES is a power of two |
 | Lane | `rtl/encoder_lane.v`: `rgb2ycbcr_2px` (2 pixels per clock in, 1 sample per clock out) → the v2 DCT, quantiser, `zigzag_rle` (SEG_RESET = 1), `selective_enc` + `keystream_gen` (restarted per segment), `huffman_enc`, `bit_packer` (flushes at each segment end) → `byte_fifo` (2^LOG_FIFO bytes) |
@@ -135,3 +135,26 @@ The bytes do not depend on `LANES` (checked on the RTL for 1, 2 and 4 lanes by `
 Cost: about 0.3 % more bytes (one 2-byte marker and up to 7 padding bits per MCU row; measured
 by `experiments/parallel_lanes.py`), one extra Ascon core per lane (keystream) plus `kseg_unit`, and
 per-lane line buffers.
+
+### 8.6 E5 in contract v3 (17 Oct 2026; golden model done, RTL pending: `docs/HW_TODO.md` H1)
+
+E5 hides block positions by sending the MCUs in a keyed order. Doing the permutation in the fabric
+would need a frame buffer; contract v3 already makes restart segments independent, so the work is
+split: **the fabric codes one segment per MCU, the ARM only reorders segments.**
+
+| Item | E5 in contract v3 |
+|---|---|
+| Mode | CTRL[3:1] = 5; APP11 mode byte 5, version 3 |
+| Encrypted fields | exactly those of E4 (AC and DC signs and low amplitude bits) |
+| Segments | segment *s* = MCU *s* in raster order (*s* = row × width/16 + column); restart interval 1 (DRI = 1); DC predictors reset per segment; keystream of (K_seg, nonce(s, frame_ctr, 0)) |
+| Lanes | unchanged dealer: MCU row *r* still goes to lane *r* mod LANES; inside a row the lane ends a segment (pad, flush, marker slot) after every MCU instead of after the row. The merger copies segments in raster order |
+| Fabric output | scan = seg0 ‖ RST0 ‖ seg1 ‖ … (raster order); tag over the 26-byte prefix (mode 5, version 3) ‖ that scan |
+| ARM (`model/hw.py :: arm_shuffle`) | splits the scan at the RST markers and sends the segments in `e5_order(K, session_id, frame_ctr, n)`: Fisher–Yates with rejection sampling on the keystream of (Ascon-MAC(K, nonce(0,0,0), AD = `E5 MCU shuffle`), nonce(session_id, frame_ctr, 0)); RST markers renumbered 0..7 in output order. Header, APP11 and tag unchanged |
+| Receiver | undoes the permutation, checks the tag over the raster-order scan, then decrypts per segment. A swapped segment or an unshuffled frame fails the tag |
+| Capability | `VERSION` bit 7 = 1 when the RTL implements mode 5 (`0x5EC00380 + LANES`); the driver uses E5 only then |
+| Nonce uniqueness | as §8: K_seg is unique per frame, segment indices are unique within a frame; the shuffle key is a separate derivation of K under nonce(0,0,0), which no frame uses |
+| Cost | one marker + padding per MCU and restarted DC prediction (+8–23 % bytes over E4 at 320×240, `experiments/restart_interval.py`), no extra Ascon core, no frame buffer; the ARM touches each output byte once |
+
+The contract-v2 E5 of the golden model (one keystream for the frame, shuffle before entropy coding)
+stays as the reference of the paper's earlier measurements; both are scored by the benchmark suite
+(`experiments/benchmark_suite.py`).

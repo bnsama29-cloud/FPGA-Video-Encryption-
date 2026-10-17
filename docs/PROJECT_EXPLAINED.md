@@ -273,7 +273,7 @@ inputs with random stalls and compares every output with `model/`. `common.py` h
 | A7–A8 | Webcam on the board; 2-minute demo video | 4 | GUIDE.md §4.2 |
 | B1 | Selective encryption in C on the ARM (the fair software baseline) | 2 | GUIDE.md §4.3 |
 | B3, B22 | One page of threat model + nonce argument; E1's status after the U-Net result | 2 (+5) | GUIDE.md §4.3 |
-| B6 | E5 in hardware (restart markers already exist in v3; add the keyed block shuffle) | 1 | GUIDE.md §4.3 |
+| B6 | E5 in hardware: specified, modelled and tested in software; the RTL change is task H1 | 1 | `docs/HW_TODO.md` |
 | — | Commit the two `.bit` + `.hwh` pairs so everyone can use the board | 1 | — |
 | — | Paper: author e-mails, order, bios, funding line, AI-assistance statement; the board-results section after A1–A4 | all | `paper/main.tex` (red `TODO`s) |
 

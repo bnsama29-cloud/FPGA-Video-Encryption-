@@ -26,9 +26,10 @@ from .tables import (ZIGZAG, DC_CODES, AC_CODES,                          # noqa
                      AC_LUMA_BITS, AC_LUMA_VALS, AC_CHROMA_BITS, AC_CHROMA_VALS)
 
 # Encryption modes (CTRL[3:1])
-MODE_OFF, MODE_E1, MODE_E2, MODE_E3, MODE_E4 = 0, 1, 2, 3, 4
+MODE_OFF, MODE_E1, MODE_E2, MODE_E3, MODE_E4, MODE_E5 = 0, 1, 2, 3, 4, 5
 MODE_NAMES = {0: "off", 1: "E1 AC signs", 2: "E2 +DC signs",
-              3: "E3 +AC amplitudes", 4: "E4 +DC amplitudes"}
+              3: "E3 +AC amplitudes", 4: "E4 +DC amplitudes",
+              5: "E5 E4 fields, one restart segment per MCU (contract v3; the ARM permutes the segments)"}
 
 # One run-length symbol. amp holds the JPEG-coded amplitude bits (size bits,
 # ones'-complement form for negatives), exactly as they appear in the file.
@@ -285,11 +286,11 @@ def frame_tag(key, mode, frame_ctr, session_id, width, height, scan, version=2):
 
 def build_frame(width, height, quality, mode, frame_ctr, session_id, scan, tag, version=2):
     """What the ARM does after the fabric is done: headers + APP11 + scan + EOI.
-    Contract v3 frames also carry a DRI segment (restart interval = MCUs per row)."""
+    Contract v3 frames also carry a DRI segment (restart interval = MCUs per row; 1 for E5)."""
     qy, qc = _tables(quality)
     meta = container.secure_meta(mode, session_id, frame_ctr, version)
-    return container.build_jpeg(width, height, qy, qc, scan, secure_segment=meta + tag,
-                                restart_interval=width // 16 if version == 3 else 0)
+    ri = (1 if mode == MODE_E5 else width // 16) if version == 3 else 0
+    return container.build_jpeg(width, height, qy, qc, scan, secure_segment=meta + tag, restart_interval=ri)
 
 
 # ------------------------------------------------------------- full encoder
@@ -334,30 +335,80 @@ def encode_frame_v3(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0, s
     """Contract v3, stage by stage like rtl/secure_jpeg_lanes_top.v: segment s = MCU row s, coded by
     lane s mod `lanes` with fresh DC predictors and the keystream (K_seg, nonce(s, frame_ctr, 0));
     the merger joins the segments in order with RST0..7 between them. `lanes` changes only which
-    lane codes a segment, never the bytes (the testbench checks that claim on the RTL)."""
-    if not 0 <= mode <= 4:
-        raise ValueError("contract v3 supports modes 0..4")
+    lane codes a segment, never the bytes (the testbench checks that claim on the RTL).
+
+    Mode 5 (E5): the same fields as E4 are encrypted, but every MCU is its own segment s (raster MCU
+    index; still coded by the lane of its MCU row), with fresh DC predictors and nonce(s, frame_ctr, 0).
+    The returned jpeg is what the FABRIC + header code produce: segments in raster order, tag over that
+    order. The ARM then permutes the segments (arm_shuffle) before sending."""
+    if not 0 <= mode <= 5:
+        raise ValueError("contract v3 supports modes 0..5")
     h, w = len(rgb), len(rgb[0])
     per_row = w // 16
+    per_seg = 1 if mode == MODE_E5 else per_row
+    enc_mode = MODE_E4 if mode == MODE_E5 else mode
     luma, chroma = quality_tables(quality)
     recips = [[reciprocal(q) for q in luma], [reciprocal(q) for q in chroma]]
     blocks = blocks_in_hw_order(rgb)
     kseg = segment_key(key, session_id, frame_ctr)
     seg_bytes, seg_lane, ks_total = [], [], 0
-    for s in range(h // 16):
+    for s in range((h // 16) * per_row // per_seg):
         pred = {0: 0, 1: 0, 2: 0}
         syms = []
-        for comp, smp in blocks[s * per_row * 6:(s + 1) * per_row * 6]:
+        for comp, smp in blocks[s * per_seg * 6:(s + 1) * per_seg * 6]:
             syms.extend(run_length(quantise(dct2d(smp), recips[0 if comp == 0 else 1]), comp, pred))
-        enc, n = selective_encrypt(syms, mode, kseg, ascon.make_nonce(s, frame_ctr, 0))
+        enc, n = selective_encrypt(syms, enc_mode, kseg, ascon.make_nonce(s, frame_ctr, 0))
         ks_total += n
         seg_bytes.append(pack_bytes([huffman_bits(x) for x in enc]))
-        seg_lane.append(s % lanes)
+        seg_lane.append((s * per_seg // per_row) % lanes)
     scan = b"".join((RST_MARKERS[(s - 1) % 8] if s else b"") + b for s, b in enumerate(seg_bytes))
     tag = frame_tag(key, mode, frame_ctr, session_id, w, h, scan, version=3)
     jpeg = build_frame(w, h, quality, mode, frame_ctr, session_id, scan, tag, version=3)
     return dict(scan=scan, tag=tag, jpeg=jpeg, segments=seg_bytes, lane_of_segment=seg_lane,
                 k_seg=kseg, keystream_bits_used=ks_total, width=w, height=h)
+
+
+def shuffle_key(key):
+    """E5 permutation key = Ascon-MAC(K, nonce(0, 0, 0), AD = "E5 MCU shuffle") (ARM software)."""
+    return ascon.mac(key, ascon.make_nonce(0, 0, 0), b"E5 MCU shuffle")
+
+
+def e5_order(key, session_id, frame_ctr, n):
+    """Keyed Fisher-Yates order of the n segments (output position p carries segment order[p]);
+    keystream bits from (shuffle_key(K), nonce(session_id, frame_ctr, 0)), rejection sampling."""
+    ks = ascon.Keystream(shuffle_key(key), ascon.make_nonce(session_id, frame_ctr, 0))
+    order = list(range(n))
+    for i in range(n - 1, 0, -1):
+        bits = i.bit_length()
+        while True:
+            j = ks.take(bits)
+            if j <= i:
+                break
+        order[i], order[j] = order[j], order[i]
+    return order
+
+
+def split_segments(scan):
+    """Scan bytes -> restart segments (an RST marker cannot occur inside stuffed data)."""
+    out, start, i = [], 0, 0
+    while i < len(scan) - 1:
+        if scan[i] == 0xFF and 0xD0 <= scan[i + 1] <= 0xD7:
+            out.append(scan[start:i])
+            start = i = i + 2
+        else:
+            i += 1
+    out.append(scan[start:])
+    return out
+
+
+def arm_shuffle(jpeg, key, session_id, frame_ctr):
+    """The ARM's part of E5 (future_work/board): split the fabric's scan at the RST markers, send the
+    segments in e5_order with RST0..7 renumbered in output order. Header, APP11 and tag are unchanged."""
+    head, scan = split_scan(jpeg)
+    segs = split_segments(scan)
+    order = e5_order(key, session_id, frame_ctr, len(segs))
+    out = b"".join((RST_MARKERS[(p - 1) % 8] if p else b"") + segs[i] for p, i in enumerate(order))
+    return head + out + b"\xFF\xD9"
 
 
 # ------------------------------------------------------------- Huffman decode
