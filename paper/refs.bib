@@ -1,5 +1,6 @@
 % References for the conference draft.
-% Each entry says how it was checked (14 Oct 2026). Before submission, open every DOI/URL once more
+% Each entry says how it was checked (14 Oct 2026). On 17 Oct 2026 every cited sentence of main.tex was
+% checked against the full PDF of its source (all 30); see docs/RESEARCH.md, 'Reference check'. Before submission, open every DOI/URL once more
 % and complete the two fields marked TODO from IEEE Xplore. Do not add an entry you have not read.
 
 % ---- standards and ciphers ------------------------------------------------------------
@@ -14,6 +15,8 @@
   doi         = {10.6028/NIST.SP.800-232}
 }
 % checked: csrc.nist.gov news item (title, Aug 2025) + citation record (authors, DOI)
+% The team's reference folder holds the initial public draft (Nov 2024, withdrawn 13 Aug 2025); cite the
+% final (Aug 2025). The model passes the official SP 800-232 KAT file (tests/test_ascon_kat.py).
 
 @article{ascon,
   author  = {Christoph Dobraunig and Maria Eichlseder and Florian Mendel and Martin Schl{\"a}ffer},
@@ -83,7 +86,7 @@
 
 % ---- selective encryption of images and video ------------------------------------------
 @inproceedings{vandroogenbroeck2002,
-  author    = {Marc {Van Droogenbroeck} and Rapha{\"e}l Benedetti},
+  author    = {Marc {Van Droogenbroeck} and Rapha{\"e}l Benedett},
   title     = {Techniques for a Selective Encryption of Uncompressed and Compressed Images},
   booktitle = {Proc. Advanced Concepts for Intelligent Vision Systems (ACIVS)},
   address   = {Ghent, Belgium},
@@ -91,8 +94,8 @@
   month     = sep,
   year      = {2002}
 }
-% checked: telecom.uliege.be/publi (authors' institution page: "Raphael Benedetti"; some citations
-% write "Benedett" -- use the spelling printed on the PDF)
+% checked 17 Oct 2026 against the PDF: title page prints "Raphael Benedett" (the institution page writes
+% "Benedetti"); we follow the PDF. Pages 90-97, Ghent, Sept. 2002 printed in the PDF header.
 
 @inproceedings{puech2005,
   author    = {William Puech and Jos{\'e} Marconi Rodrigues},
@@ -126,14 +129,16 @@
 }
 % checked: pure.fh-ooe.at record (four authors)
 
-@misc{hirose2024,
-  author       = {Mare Hirose and Shoko Imaizumi and Hitoshi Kiya},
-  title        = {On the Security of Bitstream-level {JPEG} Encryption with Restart Markers},
-  howpublished = {arXiv:2410.06522},
-  year         = {2024}
+@inproceedings{hirose2024,
+  author    = {Mare Hirose and Shoko Imaizumi and Hitoshi Kiya},
+  title     = {On the Security of Bitstream-level {JPEG} Encryption with Restart Markers},
+  booktitle = {Proc. Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
+  year      = {2024},
+  note      = {arXiv:2410.06522}
 }
-% checked: arxiv.org/abs/2410.06522 (preprint; an Electronics 2024 journal version is cited in our
-% phase-1 review -- if you cite that one, take volume/article number from the publisher page)
+% checked 17 Oct 2026 against the PDF: page 1 header names APSIPA ASC 2024. Pages TODO from IEEE Xplore.
+% NZCA is from Peng et al. (ACM TOMM 2024, their ref. [4]); Hirose et al. apply it: contours appear
+% without restart-segment permutation and partly again with a large restart interval.
 
 @article{lin2024,
   author  = {Ruiyuan Lin and Sheng Liu and Jun Jiang and Shujun Li and Chengqing Li and C.-C. Jay Kuo},
@@ -151,10 +156,11 @@
   journal = {IEEE Transactions on Circuits and Systems for Video Technology},
   volume  = {27},
   number  = {4},
-  year    = {2017}
+  pages   = {892--906},
+  year    = {2017},
+  doi     = {10.1109/TCSVT.2015.2511879}
 }
-% checked: title/abstract (infona IEEE record 7370952), volume/issue from our verified phase-1 list.
-% TODO: pages and DOI from IEEE Xplore.
+% checked 17 Oct 2026 against the PDF (HAL hal-01433748 cover page: vol. 27, no. 4, pp. 892-906, DOI).
 
 % ---- hardware JPEG encryption ---------------------------------------------------------------
 @article{kishore2015,
@@ -167,7 +173,8 @@
   year    = {2015},
   doi     = {10.1007/s11554-012-0282-5}
 }
-% checked: link.springer.com/article/10.1007/s11554-012-0282-5 (online 2012, issue Sept. 2015)
+% checked: link.springer.com/article/10.1007/s11554-012-0282-5 (online 2012, issue Sept. 2015); PDF read
+% 17 Oct 2026: PN-sequence block and symbol scrambling, Stratix II/IV, about 1 % extra hardware.
 
 @inproceedings{bagbaba2015,
   author    = {Ahmet {\c{C}}a{\u{g}}r{\i} Ba{\u{g}}baba and Berna {\"O}rs},
@@ -177,7 +184,8 @@
   pages     = {1159--1163},
   year      = {2015}
 }
-% checked: avesis.itu.edu.tr record (first names: check the PDF; the record gives initials A. C.)
+% checked: avesis.itu.edu.tr record; PDF read 17 Oct 2026 (Ahmet Cagri Bagbaba, Berna Ors; TEA on DC,
+% or DC + first five AC coefficients).
 
 % ---- attacks and methods used in the evaluation ------------------------------------------------
 @inproceedings{pomeranz2011,
@@ -300,7 +308,7 @@
 }
 % checked 15 Oct 2026: Springer abstract page (authors, journal, vol/issue/pages, online 13 Dec 2023).
 % Chosen-plaintext attack: a designed image reveals the block permutation (non-zero counts per block
-% survive), which is then inverted. Full text paywalled; only the abstract was read.
+% survive), which is then inverted. Full text read 17 Oct 2026 (PDF page 1: vol. 30(5) 976-987, DOI).
 
 @inproceedings{gallagher2012,
   author    = {Andrew C. Gallagher},

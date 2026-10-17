@@ -8,11 +8,13 @@ are in the docstring at the start of its block.
   JOB = "remaining"  open clips, Kodak, metrics, restart interval, learned attack  (14 Oct, ~1.5 h)
   JOB = "research"   R1-R8: stall profile, lanes, rate control, change-driven, size channel (15 Oct)
   JOB = "final"      60-frame leakage, MST jigsaw, recognition, P5 learned attacker  (16 Oct, ~3-4 h)
+  JOB = "references" attacks from the reference papers: Lin et al. sign recovery, Schuster et al.
+                     video identification from frame sizes                       (17 Oct, ~2-3 h, CPU only)
 
-All four have been run; their results are in paper/data/ (simulation, extra, research, final).
+The first four have been run; their results are in paper/data/ (simulation, extra, research, final).
 Each block below is the original script, byte for byte apart from the indentation.
 """
-JOB = "final"
+JOB = "references"
 
 # ==================================================================================================
 # JOB = "complete"   (was future_work/kaggle/kaggle_complete.py)
@@ -976,5 +978,167 @@ attacks ~40-60 min each). Frames of the private clips are never saved as images;
         print("FAILED:", *fails, sep="\n  ")
     print("Download final_results.zip from the Output tab.")
 
+# ==================================================================================================
+# JOB = "references"   attacks taken from the reference papers (added 17 Oct 2026)
+# ==================================================================================================
+elif JOB == "references":
+    """Two attacks from the papers we cite, run on the same sources as the paper (GUIDE.md B35, B36).
+
+HOW TO RUN (one Kaggle account, NO GPU needed)
+  1. Notebook settings: Internet ON, Accelerator None (CPU; 4 cores are used in parallel).
+  2. + Add Input -> your private clips dataset (the same one as before). Optional: without it only
+     the open films and Kodak are used.
+  3. Paste this whole file into ONE code cell -> Save Version -> "Save & Run All (Commit)".
+  4. Download references_results.zip from the version's Output tab and send it.
+  QUICK = True first for a ~10-minute smoke test (tiny sizes; the numbers mean nothing).
+
+WHAT IT RUNS (numbers under sim_out/references/, zipped after every step; no frames are saved)
+  B35  Sign-bit recovery, Lin et al. (JVCIR 2024): their LP relaxation against E1-E4, plus a check in
+       their own setting (LinU3 / LinU6). 128x96 luma; Kodak 12 images, 2 frames per video source.
+       One E1 LP takes 3-5 min on one core, so four sources run in parallel.
+  B36  Video identification from frame sizes, Schuster et al. (USENIX Security 2017): which of the
+       videos is playing, from W consecutive encrypted frame sizes, for E2, E5 and the padding schemes.
+       All video sources, 600 frames at stride 3 (about 10 frames/s of video).
+TIME (Kaggle CPU): downloads ~10 min, B35 ~1.5-2 h, B36 ~40 min.
+"""
+    # ============================ SETTINGS =======================================
+    QUICK = False
+    REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
+    BRANCHES = ["refs-verify", "main"]          # the first one that has experiments/sign_recovery.py
+    OPEN_CLIPS = {                               # CC BY 3.0, (c) Blender Foundation
+        "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
+        "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+    }
+    KODAK_URL = "http://r0k.us/graphics/kodak/kodak/kodim{:02d}.png"
+    PARALLEL = 4
+    RUN = dict(b35_sign=True, b36_fingerprint=True)
+    # =============================================================================
+
+    import glob, json, os, pathlib, re, shutil, subprocess, sys, time, urllib.request
+    from concurrent.futures import ThreadPoolExecutor
+
+    T_START = time.time()
+    ON_KAGGLE = os.path.exists("/kaggle")
+    WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "/tmp/krwork"))
+    WORK.mkdir(parents=True, exist_ok=True)
+    QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
+    REPO, DATA, OUT = WORK / "repo", WORK / "opendata", "sim_out/references"
+    ENV = {**os.environ, "PYTHONUNBUFFERED": "1"}
+    LOG, SOURCES = [], {}
+
+
+    def sh(cmd, sec, step, tail=12, cwd=None):
+        t0 = time.time()
+        print(f"\n=== [{sec}] {step}   (t = {(t0 - T_START) / 60:.0f} min)\n$ {cmd}", flush=True)
+        p = subprocess.run(cmd, shell=True, cwd=cwd or REPO, env=ENV, capture_output=True, text=True)
+        print("\n".join((p.stdout + p.stderr).strip().splitlines()[-tail:]), flush=True)
+        LOG.append((sec, step, "PASS" if p.returncode == 0 else "FAIL", round(time.time() - t0, 1)))
+        print(f"--> [{sec}] {LOG[-1][2]} in {LOG[-1][3]:.0f} s", flush=True)
+        return p.returncode == 0
+
+
+    def checkpoint():
+        res = WORK / "references_results"
+        shutil.rmtree(res, ignore_errors=True)
+        res.mkdir()
+        if (REPO / OUT).exists():
+            shutil.copytree(REPO / OUT, res / "references")
+        (res / "run_log.json").write_text(json.dumps(dict(log=LOG, minutes=round((time.time() - T_START) / 60, 1),
+                                                          quick=QUICK, sources=SOURCES), indent=1))
+        shutil.make_archive(str(WORK / "references_results"), "zip", res)
+        print(f"[checkpoint] references_results.zip {round((WORK / 'references_results.zip').stat().st_size / 1e6, 2)} MB", flush=True)
+
+
+    def fetch(url, dest):
+        if dest.exists() and dest.stat().st_size > 0:
+            return True
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=300) as r, open(dest, "wb") as f:
+                shutil.copyfileobj(r, f)
+            return dest.stat().st_size > 1000
+        except Exception as e:
+            print(f"  download failed: {url}: {e}")
+            if dest.exists():
+                dest.unlink()
+            return False
+
+
+    def safe(name):
+        return re.sub(r"[^A-Za-z0-9_-]+", "_", name.strip()).strip("_")
+
+
+    # ============================ 0. SETUP =======================================
+    shutil.rmtree(REPO, ignore_errors=True)
+    for b in BRANCHES:
+        if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
+                (REPO / "experiments" / "sign_recovery.py").exists():
+            break
+        shutil.rmtree(REPO, ignore_errors=True)
+    else:
+        raise SystemExit("no branch with experiments/sign_recovery.py: push / merge refs-verify first")
+    sh("python -m pip install -q cryptography scikit-image opencv-python-headless pillow tomli numpy scipy",
+       "setup", "pip install", tail=2)
+    DATA.mkdir(exist_ok=True)
+    inputs = [os.environ["CLIPS_DIR"]] if os.environ.get("CLIPS_DIR") else ["/kaggle/input"]
+    for f in sorted({f for r in inputs for e in ("mp4", "mkv", "avi", "mov", "webm")
+                     for f in glob.glob(f"{r}/**/*.{e}", recursive=True)}):
+        kind = "open" if any(k in f.lower() for k in ("bunny", "sintel", "tears", "elephant")) else "private"
+        SOURCES[safe(pathlib.Path(f).stem)] = dict(path=f, kind=kind)
+    if not QUICK:
+        for name, url in OPEN_CLIPS.items():
+            if any(name[:5] in k.lower() for k in SOURCES):
+                continue
+            dest = DATA / (name + pathlib.Path(url).suffix)
+            if fetch(url, dest):
+                SOURCES[name] = dict(path=str(dest), kind="open")
+    kodak = DATA / "kodak"
+    kodak.mkdir(exist_ok=True)
+    for f in (glob.glob("/kaggle/input/**/kodim*.png", recursive=True) if ON_KAGGLE else []):
+        shutil.copy(f, kodak / pathlib.Path(f).name)
+    if len(list(kodak.glob("*.png"))) < 12 and not QUICK:
+        for i in range(1, 13):
+            fetch(KODAK_URL.format(i), kodak / f"kodim{i:02d}.png")
+    if list(kodak.glob("*.png")):
+        SOURCES["kodak"] = dict(path=str(kodak), kind="open", images=True)
+    print("sources:", json.dumps(SOURCES, indent=1))
+    checkpoint()
+
+    # ============================ B35: sign-bit recovery (Lin et al.) ===============
+    if RUN["b35_sign"]:
+        jobs = [("skimage", f"python experiments/sign_recovery.py --frames {1 if QUICK else 8} "
+                            f"{'--size 64x48 --levels LinU3 E1 E2' if QUICK else ''} --name skimage --out {OUT}/sign_recovery")]
+        for name, s in SOURCES.items():
+            img = s.get("images")
+            n = 1 if QUICK else (12 if img else 2)
+            stride = 1 if img else 600
+            jobs.append((name, f"python experiments/sign_recovery.py --video '{s['path']}' --frames {n} --stride {stride} "
+                               f"{'--size 64x48 --levels LinU3 E1 E2' if QUICK else ''} --name {name} --out {OUT}/sign_recovery"))
+        with ThreadPoolExecutor(max_workers=PARALLEL) as ex:
+            list(ex.map(lambda j: sh(j[1], j[0], "B35 sign-bit recovery (Lin et al.)", tail=10), jobs))
+        checkpoint()
+
+    # ============================ B36: video identification (Schuster et al.) =======
+    if RUN["b36_fingerprint"]:
+        vids = [s["path"] for k, s in SOURCES.items() if not s.get("images")]
+        if len(vids) >= 2:
+            fr = 60 if QUICK else 600
+            sh(f"python experiments/video_fingerprint.py --sources " + " ".join(f"'{v}'" for v in vids) +
+               f" --frames {fr} --stride 3 --size {'160x128' if QUICK else '320x240'} --name all_videos "
+               f"--out {OUT}/video_fingerprint", "fingerprint", "B36 video identification (Schuster et al.)", tail=12)
+        else:
+            print("B36 skipped: fewer than two videos")
+        checkpoint()
+
+    # ============================ SUMMARY ========================================
+    checkpoint()
+    w = max(len(s) for _, s, _, _ in LOG)
+    print("\n" + "\n".join(f"{sec:<16}{s:<{w + 2}}{st:<6}{t:>7.0f} s" for sec, s, st, t in LOG))
+    fails = [f"{sec}: {s}" for sec, s, st, _ in LOG if st != "PASS"]
+    print(f"\n{len(LOG) - len(fails)} passed, {len(fails)} failed, {(time.time() - T_START) / 3600:.2f} h")
+    if fails:
+        print("FAILED:", *fails, sep="\n  ")
+    print("Download references_results.zip from the Output tab.")
+
 else:
-    raise SystemExit(f"unknown JOB {JOB!r}: complete | remaining | research | final")
+    raise SystemExit(f"unknown JOB {JOB!r}: complete | remaining | research | final | references")

@@ -317,3 +317,49 @@ Post-route (Vivado run 6, 17 Oct): 2 lanes 9,869 LUT / 50 BRAM / 46 DSP and 4 la
 100 MHz; the 2-lane PYNQ-Z2 overlay meets 100 MHz (WNS +0.208 ns). Next clock limit: the colour converter
 (v2 at 125 MHz: -0.875 ns). Items still open from the list above: 1 (clock), 6 (BRAM: lanes multiply
 the line buffers), 9-11, 12-17.
+
+## Reference check (17 Oct 2026): every cited sentence against the full PDF
+
+The team collected the PDFs of all 30 references (`references.zip`, kept outside the repository:
+copyrighted). Every sentence of `paper/main.tex` that carries a `\cite` was checked against the source.
+
+| Key | What the paper uses it for | Verdict | Change |
+|---|---|---|---|
+| sp800232 | the standard | ✅ | the PDF in the folder is the withdrawn draft (Nov 2024); cite the final (Aug 2025); our model passes the official KAT file |
+| ascon | Ascon v1.2, J. Cryptol. 34:33 | ✅ | – |
+| gross2017 | small hardware; S-box + linear layer | ✅ wording | "designed for small hardware" → "small and fast in hardware (about 7 kGE with one unrolled round)" (that is what the paper shows) |
+| kurian2025 | Ascon + replay on Artix-7; table numbers 3490-5335 LUT, 4285-4287 FF, 32 BRAM | ✅ | added: their Bloom filter has a 0.17 % false-positive rate (our 64-entry window has none) |
+| khairallah2023 | Ascon-PRF-192, 1 round/cycle: 1031 LUT, 391 FF, 5 ns | ✅ | – |
+| logijpge, castjpeg | comparison numbers | ✅ | – |
+| t81, wallace1992 | baseline JPEG | ✅ | – |
+| rfc3711 | replay window | ✅ | (SRTP: window "MUST be at least 64") |
+| vandroogenbroeck2002 | appended-bit encryption, compliant, constant bit rate | ✅ wording | they encrypt the appended bits of *selected* AC coefficients and keep the code words; author spelled "Benedett" as printed on the PDF |
+| puech2005 | AES on DCT coefficients of medical images | ✅ | added "AES in OFB mode, selected quantised coefficients" |
+| auer2013 | bitstream JPEG encryption in real time | ✅ wording | "AES-based keystream" → permutes code-word/value pairs and toggles value bits with an AES-OFB generator, > 25 VGA frames/s |
+| massoudi2008 | visual distortion is a poor proxy; replacement attacks | ✅ | reworded closer to the source ("visual distortion is a subjective criterion and does not allow to measure security") |
+| lin2024 | sign bits recoverable by optimisation | ✅, now also *run* | see B35 below: their setting is "the first U AC signs unknown"; E1 hides every AC sign |
+| hirose2024 | restart-marker JPEG encryption; NZCA | ⚠️ fixed | it is an **APSIPA ASC 2024** paper (bib entry changed); NZCA is Peng et al.'s attack which Hirose et al. *apply*; they also find that a large restart interval brings outlines back (matches our N = 1 choice) |
+| li2025shuffle | chosen plaintext against block shuffling | ✅ (full text now read) | reworded: a designed plaintext's per-block non-zero counts reveal the permutation |
+| boyadjis2017 | H.264/HEVC selective encryption | ✅ | pages 892-906 and DOI added from the PDF |
+| kishore2015 | FPGA JPEG + scrambling, ~1 % hardware | ✅ | added: PN-sequence block/symbol scrambling, Stratix II/IV |
+| bagbaba2015 | FPGA JPEG + TEA on DC / low AC | ✅ | made exact: DC, or DC + first five AC |
+| wampler2015, schuster2017, apthorpe2019 | traffic analysis; 18x padding for a camera | ✅ | (Apthorpe: b = 18.2 for the Nest camera at q = 1) |
+| pomeranz2011, gallagher2012 | jigsaw solvers | ✅ | – |
+| unet, isola2017, ren2015, ssim, sutton2018 | methods | ✅ | – |
+
+Still open in `refs.bib` (need the publisher page, not in the PDFs): lin2024 volume, hirose2024 pages,
+puech2005 pages, wampler2015 DOI year (GLOCOM.2014 vs .2015).
+
+### B35: Lin et al.'s sign-bit recovery against our levels (`experiments/sign_recovery.py`)
+
+Their LP relaxation (method 1) re-implemented with scipy/HiGHS: unknown coefficients become variables in
+[-|c|, |c|], the LP minimises the total variation subject to the (relaxed) pixel range, and the sign of each
+LP value is the guess. Generalised to E2 (DC differences as variables), E3/E4 (size-category intervals).
+Check in their own setting (first 3 or 6 AC signs per block unknown, rest known): 91-96 % of signs
+recovered, so the implementation works. Results: see the table written by the script and the paper.
+
+### B36: video identification from frame sizes (`experiments/video_fingerprint.py`)
+
+Schuster et al. identify which known video is streamed from encrypted burst sizes. Here the attacker
+correlates W consecutive frame sizes with his own encodings of the candidate videos. Every level leaks the
+same (E0-E4 sizes do not depend on the key); only padding helps, at the byte cost the script reports.
