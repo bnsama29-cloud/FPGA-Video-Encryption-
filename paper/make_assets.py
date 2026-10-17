@@ -625,6 +625,8 @@ def lanes_rtl():
         macro("RtlFourLanesSpeedup", f"{vga[1]['clocks_per_pixel'] / vga[4]['clocks_per_pixel']:.1f}")
         macro("RtlFourLanesFps", f"{100e6 / (vga[4]['clocks_per_pixel'] * 640 * 480):.0f}")
         macro("RtlFourLanesHdFps", f"{100e6 / (vga[4]['clocks_per_pixel'] * 1920 * 1080):.0f}")
+        # pixel bandwidth the DMA must read from DDR: 4 bytes per pixel (32-bit {pad, B, G, R} words)
+        macro("RtlFourLanesInMBs", f"{4 * vga[4]['mpx_per_s_at_100mhz']:.0f}")
     # R2 event-model projection of the same configurations (no frame overlap), to compare model and RTL
     plj = RES / "parallel_lanes" / "synthetic.json"
     proj = {}
@@ -664,6 +666,39 @@ def lanes_rtl():
     plt.close(fig)
 
 
+# ---------------------------------------------------------------- complete Zynq system, lanes, clock sweep
+BLOCK_WORDS = {"u_conv": "colour converter", "u_rle": "zig-zag/run-length stage", "u_dct": "DCT",
+               "u_quant": "quantiser", "u_huff": "Huffman coder", "u_pack": "bit packer", "u_ks": "keystream generator",
+               "u_tag": "tag unit"}
+
+
+def system_and_lanes(results):
+    """Macros from the Vivado snapshot beyond the encoder table: both PYNQ-Z2 overlays (PS + DMA + encoder,
+    post-route), the lane encoders out of context, and the v2 encoder at 125 MHz (which block limits it)."""
+    res = {x["name"]: x for x in results}
+    n = lambda v, nd=0: f"{v:,.{nd}f}".replace(",", "{,}")
+    for key, name in (("overlay", "Overlay"), ("overlay_lanes", "OverlayLanes")):
+        r = res.get(key)
+        if r and r["timing"].get("wns") is not None:
+            macro(f"{name}Wns", f"{r['timing']['wns']:+.3f}")
+            macro(f"{name}Luts", n(r["util"]["lut"][0]))
+            macro(f"{name}Bram", f"{r['util']['bram'][0]:g}")
+            macro(f"{name}Dsp", f"{r['util']['dsp'][0]:g}")
+            macro(f"{name}PowerW", f"{r['power'].get('total', 0):.2f}")
+    for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
+        v = lanes_vivado(l)
+        if v:
+            macro(f"{name}Luts", n(v["lut"]))
+            macro(f"{name}Bram", f"{v['bram']:g}")
+            macro(f"{name}Dsp", f"{v['dsp']:g}")
+            macro(f"{name}Wns", f"{v['wns']:+.3f}")
+    r125 = res.get("secure_jpeg_top_8.0ns")
+    if r125 and r125.get("critical"):
+        macro("TopWnsAtOneTwoFive", f"{r125['timing']['wns']:.3f}")
+        blk = r125["critical"][0][1]
+        macro("TopLimitAtOneTwoFive", BLOCK_WORDS.get(blk, blk.replace("_", "\\_")))
+
+
 # ---------------------------------------------------------------- comparison with published designs
 def compare(r, cores):
     """Table: this work (from vivado_results.json + the RTL cycle benchmark) next to published designs
@@ -690,7 +725,8 @@ def compare(r, cores):
         rows.append(row if lr["lanes"] == 4 else "\\ifextended " + row + " \\fi")   # 6-page limit
     if lr_all:
         pending = not all(lanes_vivado(x["lanes"]) for x in lr_all)
-        lanes_note = (" Lanes (v3): RTL simulation at 100\\,MHz" + ("; area pending (--)" if pending else "") + ".")
+        lanes_note = (" Lanes (v3): throughput in RTL simulation at 100\\,MHz" +
+                      ("; area pending (--)" if pending else ", area post-route") + ".")
     for x in J(rel)["rows"]:
         rows.append(f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
                     f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'])} & {x['crypto']} \\\\")
@@ -786,6 +822,7 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
             macro("AsconLutMin", f"{min(c[3] for c in cores)}")
             macro("AsconLutMax", f"{max(c[3] for c in cores)}")
         compare(r, cores)
+        system_and_lanes(J(viv))
     else:                                                 # until then: Yosys estimate, clearly labelled
         def yosys(name):
             p = DATA / "yosys" / name
