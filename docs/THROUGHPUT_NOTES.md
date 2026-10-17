@@ -105,5 +105,7 @@ Ideas behind it, and where each one came from:
 
 Measured (Icarus, cycle-accurate, `experiments/lanes_rtl_throughput.py`, 640x480, 100 MHz):
 1 lane 1.519 clk/px = 65.8 Mpx/s · 2 lanes 0.817 = 122.3 Mpx/s · 4 lanes 0.569 = 175.7 Mpx/s.
-Area and timing: Vivado run 5. Items still open from the list above: 1 (clock), 6 (BRAM: lanes multiply
+Post-route (Vivado run 6, 17 Oct): 2 lanes 9,869 LUT / 50 BRAM / 46 DSP and 4 lanes 16,573 / 52 / 92 meet
+100 MHz; the 2-lane PYNQ-Z2 overlay meets 100 MHz (WNS +0.208 ns). Next clock limit: the colour converter
+(v2 at 125 MHz: -0.875 ns). Items still open from the list above: 1 (clock), 6 (BRAM: lanes multiply
 the line buffers), 9-11, 12-17.

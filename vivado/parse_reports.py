@@ -1,6 +1,6 @@
 """Turn Vivado reports into the paper's hardware table (no number typed by hand).
 
-    python vivado/parse_reports.py                       # every sim_build/vivado_*/ and the overlay
+    python vivado/parse_reports.py                       # every sim_build/vivado_*/ and both overlays
     python vivado/parse_reports.py sim_build/vivado_secure_jpeg_top future_work/board/overlay
 
 Reads, in each folder: utilization.txt (LUT / FF / BRAM / DSP), timing.txt (WNS, TNS, WHS),
@@ -131,11 +131,18 @@ def parse_hier(text, depth=2):
     return rows
 
 
+def _name(folder):
+    """Design name from the folder: vivado_<design> (OOC runs), overlay, overlay/lanes -> overlay_lanes."""
+    if folder.name == "lanes" and folder.parent.name == "overlay":
+        return "overlay_lanes"
+    return folder.name.replace("vivado_", "")
+
+
 def read_folder(folder):
     folder = Path(folder)
     rd = lambda n: (folder / n).read_text(errors="replace") if (folder / n).exists() else ""
     t = rd("timing.txt")
-    r = dict(folder=str(folder), name=folder.name.replace("vivado_", ""), util=parse_utilization(rd("utilization.txt")),
+    r = dict(folder=str(folder), name=_name(folder), util=parse_utilization(rd("utilization.txt")),
              timing=parse_timing(t), power=parse_power(rd("power.txt")), hier=parse_hier(rd("utilization_hier.txt")),
              critical=parse_critical(t),
              period=parse_period(t, folder), missing=[])
@@ -188,7 +195,8 @@ def tables(results):
 
 def main():
     folders = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / "sim_build").glob("vivado_*")) + \
-        [p for p in [ROOT / "future_work" / "board" / "overlay"] if p.exists()]
+        [p for p in [ROOT / "future_work" / "board" / "overlay",
+                     ROOT / "future_work" / "board" / "overlay" / "lanes"] if (p / "timing.txt").exists()]
     folders = [f for f in folders if f.is_dir() and f.name != "vivado_logs"]   # logs are not a design
     if not folders:
         sys.exit("no report folders: run vivado/vivado_ooc.tcl (or vivado/run_vivado_day.py) first")
