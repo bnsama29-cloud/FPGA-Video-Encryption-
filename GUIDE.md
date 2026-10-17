@@ -211,8 +211,8 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B31 | Frame-size side channel (R7: every level E0-E5 leaks the same; separability 0.95 fixed camera, 0.50-0.95 films): constant-size padding option in `link/` + static-camera clip | P1 | 2 + 5 | ✅ measured, in the paper (Discussion); padding option and FF+PI rerun open | `docs/RESEARCH.md` |
 | B33 | Research R8: chosen-plaintext attack (Li et al.) on the E5 shuffle, transferred across frames | P1 | 5 | ✅ 7 sources (chance-level placement) | `docs/RESEARCH.md` |
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
-| B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ scikit-image photos (local) · ⏳ Kodak + clips: Kaggle `JOB = "references"` | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
-| B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ⏳ Kaggle `JOB = "references"` (needs ≥ 2 videos) | `experiments/video_fingerprint.py` |
+| B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ Kaggle 17 Oct: 29 frames, 9 source sets (Kodak, open films, private clips); in the paper | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
+| B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ✅ Kaggle 17 Oct: 7 videos; in the paper (Table XII extended, one sentence in the conference version) | `experiments/video_fingerprint.py` |
 | B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ⏳ hardware phase, after the board gate | §4.1 |
 | B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
@@ -457,8 +457,8 @@ two restart-interval rows already moved to the repository).
 | Every level E0–E5 leaks motion through the frame size equally; constant-size frames close it (cost depends on content) | `size_leak.py`, 7 sources (fixed-camera case: synthetic only) | ✅ (E0–E5 and padding rows) |
 | Rate control + padding to a cap hides motion | `size_leak.py` FF+PI row | ❌ **do not claim**: 0.51-0.73 and 13-36 % frames over cap on real clips |
 | E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ 7 sources |
-| The sign-recovery LP of Lin et al. does not recover E1's signs (chance level), while it recovers most signs in its own setting | `sign_recovery.py` | ✅ scikit-image photos · ⏳ Kodak + clips |
-| Frame sizes identify which known video is streamed, at every level; only padding stops it | `video_fingerprint.py` | ⏳ Kaggle |
+| The sign-recovery LP of Lin et al. recovers 88-93 % of signs in its own setting but 59 % of E1's and 49 % of E2's; it still sharpens E1's outline (edge 0.41 vs 0.33) | `sign_recovery.py` | ✅ 29 frames, 9 source sets |
+| One second of frame sizes identifies which of 7 known videos plays (98 % E1-E4, 99 % E5, chance 14 %); only constant-size frames (+81 % bytes) reach chance | `video_fingerprint.py` | ✅ 7 videos |
 | E5 in hardware | B6 | 📝 (paper says "model level") |
 
 **Claims to avoid:**

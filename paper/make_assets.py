@@ -1104,8 +1104,12 @@ def sign_recovery():
     rows, srcs = [], []
     for f in files:
         j = J(f)
-        rows += j["rows"]
+        rows += [dict(r, src=f.stem) for r in j["rows"]]
         srcs.append(f.stem)
+    # a blank frame (no AC coefficient, e.g. a fade to black) has no sign to recover: leave it out
+    blank = {(r["src"], r["frame"]) for r in rows if r["mode"] == "LinU3" and r.get("sign_acc") != r.get("sign_acc")}
+    rows = [r for r in rows if (r["src"], r["frame"]) not in blank]
+    macro("SrBlank", str(len(blank)))
     by = lambda m: [r for r in rows if r["mode"] == m]
     mean = lambda m, k: st.mean(r[k] for r in by(m) if k in r)
     levels = [m for m in ("LinU3", "LinU6", "E1", "E2", "E3", "E4") if by(m)]
@@ -1124,7 +1128,7 @@ def sign_recovery():
 \centering\small
 \begin{{tabular}}{{lrrrrr}}
 \toprule
-Setting & Frames & Signs & SSIM & Edge & Repl.\ edge \\\\
+Setting & Frames & Signs & SSIM & Edge & Repl.\ edge \\
 \midrule
 {chr(10).join(lines)}
 \bottomrule
@@ -1132,6 +1136,11 @@ Setting & Frames & Signs & SSIM & Edge & Repl.\ edge \\\\
 \end{{table}}
 """)
     macro("SrFrames", str(n_frames))
+    macro("SrSources", str(len(srcs)))
+    e1 = [r["sign_acc"] for r in by("E1") if "sign_acc" in r]
+    if e1:
+        macro("SrEoneSignsMin", f"{100 * min(e1):.0f}")
+        macro("SrEoneSignsMax", f"{100 * max(e1):.0f}")
     if by("LinU3") and by("LinU6"):
         macro("SrLinSignsMin", f"{100 * min(mean('LinU3', 'sign_acc'), mean('LinU6', 'sign_acc')):.0f}")
         macro("SrLinSignsMax", f"{100 * max(mean('LinU3', 'sign_acc'), mean('LinU6', 'sign_acc')):.0f}")
@@ -1143,6 +1152,46 @@ Setting & Frames & Signs & SSIM & Edge & Repl.\ edge \\\\
         macro(f"Sr{w}Ssim", f"{mean(m, 'ssim_lp'):.2f}")
         if any("sign_acc" in r for r in by(m)):
             macro(f"Sr{w}Signs", f"{100 * mean(m, 'sign_acc'):.0f}")
+
+
+def video_fingerprint():
+    """B36: video identification from frame sizes (experiments/video_fingerprint.py), Schuster et al. style."""
+    p = REFS / "video_fingerprint" / "all_videos.json"
+    if not p.exists():
+        return
+    j = J(p)
+    res, meta = j["results"], j["meta"]
+    W = sorted(int(k[1:]) for k in res["E2"] if k.startswith("W"))
+    name = {"E2": "E1--E4", "E5": "E5", "pad-1KB": "pad to 1\\,KB", "pad-runmax": "pad to running max.",
+            "pad-win": "pad to 10\\,s max.", "pad-const": "constant size"}
+    lines = [f"{name[k]} & {100 * v['overhead']:+.0f}\\,\\% & " + " & ".join(f"{100 * v[f'W{w}']:.0f}" for w in W) + " \\\\"
+             for k, v in res.items()]
+    write("tab_fingerprint.tex", rf"""\begin{{table}}[t]
+\caption{{Which of {len(meta['sources'])} videos is playing, identified from $W$ consecutive encrypted frame sizes (after~\cite{{schuster2017}}), in \% of {meta['queries']} queries; chance {100 * meta['chance']:.0f}\,\%. At 10 frames/s, $W{{=}}10$ is one second. Bytes: cost over the E2 stream.}}
+\label{{tab:fingerprint}}
+\centering\small
+\begin{{tabular}}{{lr{'r' * len(W)}}}
+\toprule
+Stream & Bytes & {' & '.join(f'$W{{=}}{w}$' for w in W)} \\
+\midrule
+{chr(10).join(lines)}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+    macro("FpVideos", str(len(meta["sources"])))
+    macro("FpChance", f"{100 * meta['chance']:.0f}")
+    macro("FpEtwoTen", f"{100 * res['E2']['W10']:.0f}")
+    macro("FpEfiveTen", f"{100 * res['E5']['W10']:.0f}")
+    macro("FpEtwoFive", f"{100 * res['E2']['W5']:.0f}")
+    macro("FpKbTen", f"{100 * res['pad-1KB']['W10']:.0f}")
+    macro("FpKbHundred", f"{100 * res['pad-1KB']['W100']:.0f}")
+    macro("FpKbCost", f"{100 * res['pad-1KB']['overhead']:.0f}")
+    macro("FpRunTen", f"{100 * res['pad-runmax']['W10']:.0f}")
+    macro("FpRunHundred", f"{100 * res['pad-runmax']['W100']:.0f}")
+    macro("FpRunCost", f"{100 * res['pad-runmax']['overhead']:.0f}")
+    macro("FpConstHundred", f"{100 * res['pad-const']['W100']:.0f}")
+    macro("FpConstCost", f"{100 * res['pad-const']['overhead']:.0f}")
 
 
 def restart_interval():
@@ -1496,6 +1545,7 @@ def main():
     leakage()
     standard_metrics()
     sign_recovery()
+    video_fingerprint()
     restart_interval()
     size_channel()
     lanes_rtl()
