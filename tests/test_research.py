@@ -249,3 +249,48 @@ def test_recognition_counts_matches_hits_and_false_alarms():
     assert r["E5 (N=1)"]["recall_iou"] == 0.0, r["E5 (N=1)"]
     assert r["plain"]["frames_with_person"] == 3 and r["plain"]["frames_without"] == 1
     assert RG.iou([0, 0, 10, 10], [5, 0, 15, 10]) == 1 / 3
+
+
+# ---------------------------------------------------------------- B35 sign-bit recovery (Lin et al.)
+def test_sign_recovery_works_in_lin_setting_and_reads_only_the_ciphertext():
+    """The LP attack must recover most signs in Lin et al.'s own setting (first 3 AC signs unknown, plain
+    stream), otherwise its E1-E4 numbers mean nothing. The attacker's view of an E1 frame must have the
+    true magnitudes and DC, and E3 must hide the magnitudes (only size categories)."""
+    import sign_recovery as SR
+    from model.jpeg import package_frame
+    rgb = make_image(64, 48, "scene", seed=5)
+    an = analyse_frame(rgb)
+    truth = SR.truth_blocks(an, 64)
+    plain = package_frame(an, SR.KEY, 7, 1, "E0").jpeg
+    img, info, F, acv = SR.sign_recovery(plain, "E0", lin_u=3)
+    acc = SR.sign_accuracy(F, acv, truth)
+    assert info["unknown_ac"] > 0 and acc > 0.8, f"Lin setting: {acc:.3f} of signs recovered ({info})"
+    e1 = package_frame(an, SR.KEY, 7, 1, "E1").jpeg
+    blocks, W, H, q = SR.luma_blocks_from_cipher(e1, "E1")
+    flips = 0
+    for bi, b in enumerate(blocks):
+        assert b["dc"][1] == (truth[bi][0] - (truth[bi - 1][0] if bi else 0)), f"block {bi}: DC differs"
+        for n, s, a in b["ac"]:
+            assert abs(a) == abs(truth[bi][n]), f"block {bi} coef {n}: |{a}| != |{truth[bi][n]}|"
+            flips += a != truth[bi][n]
+    assert flips > 0, "E1 ciphertext shows every AC sign in clear"
+    e3 = package_frame(an, SR.KEY, 7, 1, "E3").jpeg
+    blocks3, *_ = SR.luma_blocks_from_cipher(e3, "E3")
+    changed = sum(abs(a) != abs(truth[bi][n]) for bi, b in enumerate(blocks3) for n, s, a in b["ac"])
+    assert changed > 0, "E3 ciphertext shows the AC magnitudes"
+
+
+# ---------------------------------------------------------------- B36 video identification (Schuster et al.)
+def test_fingerprint_identifies_by_shape_and_guesses_on_constant_size():
+    import video_fingerprint as VF
+    rng = np.random.default_rng(1)
+    lib = [rng.normal(5000, 300, 200) for _ in range(4)]
+    hits = sum(VF.identify(lib[k][o:o + 20] * 1.1, lib, rng) == k
+               for k in range(4) for o in (0, 50, 120))
+    assert hits == 12, f"scaled exact windows identified {hits}/12"
+    flat = VF.pad(lib[2], "pad-const")
+    assert np.all(flat == lib[2].max())
+    guesses = [VF.identify(flat[:20], [VF.pad(x, "pad-const") for x in lib], rng) for _ in range(200)]
+    assert 0.1 < np.mean(np.array(guesses) == 2) < 0.4, "constant-size query must be a random guess"
+    rm = VF.pad(np.array([3.0, 1, 4, 1, 5]), "pad-runmax")
+    assert list(rm) == [3, 3, 4, 4, 5]

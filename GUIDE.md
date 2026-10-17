@@ -211,6 +211,10 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B31 | Frame-size side channel (R7: every level E0-E5 leaks the same; separability 0.95 fixed camera, 0.50-0.95 films): constant-size padding option in `link/` + static-camera clip | P1 | 2 + 5 | ✅ measured, in the paper (Discussion); padding option and FF+PI rerun open | `docs/RESEARCH.md` |
 | B33 | Research R8: chosen-plaintext attack (Li et al.) on the E5 shuffle, transferred across frames | P1 | 5 | ✅ 7 sources (chance-level placement) | `docs/RESEARCH.md` |
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
+| B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ scikit-image photos (local) · ⏳ Kodak + clips: Kaggle `JOB = "references"` | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
+| B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ⏳ Kaggle `JOB = "references"` (needs ≥ 2 videos) | `experiments/video_fingerprint.py` |
+| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ⏳ hardware phase, after the board gate | §4.1 |
+| B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test** (Faster R-CNN persons) | P2 | 5 | ✅ plain 68-100 %, E1 up to 37 %, E2/E4 <= 3 %, E5 0 %; in the paper | below |
 | B24 | **More frames + 95 % intervals** for leakage | P2 | 5 | ✅ 60 frames/source, intervals in the extended paper (Table + Fig.) | below |
@@ -453,6 +457,8 @@ two restart-interval rows already moved to the repository).
 | Every level E0–E5 leaks motion through the frame size equally; constant-size frames close it (cost depends on content) | `size_leak.py`, 7 sources (fixed-camera case: synthetic only) | ✅ (E0–E5 and padding rows) |
 | Rate control + padding to a cap hides motion | `size_leak.py` FF+PI row | ❌ **do not claim**: 0.51-0.73 and 13-36 % frames over cap on real clips |
 | E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ 7 sources |
+| The sign-recovery LP of Lin et al. does not recover E1's signs (chance level), while it recovers most signs in its own setting | `sign_recovery.py` | ✅ scikit-image photos · ⏳ Kodak + clips |
+| Frame sizes identify which known video is streamed, at every level; only padding stops it | `video_fingerprint.py` | ⏳ Kaggle |
 | E5 in hardware | B6 | 📝 (paper says "model level") |
 
 **Claims to avoid:**
@@ -492,13 +498,13 @@ Numbers are copied from each source. Ours are RTL simulation and a Yosys estimat
 | Work | Platform | Area | Speed | Encryption | Authentication | Format compliant | Security evaluation |
 |---|---|---|---|---|---|---|---|
 | **Ours** | Zynq-7020 (RTL sim) | ~5.7 K LUT, 2.8 K FF, 25 BRAM36, 24 DSP (Yosys est.) | 1.64 cycles/px → ~199 fps VGA if 100 MHz closes; 0 extra cycles for encryption | Ascon-AEAD128 keystream on signs/amplitudes (+ keyed MCU shuffle in E5) | per-frame 128-bit tag over metadata + scan, replay window, ratchet | yes, 4 decoders | edge leakage on 8 sources (incl. open films + Kodak), jigsaw, U-Net (4 setups), NZCA + restart interval, key sensitivity/NPCR/UACI/entropy; 11 active attacks, 10-seed policy study |
-| Kishore et al. 2015 [JRTIP] | FPGA JPEG encoder | +~1 % hardware for the encryption stage | not quoted here | lightweight block/symbol scrambling | no | yes (claimed) | visual |
-| Bağbaba & Örs 2015 [ELECO] | FPGA | – | – | TEA on DC (+5 AC) coefficients | no | – | PSNR |
+| Kishore et al. 2015 [JRTIP] | Stratix II / IV, 256×256 grey | 2250 ALUT, 47 mult., 1.26 Mbit (Stratix IV, with scrambler; +13-17 % ALUT, 2× memory vs. without) | 100 MHz, 170 frames/s (188 without) = 11.1 Mpx/s | lightweight block/symbol scrambling | no | yes (claimed) | visual |
+| Bağbaba & Örs 2015 [ELECO] | Virtex-6 | 2130 LUT, 1456 FF, 9 DSP | 87 MHz (no throughput) | TEA on DC (+5 AC) coefficients | no | – | PSNR |
 | Gladis Kurian & Chen 2025 [Electronics] | Artix-7 100T | 3.5–5.3 K LUT, 4.3 K FF, 32 BRAM, 0 DSP | 100 MHz; replay check ~0.8 µs | Ascon-128 (messages, not video) | AEAD + Bloom-filter replay check | n/a | false-positive rate |
 | Khairallah & Yadhunathan 2023 [NIST LWC workshop] | Artix-7 100T | Ascon-p MACs: ~0.8–1.7 K LUT, ~390 FF | 200 MHz, 33–166 Mbps (duplex) | – (MAC) | MAC | n/a | – |
 | CAST JPEG-E-S (commercial) | Artix-7 | 3.1 K LUT, 2 BRAM, 16 DSP | 1 sample/clk @ 166 MHz | none | none | yes | – |
 | logicBRICKS logiJPGE (commercial) | Zynq-7020 | 3.2 K LUT, 2.0 K FF, 16 BRAM, 30 DSP | 1 px/clk @ 150 MHz, 1080p60 | none | none | yes | – |
-| Hirose, Imaizumi & Kiya 2024 [arXiv] | software | – | – | bitstream XOR + restart-marker block permutation (RI 2–32) | no | yes | key space/sensitivity, NZCA, histograms, PSNR/SSIM on 1338 UCID images |
+| Hirose, Imaizumi & Kiya 2024 [APSIPA ASC] | software | – | – | bitstream XOR + restart-marker block permutation (RI 2–32) | no | yes | key space/sensitivity, NZCA, histograms, PSNR/SSIM on 1338 UCID images |
 | Sirichotedumrong & Kiya [arXiv 2010.06198] | software | – | – | learnable block-wise encryption | no | – | learned attacks (ITN, GAN) reach SSIM 0.72–0.91 |
 | Qiu et al. 2025 [arXiv 2503.16287] | Raspberry Pi 4B + Zynq HLS prototype | – | 720p, 10 s clip in ~2.7 s | chaotic keystream XOR on raw frames | no | no (raw video) | entropy, correlation, NPCR/UACI, NIST/DIEHARD |
 

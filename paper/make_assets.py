@@ -23,6 +23,7 @@ NUMWORD = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: 
 EXTRA = DATA / "extra"                         # open data, standard metrics, restart interval, stronger U-Net
 FINAL = DATA / "final"                         # last Kaggle run, 16 Oct 2026: 60-frame leakage + intervals (B24),
                                                # MST jigsaw (B9), person detection (B23), U-Net controls (B25), P5 (B17)
+REFS = DATA / "references"                     # attacks from the reference papers (B35 Lin et al., B36 Schuster et al.)
 TAB = HERE / "tables"
 FIG = HERE / "figures"
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
@@ -728,11 +729,14 @@ def compare(r, cores):
         lanes_note = (" Lanes (v3): throughput in RTL simulation at 100\\,MHz" +
                       ("; area pending (--)" if pending else ", area post-route") + ".")
     for x in J(rel)["rows"]:
-        rows.append(f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
-                    f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'])} & {x['crypto']} \\\\")
+        row = (f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
+               f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'], 1 if (x['mpix_s'] or 100) < 100 else 0)} & {x['crypto']} \\\\")
+        rows.append("\\ifextended " + row + " \\fi" if x.get("extended") else row)
+    ext_note = ("\\ifextended{} Kishore et al.: Stratix~IV ALUTs and 18-bit multipliers, 256$\\times$256 grey images; "
+                "Ba\\u{g}baba and \\\"Ors report no throughput.\\fi" if any(x.get("extended") for x in J(rel)["rows"]) else "")
     write("tab_compare.tex", rf"""\begin{{table}}[t]
 \caption{{Comparison with published FPGA designs. Their numbers are as reported by each source; ours are
-post-route (Table~\ref{{tab:resources}}) with throughput from the RTL cycle count of a 640$\times$480 frame. Mpx/s: million pixels per second.{lanes_note}}}
+post-route (Table~\ref{{tab:resources}}) with throughput from the RTL cycle count of a 640$\times$480 frame. Mpx/s: million pixels per second.{lanes_note}{ext_note}}}
 \label{{tab:compare}}
 \centering\small
 \begin{{tabular}}{{llrrrrrl}}
@@ -1090,6 +1094,57 @@ Level & Wrong-key SSIM & NPCR / UACI & 1-pixel NPCR & Entropy & Adj.\ corr. \\
     macro("StdPixelNpcrMax", f"{max(avg(m, 'npcr_plain') for m in MODES[1:]):.0f}")
 
 
+def sign_recovery():
+    """B35: Lin et al.'s sign-bit recovery LP against E1-E4 (experiments/sign_recovery.py), pooled over every
+    source file in paper/data/references/sign_recovery/ (frames weighted equally)."""
+    d = REFS / "sign_recovery"
+    files = sorted(d.glob("*.json")) if d.exists() else []
+    if not files:
+        return
+    rows, srcs = [], []
+    for f in files:
+        j = J(f)
+        rows += j["rows"]
+        srcs.append(f.stem)
+    by = lambda m: [r for r in rows if r["mode"] == m]
+    mean = lambda m, k: st.mean(r[k] for r in by(m) if k in r)
+    levels = [m for m in ("LinU3", "LinU6", "E1", "E2", "E3", "E4") if by(m)]
+    label = {"LinU3": r"Lin et al.'s setting, $U{=}3$", "LinU6": r"Lin et al.'s setting, $U{=}6$"}
+    lines = []
+    for m in levels:
+        sa = rf"{100 * mean(m, 'sign_acc'):.0f}\,\%" if any("sign_acc" in r for r in by(m)) else "--"
+        repl = "--" if m.startswith("Lin") else f"{mean(m, 'edge_repl'):.2f}"
+        lines.append(f"{label.get(m, m)} & {len(by(m))} & {sa} & {mean(m, 'ssim_lp'):.2f} & {mean(m, 'edge_lp'):.2f} & {repl} \\\\")
+        if m == "LinU6":
+            lines.append("\\midrule")
+    n_frames = len(by("E1")) or len(by(levels[0]))
+    write("tab_signrec.tex", rf"""\begin{{table}}[t]
+\caption{{Sign-bit recovery attack of Lin et al.~\cite{{lin2024}} (LP relaxation, luma, {n_frames} frames of {len(srcs)} source sets). Top: their own setting on plain JPEG, where only the first $U$ AC signs per block are unknown (check of our implementation). Bottom: our levels, attacked from the ciphertext alone. Signs: share of unknown AC signs recovered, weighted by magnitude (chance 50\,\%). Edge: edge correlation with the original; last column: the replacement attack for comparison.}}
+\label{{tab:signrec}}
+\centering\small
+\begin{{tabular}}{{lrrrrr}}
+\toprule
+Setting & Frames & Signs & SSIM & Edge & Repl.\ edge \\\\
+\midrule
+{chr(10).join(lines)}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+    macro("SrFrames", str(n_frames))
+    if by("LinU3") and by("LinU6"):
+        macro("SrLinSignsMin", f"{100 * min(mean('LinU3', 'sign_acc'), mean('LinU6', 'sign_acc')):.0f}")
+        macro("SrLinSignsMax", f"{100 * max(mean('LinU3', 'sign_acc'), mean('LinU6', 'sign_acc')):.0f}")
+    for m, w in (("E1", "Eone"), ("E2", "Etwo"), ("E3", "Ethree"), ("E4", "Efour")):
+        if not by(m):
+            continue
+        macro(f"Sr{w}Edge", f"{mean(m, 'edge_lp'):.2f}")
+        macro(f"Sr{w}ReplEdge", f"{mean(m, 'edge_repl'):.2f}")
+        macro(f"Sr{w}Ssim", f"{mean(m, 'ssim_lp'):.2f}")
+        if any("sign_acc" in r for r in by(m)):
+            macro(f"Sr{w}Signs", f"{100 * mean(m, 'sign_acc'):.0f}")
+
+
 def restart_interval():
     files = {}
     for key, label in ALL_LABEL.items():
@@ -1440,6 +1495,7 @@ def main():
     final_results()          # first: the learned-attack caption uses its source counts
     leakage()
     standard_metrics()
+    sign_recovery()
     restart_interval()
     size_channel()
     lanes_rtl()
