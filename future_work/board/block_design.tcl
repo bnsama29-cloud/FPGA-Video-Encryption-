@@ -100,6 +100,11 @@ set_property -dict [list \
     CONFIG.c_mm2s_burst_size {16} \
     CONFIG.c_s2mm_burst_size {16}] $dma
 
+# Clock our IP from FCLK0 BEFORE the AXI automation, so "Auto" reuses this clock. The wrapper's clock
+# pin no longer declares FREQ_HZ 100000000: with that fixed value, a 90 or 80 MHz retry made the
+# automation insert a clk_wiz with an unconnected input (run 5: ERROR [BD 41-758] /clk_wiz/clk_in1).
+connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins sjpeg/clk]
+
 connect_bd_intf_net [get_bd_intf_pins dma/M_AXIS_MM2S] [get_bd_intf_pins sjpeg/s_axis]
 connect_bd_intf_net [get_bd_intf_pins sjpeg/m_axis]     [get_bd_intf_pins dma/S_AXIS_S2MM]
 
@@ -119,7 +124,7 @@ axi_auto /dma/M_AXI_S2MM /ps7/S_AXI_HP0    ps7/S_AXI_HP0
 # ---- clock and reset for our IP (active-high, synchronous, from the automation's reset block)
 # (the AXI automation above may already have wired them: only connect what is still open)
 proc unconnected {pin} { expr {[llength [get_bd_nets -quiet -of_objects [get_bd_pins $pin]]] == 0} }
-if {[unconnected sjpeg/clk]} { connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins sjpeg/clk] }
+# (sjpeg/clk was connected to FCLK0 above)
 set rstblk [lindex [get_bd_cells -filter {VLNV =~ "*proc_sys_reset*"}] 0]
 if {[unconnected sjpeg/rst]} { connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins sjpeg/rst] }
 
@@ -132,6 +137,9 @@ connect_bd_net [get_bd_pins dma/s2mm_introut]       [get_bd_pins irq_concat/In2]
 connect_bd_net [get_bd_pins irq_concat/dout]        [get_bd_pins ps7/IRQ_F2P]
 
 assign_bd_address
+if {[llength [get_bd_cells -quiet -filter {VLNV =~ "*clk_wiz*"}]] > 0} {
+    error "the AXI automation added a clk_wiz: every block must run on ps7/FCLK_CLK0 (see the comment at sjpeg/clk)"
+}
 validate_bd_design
 save_bd_design
 
