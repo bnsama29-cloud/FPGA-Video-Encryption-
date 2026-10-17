@@ -8,8 +8,9 @@ On the laptop (channel + receiver + dashboard, listening on the network):
     python -m link.run_all --no-sender --set link.bind_host=0.0.0.0 --set link.sender_host=<board IP>
     (or start link.channel, link.receiver, link.dashboard separately with the same --set flags)
 
-Without a board (development / tests): --mock uses the golden-model emulation of the IP,
-so everything except the FPGA itself can be exercised on a laptop.
+Without a board (development / tests): --mock uses the golden-model emulation of the IP
+(--mock-lanes 2 emulates the lane bitstream secure_jpeg_lanes.bit), so everything except the
+FPGA itself can be exercised on a laptop.
 
 Everything else (keys, ratchet, feedback, defence policy, dashboard telemetry) is the
 unchanged link/sender.py. The ARM keeps the policy loop; the fabric does the encoding.
@@ -45,12 +46,15 @@ class BoardEncoder:
         return EncodedOut(jpeg, payload_bits=8 * len(scan), enc_bits=0, scan_bytes=len(scan))
 
 
-def make_board_sender(cfg, bitfile=None, mock=False):
+def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None):
     cfg["sender"]["encoder"] = "model"                     # placeholder, replaced below
     if cfg["defence"]["max_mode"] == "E5":
         cfg["defence"]["max_mode"] = "E4"
     s = Sender(cfg)
-    backend = MockBackend() if mock else PynqBackend(bitfile)
+    if mock_lanes:
+        backend = MockBackend(contract=3, lanes=mock_lanes)
+    else:
+        backend = MockBackend() if mock else PynqBackend(bitfile)
     s.encoder = BoardEncoder(SecureJpegIP(backend), cfg["sender"]["quality"])
     return s
 
@@ -60,9 +64,11 @@ def main():
                                                  formatter_class=argparse.RawDescriptionHelpFormatter))
     ap.add_argument("--bitfile", default="secure_jpeg.bit")
     ap.add_argument("--mock", action="store_true", help="emulate the IP with the golden model (no board)")
+    ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
+                    help="emulate the lane bitstream (contract v3) with this many lanes (no board)")
     a = ap.parse_args()
     cfg = config.load(a.config, a.set)
-    make_board_sender(cfg, a.bitfile, a.mock).run()
+    make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes).run()
 
 
 if __name__ == "__main__":

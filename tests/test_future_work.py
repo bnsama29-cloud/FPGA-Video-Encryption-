@@ -251,3 +251,14 @@ def test_vivado_overlay_fallback_and_collect(tmp_path, monkeypatch):
     names = zipfile.ZipFile(zips[0]).namelist()
     assert "summary.txt" in names and "overlay/timing_90MHz.txt" in names
     assert not any(n.endswith(".bit") for n in names), names
+
+
+def test_scenario_board_command_matches_the_run_ports():
+    """GUIDE.md A6: experiments/scenario.py --external-sender prints the board_sender command; its ports
+    must be the ones the scenario's channel and logger use, or the board streams into nothing."""
+    sys.path.insert(0, str(ROOT / "experiments"))
+    import scenario
+    cmd = scenario.board_command(47300, "threshold", "10.0.0.5")
+    for part in ("link.host=10.0.0.5", "link.video_in=47300", "link.fb_out=47303", "link.sender_control=47305",
+                 "link.bus=[47310]", "sender.policy=threshold", "future_work.board.board_sender"):
+        assert part in cmd, part

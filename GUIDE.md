@@ -151,6 +151,8 @@ limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\bo
 
 ### 4.2 Board (critical path, deadline 12 Nov) ⏳
 
+Step by step, from the SD card to every number below: **`docs/BOARD_BRINGUP.md`**.
+
 | # | Task | Owner | Time | How | Done when |
 |---|---|---|---|---|---|
 | A1 | **Bit-exact gate on silicon** | 1 | ½ day | `sudo -E python3 -m future_work.board.first_contact --sizes 320x240 640x480` | all modes E0–E4 byte-identical with the model |
@@ -158,7 +160,7 @@ limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\bo
 | A3 | ARM baseline on the same board | 2 | ½ day | `python3 -m future_work.baselines.bench_software_codecs --sizes 320x240 640x480 --frames 30` | `baselines_<host>.md` |
 | A4 | Power and energy per frame | 1 + 5 | 1 day | USB meter: idle / ARM / FPGA per mode, 30 s averages → `future_work/baselines/power_template.csv` → `python -m future_work.baselines.energy_table <csv>` | mJ/frame, FPGA vs ARM |
 | A5 | Live link board → laptop | 3 + 4 | 1 day | board: `python3 -m future_work.board.board_sender --bitfile ... --set link.host=<laptop> --set link.bind_host=0.0.0.0`; laptop: `python -m link.run_all --no-sender --set link.bind_host=0.0.0.0 --set link.sender_host=<board>` | the dashboard shows the board's stream |
-| A6 | Attacks against the board | 3 | 1 day | `experiments/scenario.py` with `full_suite.json` and `benign.json`, 3 runs each | "on hardware" row in the reaction table |
+| A6 | Attacks against the board | 3 | 1 day | `experiments/scenario.py --external-sender <BOARD IP>` with `full_suite.json` and `benign.json`, 3 runs each (docs/BOARD_BRINGUP.md §8) | "on hardware" row in the reaction table |
 | A7 | Webcam on the board | 4 | ½ day | `--set sender.source=webcam:0` | live demo |
 | A8 | Demo video (2 min) | 4 | ½ day | calm → attack → detection → recovery | linked in the README (not in git) |
 
@@ -434,6 +436,8 @@ two restart-interval rows already moved to the repository).
 | Lane encoder (contract v3) bit-exact with the model for 1, 2, 4 lanes, all levels, under stalls; same bytes for every lane count | `tb/test_lanes_top.py`, `make xsim-icarus` | ✅ RTL simulation · ✅ XSim in Vivado (runs 5, 6) |
 | 2 lanes 122 Mpixel/s, 4 lanes 176 Mpixel/s at 640x480 and 100 MHz | `experiments/lanes_rtl_throughput.py` | ✅ RTL simulation (no DMA stalls) · ⏳ board |
 | The lane encoder fits the xc7z020 and meets 100 MHz; its LUT/BRAM/DSP | Vivado run 6 (`lanes`, `bd_lanes` steps) | ✅ post-route: 2 lanes 9,869 LUT / 50 BRAM / 46 DSP, 4 lanes 16,573 / 52 / 92 (out of context); 2-lane PYNQ-Z2 system meets 100 MHz · ⏳ 4-lane system not built; whether DDR feeds ~700 MB/s: board |
+| Peculiar case 1: a bit flip is caught at the first frame, held-back frames only as jamming (their late return is benign reordering), silenced feedback only by the dead-man rule, with the highest leakage while active | `paper/make_assets.py :: peculiar_cases` on the full-suite runs (`experiments/scenario.py`) | ✅ system simulation, 3 runs (extended paper, Fig. 7) |
+| Peculiar case 2: 6 % packet loss loses ~37 % of frames (fragmentation, 1-(1-p)^n), and the defence still never escalates (5-90 % frame loss = degraded network) | same, on the benign runs | ✅ system simulation, 3 runs (extended paper, Fig. 8) |
 | Faster than the commercial encoders | only as "more Mpixel/s at 100 MHz than logiJPGE reports at 150 MHz" | ✅ throughput only; ❌ never "better" overall (they use less BRAM and no cipher) |
 | E1–E4 leak an outline sketch, E5 does not (8 sources incl. open films + Kodak) | mode trade-off + jigsaw | ✅ |
 | A trained network does not recover E5 outlines | learned attack, 4 setups, up to 2,609 training frames | ✅ |

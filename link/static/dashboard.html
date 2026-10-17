@@ -678,10 +678,13 @@ window.addEventListener("resize", drawAll);
 
 // ---------------------------------------------------------------- events
 let lastMode = null, lastPolicy = null, lastFrame = 0, nOk = 0, nRej = 0, nAtk = 0, nRekey = 0, pending = null;
+let encoderName = null;     // "model", "rtl" or "board" (the FPGA, future_work/board/board_sender.py)
 function onEvent(ev) {
   const k = `${ev.src}.${ev.kind}`;
   if (k === "sender.start") {
     $("f-session").textContent = ev.session; floorMode = ev.mode; drawLadder(lastMode);
+    encoderName = ev.encoder;
+    $("foot-cam").textContent = ev.encoder === "board" ? "Input to the FPGA encoder (PYNQ-Z2)" : "Input to the encoder";
     document.querySelector(".views").style.setProperty("--ar", `${ev.size[0]} / ${ev.size[1]}`);
     log(`Sender started: ${ev.size[0]}×${ev.size[1]}, ${ev.encoder} encoder, ${ev.policy} policy`);
   }
@@ -692,8 +695,9 @@ function onEvent(ev) {
     $("f-fps").textContent = ev.fps.toFixed(1);
     $("threat").style.width = (ev.threat * 100) + "%"; $("threat-v").textContent = ev.threat.toFixed(2);
     $("n-threat").textContent = ev.threat.toFixed(2);
-    $("k-enc").textContent = (ev.enc_fraction * 100).toFixed(1) + "% of payload";
-    $("k-encms").textContent = ev.encode_ms + " ms/frame";
+    // the FPGA does not report how many bits it encrypted (board_sender.py), so say so instead of "0 %"
+    $("k-enc").textContent = encoderName === "board" ? "not reported by the FPGA" : (ev.enc_fraction * 100).toFixed(1) + "% of payload";
+    $("k-encms").textContent = ev.encode_ms + (encoderName === "board" ? " ms/frame (FPGA + DMA)" : " ms/frame");
     $("k-hb").textContent = ev.hb_age.toFixed(1) + " s ago";
     $("reason").textContent = (ev.manual ? `Manual override ${ev.manual}. ` : "") + ev.reason;
     $("wire-mode").textContent = ev.mode;
