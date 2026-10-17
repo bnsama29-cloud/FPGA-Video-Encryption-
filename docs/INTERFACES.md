@@ -29,7 +29,7 @@ Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAX
 |---|---|---|---|
 | 0x00 | CTRL | RW | `[0]` START (write 1, self-clearing), `[3:1]` MODE: 0 off, 1 E1, 2 E2, 3 E3, 4 E4 |
 | 0x04 | STATUS | RO | `[0]` DONE, `[1]` BUSY, `[2]` TAG_VALID |
-| 0x08 | VERSION | RO | 0x5EC00200 (contract v2, `secure_jpeg_top`); 0x5EC003LL (contract v3, `secure_jpeg_lanes_top`, LL = lanes) |
+| 0x08 | VERSION | RO | 0x5EC00200 (contract v2, `secure_jpeg_top`); 0x5EC003LL (contract v3, `secure_jpeg_lanes_top`, LL = lanes, bit 7 set when mode 5 is in the RTL: 0x5EC00382 for 2 lanes) |
 | 0x10 | WIDTH | RW | pixels |
 | 0x14 | HEIGHT | RW | pixels |
 | 0x18 | FRAME_CTR | RW | frame counter bits [31:0]; the 63-bit counter must strictly increase |
@@ -136,7 +136,7 @@ Cost: about 0.3 % more bytes (one 2-byte marker and up to 7 padding bits per MCU
 by `experiments/parallel_lanes.py`), one extra Ascon core per lane (keystream) plus `kseg_unit`, and
 per-lane line buffers.
 
-### 8.6 E5 in contract v3 (17 Oct 2026; golden model done, RTL pending: `docs/HW_TODO.md` H1)
+### 8.6 E5 in contract v3 (17 Oct 2026; golden model and RTL done, `secure_jpeg_lanes_top`, VERSION bit 7 set)
 
 E5 hides block positions by sending the MCUs in a keyed order. Doing the permutation in the fabric
 would need a frame buffer; contract v3 already makes restart segments independent, so the work is
@@ -151,7 +151,8 @@ split: **the fabric codes one segment per MCU, the ARM only reorders segments.**
 | Fabric output | scan = seg0 ‖ RST0 ‖ seg1 ‖ … (raster order); tag over the 26-byte prefix (mode 5, version 3) ‖ that scan |
 | ARM (`model/hw.py :: arm_shuffle`) | splits the scan at the RST markers and sends the segments in `e5_order(K, session_id, frame_ctr, n)`: Fisher–Yates with rejection sampling on the keystream of (Ascon-MAC(K, nonce(0,0,0), AD = `E5 MCU shuffle`), nonce(session_id, frame_ctr, 0)); RST markers renumbered 0..7 in output order. Header, APP11 and tag unchanged |
 | Receiver | undoes the permutation, checks the tag over the raster-order scan, then decrypts per segment. A swapped segment or an unshuffled frame fails the tag |
-| Capability | `VERSION` bit 7 = 1 when the RTL implements mode 5 (`0x5EC00380 + LANES`); the driver uses E5 only then |
+| Capability | `VERSION` bit 7 = 1 when the RTL implements mode 5 (`0x5EC00380 + LANES`, the current RTL); the driver uses E5 only then |
+| RTL | `encoder_lane.v` ends a segment after the 6th block of every MCU (counted at the converter output) and keys the keystream with the raster MCU index (row × cols + col, kept as a running sum); `segment_merger.v` reads segment *s* from lane (*s* / cols) mod LANES by tracking the MCU row and column; `selective_enc.v` already selects E4's fields for mode 5 (its tests are `>=`). Cost: +50 LUT and +1 DSP (segment count = rows × cols) in Yosys for 2 lanes; 0.7–3.6 % fewer pixels per second than E2 at 320×240 (1, 2, 4 lanes: 62.7 / 115.3 / 164.8 Mpx/s at 100 MHz, `experiments/lanes_rtl_throughput.py --modes 2 5`) |
 | Nonce uniqueness | as §8: K_seg is unique per frame, segment indices are unique within a frame; the shuffle key is a separate derivation of K under nonce(0,0,0), which no frame uses |
 | Cost | one marker + padding per MCU and restarted DC prediction (+8–23 % bytes over E4 at 320×240, `experiments/restart_interval.py`), no extra Ascon core, no frame buffer; the ARM touches each output byte once |
 

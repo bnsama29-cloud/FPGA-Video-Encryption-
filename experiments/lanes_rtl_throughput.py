@@ -3,10 +3,11 @@
     python experiments/lanes_rtl_throughput.py                    # 128x96, 320x240, 640x480; L = 1, 2, 4
     python experiments/lanes_rtl_throughput.py --sizes 640x480 --lanes 2 4
     python experiments/lanes_rtl_throughput.py --hd              # adds 1280x720 (LOG_MAXW = 11, slow)
+    python experiments/lanes_rtl_throughput.py --sizes 320x240 --modes 2 5   # E5 cost (one segment per MCU)
 
 R2 (experiments/parallel_lanes.py) PROJECTED the lane architecture with an event model. This script
 replaces the projection with a cycle-accurate measurement: it runs tb/test_lanes_top.py::throughput
-in Icarus for each lane count and frame size (scene image, quality 75, E2, no DMA stalls; clocks
+in Icarus for each lane count and frame size (scene image, quality 75, E2 unless --modes, no DMA stalls; clocks
 from the internal start pulse to irq_done; every measured frame is also checked bit-exact against
 model/hw.py :: encode_frame_v3). The contract-v2 encoder (rtl/secure_jpeg_top.v) measured by R1
 (experiments/stall_profile.py, paper/data/research/stall_profile/scaling.json) is the baseline.
@@ -28,15 +29,17 @@ OUT = ROOT / "sim_out" / "lanes_rtl"
 V2_SCALING = ROOT / "paper" / "data" / "research" / "stall_profile" / "scaling.json"
 
 
-def measure(lanes, size, log_maxw):
+def measure(lanes, size, log_maxw, mode=2):
     from common import run_sim
     os.environ["THROUGHPUT_SIZE"] = size
+    os.environ["THROUGHPUT_MODE"] = str(mode)
     os.environ["THROUGHPUT_WARMUP"] = "0"
     log_l = {1: 1, 2: 1, 4: 2}[lanes]
     run_sim("secure_jpeg_lanes_top", "test_lanes_top",
             parameters=dict(LANES=lanes, LOG_L=log_l, LOG_MAXW=log_maxw, LOG_FIFO=10),
             testcase="throughput", build_tag=f"_L{lanes}_W{log_maxw}")
-    return json.loads((ROOT / "sim_out" / f"lanes_throughput_L{lanes}_{size}.json").read_text())
+    suffix = "" if mode == 2 else f"_E{mode}"
+    return json.loads((ROOT / "sim_out" / f"lanes_throughput_L{lanes}_{size}{suffix}.json").read_text())
 
 
 def v2_baseline():
@@ -51,6 +54,7 @@ def main():
     ap.add_argument("--sizes", nargs="+", default=["128x96", "320x240", "640x480"])
     ap.add_argument("--lanes", nargs="+", type=int, default=[1, 2, 4])
     ap.add_argument("--hd", action="store_true", help="also 1280x720 (needs LOG_MAXW = 11)")
+    ap.add_argument("--modes", nargs="+", type=int, default=[2], help="encryption modes (5 = E5)")
     a = ap.parse_args()
     sizes = a.sizes + (["1280x720"] if a.hd else [])
     OUT.mkdir(parents=True, exist_ok=True)
@@ -59,20 +63,21 @@ def main():
         w = int(size.split("x")[0])
         log_maxw = 10 if w <= 1024 else 11
         for lanes in a.lanes:
-            r = measure(lanes, size, log_maxw)
-            r["log_maxw"] = log_maxw
-            res.append(r)
-            print(f"L={lanes} {size}: {r['clocks_per_pixel']:.3f} clk/px, "
-                  f"{r['mpx_per_s_at_100mhz']:.1f} Mpx/s at 100 MHz", flush=True)
+            for mode in a.modes:
+                r = measure(lanes, size, log_maxw, mode)
+                r["log_maxw"] = log_maxw
+                res.append(r)
+                print(f"L={lanes} E{mode} {size}: {r['clocks_per_pixel']:.3f} clk/px, "
+                      f"{r['mpx_per_s_at_100mhz']:.1f} Mpx/s at 100 MHz", flush=True)
     base = v2_baseline()
     (OUT / "results.json").write_text(json.dumps(dict(v2_measured_clocks_per_pixel=base, rows=res), indent=1))
-    md = ["| Frame | Lanes | Clocks/pixel | Mpx/s @100 MHz | @125 MHz | @150 MHz | v2 encoder (R1) |",
-          "|---|---|---|---|---|---|---|"]
+    md = ["| Frame | Lanes | Mode | Clocks/pixel | Mpx/s @100 MHz | @125 MHz | @150 MHz | v2 encoder (R1) |",
+          "|---|---|---|---|---|---|---|---|"]
     for r in res:
         size = f"{r['width']}x{r['height']}"
         c = r["clocks_per_pixel"]
         b = base.get(size)
-        md.append(f"| {size} | {r['lanes']} | {c:.3f} | {100 / c:.1f} | {125 / c:.1f} | {150 / c:.1f} | "
+        md.append(f"| {size} | {r['lanes']} | E{r.get('mode', 2)} | {c:.3f} | {100 / c:.1f} | {125 / c:.1f} | {150 / c:.1f} | "
                   + (f"{b:.3f} clk/px = {100 / b:.1f} Mpx/s" if b else "-") + " |")
     (OUT / "table.md").write_text("\n".join(md) + "\n")
     print("\n".join(md))

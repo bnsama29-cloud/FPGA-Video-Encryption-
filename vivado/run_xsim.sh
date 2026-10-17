@@ -5,6 +5,8 @@
 #   bash vivado/run_xsim.sh            # batch: prints XSIM RESULT: PASS/FAIL
 #   bash vivado/run_xsim.sh gui        # opens the XSim waveform GUI
 #   bash vivado/run_xsim.sh batch xsim_work_v3   # contract-v3 vectors (run_vivado_day.py vectors --v3)
+#   bash vivado/run_xsim.sh saif <work dir>      # also record switching activity: runs saif.tcl
+#                                                # (written by run_vivado_day.py --steps power)
 #   python vivado/run_vivado_day.py check # rebuild JPEGs, run the receiver, save images
 set -e
 cd "$(dirname "$0")/${2:-xsim_work}" || { echo "run python vivado/run_vivado_day.py vectors first"; exit 1; }
@@ -12,6 +14,10 @@ xvlog -prj xsim_abs.prj -i "$(cd ../../rtl/include && pwd)"
 xelab -debug typical -top tb_secure_jpeg_top -snapshot tb_snap
 if [ "$1" = "gui" ]; then
     xsim tb_snap -gui
+elif [ "$1" = "saif" ]; then
+    xsim tb_snap -testplusarg SAIF -tclbatch saif.tcl | tee xsim_run.log
+    grep -q "XSIM RESULT: PASS" xsim_run.log
+    test -s activity.saif
 else
     xsim tb_snap -R | tee xsim_run.log
     grep -q "XSIM RESULT: PASS" xsim_run.log

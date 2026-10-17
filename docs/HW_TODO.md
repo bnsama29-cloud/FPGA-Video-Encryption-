@@ -1,4 +1,4 @@
-# What is left for the hardware (as of 17 Oct 2026)
+# What is left for the hardware (as of 17 Oct 2026, H1 done)
 
 All software is finished and tested: the golden model, the receiver, the board driver, the board
 sender, the bit-exact gate, the XSim vector and check tools and the dashboard all already handle every
@@ -7,16 +7,24 @@ The model is the referee (CLAUDE.md): change the RTL until the test passes, neve
 
 | # | Task | Why | Effort |
 |---|---|---|---|
-| H1 | **E5 in the lane encoder** (mode 5, contract v3 §8.6) | the strongest level exists only in software today; with H1 the board reaches E5 | ~1 week |
+| H1 | ✅ **E5 in the lane encoder** (mode 5, contract v3 §8.6) | done 17 Oct: bit-exact for 1, 2, 4 lanes and in the XSim testbench; the lane bitstream must be rebuilt in Vivado to include it | done |
 | H2 | Board bring-up A1–A6 (`docs/BOARD_BRINGUP.md`) | every board number in the paper | 1–2 weeks |
 | H3 | 125 MHz: one more pipeline stage in the colour converter | 1 lane 82, 2 lanes ~150 Mpixel/s | 1–2 days + Vivado run |
-| H4 | Power from simulated switching activity (GUIDE B37) | replaces the vectorless estimate | 1 day |
+| H4 | Power from simulated switching activity (GUIDE B37) | replaces the vectorless estimate | flow built (`--steps power`); ⏳ run it in Vivado |
 
-H2 does not depend on H1: run the board with today's bitstreams first, then again with the H1 bitstream.
+H2 does not depend on H1: run the board with today's bitstreams first, then again with a lane bitstream
+rebuilt from the current RTL (`py vivado\run_vivado_day.py --steps xsim lanes bd_lanes power parse`).
 
 ---
 
-## H1 — E5 in `secure_jpeg_lanes_top` (contract v3, mode 5)
+## H1 — E5 in `secure_jpeg_lanes_top` (contract v3, mode 5) ✅ done 17 Oct 2026
+
+**Result.** All six "done when" checks below that run without a board pass: `tb/test_lanes_top.py` runs
+`e5_one_segment_per_mcu` for 1, 2 and 4 lanes (scan and tag byte-exact under random stalls, then the ARM
+shuffle and the receiver); `make test` is green with modes 0–4 unchanged; `make xsim-icarus` passes the two
+E5 frames and reads VERSION 0x5EC00382. Measured cost: 0.7–3.6 % fewer pixels per second than E2 at 320×240 (1, 2, 4 lanes: 62.7 / 115.3 / 164.8 Mpx/s at 100 MHz, `experiments/lanes_rtl_throughput.py --modes 2 5`);
+Yosys (2 lanes): +50 LUT, +1 DSP. Still to do in Vivado: the `lanes` / `bd_lanes` run on the new RTL.
+The plan as it was written:
 
 **Spec:** `docs/INTERFACES.md` §8.6. **Golden model:** `model/hw.py :: encode_frame_v3(..., mode=5)`
 (fabric output), `model/hw.py :: arm_shuffle` (ARM, already written: `future_work/board/fast_e5.py`).
@@ -66,12 +74,28 @@ Vivado run 6: at 125 MHz the colour converter fails by 0.875 ns (v2). Add one re
 bugs #17, #20, #27 in `docs/TESTING.md`). Done when every RTL test is still bit-exact and
 `py vivado\run_vivado_day.py --steps ooc lanes --periods 8.0` shows WNS ≥ 0 at 8 ns.
 
-## H4 — Power with switching activity
+## H4 — Power with switching activity (flow built 17 Oct 2026; ⏳ run in Vivado)
 
-`vivado/tb_secure_jpeg_top.v` already runs real frames in XSim. Add `open_saif` / `log_saif` around the
-frame loop, then `read_saif` before `report_power` in the implementation step, and report the matched
-net percentage next to the power. Done when `vivado_tables.md` shows both the vectorless and the
-SAIF-based power for the encoder and both overlays.
+`py vivado\run_vivado_day.py --steps ooc lanes power parse` (or `--steps power parse` after an earlier
+`ooc lanes` run, which left `routed.dcp` in `sim_build\vivado_*\`). For each routed out-of-context design
+and mode (v2 encoder: E0, E2, E4; 2-lane encoder: E2, E5) it:
+
+1. writes vectors for one 320×240 scene frame (`vectors --scene 320x240`, size set by `--power-size`);
+2. runs the XSim testbench with `+SAIF` and `saif.tcl` (`open_saif` / `log_saif` on the encoder /
+   `run all` / `close_saif`) → `vivado\xsim_power_<v2|v3>_E<m>\activity.saif`. The frame is still checked
+   bit-exact (`XSIM RESULT: PASS`);
+3. runs `vivado/power_saif.tcl`: opens `routed.dcp`, `read_saif -strip_path tb_secure_jpeg_top/dut[3]`,
+   `report_power` → `power_saif_<v2|v3>_E<m>.txt` next to `power.txt`.
+
+`parse` adds a table "Power with simulated switching activity" with the vectorless number beside each
+run and the confidence Vivado gives the activity ("Internal nodes activity"). The SAIF comes from RTL
+simulation, so only nets whose names survive synthesis are matched; read the `read_saif` summary in
+`sim_build\vivado_logs\power_report_*_vivado.log`. Tested here: the Python side (`tests/test_vivado_reports.py`)
+and the `+SAIF` testbench path in Icarus; the Vivado commands themselves need a Vivado machine.
+The overlays are not covered (the block-design testbench would need the Zynq PS model).
+
+**Measured** power remains a board task: USB meter, idle / ARM / FPGA per mode (GUIDE A4,
+`future_work/baselines/power_template.csv` → `python -m future_work.baselines.energy_table`).
 
 ## Rehearsing without a board
 

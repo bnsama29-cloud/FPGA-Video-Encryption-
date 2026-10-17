@@ -68,11 +68,13 @@ Finding for RQ1/RQ3: **E1 alone is broken** by discarding the AC coefficients (D
 
 | Test | What it proves |
 |---|---|
-| `tb/test_lanes_top.py` (`make test-rtl`, built for LANES = 1, 2 and 4) | scan and tag bit-exact with `model/hw.py :: encode_frame_v3` in every mode E0–E4, the same bytes for every lane count, frames with fewer MCU rows than lanes (16-line frames: lanes 1–3 get nothing), random stalls on both DMA streams, receiver round trip = the v2 plain JPEG, tamper / replay / version-downgrade detection, clocks per pixel and latency |
+| `tb/test_lanes_top.py` (`make test-rtl`, built for LANES = 1, 2 and 4) | scan and tag bit-exact with `model/hw.py :: encode_frame_v3` in every mode E0–E4 and **E5** (`e5_one_segment_per_mcu`: one segment per MCU, random stalls, then the ARM shuffle and the receiver; since 17 Oct 2026), the same bytes for every lane count, frames with fewer MCU rows than lanes (16-line frames: lanes 1–3 get nothing), random stalls on both DMA streams, receiver round trip = the v2 plain JPEG, tamper / replay / version-downgrade detection, clocks per pixel and latency |
 | `tests/test_hw_equivalence.py` (`test_v3_*`) | model views agree; bytes independent of the lane count; one segment's content never changes another segment's ciphertext; version byte authenticated; E5 rejected in v3 |
 | `make xsim-icarus` (second half) | the Vivado XSim testbench drives the lane encoder (`M 3` in the vector file) and the receiver checks its frames |
 | `tests/test_future_work.py` (`*_v3_*`) | the PYNQ driver detects the lane bitstream from VERSION and its frames match the model |
-| `experiments/lanes_rtl_throughput.py` | measured clocks/pixel for 1, 2, 4 lanes at 128×96, 320×240, 640×480 → `sim_out/lanes_rtl/` |
+| `experiments/lanes_rtl_throughput.py` | measured clocks/pixel for 1, 2, 4 lanes at 128×96, 320×240, 640×480 → `sim_out/lanes_rtl/`; `--modes 2 5` measures E5's cost |
+| `make xsim-icarus` (v3 part) | the Vivado testbench with contract-v3 vectors including two E5 frames; VERSION must read 0x5EC00382 |
+| `tests/test_vivado_reports.py` (`test_power_*`) | the SAIF power step's commands (dry run) and the parsing of `power_saif_*.txt` into the hardware table |
 
 ## 6. Known gaps and limitations (be honest about these in the report)
 

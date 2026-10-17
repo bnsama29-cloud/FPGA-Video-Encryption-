@@ -16,6 +16,7 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
     python vivado/run_vivado_day.py --steps xsim ooc lanes bd_lanes parse --periods 8.0 6.667
                                          # run 5: + the contract-v3 lane encoder (OOC at 100/125/150 MHz,
                                          #   4 lanes at 100 MHz) and its overlay (64-bit pixel DMA)
+    python vivado/run_vivado_day.py --steps ooc lanes power parse   # + power from simulated activity
 If the overlay misses timing at --fclk, the block design is retried at 90 and then 80 MHz (--no-fallback
 turns this off). At the end, everything to send back is packed into vivado_results_<date>.zip in the
 repository root (summary, paper tables, timing/utilisation/power reports; no bitstream).
@@ -32,6 +33,10 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
          --periods clock, 4 lanes (1024-pixel lines) at 100 MHz
   bd     PYNQ-Z2 block design + bitstream -> future_work/board/overlay/secure_jpeg.bit/.hwh
   bd_lanes  the same for the lane encoder -> overlay/secure_jpeg_lanes.bit/.hwh (reports in overlay/lanes/)
+  power  post-route power with SIMULATED switching activity (needs ooc and/or lanes first): XSim
+         encodes --power-size scene frames in each mode and records activity.saif, then Vivado
+         re-reports the routed design's power with it -> power_saif_<v2|v3>_E<m>.txt next to power.txt
+         (v2 encoder: E0, E2, E4; 2-lane encoder: E2, E5)
   parse  every report -> sim_out/vivado/vivado_tables.md (the paper's hardware table)
   collect  (always, last) summary + reports -> vivado_results_<date>.zip
 At the end it prints a PASS/FAIL table with the time of every step. Paste a FAIL's log
@@ -126,6 +131,9 @@ def load_frames(a):
             for m in a.modes:
                 frames.append((img, a.quality, m, f"input{k}_E{m}"))
         return frames
+    if a.scene:                         # power flow: one realistic frame per mode
+        w, h = (int(v) for v in a.scene.lower().split("x"))
+        return [(make_image(w, h, "scene", 11), a.quality, m, f"scene{w}x{h}_E{m}") for m in a.modes]
     # default: small synthetic set covering every mode, two qualities, odd sizes
     return [(make_image(64, 48, "scene", 1), 75, 2, "scene64x48_E2"),
             (make_image(32, 32, "noise", 2), 75, 4, "noise32x32_E4"),
@@ -144,6 +152,8 @@ def vectors_main(argv=None):
     ap.add_argument("--video")
     ap.add_argument("--frames", type=int, default=2, help="frames to take from --video")
     ap.add_argument("--size", default="64x48", help="WxH, multiples of 16 (with --image/--video)")
+    ap.add_argument("--scene", default=None,
+                    help="WxH: one synthetic scene frame of this size per --modes value (power flow)")
     ap.add_argument("--modes", type=int, nargs="+", default=[2])
     ap.add_argument("--quality", type=int, default=75)
     ap.add_argument("--key", default=DEFAULT_KEY)
@@ -166,7 +176,7 @@ def vectors_main(argv=None):
     # session setup + register sanity checks
     if a.v3:
         cmds.append("M 3")
-    r32(VERSION, (0x5EC00302 | (0x80 if 5 in a.modes else 0)) if a.v3 else 0x5EC00200)   # bit 7: E5 RTL
+    r32(VERSION, 0x5EC00382 if a.v3 else 0x5EC00200)   # v3: 2 lanes, bit 7 = mode 5 in the RTL (HW_TODO H1)
     for i in range(4):
         w32(KEY0 + 4 * i, int.from_bytes(key[4 * i:4 * i + 4], "little"))
         r32(KEY0 + 4 * i, 0)                                   # keys are write-only
@@ -352,7 +362,19 @@ def parse_power(text):
     m = re.search(r"\|\s*Confidence Level\s*\|\s*(\w+)", text)
     if m:
         res["confidence"] = m.group(1)
+    m = re.search(r"\|\s*Internal nodes activity\s*\|\s*(\w+)\s*\|\s*([^|]*?)\s*\|", text)
+    if m:                               # how much of the design had simulated (not default) activity
+        res["internal"] = m.group(1)
+        res["internal_detail"] = m.group(2)
     return res
+
+
+def parse_power_saif(folder):
+    """{tag: power} from power_saif_<tag>.txt (step_power), e.g. tag v2_E2."""
+    out = {}
+    for f in sorted(Path(folder).glob("power_saif_*.txt")):
+        out[f.stem[len("power_saif_"):]] = parse_power(f.read_text(errors="replace"))
+    return out
 
 
 def parse_hier(text, depth=2):
@@ -394,7 +416,8 @@ def read_folder(folder):
     rd = lambda n: (folder / n).read_text(errors="replace") if (folder / n).exists() else ""
     t = rd("timing.txt")
     r = dict(folder=str(folder), name=_name(folder), util=parse_utilization(rd("utilization.txt")),
-             timing=parse_timing(t), power=parse_power(rd("power.txt")), hier=parse_hier(rd("utilization_hier.txt")),
+             timing=parse_timing(t), power=parse_power(rd("power.txt")), power_saif=parse_power_saif(folder),
+             hier=parse_hier(rd("utilization_hier.txt")),
              critical=parse_critical(t),
              period=parse_period(t, folder), missing=[])
     for f in ("utilization.txt", "timing.txt", "power.txt"):
@@ -421,6 +444,20 @@ def tables(results):
                   f"{fmt(r['fmax_mhz'], 1)} | {fmt(p.get('total'), 3)} / {fmt(p.get('dynamic'), 3)} |")
     md += ["", "Power is Vivado's vectorless estimate (confidence shown in power.txt); measure the board for real power.",
            "Est. fmax = 1000 / (period - WNS): a single-run estimate, confirm by re-running at that period.", ""]
+    saif = [r for r in results if r.get("power_saif")]
+    if saif:
+        md += ["### Power with simulated switching activity (SAIF from the XSim testbench)", "",
+               "| Design | Run | Total (W) | Dynamic (W) | Vectorless dynamic (W) | Confidence | Internal nodes |",
+               "|---|---|---|---|---|---|---|"]
+        for r in saif:
+            for tag, p in r["power_saif"].items():
+                md.append(f"| {r['name']} | {tag} | {fmt(p.get('total'), 3)} | {fmt(p.get('dynamic'), 3)} | "
+                          f"{fmt(r['power'].get('dynamic'), 3)} | {p.get('confidence', '?')} | "
+                          f"{p.get('internal', '?')}: {p.get('internal_detail', '')} |")
+        md += ["", "Run = contract (v2: secure_jpeg_top, v3: 2 lanes) and mode; activity of one scene frame "
+               "(vivado/run_vivado_day.py --steps power). Activity from RTL simulation matches only the nets "
+               "whose names survive synthesis; the rest keep Vivado's default. Still an estimate: the "
+               "board measurement (GUIDE A4) is the measured number.", ""]
     crit = [r for r in results if r.get("critical")]
     if crit:
         md += ["### Worst setup paths (block of source -> destination)", "",
@@ -547,6 +584,45 @@ def step_lanes(a):
            r"RESULT top=", a.dry_run)
 
 
+POWER_RUNS = [   # (tag, contract flag, modes, OOC report folder, testbench instance)
+    ("v2", "", (0, 2, 4), "vivado_secure_jpeg_top", "tb_secure_jpeg_top/dut"),
+    ("v3", "--v3", (2, 5), "vivado_secure_jpeg_lanes_top_lanes2_log_l1", "tb_secure_jpeg_top/dut3"),
+]
+
+
+def step_power(a):
+    """Post-route power with simulated switching activity (GUIDE B37, HW_TODO H4). For each routed
+    OOC design and mode: XSim encodes one --power-size scene frame with SAIF logging on, then Vivado
+    reads the SAIF into the routed checkpoint and reports power."""
+    sim = "vivado\\run_xsim.bat" if WIN else "bash vivado/run_xsim.sh"
+    for tag, flag, modes, folder, inst in POWER_RUNS:
+        dcp = ROOT / "sim_build" / folder / "routed.dcp"
+        if not dcp.exists() and not a.dry_run:
+            print(f"\n=== power_{tag}: skipped, no {dcp.relative_to(ROOT)} (run --steps "
+                  f"{'ooc' if tag == 'v2' else 'lanes'} first)")
+            RESULTS.append((f"power_{tag}", "FAIL", 0.0, ""))
+            continue
+        for m in modes:
+            work = f"xsim_power_{tag}_E{m}"
+            wdir = ROOT / "vivado" / work
+            run(f"power_vectors_{tag}_E{m}", f"{sys.executable} vivado/run_vivado_day.py vectors {flag} "
+                f"--scene {a.power_size} --modes {m} --out vivado/{work}", dry=a.dry_run)
+            if not a.dry_run:
+                wdir.mkdir(parents=True, exist_ok=True)
+                (wdir / "saif.tcl").write_text(
+                    "# written by run_vivado_day.py --steps power\n"
+                    "open_saif activity.saif\n"
+                    f"log_saif [get_objects -r /{inst}/*]\n"
+                    "run all\n"
+                    "close_saif\n"
+                    "quit\n")
+            run(f"power_xsim_{tag}_E{m}", f"{sim} saif {work}", check=r"XSIM RESULT: PASS", dry=a.dry_run)
+            rpt = (ROOT / "sim_build" / folder / f"power_saif_{tag}_E{m}.txt").relative_to(ROOT).as_posix()
+            saif = (wdir / "activity.saif").relative_to(ROOT).as_posix()
+            vivado(f"power_report_{tag}_E{m}", "vivado/power_saif.tcl",
+                   f"{dcp.relative_to(ROOT).as_posix()} {saif} {inst} {rpt}", r"RESULT power_saif", a.dry_run)
+
+
 FALLBACK_MHZ = (90, 80)          # overlay clocks to try when the requested one misses timing (run 3: -0.24 ns)
 
 
@@ -607,7 +683,7 @@ def step_collect(a):
         z.writestr("summary.txt", "\n".join(lines) + "\n")
         for f in sorted((ROOT / "sim_out" / "vivado").glob("*")) if (ROOT / "sim_out" / "vivado").exists() else []:
             z.write(f, f"sim_out/vivado/{f.name}")
-        reports = ("timing*.txt", "utilization*.txt", "power.txt")
+        reports = ("timing*.txt", "utilization*.txt", "power.txt", "power_saif_*.txt")
         ov = ROOT / "future_work" / "board" / "overlay"
         for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov, ov / "lanes"]:
             for pat in reports:
@@ -644,7 +720,9 @@ def check_python():
 def day_main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
-                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "parse"])
+                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "power", "parse"])
+    ap.add_argument("--power-size", default="320x240",
+                    help="WxH of the scene frame whose switching activity the power step records")
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
     ap.add_argument("--fmax", action="store_true", help="re-run the top at the clock the slack suggests")
     ap.add_argument("--fclk", type=int, default=100, help="PL clock of the overlay in MHz (block design)")

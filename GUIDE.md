@@ -213,13 +213,13 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
 | B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ Kaggle 17 Oct: 29 frames, 9 source sets (Kodak, open films, private clips); in the paper | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
 | B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ✅ Kaggle 17 Oct: 7 videos; in the paper (Table XII extended, one sentence in the conference version) | `experiments/video_fingerprint.py` |
-| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ⏳ hardware phase, after the board gate | §4.1 |
+| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ✅ flow (`--steps power`, 17 Oct) · ⏳ run in Vivado | `docs/HW_TODO.md` H4 |
 | B39 | **SVE-Bench**: ours and four published schemes (Van Droogenbroeck, Kishore, Auer, Hirose) under the same four attacks | P1 | 5 | ✅ local synthetic · ⏳ Kaggle `JOB = "benchmark"` | `experiments/benchmark_suite.py` |
 | B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test** (Faster R-CNN persons) | P2 | 5 | ✅ plain 68-100 %, E1 up to 37 %, E2/E4 <= 3 %, E5 0 %; in the paper | below |
 | B24 | **More frames + 95 % intervals** for leakage | P2 | 5 | ✅ 60 frames/source, intervals in the extended paper (Table + Fig.) | below |
-| B6 | E5 in RTL: contract v3 mode 5 (one segment per MCU; the ARM permutes) | P1 | 1 | ~1 week | ✅ spec + model + driver + tests (17 Oct) · ⏳ RTL: `docs/HW_TODO.md` H1 |
+| B6 | E5 in RTL: contract v3 mode 5 (one segment per MCU; the ARM permutes) | P1 | 1 | ~1 week | ✅ spec + model + driver + tests + **RTL** (17 Oct, bit-exact for 1/2/4 lanes) · ⏳ Vivado rebuild + board |
 | B7 | Shared vs separate Ascon core (area vs throughput) | P2 | 1 | 2 d | below |
 | B8 | Ascon-XOF128 KDF with official vectors | P2 | 2 | 1 d | below |
 | B9 | Stronger jigsaw solver (MST + MGC) | P2 | 5 | ✅ gate 0.84-1.00 on plain tiles (greedy 0.62-1.00); E5 at chance (<= 2.5 %) on 9 sources | below |
@@ -327,7 +327,8 @@ reviewer will dismiss.
 
 **Done when** the paper's TODO in §III-A is replaced and `docs/THREAT_MODEL.md` exists.
 
-**B6 – E5 in RTL.** Keep the model as the referee: add a mode-5 path to `model/hw.py` first, then the
+**B6 – E5 in RTL** (✅ done 17 Oct 2026 as contract v3 mode 5, `docs/HW_TODO.md` H1; the plan below was the
+original contract-v2 idea). Keep the model as the referee: add a mode-5 path to `model/hw.py` first, then the
 cocotb test, then the RTL.
 
 1. `zigzag_rle.v`: when a new CTRL bit is set, reset the DC predictors at each MCU start.
@@ -436,7 +437,7 @@ two restart-interval rows already moved to the repository).
 | Output stays a valid, playable JPEG/MJPEG in every mode | format compliance (4 decoders, 6 modes) | ✅ |
 | Key holder recovers the frame bit-exactly | tests + figure row 3 | ✅ |
 | Encryption adds 0 cycles to the encoder | `benchmark_crypto.py --rtl` | ✅ RTL simulation |
-| Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder and both PYNQ-Z2 systems post-route at 100 MHz (run 6, 17 Oct) · power = vectorless estimate · ⏳ board |
+| Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder and both PYNQ-Z2 systems post-route at 100 MHz (run 6, 17 Oct) · power = vectorless estimate (SAIF flow ready: B37) · ⏳ board |
 | 1.5 + a/MCU rows cycles per pixel; 65 Mpixel/s at 640x480 and 100 MHz | `stall_profile.py --scaling` (RTL, 5 frame sizes) | ✅ RTL simulation |
 | Lane encoder (contract v3) bit-exact with the model for 1, 2, 4 lanes, all levels, under stalls; same bytes for every lane count | `tb/test_lanes_top.py`, `make xsim-icarus` | ✅ RTL simulation · ✅ XSim in Vivado (runs 5, 6) |
 | 2 lanes 122 Mpixel/s, 4 lanes 176 Mpixel/s at 640x480 and 100 MHz | `experiments/lanes_rtl_throughput.py` | ✅ RTL simulation (no DMA stalls) · ⏳ board |
@@ -460,7 +461,7 @@ two restart-interval rows already moved to the repository).
 | E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ 7 sources |
 | The sign-recovery LP of Lin et al. recovers 88-93 % of signs in its own setting but 59 % of E1's and 49 % of E2's; it still sharpens E1's outline (edge 0.41 vs 0.33) | `sign_recovery.py` | ✅ 29 frames, 9 source sets |
 | One second of frame sizes identifies which of 7 known videos plays (98 % E1-E4, 99 % E5, chance 14 %); only constant-size frames (+81 % bytes) reach chance | `video_fingerprint.py` | ✅ 7 videos |
-| E5 in hardware | B6 | 📝 specified, modelled and rehearsed with an emulated bitstream; ⏳ RTL (H1). Until then the paper says "model level, hardware form specified" |
+| E5 in hardware | B6 | ✅ RTL simulation (lane encoder, 1/2/4 lanes bit-exact, XSim testbench in Icarus) · ⏳ Vivado rebuild + board. Until the board run the paper says "in RTL simulation", not "on hardware" |
 
 **Claims to avoid:**
 

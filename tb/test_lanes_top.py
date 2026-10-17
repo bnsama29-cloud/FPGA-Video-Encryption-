@@ -227,25 +227,30 @@ async def back_to_back_with_stalls(dut):
 
 @cocotb.test()
 async def throughput(dut):
-    """Clocks per pixel with no stalls (scene image, quality 75, E2)."""
+    """Clocks per pixel with no stalls (scene image, quality 75, E2 or THROUGHPUT_MODE)."""
     enc = await init(dut)
     key, sid, quality = bytes(16), 1, 75
     await enc.setup_session(key, sid, quality)
     size = os.getenv("THROUGHPUT_SIZE", "640x480" if full_run() else "128x96")
     w, h = (int(v) for v in size.split("x"))
+    mode = int(os.getenv("THROUGHPUT_MODE", "2"))
+    if mode == 5 and not (await enc.rd(VERSION)) & E5_CAP:
+        dut._log.warning("E5 not implemented in this RTL: throughput not measured")
+        return
     img = make_image(w, h, "scene")
     if os.getenv("THROUGHPUT_WARMUP", "1") == "1":
-        await enc.encode(img, 2, 0)                      # warm-up (frames are independent)
-    scan, tag, clocks = await enc.encode(img, 2, 1)
-    model = J.encode_frame_v3(img, quality, 2, key, 1, sid)
+        await enc.encode(img, mode, 0)                   # warm-up (frames are independent)
+    scan, tag, clocks = await enc.encode(img, mode, 1)
+    model = J.encode_frame_v3(img, quality, mode, key, 1, sid)
     assert scan == model["scan"] and tag == model["tag"], "throughput frame not bit-exact"
     cpp = clocks / (w * h)
-    res = dict(lanes=lanes_of(dut), width=w, height=h, clocks=clocks, clocks_per_pixel=cpp,
+    res = dict(lanes=lanes_of(dut), mode=mode, width=w, height=h, clocks=clocks, clocks_per_pixel=cpp,
                mpx_per_s_at_100mhz=100 / cpp, scan_bytes=len(scan),
                latency_clocks=enc.latency, latency_lines=(enc.latency / (w / 2)) if enc.latency else None,
                measured_from="internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate")
     OUT_DIR.mkdir(exist_ok=True)
-    (OUT_DIR / f"lanes_throughput_L{lanes_of(dut)}_{w}x{h}.json").write_text(json.dumps(res, indent=1))
+    suffix = "" if mode == 2 else f"_E{mode}"
+    (OUT_DIR / f"lanes_throughput_L{lanes_of(dut)}_{w}x{h}{suffix}.json").write_text(json.dumps(res, indent=1))
     dut._log.info("L=%d %dx%d: %.0f clocks, %.3f clocks/pixel -> %.1f Mpx/s at 100 MHz",
                   lanes_of(dut), w, h, clocks, cpp, 100 / cpp)
 
