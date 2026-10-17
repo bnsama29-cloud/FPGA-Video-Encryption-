@@ -207,6 +207,37 @@ def test_first_contact_checks_the_lane_bitstream_against_contract_v3(tmp_path):
     assert expected_jpeg(ip, rgb, 75, 2, 1) != hw.encode_frame(rgb, 75, 2, bytes(range(16)), 1, 0x5EC0_1234_5678)["jpeg"]
 
 
+def test_board_e5_path_on_an_emulated_e5_bitstream(tmp_path):
+    """E5 on the board (INTERFACES.md §8.6): a lane bitstream that reports VERSION bit 7 runs mode 5; the
+    gate compares the fabric output + the ARM's shuffle with the model; without bit 7 the driver refuses
+    mode 5 and the board sender caps the policy at E4. The fast ARM shuffle (C order, bytes.find) must give
+    the same bytes as model/hw.py."""
+    import json
+    from future_work.board import fast_e5
+    from future_work.board.board_sender import make_board_sender
+    from link import config
+    r = subprocess.run([sys.executable, "-m", "future_work.board.first_contact", "--mock-lanes", "2", "--mock-e5",
+                        "--sizes", "32x32", "--frames", "1", "--timing-frames", "1", "--out", str(tmp_path)],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    res = json.loads((tmp_path / "first_contact.json").read_text())
+    assert res["all_bit_exact"] and {x["mode"] for x in res["exactness"]} == set(range(6)), res["exactness"]
+    no_e5 = SecureJpegIP(MockBackend(contract=3, lanes=2))
+    no_e5.setup_session(bytes(16), 1)
+    with pytest.raises(ValueError):
+        no_e5.encode(make_image(32, 32, "scene"), 5, 1)
+    cfg1 = config.load(None, []); cfg1["defence"]["max_mode"] = "E5"
+    make_board_sender(cfg1, mock_lanes=2)
+    assert cfg1["defence"]["max_mode"] == "E4"
+    cfg2 = config.load(None, []); cfg2["defence"]["max_mode"] = "E5"
+    make_board_sender(cfg2, mock_lanes=2, mock_e5=True)
+    assert cfg2["defence"]["max_mode"] == "E5"
+    key = bytes(range(16))
+    for n, (w, h) in enumerate([(16, 16), (64, 48), (48, 96)]):
+        raw = hw.encode_frame_v3(make_image(w, h, "noise", seed=n), 75, 5, key, 1000 + n, 42)["jpeg"]
+        assert fast_e5.arm_shuffle(raw, key, 42, 1000 + n) == hw.arm_shuffle(raw, key, 42, 1000 + n)
+
+
 def test_vivado_driver_dry_run():
     r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--dry-run", "--blocks"], cwd=ROOT,
                        capture_output=True, text=True)

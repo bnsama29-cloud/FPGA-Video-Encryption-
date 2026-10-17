@@ -49,7 +49,8 @@ def expected_jpeg(ip, rgb, quality, mode, ctr):
     """What the golden model says this bitstream must produce: contract v2 (secure_jpeg.bit) or
     contract v3 (secure_jpeg_lanes.bit, restart segments; the bytes do not depend on the lane count)."""
     if ip.contract == 3:
-        return hw.encode_frame_v3(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+        jpeg = hw.encode_frame_v3(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+        return hw.arm_shuffle(jpeg, KEY, SID, ctr) if mode == hw.MODE_E5 else jpeg
     return hw.encode_frame(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
 
 
@@ -57,7 +58,7 @@ def check(ip, sizes, n, source, quality):
     rows, ok_all = [], True
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
-        for mode in range(5):
+        for mode in range(ip.max_mode + 1):
             bad = None
             for i, rgb in enumerate(imgs):
                 ctr = 1000 * mode + i + 1
@@ -77,7 +78,7 @@ def timing(ip, sizes, n, source):
     rows = []
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
-        for mode in range(5):
+        for mode in range(ip.max_mode + 1):
             t_enc, t_full = [], []
             for i, rgb in enumerate(imgs):
                 t0 = time.perf_counter()
@@ -101,6 +102,7 @@ def main():
     ap.add_argument("--mock", action="store_true", help="golden-model emulation instead of the board")
     ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
                     help="emulate the contract-v3 lane bitstream with this many lanes (implies --mock)")
+    ap.add_argument("--mock-e5", action="store_true", help="with --mock-lanes: the emulated bitstream has E5")
     ap.add_argument("--sizes", nargs="+", default=["320x240", "640x480"])
     ap.add_argument("--frames", type=int, default=10, help="frames per size and mode for the bit-exact check")
     ap.add_argument("--timing-frames", type=int, default=50)
@@ -113,14 +115,15 @@ def main():
     sizes = [tuple(int(v) for v in s.split("x")) for s in a.sizes]
     a.mock = a.mock or bool(a.mock_lanes)
     if a.mock:
-        backend = MockBackend(contract=3, lanes=a.mock_lanes) if a.mock_lanes else MockBackend()
+        backend = MockBackend(contract=3, lanes=a.mock_lanes, e5=a.mock_e5) if a.mock_lanes else MockBackend()
     else:
         from future_work.board.pynq_driver import PynqBackend
         backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes))
     ip = SecureJpegIP(backend)                      # checks the VERSION register
     ip.setup_session(KEY, SID, a.quality)
     print(f"IP found ({'mock' if a.mock else a.bitfile}), VERSION ok: contract v{ip.contract}"
-          + (f", {ip.lanes} lanes" if ip.contract == 3 else "") + ". Part 1: bit-exact check", flush=True)
+          + (f", {ip.lanes} lanes" if ip.contract == 3 else "") + (", E5 in hardware" if ip.e5 else "")
+          + ". Part 1: bit-exact check", flush=True)
     ok, exact = check(ip, sizes, a.frames, a.source, a.quality)
     speed = []
     if ok:

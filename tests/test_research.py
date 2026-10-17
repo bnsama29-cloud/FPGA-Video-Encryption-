@@ -294,3 +294,34 @@ def test_fingerprint_identifies_by_shape_and_guesses_on_constant_size():
     assert 0.1 < np.mean(np.array(guesses) == 2) < 0.4, "constant-size query must be a random guess"
     rm = VF.pad(np.array([3.0, 1, 4, 1, 5]), "pad-runmax")
     assert list(rm) == [3, 3, 4, 4, 5]
+
+
+# ---------------------------------------------------------------- SVE-Bench (benchmark_suite.py)
+def test_benchmark_schemes_decode_invert_and_rank():
+    """Every re-implemented scheme must stay a decodable JPEG with the same coefficient count per block;
+    undoing a scheme's own permutation must give back the clear block order (so A4 measures the scheme,
+    not a bug); and the ranking that the paper states must hold on a small scene."""
+    import benchmark_suite as B
+    from model.container import parse_jpeg
+    frames = [make_image(160, 128, "scene", seed=s) for s in (1, 2, 3)]   # 80 MCUs: enough blocks for a stable correlation
+    ans = [analyse_frame(f) for f in frames]
+    for name, sc in B.SCHEMES.items():
+        for ctr, an in enumerate(ans):
+            jpeg, perm = sc["fn"](an, ctr)
+            assert B.compliant(jpeg), f"{name}: output does not decode"
+            if perm is not None and perm[0] in ("blocks", "mcu_inner") and name != "Auer":
+                w, h, qy, qc, ri, segs = B.received_segments(jpeg)
+                nat = B.undo_permutation(w, h, ri, segs, perm)
+                got = [len([s for s in b if s.size and not s.is_dc and not s.eob]) for b in B.split_blocks(nat[0])]
+                want = [len([s for s in b if s.size and not s.is_dc and not s.eob]) for b in B.split_blocks(an.symbols)]
+                assert got == want, f"{name}: undoing its own permutation does not restore the block order"
+    y0s = [B.luma(f) for f in frames]
+    en = [B.block_energy(y, (an.height // 8, an.width // 8)) for y, an in zip(y0s, ans)]
+    def leak(name):
+        sc = B.SCHEMES[name]
+        out = [sc["fn"](an, ctr) for ctr, an in enumerate(ans)]
+        v = B.views(out[1][0], sc["fields"], y0s[1], en[1], out[0][1])
+        return max(x for x in (v["decode"], v["replacement"], v["nzca"], v["cross_frame"]) if x is not None)
+    e5, e5hw, kish, hir, e2 = (leak(n) for n in ("E5 (v2)", "E5 (v3, hw)", "Kishore", "Hirose RI=1", "E2"))
+    assert e5 < 0.3 and e5hw < 0.3, (e5, e5hw)
+    assert kish > 0.5 and hir > 0.5 and e2 > 0.5, (kish, hir, e2)

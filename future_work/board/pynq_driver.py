@@ -37,15 +37,21 @@ KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
 EXPECTED_VERSION = 0x5EC00200          # contract v2
 V3_VERSION_BASE = 0x5EC00300           # contract v3: 0x5EC003LL, LL = number of lanes
+E5_CAP = 0x80                          # v3 VERSION bit 7: the RTL implements mode 5 (INTERFACES.md §8.6)
 
 
 def contract_of(version):
-    """VERSION register -> (contract, lanes), or None for an unknown bitstream."""
+    """VERSION register -> (contract, lanes), or None for an unknown bitstream. Bit 7 (E5) is read by
+    has_e5()."""
     if version == EXPECTED_VERSION:
         return 2, 1
-    if version & 0xFFFFFF00 == V3_VERSION_BASE and version & 0xFF in (1, 2, 4):
-        return 3, version & 0xFF
+    if version & 0xFFFFFF00 == V3_VERSION_BASE and version & 0x7F in (1, 2, 4):
+        return 3, version & 0x7F
     return None
+
+
+def has_e5(version):
+    return version & 0xFFFFFF00 == V3_VERSION_BASE and bool(version & E5_CAP)
 
 
 def pixels_to_words(rgb):
@@ -57,8 +63,8 @@ def pixels_to_words(rgb):
 class MockBackend:
     """Register file + DMA emulated with the golden model (bit-exact with the RTL)."""
 
-    def __init__(self, contract=2, lanes=2):
-        self.contract, self.lanes = contract, lanes
+    def __init__(self, contract=2, lanes=2, e5=False):
+        self.contract, self.lanes, self.e5 = contract, lanes, e5 and contract == 3
         self.regs = {}
         self.qt = [0] * 128
         self.qt_ptr = 0
@@ -86,7 +92,7 @@ class MockBackend:
 
     def read(self, addr):
         if addr == VERSION:
-            return EXPECTED_VERSION if self.contract == 2 else V3_VERSION_BASE + self.lanes
+            return EXPECTED_VERSION if self.contract == 2 else V3_VERSION_BASE + self.lanes + (E5_CAP if self.e5 else 0)
         if addr == STATUS:
             return 0b101 if self.done else 0
         if addr == OUT_BYTES:
@@ -108,6 +114,8 @@ class MockBackend:
         sid = r.get(SESSION_ID, 0) | (r.get(SESSION_ID_HI, 0) << 32)
         ctr = r.get(FRAME_CTR, 0) | (r.get(FRAME_CTR_HI, 0) << 32)
         mode = (r.get(CTRL, 0) >> 1) & 7
+        if mode > 4 and not self.e5:
+            raise ValueError(f"mode {mode}: this bitstream has no E5 (VERSION bit 7 = 0)")
         rgb = np.stack([(words >> s) & 0xFF for s in (0, 8, 16)], -1).reshape(h, w, 3).astype(np.uint8)
         self.out, self.tag = _encode_with_reciprocals(rgb, self.qt[:64], self.qt[64:], mode, key, ctr, sid,
                                                       self.contract)
@@ -133,9 +141,11 @@ def _encode_with_reciprocals(rgb, luma_r, chroma_r, mode, key, ctr, sid, contrac
         enc, _ = hw.selective_encrypt(symbols(blocks), mode, key, ascon.make_nonce(sid, ctr, 0))
         scan = hw.pack_bytes([hw.huffman_bits(s) for s in enc])
         return scan, hw.frame_tag(key, mode, ctr, sid, w, h, scan)
-    per_row, kseg, segs = (w // 16) * 6, hw.segment_key(key, sid, ctr), []
-    for s in range(h // 16):
-        enc, _ = hw.selective_encrypt(symbols(blocks[s * per_row:(s + 1) * per_row]), mode, kseg,
+    per_seg = 6 if mode == hw.MODE_E5 else (w // 16) * 6          # blocks per restart segment
+    enc_mode = hw.MODE_E4 if mode == hw.MODE_E5 else mode
+    kseg, segs = hw.segment_key(key, sid, ctr), []
+    for s in range(len(blocks) // per_seg):
+        enc, _ = hw.selective_encrypt(symbols(blocks[s * per_seg:(s + 1) * per_seg]), enc_mode, kseg,
                                       ascon.make_nonce(s, ctr, 0))
         segs.append(hw.pack_bytes([hw.huffman_bits(x) for x in enc]))
     scan = b"".join((hw.RST_MARKERS[(s - 1) % 8] if s else b"") + b for s, b in enumerate(segs))
@@ -190,8 +200,15 @@ class SecureJpegIP:
                                f"(v2) or 0x{V3_VERSION_BASE + 2:08x} (v3, 2 lanes) "
                                "(wrong bitstream, or the AXI-Lite address is wrong)")
         self.contract, self.lanes = known
+        self.e5 = has_e5(version)
+        self.key = None
+
+    @property
+    def max_mode(self):
+        return 5 if self.e5 else 4
 
     def setup_session(self, key, session_id, quality=75):
+        self.key = bytes(key)
         for i in range(4):
             self.b.write(KEY0 + 4 * i, int.from_bytes(key[4 * i:4 * i + 4], "little"))
         self.b.write(SESSION_ID, session_id & 0xFFFFFFFF)
@@ -203,12 +220,13 @@ class SecureJpegIP:
         self.quality, self.session_id = quality, session_id
 
     def encode(self, rgb, mode, frame_ctr, timeout_s=2.0):
-        """Returns (scan bytes, 16-byte tag). mode 0..4 (E5 needs RTL restart markers)."""
+        """Returns (scan bytes, 16-byte tag) as the fabric produced them. mode 0..4, and 5 when the
+        bitstream reports E5 (VERSION bit 7); for E5 the scan is in raster order (build_jpeg shuffles)."""
         h, w = rgb.shape[:2]
         if w % 16 or h % 16:
             raise ValueError("width and height must be multiples of 16")
-        if not 0 <= mode <= 4:
-            raise ValueError("the RTL supports modes 0..4")
+        if not 0 <= mode <= self.max_mode:
+            raise ValueError(f"this bitstream supports modes 0..{self.max_mode}")
         self.b.write(WIDTH, w)
         self.b.write(HEIGHT, h)
         self.b.write(FRAME_CTR, frame_ctr & 0xFFFFFFFF)
@@ -226,6 +244,11 @@ class SecureJpegIP:
         return scan, tag
 
     def build_jpeg(self, width, height, mode, frame_ctr, scan, tag):
-        """What the ARM does after the fabric: headers + APP11 + scan + EOI."""
-        return hw.build_frame(width, height, self.quality, mode, frame_ctr, self.session_id, scan, tag,
+        """What the ARM does after the fabric: headers + APP11 + scan + EOI; for E5 also the keyed
+        permutation of the restart segments (model/hw.py :: arm_shuffle, INTERFACES.md §8.6)."""
+        jpeg = hw.build_frame(width, height, self.quality, mode, frame_ctr, self.session_id, scan, tag,
                               version=self.contract)
+        if mode == hw.MODE_E5:
+            from .fast_e5 import arm_shuffle             # C order + bytes.find; same bytes as hw.arm_shuffle
+            jpeg = arm_shuffle(jpeg, self.key, self.session_id, frame_ctr)
+        return jpeg

@@ -10,11 +10,13 @@ are in the docstring at the start of its block.
   JOB = "final"      60-frame leakage, MST jigsaw, recognition, P5 learned attacker  (16 Oct, ~3-4 h)
   JOB = "references" attacks from the reference papers: Lin et al. sign recovery, Schuster et al.
                      video identification from frame sizes                       (17 Oct, ~2-3 h, CPU only)
+  JOB = "benchmark"  SVE-Bench: ours and four published schemes under the same four attacks, every
+                     source                                                       (17 Oct, ~30-45 min, CPU only)
 
 The first four have been run; their results are in paper/data/ (simulation, extra, research, final).
 Each block below is the original script, byte for byte apart from the indentation.
 """
-JOB = "references"
+JOB = "benchmark"
 
 # ==================================================================================================
 # JOB = "complete"   (was future_work/kaggle/kaggle_complete.py)
@@ -1140,5 +1142,131 @@ TIME (Kaggle CPU): downloads ~10 min, B35 ~1.5-2 h, B36 ~40 min.
         print("FAILED:", *fails, sep="\n  ")
     print("Download references_results.zip from the Output tab.")
 
+# ==================================================================================================
+# JOB = "benchmark"   SVE-Bench (experiments/benchmark_suite.py), added 17 Oct 2026
+# ==================================================================================================
+elif JOB == "benchmark":
+    """Ours (E1-E5, both E5 forms) and four published schemes (Van Droogenbroeck 2002, Kishore 2015,
+Auer 2013, Hirose 2024 with RI = 1 and 4) under the same four attacks, on every source (GUIDE.md B39).
+
+HOW TO RUN: Internet ON, Accelerator None (CPU), + Add Input -> your clips dataset, paste this whole
+file into ONE cell, Save Version -> Save & Run All (Commit), then send benchmark_results.zip.
+QUICK = True: 3-minute smoke test.
+"""
+    QUICK = False
+    REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
+    BRANCHES = ["e5-hardware", "main"]          # the first one that has experiments/benchmark_suite.py
+    OPEN_CLIPS = {
+        "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
+        "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+    }
+    KODAK_URL = "http://r0k.us/graphics/kodak/kodak/kodim{:02d}.png"
+    PARALLEL = 4
+
+    import glob, json, os, pathlib, re, shutil, subprocess, sys, time, urllib.request
+    from concurrent.futures import ThreadPoolExecutor
+
+    T_START = time.time()
+    ON_KAGGLE = os.path.exists("/kaggle")
+    WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "/tmp/kbwork"))
+    WORK.mkdir(parents=True, exist_ok=True)
+    QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
+    REPO, DATA, OUT = WORK / "repo", WORK / "opendata", "sim_out/benchmark_suite"
+    ENV = {**os.environ, "PYTHONUNBUFFERED": "1"}
+    LOG, SOURCES = [], {}
+
+
+    def sh(cmd, sec, step, tail=16, cwd=None):
+        t0 = time.time()
+        print(f"\n=== [{sec}] {step}   (t = {(t0 - T_START) / 60:.0f} min)\n$ {cmd}", flush=True)
+        p = subprocess.run(cmd, shell=True, cwd=cwd or REPO, env=ENV, capture_output=True, text=True)
+        print("\n".join((p.stdout + p.stderr).strip().splitlines()[-tail:]), flush=True)
+        LOG.append((sec, step, "PASS" if p.returncode == 0 else "FAIL", round(time.time() - t0, 1)))
+        print(f"--> [{sec}] {LOG[-1][2]} in {LOG[-1][3]:.0f} s", flush=True)
+        return p.returncode == 0
+
+
+    def checkpoint():
+        res = WORK / "benchmark_results"
+        shutil.rmtree(res, ignore_errors=True)
+        res.mkdir()
+        if (REPO / OUT).exists():
+            shutil.copytree(REPO / OUT, res / "benchmark_suite")
+        (res / "run_log.json").write_text(json.dumps(dict(log=LOG, minutes=round((time.time() - T_START) / 60, 1),
+                                                          quick=QUICK, sources=SOURCES), indent=1))
+        shutil.make_archive(str(WORK / "benchmark_results"), "zip", res)
+        print(f"[checkpoint] benchmark_results.zip {round((WORK / 'benchmark_results.zip').stat().st_size / 1e6, 2)} MB", flush=True)
+
+
+    def fetch(url, dest):
+        if dest.exists() and dest.stat().st_size > 0:
+            return True
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=300) as r, open(dest, "wb") as f:
+                shutil.copyfileobj(r, f)
+            return dest.stat().st_size > 1000
+        except Exception as e:
+            print(f"  download failed: {url}: {e}")
+            if dest.exists():
+                dest.unlink()
+            return False
+
+
+    def safe(name):
+        return re.sub(r"[^A-Za-z0-9_-]+", "_", name.strip()).strip("_")
+
+
+    shutil.rmtree(REPO, ignore_errors=True)
+    for b in BRANCHES:
+        if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
+                (REPO / "experiments" / "benchmark_suite.py").exists():
+            break
+        shutil.rmtree(REPO, ignore_errors=True)
+    else:
+        raise SystemExit("no branch with experiments/benchmark_suite.py: push / merge e5-hardware first")
+    sh("python -m pip install -q cryptography scikit-image opencv-python-headless pillow tomli numpy scipy",
+       "setup", "pip install", tail=2)
+    DATA.mkdir(exist_ok=True)
+    inputs = [os.environ["CLIPS_DIR"]] if os.environ.get("CLIPS_DIR") else ["/kaggle/input"]
+    for f in sorted({f for r in inputs for e in ("mp4", "mkv", "avi", "mov", "webm")
+                     for f in glob.glob(f"{r}/**/*.{e}", recursive=True)}):
+        SOURCES[safe(pathlib.Path(f).stem)] = dict(path=f)
+    if not QUICK:
+        for name, url in OPEN_CLIPS.items():
+            if any(name[:5] in k.lower() for k in SOURCES):
+                continue
+            dest = DATA / (name + pathlib.Path(url).suffix)
+            if fetch(url, dest):
+                SOURCES[name] = dict(path=str(dest))
+        kodak = DATA / "kodak"
+        kodak.mkdir(exist_ok=True)
+        for f in (glob.glob("/kaggle/input/**/kodim*.png", recursive=True) if ON_KAGGLE else []):
+            shutil.copy(f, kodak / pathlib.Path(f).name)
+        if len(list(kodak.glob("*.png"))) < 24:
+            for i in range(1, 25):
+                fetch(KODAK_URL.format(i), kodak / f"kodim{i:02d}.png")
+        if list(kodak.glob("*.png")):
+            SOURCES["kodak"] = dict(path=str(kodak), images=True)
+    SOURCES = {"synthetic": dict(path="synthetic"), **SOURCES}
+    print("sources:", json.dumps(SOURCES, indent=1))
+    checkpoint()
+
+    jobs = []
+    for name, s in SOURCES.items():
+        img = s.get("images")
+        n, stride = (3, 5) if QUICK else ((24, 1) if img else (20, 10 if s["path"] == "synthetic" else 60))
+        size = "160x128" if QUICK else "320x240"
+        jobs.append((name, f"python experiments/benchmark_suite.py --video '{s['path']}' --frames {n} --stride {stride} "
+                           f"--size {size} --name {name} --out {OUT}"))
+    with ThreadPoolExecutor(max_workers=PARALLEL) as ex:
+        list(ex.map(lambda j: sh(j[1], j[0], "SVE-Bench"), jobs))
+    checkpoint()
+    w = max(len(s) for _, s, _, _ in LOG)
+    print("\n" + "\n".join(f"{sec:<16}{s:<{w + 2}}{st:<6}{t:>7.0f} s" for sec, s, st, t in LOG))
+    fails = [f"{sec}: {s}" for sec, s, st, _ in LOG if st != "PASS"]
+    print(f"\n{len(LOG) - len(fails)} passed, {len(fails)} failed, {(time.time() - T_START) / 3600:.2f} h")
+    print("Download benchmark_results.zip from the Output tab.")
+
 else:
-    raise SystemExit(f"unknown JOB {JOB!r}: complete | remaining | research | final | references")
+    raise SystemExit(f"unknown JOB {JOB!r}: complete | remaining | research | final | references | benchmark")

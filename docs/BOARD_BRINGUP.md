@@ -173,7 +173,8 @@ Open `http://localhost:8000` on the laptop. What changes with the board:
 * The log says `Sender started ... board encoder`; the Camera tile says *Input to the FPGA encoder*.
 * **Encode time** is the FPGA + DMA time per frame; **Encrypted bits** reads *not reported by the FPGA*
   (the fabric does not count them).
-* The top protection level is **E4**: E5 (block shuffling) exists only in the golden model.
+* The top protection level is **E4** with today's bitstreams. A lane bitstream with E5 (`docs/HW_TODO.md` H1,
+  VERSION bit 7) lifts it to E5 automatically; rehearse that with `--mock-lanes 2 --mock-e5`.
 * Everything else is the same as the laptop demo: attack buttons, rejections, protection rising,
   rekeying, the eavesdropper view (for both bitstreams).
 

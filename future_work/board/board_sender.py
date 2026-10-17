@@ -14,7 +14,8 @@ FPGA itself can be exercised on a laptop.
 
 Everything else (keys, ratchet, feedback, defence policy, dashboard telemetry) is the
 unchanged link/sender.py. The ARM keeps the policy loop; the fabric does the encoding.
-E5 is not available until the RTL supports restart markers, so max_mode is capped at E4.
+E5 needs a lane bitstream that reports it (VERSION bit 7, docs/INTERFACES.md §8.6); with any other
+bitstream max_mode is capped at E4. --mock-lanes 2 --mock-e5 emulates such a bitstream.
 """
 import argparse
 
@@ -46,16 +47,17 @@ class BoardEncoder:
         return EncodedOut(jpeg, payload_bits=8 * len(scan), enc_bits=0, scan_bytes=len(scan))
 
 
-def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None):
+def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None, mock_e5=False):
     cfg["sender"]["encoder"] = "model"                     # placeholder, replaced below
-    if cfg["defence"]["max_mode"] == "E5":
-        cfg["defence"]["max_mode"] = "E4"
-    s = Sender(cfg)
     if mock_lanes:
-        backend = MockBackend(contract=3, lanes=mock_lanes)
+        backend = MockBackend(contract=3, lanes=mock_lanes, e5=mock_e5)
     else:
         backend = MockBackend() if mock else PynqBackend(bitfile)
-    s.encoder = BoardEncoder(SecureJpegIP(backend), cfg["sender"]["quality"])
+    ip = SecureJpegIP(backend)
+    if cfg["defence"]["max_mode"] == "E5" and not ip.e5:
+        cfg["defence"]["max_mode"] = "E4"
+    s = Sender(cfg)
+    s.encoder = BoardEncoder(ip, cfg["sender"]["quality"])
     return s
 
 
@@ -66,9 +68,10 @@ def main():
     ap.add_argument("--mock", action="store_true", help="emulate the IP with the golden model (no board)")
     ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
                     help="emulate the lane bitstream (contract v3) with this many lanes (no board)")
+    ap.add_argument("--mock-e5", action="store_true", help="with --mock-lanes: the emulated bitstream has E5")
     a = ap.parse_args()
     cfg = config.load(a.config, a.set)
-    make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes).run()
+    make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes, a.mock_e5).run()
 
 
 if __name__ == "__main__":

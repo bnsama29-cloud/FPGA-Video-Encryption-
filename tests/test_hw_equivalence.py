@@ -145,24 +145,30 @@ def test_nonce_purposes_differ():
 # ------------------------------------------------- contract v3 (parallel lanes)
 @pytest.mark.parametrize("kind,w,h", [("scene", 64, 80), ("noise", 48, 32), ("bars", 16, 64)])
 def test_v3_hw_view_equals_golden_frame(kind, w, h):
-    """encode_frame_v3 (drives tb/test_lanes_top.py) == jpeg.encode_frame(segmented=True)."""
+    """encode_frame_v3 (drives tb/test_lanes_top.py) == jpeg.encode_frame(segmented=True).
+    E5: the fabric's frame (raster order) + the ARM's permutation (hw.arm_shuffle) == the golden frame."""
     img = make_image(w, h, kind, seed=w * h)
-    for mode in range(5):
+    for mode in range(6):
         ctr = (1 << 40) + mode
         a = hw.encode_frame_v3(img, 75, mode, KEY, ctr, SID)
         b = encode_frame(img, KEY, SID, ctr, MODE_NAME[mode], 75, segmented=True)
+        if mode == 5:
+            assert a["tag"] == b.tag, f"{kind} E5: the tag must cover the fabric's raster order"
+            a = dict(a, jpeg=hw.arm_shuffle(a["jpeg"], KEY, SID, ctr))
+            a["scan"] = hw.split_scan(a["jpeg"])[1]
         assert a["scan"] == b.scan, f"{kind} mode{mode}: v3 scan differs"
         assert a["jpeg"] == b.jpeg, f"{kind} mode{mode}: v3 file differs"
 
 
 def test_v3_bytes_do_not_depend_on_lane_count():
     img = make_image(64, 112, "scene", seed=3)
-    ref = hw.encode_frame_v3(img, 75, 4, KEY, 9, SID, lanes=1)
-    for lanes in (2, 4, 8):
-        assert hw.encode_frame_v3(img, 75, 4, KEY, 9, SID, lanes=lanes)["jpeg"] == ref["jpeg"]
+    for mode in (4, 5):
+        ref = hw.encode_frame_v3(img, 75, mode, KEY, 9, SID, lanes=1)
+        for lanes in (2, 4, 8):
+            assert hw.encode_frame_v3(img, 75, mode, KEY, 9, SID, lanes=lanes)["jpeg"] == ref["jpeg"]
 
 
-@pytest.mark.parametrize("mode", ["E0", "E2", "E4"])
+@pytest.mark.parametrize("mode", ["E0", "E2", "E4", "E5"])
 def test_v3_receiver_returns_the_v2_plain_frame(mode):
     """Decrypting a v3 frame gives exactly the plain contract-v2 JPEG, and it decodes to the same
     pixels as the restart-marked frame (restart markers change no sample)."""
@@ -187,17 +193,42 @@ def test_v3_segments_use_independent_keystreams():
     assert a[1] != b[1] and [a[i] for i in (0, 2, 3)] == [b[i] for i in (0, 2, 3)]
 
 
-def test_v3_version_byte_is_authenticated_and_e5_rejected():
+def test_v3_version_byte_is_authenticated():
     img = make_image(32, 32, "scene")
-    jpg = bytearray(encode_frame(img, KEY, SID, 3, "E2", segmented=True).jpeg)
-    k = jpg.find(b"SJV1")
-    assert jpg[k + 4] == 3
-    jpg[k + 4] = 2
-    assert receive_frame(bytes(jpg), KEY).reason == "tag-mismatch"
+    for m in ("E2", "E5"):
+        jpg = bytearray(encode_frame(img, KEY, SID, 3, m, segmented=True).jpeg)
+        k = jpg.find(b"SJV1")
+        assert jpg[k + 4] == 3
+        jpg[k + 4] = 2
+        assert receive_frame(bytes(jpg), KEY).reason != "ok", f"{m}: version downgrade accepted"
     with pytest.raises(ValueError):
-        encode_frame(img, KEY, SID, 3, "E5", segmented=True)
-    with pytest.raises(ValueError):
-        hw.encode_frame_v3(img, 75, 5, KEY, 3, SID)
+        hw.encode_frame_v3(img, 75, 6, KEY, 3, SID)
+
+
+def test_v3_e5_segments_are_mcus_permuted_per_frame_and_authenticated():
+    """E5 in contract v3: one restart segment per MCU (DRI = 1), each with its own keystream; the order is
+    keyed and changes with the frame counter; swapping two segments, or sending the fabric's raster
+    order unshuffled, fails the tag; and the eavesdropper's replacement picture still decodes."""
+    from model.container import parse_jpeg
+    from model.entropy import split_restart
+    from model.jpeg import decode_pixels, replacement_attack_jpeg
+    img = make_image(64, 48, "scene", seed=4)
+    n_mcu = (64 // 16) * (48 // 16)
+    f1 = encode_frame(img, KEY, SID, 10, "E5", segmented=True)
+    f2 = encode_frame(img, KEY, SID, 11, "E5", segmented=True)
+    assert len(split_restart(f1.scan)) == n_mcu
+    o1, o2 = hw.e5_order(KEY, SID, 10, n_mcu), hw.e5_order(KEY, SID, 11, n_mcu)
+    assert sorted(o1) == list(range(n_mcu)) and o1 != o2 and o1 != list(range(n_mcu))
+    assert receive_frame(f1.jpeg, KEY).ok
+    raster = hw.encode_frame_v3(img, 75, 5, KEY, 10, SID)["jpeg"]
+    assert receive_frame(raster, KEY).reason == "tag-mismatch", "unshuffled fabric output accepted"
+    head, scan = hw.split_scan(f1.jpeg)
+    segs = hw.split_segments(scan)
+    segs[0], segs[1] = segs[1], segs[0]
+    swapped = head + b"".join((hw.RST_MARKERS[(p - 1) % 8] if p else b"") + x for p, x in enumerate(segs)) + b"\xFF\xD9"
+    assert receive_frame(swapped, KEY).reason == "tag-mismatch", "segment swap accepted"
+    assert parse_jpeg(f1.jpeg).width == 64
+    assert decode_pixels(replacement_attack_jpeg(f1.jpeg)).shape == (48, 64, 3)
 
 
 def test_v3_eavesdropper_sees_exactly_what_it_sees_in_v2():
@@ -213,3 +244,16 @@ def test_v3_eavesdropper_sees_exactly_what_it_sees_in_v2():
             a = decode_pixels(replacement_attack_jpeg(encode_frame(img, key, 7, 9, m).jpeg))
             b = decode_pixels(replacement_attack_jpeg(encode_frame(img, key, 7, 9, m, segmented=True).jpeg))
             assert np.array_equal(a, b), f"{kind} {m}: eavesdropper picture differs between v2 and v3"
+
+
+def test_hardware_e5_gives_the_eavesdropper_the_same_replacement_picture_as_model_e5():
+    """E5 in contract v3 (one keystream per MCU segment, tag over raster order) and the model's E5 of
+    contract v2 send the MCUs in the same keyed order and encrypt the same fields, so the replacement
+    attack -- the picture the jigsaw, chosen-plaintext and recognition experiments start from -- is
+    pixel-identical. That is why the paper's E5 security results carry over to the hardware form."""
+    from model.jpeg import decode_pixels, replacement_attack_jpeg
+    for kind in ("scene", "noise", "bars"):
+        img = make_image(96, 64, kind, seed=3)
+        a = decode_pixels(replacement_attack_jpeg(encode_frame(img, KEY, SID, 9, "E5").jpeg))
+        b = decode_pixels(replacement_attack_jpeg(encode_frame(img, KEY, SID, 9, "E5", segmented=True).jpeg))
+        assert np.array_equal(a, b), f"{kind}: hardware E5 gives a different eavesdropper picture"

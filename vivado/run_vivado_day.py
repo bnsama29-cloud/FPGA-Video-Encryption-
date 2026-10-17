@@ -131,7 +131,9 @@ def load_frames(a):
             (make_image(32, 32, "noise", 2), 75, 4, "noise32x32_E4"),
             (make_image(48, 32, "checker", 3), 75, 0, "checker48x32_E0"),
             (make_image(64, 64, "bars", 4), 50, 1, "bars64x64_q50_E1"),
-            (make_image(80, 48, "scene", 5), 50, 3, "scene80x48_q50_E3")]
+            (make_image(80, 48, "scene", 5), 50, 3, "scene80x48_q50_E3")] + \
+        ([(make_image(64, 48, "scene", 6), 75, 5, "scene64x48_E5"),       # E5 RTL (INTERFACES.md §8.6)
+          (make_image(48, 32, "noise", 7), 75, 5, "noise48x32_E5")] if 5 in a.modes and a.v3 else [])
 
 
 def vectors_main(argv=None):
@@ -164,7 +166,7 @@ def vectors_main(argv=None):
     # session setup + register sanity checks
     if a.v3:
         cmds.append("M 3")
-    r32(VERSION, 0x5EC00302 if a.v3 else 0x5EC00200)
+    r32(VERSION, (0x5EC00302 | (0x80 if 5 in a.modes else 0)) if a.v3 else 0x5EC00200)   # bit 7: E5 RTL
     for i in range(4):
         w32(KEY0 + 4 * i, int.from_bytes(key[4 * i:4 * i + 4], "little"))
         r32(KEY0 + 4 * i, 0)                                   # keys are write-only
@@ -248,6 +250,8 @@ def check_main(argv=None):
         pos += fr["scan_bytes"]
         jpg = hw.build_frame(fr["width"], fr["height"], fr["quality"], fr["mode"],
                              fr["frame_ctr"], sid, scan, tags[fr["index"]], version=fr.get("version", 2))
+        if fr["mode"] == hw.MODE_E5:                  # E5 (INTERFACES.md §8.6): the ARM permutes the segments
+            jpg = hw.arm_shuffle(jpg, key, sid, fr["frame_ctr"])
         r = receive_frame(jpg, key, guard)
         (d / f"frame{fr['index']}_scrambled.jpg").write_bytes(jpg)
         if r.plain_jpeg:
