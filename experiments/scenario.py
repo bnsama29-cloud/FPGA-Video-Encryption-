@@ -2,6 +2,9 @@
 
     python experiments/scenario.py --scenario experiments/scenarios/quick.json --policy threshold
     python experiments/scenario.py --scenario experiments/scenarios/learning.json --policy bandit --watch
+    python experiments/scenario.py --scenario experiments/scenarios/full_suite.json --external-sender <BOARD IP>
+        (GUIDE.md A6: the PYNQ-Z2 is the sender; the script prints the command to start on the board
+         and starts the scenario clock when the board's first report arrives)
 
 Starts channel + receiver + sender on their own port block (so a dashboard on the
 default ports is not disturbed; --watch also sends telemetry to the dashboard),
@@ -33,7 +36,19 @@ from link.buslog import BusLogger           # noqa: E402
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
-def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memory=None, quiet=False):
+def board_command(base_port, policy, laptop="<LAPTOP IP>"):
+    """The board_sender command whose ports match a scenario run on base_port (GUIDE.md A6)."""
+    ports = [f"link.host={laptop}", "link.bind_host=0.0.0.0", f"link.video_in={base_port}",
+             f"link.fb_out={base_port + 3}", f"link.sender_control={base_port + 5}",
+             f"link.bus=[{base_port + 10}]", f"sender.policy={policy}"]
+    return ("python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes.bit "
+            + " ".join(f"--set {x}" for x in ports))
+
+
+def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memory=None, quiet=False,
+        external_sender=None, wait_s=600):
+    """external_sender = the board's IP: start only channel + receiver here, listen on the network,
+    and let the PYNQ-Z2 (future_work/board/board_sender.py) be the sender."""
     sc = json.loads(Path(scenario).read_text())
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -43,12 +58,28 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
             f"link.sender_control={base_port + 5}", f"link.bus={bus}",
             f"sender.policy='{policy}'",
             f"defence.memory_file='{memory or (out / 'bandit_memory.json')}'"] + list(sc.get("set", [])) + list(extra_sets)
+    if external_sender:
+        # the board caps protection at E4 (no E5 in the RTL: future_work/board/board_sender.py)
+        sets += ["link.bind_host='0.0.0.0'", f"link.sender_host='{external_sender}'", "defence.max_mode='E4'"]
     args = [x for s in sets for x in ("--set", s)]
     cfg = config.load(overrides=sets)
-    log = BusLogger(base_port + 10)
+    log = BusLogger(base_port + 10, host="0.0.0.0" if external_sender else "127.0.0.1")
     out_log = None if not quiet else subprocess.DEVNULL
+    nodes = ("channel", "receiver") if external_sender else ("channel", "receiver", "sender")
     procs = [subprocess.Popen([sys.executable, "-m", f"link.{n}"] + args, cwd=ROOT, stdout=out_log)
-             for n in ("channel", "receiver", "sender")]
+             for n in nodes]
+    if external_sender:
+        print("\nStart the sender on the board now (same ports as this run):\n  "
+              + board_command(base_port, policy) + "\nWaiting for the board's first report ...", flush=True)
+        t_wait = time.time()
+        while not log.take("window", "sender"):
+            if time.time() - t_wait > wait_s:
+                for p in procs:
+                    p.terminate()
+                log.close()
+                raise RuntimeError(f"no report from the board in {wait_s} s: check IPs, firewall and ports")
+            time.sleep(0.2)
+        print("board is streaming: scenario clock starts", flush=True)
     t0 = time.time()
     try:
         for step in sorted(sc["steps"], key=lambda s: s["at"]):
@@ -103,7 +134,9 @@ def analyse(events, cfg, t0):
         ws = [w for w in windows if s["t"] <= w["t"] <= end + 5.0]
         aware = next((w for w in ws if w["threat"] >= 0.5), None)
         ep["sender_aware_s"] = round(aware["t"] - s["t"], 3) if aware else None
-        mit = next((w for w in ws if leak[w["mode"]] <= leak[top] + 1e-9), None)
+        # mitigated = the top level available is reached (E5 on the laptop; E4 on the board, which has no E5).
+        # With top = E5 this is the old rule leak <= leak[E5] = 0 exactly (only E5 has zero leakage).
+        mit = next((w for w in ws if MODES.index(w["mode"]) >= MODES.index(top)), None)
         ep["time_to_mitigate_s"] = round(mit["t"] - s["t"], 3) if mit else None
         during = [w for w in windows if s["t"] <= w["t"] <= end + 1]
         ep["mean_leakage_during"] = round(sum(leak[w["mode"]] for w in during) / len(during), 4) if during else None
@@ -181,9 +214,11 @@ def main():
     ap.add_argument("--base-port", type=int, default=47200)
     ap.add_argument("--watch", action="store_true", help="also send telemetry to a running dashboard")
     ap.add_argument("--set", action="append", default=[], help="extra config override")
+    ap.add_argument("--external-sender", metavar="BOARD_IP",
+                    help="the PYNQ-Z2 (board_sender.py) is the sender; start only channel + receiver here")
     a = ap.parse_args()
     out = a.out or ROOT / "sim_out" / "runs" / f"{Path(a.scenario).stem}_{a.policy}"
-    s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory)
+    s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory, external_sender=a.external_sender)
     print_summary(s)
     print(f"\nwritten {out}/")
 
