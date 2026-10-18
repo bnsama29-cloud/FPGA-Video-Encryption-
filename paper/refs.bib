@@ -140,6 +140,31 @@
 % NZCA is from Peng et al. (ACM TOMM 2024, their ref. [4]); Hirose et al. apply it: contours appear
 % without restart-segment permutation and partly again with a large restart interval.
 
+@inproceedings{sirichotedumrong2020,
+  author    = {Warit Sirichotedumrong and Hitoshi Kiya},
+  title     = {Visual Security Evaluation of Learnable Image Encryption Methods against Ciphertext-only Attacks},
+  booktitle = {Proc. Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
+  year      = {2020},
+  note      = {arXiv:2010.06198}
+}
+% checked 18 Oct 2026: arXiv abstract page only (listed as "to be appeared in APSIPA ASC 2020"; pages and
+% final publication TODO from IEEE Xplore). Cited sentence uses only what the abstract states: a GAN-based
+% ciphertext-only attack defeats most protection methods. TODO: a team member reads the full PDF.
+% 18 Oct 2026: full arXiv text read (cloud session): targets are pixel/block-wise learnable encryption on
+% STL-10 96x96 images, not JPEG; Table I: ITN attack SSIM 0.91 and GAN attack 0.72 on Tanaka's scheme.
+
+@misc{qiu2025,
+  author = {Hanshuo Qiu and Jing Lian and Xiaoyuan Wang and Jizhao Liu},
+  title  = {Securing Satellite Communications: Real-Time Video Encryption Scheme on Satellite Payloads},
+  year   = {2025},
+  note   = {arXiv:2503.16287}
+}
+% checked 18 Oct 2026: arXiv abstract page only (preprint, no venue listed). Cited sentence uses only the
+% abstract: two 1-D chaotic maps, real time on a satellite payload, also implemented on an FPGA.
+% 18 Oct 2026: full arXiv HTML read (cloud session): Raspberry Pi 4B payload, maps also run via HLS on a
+% Zynq xc7z020; frames XORed with the chaotic sequence and stored raw (no JPEG/H.264), no MAC or tag.
+% TODO: a team member reads the full PDF.
+
 @article{lin2024,
   author  = {Ruiyuan Lin and Sheng Liu and Jun Jiang and Shujun Li and Chengqing Li and C.-C. Jay Kuo},
   title   = {Recovering Sign Bits of {DCT} Coefficients in Digital Images as an Optimization Problem},

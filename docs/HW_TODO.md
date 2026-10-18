@@ -7,10 +7,10 @@ The model is the referee (CLAUDE.md): change the RTL until the test passes, neve
 
 | # | Task | Why | Effort |
 |---|---|---|---|
-| H1 | ✅ **E5 in the lane encoder** (mode 5, contract v3 §8.6) | done 17 Oct: bit-exact for 1, 2, 4 lanes and in the XSim testbench; the lane bitstream must be rebuilt in Vivado to include it | done |
+| H1 | ✅ **E5 in the lane encoder** (mode 5, contract v3 §8.6) | done 17 Oct: bit-exact for 1, 2, 4 lanes and in the XSim testbench; lane bitstream rebuilt with E5 in Vivado run 7 (18 Oct, +200 LUT, meets 100 MHz) | done |
 | H2 | Board bring-up A1–A6 (`docs/BOARD_BRINGUP.md`) | every board number in the paper | 1–2 weeks |
 | H3 | 125 MHz: one more pipeline stage in the colour converter | 1 lane 82, 2 lanes ~150 Mpixel/s | 1–2 days + Vivado run |
-| H4 | Power from simulated switching activity (GUIDE B37) | replaces the vectorless estimate | flow built (`--steps power`); ⏳ run it in Vivado |
+| H4 | Power from simulated switching activity (GUIDE B37) | replaces the vectorless estimate | ✅ run 7 (18 Oct): 2 lanes 0.318 W (E5) / 0.319 W (E2), v2 0.210-0.211 W |
 
 H2 does not depend on H1: run the board with today's bitstreams first, then again with a lane bitstream
 rebuilt from the current RTL (`py vivado\run_vivado_day.py --steps xsim lanes bd_lanes power parse`).

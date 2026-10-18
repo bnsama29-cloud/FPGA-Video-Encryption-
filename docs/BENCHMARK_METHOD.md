@@ -80,9 +80,8 @@ encoder) with the post-route Vivado results and the published rows of `paper/dat
   labelled as such. Board measurement (GUIDE A4) replaces both.
 * **Input Gbit/s** = Mpixel/s x 24 bit, the data the design consumes, for comparison with cipher cores.
 
-Limits: throughput is RTL simulation without DMA stalls. Vivado run 6 (17 Oct) predates the E5 RTL, so E5
-rows pair E5's throughput with the pre-E5 area (Yosys: about +50 LUT and +1 DSP for 2 lanes) until the lane
-bitstream is rebuilt.
+Limits: throughput is RTL simulation without DMA stalls. Since Vivado run 7 (18 Oct) the lane rows use the
+post-route area with E5 (+200 LUT for 2 lanes, no DSP) and SAIF power; the 4-lane power is still vectorless.
 
 ## 5. How to reproduce
 

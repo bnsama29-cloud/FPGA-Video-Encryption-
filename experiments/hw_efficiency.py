@@ -16,9 +16,9 @@ Derived columns:
   Mpx/s per kLUT   throughput / area, the efficiency metric of hardware papers
   Gbit/s in        Mpixel/s x 24 bit (the RGB data the design consumes), for comparison with cipher cores
   nJ/pixel         total on-chip power / throughput (energy per pixel)
-Limits: throughput is RTL simulation with no DMA stalls; vectorless power is an estimate, and a Vivado run
-older than the E5 RTL (run 6, 17 Oct 2026) has no E5 logic in its netlist (Yosys: about +50 LUT, +1 DSP for
-2 lanes), so E5 rows then pair E5 throughput with the pre-E5 area. Board measurements replace both (GUIDE A4).
+Limits: throughput is RTL simulation with no DMA stalls; SAIF and vectorless power are estimates. A Vivado run
+older than the E5 RTL (run 6, 17 Oct 2026) has no E5 logic in its netlist, so with it E5 rows pair E5
+throughput with the pre-E5 area; run 7 (18 Oct) includes E5. Board measurements replace both (GUIDE A4).
 Writes sim_out/hw_efficiency/hw_efficiency.json and .md.
 """
 import argparse
