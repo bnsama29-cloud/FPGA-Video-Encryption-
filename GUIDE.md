@@ -19,48 +19,44 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 
 ---
 
-## 1. Where the project stands (14 Oct 2026, after the open-data run)
+## 1. Where the project stands (18 Oct 2026, after Vivado run 7 and SVE-Bench)
 
 | Part | State | Evidence |
 |---|---|---|
-| Golden model + contract v2 | ✅ done | `model/`, `docs/INTERFACES.md`, 1089 Ascon KATs |
-| RTL (E0–E4) | ✅ bit-exact with the model in cocotb + Icarus, 0 extra cycles for encryption | `tb/`, `make test` |
-| Vivado testbench | ✅ in Icarus · ✅ in Vivado XSim 2026.1 | `make xsim-icarus`, `python vivado/run_vivado_day.py --steps xsim` |
-| Post-route resources / timing / power | ✅ encoder meets 100 MHz (run 3, in the paper) · ⏳ overlay −0.24 ns → run 4 with the extra converter stage | `python vivado/run_vivado_day.py --maxw 9 10` |
+| Golden model + contracts v2/v3 | ✅ done | `model/`, `docs/INTERFACES.md`, 1089 Ascon KATs |
+| RTL, single pipeline (E0–E4) | ✅ bit-exact with the model in cocotb + Icarus, 0 extra cycles for encryption | `tb/`, `make test` |
+| RTL, lane encoder (E0–E5, 1/2/4 lanes) | ✅ bit-exact with the model, E5 included (B6) | `tb/test_lanes_top.py`, `rtl/secure_jpeg_lanes_top.v` |
+| Vivado testbench | ✅ Icarus · ✅ Vivado XSim 2026.1, both designs, E5 frames included (run 7) | `make xsim-icarus`, `python vivado/run_vivado_day.py --steps xsim` |
+| Post-route resources / timing / power | ✅ run 7 (18 Oct, 27/27 steps): encoder, 2 and 4 lanes with E5 and both PYNQ-Z2 systems meet 100 MHz; power from simulated activity (SAIF) | `paper/data/vivado/`, §4.1 |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
-| Simulation results, private clips | ✅ (Kaggle, 47/47 steps) | `paper/data/simulation/` |
-| Simulation results, open data + standard metrics + restart interval + stronger U-Net | ✅ (Kaggle, 39/39 steps + rerun 9/9 steps) | `paper/data/extra/` (README there says where each file came from) |
-| PYNQ-Z2 overlay + board tests | ⏳ scripts ready, not yet run | `future_work/board/` |
-| Paper | 📝 full 6-page draft with a real (open-licence) frame in Fig. 2; 8 red TODOs | `paper/main.tex` → `paper/main.pdf` |
+| Simulation results (private clips, open data, learned attackers, jigsaw, sign recovery, recognition, size channel) | ✅ Kaggle runs 14–17 Oct | `paper/data/simulation/`, `paper/data/extra/` |
+| SVE-Bench: ours vs four published schemes under the same attacks | ✅ Kaggle 18 Oct (method v2), in the paper | `paper/data/benchmark/`, B39/B41 |
+| PYNQ-Z2 board tests | ⏳ E5 bitstream built (tom's PC, not in git); `first_contact` passes against the emulated board for E0–E5; **not yet run on the board** | §4.2 |
+| Paper | 📝 complete draft: conference version exactly 6 pages, extended version 14 pages; open TODOs are author details, board/ARM results and the AI disclosure | `paper/main.tex`, `cd paper && make` |
 
-**Rough position: ~60 % of the project.** The simulation side is finished. The Vivado day, the board
-and the paper are left, in that order.
+**Rough position: ~75 % of the project.** Design, simulation, Vivado and the security evaluation are
+finished. Left: the board (§4.2, the critical path to 12 Nov), the ARM baseline (A3 + B1), then the
+board numbers in the paper and the final proof-reading.
 
-The headline results (generated tables in `paper/tables/`, inputs in `paper/data/`):
+The headline results (generated tables in `paper/tables/`, numbers in `paper/tables/numbers.tex`):
 
-* **Encryption cost.** It adds 0 cycles in RTL; the estimate is 199 fps at 640×480 if 100 MHz closes.
-* **Attack suite.** 11/11 attacks are mitigated in 0.91 ± 0.02 s, with 0/375 false alarms (3 runs).
-  Benign impairments give 0/447 false alarms. With a trailer, a talking head or Tears of Steel as the
-  source: 11/11 each (one run each), no false alarms.
-* **Outline leakage** on 8 sources (synthetic, 4 private clips, Sintel, Tears of Steel, Kodak):
-  E1–E4 leak an outline sketch (edge correlation 0.25–0.58); E5 removes it (−0.005…0.017). The
-  private-clip numbers were reproduced exactly on a second machine.
-* **Jigsaw solver on E5:** at most 2.2 % of neighbour pairs restored (synthetic), ≤ 1.7 % on real sources.
-* **Learned attacker (U-Net).** Four train/test setups, the largest with 2,609 frames from 3 clips,
-  tested on 800 frames of 3 unseen clips. It **breaks E1** (edge correlation 0.69, SSIM 0.79). Under E2/E4
-  it gets no more outline than the plain replacement attack (0.40). Under E5 the edge correlation stays
-  at the level of a no-ciphertext control (0.037 vs 0.036: no outline from the stream), but SSIM beats
-  that control by 0.11 in the 3 → 3 setup (0.34 vs 0.23) and not at all in the open-clip setup (0.21 vs 0.21) —
-  most likely frame-level brightness/colour statistics, which a block permutation does not hide (B25).
-* **Restart interval (E5 with N MCUs per segment), 8 sources.** Overhead 8–23 % at N = 1, 0.5 % at N = 32;
-  the non-zero counting attack is defeated for every N (≤ 0.08), but a beam-search solver chains 15–41 % of
-  the 10 segments at N = 32 (chance 11 %). So we keep N = 1 and do not claim larger N is safe.
-* **Standard metrics.** Key sensitivity is good (E5: 77.5–99.5 % pixels change with a 1-bit key change);
-  adjacent-pixel correlation stays 0.88–0.92 and entropy rises only under E5 — expected for a
-  format-compliant scheme, and written as such in the paper.
-* **Bandit vs threshold over 10 seeds.** The bandit encrypts 14 % fewer bits (10/10 seeds) but
-  reacts 0.88 s slower and leaks more under attack (0/10 seeds better). This is a trade-off, not a
-  win.
+* **Encryption cost.** 0 extra cycles in RTL. The encoder meets 100 MHz post-route: 65 Mpixel/s,
+  212 fps at 640×480. Two and four lanes reach 122 and 176 Mpixel/s in RTL simulation; E5 costs 2–4 %.
+* **Area and power (run 7).** Encoder 5,037 LUT, about 211 mW (SAIF). E5 adds +2 % LUT to the lane
+  encoder, no BRAM or DSP, and no power (2 lanes: 318 mW with E5, 319 mW with E2).
+* **Attack suite.** 11/11 attacks are mitigated in 0.91 s on average, with 0/375 false alarms
+  (3 runs); benign impairments give 0/447.
+* **Outline leakage** on 9 sources: E1–E4 leak an outline (edge correlation 0.28–0.56); E5 removes
+  it (−0.007…0.014). Jigsaw solvers (greedy, MST) restore at most 2.5 % of E5's neighbours (chance).
+* **Published schemes (SVE-Bench, 175 frames).** Van Droogenbroeck, Kishore, Auer and Hirose leak
+  0.58–0.94 at their strongest attack; the fixed-key ones fall to one known frame. E5 stays ≤ 0.02.
+* **Learned attackers.** The U-Net breaks E1 (edge 0.69, SSIM 0.79). Under E5 it scores SSIM 0.34,
+  no more than an oracle of each frame's true colour statistics (0.36); the adversarial P5 gets 0.26.
+* **Restart interval.** Keep N = 1: at N = 32 a beam-search solver chains 15–41 % of the segments.
+* **Frame sizes.** Every level leaks motion and video identity equally (98 % identification of 7 videos);
+  only constant-size frames close it.
+* **Bandit vs threshold over 10 seeds.** The bandit encrypts 14 % fewer bits but reacts slower
+  (1.34 s vs 0.46 s). A trade-off, not a win.
 * **Format compliance.** Every mode decodes in Pillow, OpenCV, scikit-image and ffmpeg.
 
 ---
@@ -94,10 +90,10 @@ pip install -r requirements.txt
 | `python experiments/measure_mode_tradeoff.py --video clip.mp4` | leakage vs cost per mode |
 | `python experiments/learned_attack.py --train-source a.mp4 --test-source b.mp4` | neural attacker (GPU) |
 | `python -m future_work.attacks.jigsaw_attack --video clip.mp4` | jigsaw attack on E5 |
-| `python vivado/run_vivado_day.py` | XSim + post-route numbers + overlay + tables (Vivado) |
+| `python vivado/run_vivado_day.py` | XSim + post-route numbers + overlay + tables (Vivado; on Windows: `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes power parse --jobs 2`) |
 | `python -m future_work.board.first_contact` | bit-exact gate + fps on the PYNQ-Z2 |
 | `python -m future_work.figures.paper_tables --root <results>` | every paper table from result files |
-| `cd paper && make` | build the paper PDF (`make tables` first after new results) |
+| `cd paper && make` | build the paper PDF (`make tables` first after new results); `make extended.pdf` for the long version. Needs `texlive-latex-extra texlive-publishers texlive-science` (or Overleaf) |
 
 **The remaining GPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_runs.py (JOB = "remaining")` (GPU T4, Internet on,
 your clips dataset attached). With `RERUN = True` (the default now) it only repeats what the fixes of
@@ -145,9 +141,11 @@ Everything in **`docs/VIVADO_ONE_DAY.md`** (install, the one command, results, b
 troubleshooting, history of runs 1-6). Run 6 passed all 20 steps: encoder WNS +0.554 ns, 2 lanes
 +0.400, 4 lanes +0.440 (out of context), v2 overlay +0.788, 2-lane overlay +0.208 ns at 100 MHz.
 Run 7 (18 Oct, tom's PC, 27/27 steps) rebuilt the lane encoders and the 2-lane system **with E5**: 2 lanes 10,069 LUT (+200) WNS +0.359, 4 lanes 16,893 (+320) +0.293, 2-lane overlay 11,913 (+197) +0.228 ns, no extra BRAM/DSP; SAIF power 0.318 W (E5) vs 0.319 W (E2) for 2 lanes. Snapshot (runs 6 + 7) in `paper/data/vivado/`, in the paper. At 125 MHz the colour converter is the next
-limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\board\overlay\`).
+limit (v2 -0.875 ns). Bitstreams (not in git): the run 6 pair on Samarth's laptop, and the **E5
+2-lane system from run 7** on tom's PC (`D:\FPGA-Video-Encryption-\future_work\board\overlay\secure_jpeg_lanes.bit` + `.hwh`).
 
-**Still to do:** commit the two `.bit` + `.hwh` pairs so teammates without Vivado can use the board.
+**Still to do:** share the `.bit` + `.hwh` pairs (commit them or copy them to the board's SD card) so
+teammates without Vivado can use the board.
 
 ### 4.2 Board (critical path, deadline 12 Nov) ⏳
 
@@ -155,7 +153,7 @@ Step by step, from the SD card to every number below: **`docs/BOARD_BRINGUP.md`*
 
 | # | Task | Owner | Time | How | Done when |
 |---|---|---|---|---|---|
-| A1 | **Bit-exact gate on silicon** | 1 | ½ day | `sudo -E python3 -m future_work.board.first_contact --sizes 320x240 640x480` | all modes E0–E4 byte-identical with the model |
+| A1 | **Bit-exact gate on silicon** | 1 | ½ day | copy the repo and the `.bit` + `.hwh` to `/home/xilinx/fpga`, then `sudo -E python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10` (already passes with `--mock --mock-lanes 2 --mock-e5`) | all modes E0–E5 byte-identical with the model |
 | A2 | FPGA speed | 1 | same run | part 2 of the same script | fps table in `sim_out/board/first_contact.md` |
 | A3 | ARM baseline on the same board | 2 | ½ day | `python3 -m future_work.baselines.bench_software_codecs --sizes 320x240 640x480 --frames 30` | `baselines_<host>.md` |
 | A4 | Power and energy per frame | 1 + 5 | 1 day | USB meter: idle / ARM / FPGA per mode, 30 s averages → `future_work/baselines/power_template.csv` → `python -m future_work.baselines.energy_table <csv>` | mJ/frame, FPGA vs ARM |
@@ -200,7 +198,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 |---|---|---|---|---|---|
 | B25 | **Global-statistics control for E5** | P2 | 5 | ✅ measured: U-Net E5 SSIM 0.34 [0.33, 0.36] vs oracle of true frame statistics 0.36 [0.34, 0.37]; in the paper | below |
 | B1 | **Selective encryption in C** on the ARM (fair software baseline) | P1 | 2 | 1–2 d | below |
-| B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | 1 d | below |
+| B3 | **Threat model + nonce-uniqueness argument** (1 page) | P1 | 2 | ½ d | ✅ in the paper (§III threat model and nonce subsections) · ⏳ `docs/THREAT_MODEL.md` |
 | B22 | **E1's status after the U-Net result** (documentation + defaults) | P1 | 2 + 5 | ½ d | below |
 | B14 | ✅ **Comparison table in the paper** (Table II, `paper/data/related/compare.json`) | P1 | 1 + 2 | done | §7 |
 | B26 | Research R1: stall profile + frame-size law (RTL) | P2 | 1 | ✅ VM + Kaggle (640x480 measured 1.534 cycles/px, law confirmed) | `docs/RESEARCH.md` |
@@ -213,15 +211,15 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
 | B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ Kaggle 17 Oct: 29 frames, 9 source sets (Kodak, open films, private clips); in the paper | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
 | B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ✅ Kaggle 17 Oct: 7 videos; in the paper (Table XII extended, one sentence in the conference version) | `experiments/video_fingerprint.py` |
-| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ✅ run 7 (18 Oct): v2 0.210-0.211 W (E0/E2/E4), 2 lanes 0.319 W (E2) / 0.318 W (E5); `paper/data/vivado/` · ⏳ board | `docs/HW_TODO.md` H4 |
-| B39 | **SVE-Bench**: ours and four published schemes (Van Droogenbroeck, Kishore, Auer, Hirose) under the same four attacks | P1 | 5 | ✅ Kaggle (re-run with method v2, received 18 Oct 10:01): 9 sources, 175 frames; `paper/data/benchmark/`, `tab_bench.tex`, `tab_bench_metrics.tex` (not yet `\input` in the paper) | `experiments/benchmark_suite.py` |
+| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ✅ run 7 (18 Oct): v2 0.210-0.211 W (E0/E2/E4), 2 lanes 0.319 W (E2) / 0.318 W (E5); `paper/data/vivado/`, in the paper (`\SaifTopMw`, `\SaifLanes*Mw`) · ⏳ board | `docs/HW_TODO.md` H4 |
+| B39 | **SVE-Bench**: ours and four published schemes (Van Droogenbroeck, Kishore, Auer, Hirose) under the same four attacks | P1 | 5 | ✅ Kaggle (re-run with method v2, received 18 Oct 10:01): 9 sources, 175 frames; `paper/data/benchmark/`; in the paper (§V paragraph in both versions, `tab_bench.tex` in the extended one; `tab_bench_metrics.tex` not yet `\input`) | `experiments/benchmark_suite.py` |
 | B40 | Hardware figures of merit as hardware papers report them: Mpixel/s per kLUT, input Gbit/s, nJ/pixel, per mode (E5 rows) | P2 | 1 | ✅ from RTL throughput + Vivado run 7 (E5 netlist, SAIF power for v2 and 2 lanes; 4 lanes vectorless): 2 lanes E5 2.7 nJ/pixel · ⏳ board | `experiments/hw_efficiency.py` |
 | B41 | **SVE-Bench method v2** (comparable with published work): A4 becomes a known-plaintext attacker (permutation and keystream recovered from one clear frame, nothing handed over); per scheme PSNR/SSIM, entropy, adjacent correlation, NPCR/UACI (key, 1 pixel); 95 % bootstrap CIs; Kodak at 768x512 with quality 50/75/90; standard metrics for E5's hardware form | P1 | 5 | ✅ code + Kaggle re-run (18 Oct, every step PASS, 43.9 min): `paper/data/benchmark/` (with `standard_metrics/` and the Kodak q50/q90 files), `tab_bench.tex`, `tab_bench_metrics.tex` | `docs/BENCHMARK_METHOD.md` |
-| B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
+| B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI; a team member reads the PDFs of the two entries added 18 Oct (`sirichotedumrong2020`, `qiu2025`) | P1 | 4 | ⏳ 30 min with IEEE Xplore / ScienceDirect / arXiv | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test** (Faster R-CNN persons) | P2 | 5 | ✅ plain 68-100 %, E1 up to 37 %, E2/E4 <= 3 %, E5 0 %; in the paper | below |
 | B24 | **More frames + 95 % intervals** for leakage | P2 | 5 | ✅ 60 frames/source, intervals in the extended paper (Table + Fig.) | below |
-| B6 | E5 in RTL: contract v3 mode 5 (one segment per MCU; the ARM permutes) | P1 | 1 | ~1 week | ✅ spec + model + driver + tests + **RTL** (17 Oct, bit-exact for 1/2/4 lanes) · ⏳ Vivado rebuild + board |
+| B6 | E5 in RTL: contract v3 mode 5 (one segment per MCU; the ARM permutes) | P1 | 1 | ~1 week | ✅ spec + model + driver + tests + **RTL** (17 Oct, bit-exact for 1/2/4 lanes) + **Vivado run 7** (18 Oct, post-route, XSim) · ⏳ board |
 | B7 | Shared vs separate Ascon core (area vs throughput) | P2 | 1 | 2 d | below |
 | B8 | Ascon-XOF128 KDF with official vectors | P2 | 2 | 1 d | below |
 | B9 | Stronger jigsaw solver (MST + MGC) | P2 | 5 | ✅ gate 0.84-1.00 on plain tiles (greedy 0.62-1.00); E5 at chance (<= 2.5 %) on 9 sources | below |
@@ -394,26 +392,25 @@ us near the commercial cores plus one ~1 K-LUT Ascon.
 * the rules on originality, citations and disclosure of AI assistance.
 
 Placeholders that wait for results are marked `\TODO{...}` in red. The PDF lists them, so nothing
-unfinished slips through. **The draft is exactly 6 pages with no slack** (the last reference ends at the bottom of page 6):
-anything added must be paid for with text cut elsewhere (the standard-metrics table, the two plots and
-two restart-interval rows already moved to the repository).
+unfinished slips through. **The conference version is exactly 6 pages with no slack** (commit 6f1bc20,
+18 Oct: the last reference ends on page 6). Anything added must be paid for with text cut elsewhere,
+usually by moving detail into `\ifextended ... \fi` (the extended version, `extended.tex`, has no page limit).
 
 | Paper part | Waits for | Owner |
 |---|---|---|
-| Table III hardware (now a Yosys estimate) | 4.1 Vivado | 1 |
-| §VI board results (now a placeholder) | 4.2 A1–A6 | 1 + 4 |
-| Fig. 2 with a real frame | ✅ Sintel (B2); redraw at paper size in the B20 run | 4 |
-| No-ciphertext control in "Learned attacker" | ✅ B21 | 5 |
-| "we attribute the gain to frame statistics" → measured | B25 | 5 |
-| Software baseline row on the ARM | A3 + B1 | 2 |
-| Threat model paragraph | B3 | 2 |
+| Hardware tables (resources, comparison) | ✅ Vivado run 7, post-route | 1 |
+| E5 in hardware, SAIF power | ✅ run 7 (18 Oct) | 1 |
+| Comparison with published schemes (SVE-Bench) | ✅ B39 (18 Oct) | 5 |
+| Fig. 2 with a real frame, learned-attacker controls, threat model | ✅ B2, B21, B25, B3 | 2 + 4 + 5 |
+| §VI board results and "Cost relative to software" (red TODO) | 4.2 A1–A4 + B1 | 1 + 2 + 4 |
+| Author order, e-mails, funding line, AI-assistance disclosure (red TODOs) | team decision | all |
 | Proof-reading, own wording, plagiarism check | everything | all |
 
 **Dates:**
 
 | Date | Milestone |
 |---|---|
-| 16 Oct | Vivado day done |
+| 16–18 Oct | Vivado day done ✅ (runs 6 and 7) |
 | 24 Oct | A1–A2 |
 | 7 Nov | A3–A6 + B1–B3 |
 | 12 Nov | demo, project complete |
@@ -441,7 +438,7 @@ two restart-interval rows already moved to the repository).
 | Encryption adds 0 cycles to the encoder | `benchmark_crypto.py --rtl` | ✅ RTL simulation |
 | Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder and both PYNQ-Z2 systems post-route at 100 MHz (runs 6-7; the 2-lane system with E5) · power = SAIF estimate for the encoders (B37), vectorless for the systems · ⏳ board |
 | 1.5 + a/MCU rows cycles per pixel; 65 Mpixel/s at 640x480 and 100 MHz | `stall_profile.py --scaling` (RTL, 5 frame sizes) | ✅ RTL simulation |
-| Lane encoder (contract v3) bit-exact with the model for 1, 2, 4 lanes, all levels, under stalls; same bytes for every lane count | `tb/test_lanes_top.py`, `make xsim-icarus` | ✅ RTL simulation · ✅ XSim in Vivado (runs 5, 6) |
+| Lane encoder (contract v3) bit-exact with the model for 1, 2, 4 lanes, all levels, under stalls; same bytes for every lane count | `tb/test_lanes_top.py`, `make xsim-icarus` | ✅ RTL simulation · ✅ XSim in Vivado (runs 5, 6; run 7 with E5 frames) |
 | 2 lanes 122 Mpixel/s, 4 lanes 176 Mpixel/s at 640x480 and 100 MHz | `experiments/lanes_rtl_throughput.py` | ✅ RTL simulation (no DMA stalls) · ⏳ board |
 | The lane encoder fits the xc7z020 and meets 100 MHz; its LUT/BRAM/DSP | Vivado run 6 (`lanes`, `bd_lanes` steps) | ✅ post-route with E5 (run 7): 2 lanes 10,069 LUT / 50 BRAM / 46 DSP, 4 lanes 16,893 / 52 / 92 (out of context); 2-lane PYNQ-Z2 system with E5 meets 100 MHz; E5 costs +2 % LUT, no BRAM/DSP · ⏳ 4-lane system not built; whether DDR feeds ~700 MB/s: board |
 | Peculiar case 1: a bit flip is caught at the first frame, held-back frames only as jamming (their late return is benign reordering), silenced feedback only by the dead-man rule, with the highest leakage while active | `paper/make_assets.py :: peculiar_cases` on the full-suite runs (`experiments/scenario.py`) | ✅ system simulation, 3 runs (extended paper, Fig. 7) |
@@ -465,7 +462,7 @@ two restart-interval rows already moved to the repository).
 | E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ 7 sources |
 | The sign-recovery LP of Lin et al. recovers 88-93 % of signs in its own setting but 59 % of E1's and 49 % of E2's; it still sharpens E1's outline (edge 0.41 vs 0.33) | `sign_recovery.py` | ✅ 29 frames, 9 source sets |
 | One second of frame sizes identifies which of 7 known videos plays (98 % E1-E4, 99 % E5, chance 14 %); only constant-size frames (+81 % bytes) reach chance | `video_fingerprint.py` | ✅ 7 videos |
-| E5 in hardware | B6 | ✅ RTL simulation (lane encoder, 1/2/4 lanes bit-exact, XSim testbench in Icarus) · ⏳ Vivado rebuild + board. Until the board run the paper says "in RTL simulation", not "on hardware" |
+| E5 in hardware | B6 | ✅ RTL simulation (lane encoder, 1/2/4 lanes bit-exact) · ✅ Vivado run 7: XSim bit-exact, post-route at 100 MHz, +2 % LUT · ⏳ board. Until the board run the paper says "in RTL" / "post-route", not "on the board" |
 
 **Claims to avoid:**
 
@@ -497,13 +494,15 @@ two restart-interval rows already moved to the repository).
 
 ---
 
-## 7. How we compare with published work (checked 14 Oct 2026)
+## 7. How we compare with published work (checked 14 Oct 2026, ours updated 18 Oct)
 
-Numbers are copied from each source. Ours are RTL simulation and a Yosys estimate until §4.1 is done.
+Numbers are copied from each source. Ours are post-route (Vivado run 7) with throughput from RTL
+simulation. The paper's version of this table is generated (`tab_compare.tex` from
+`paper/data/related/compare.json`); copy numbers from there, not from here.
 
 | Work | Platform | Area | Speed | Encryption | Authentication | Format compliant | Security evaluation |
 |---|---|---|---|---|---|---|---|
-| **Ours** | Zynq-7020 (RTL sim) | ~5.7 K LUT, 2.8 K FF, 25 BRAM36, 24 DSP (Yosys est.) | 1.64 cycles/px → ~199 fps VGA if 100 MHz closes; 0 extra cycles for encryption | Ascon-AEAD128 keystream on signs/amplitudes (+ keyed MCU shuffle in E5) | per-frame 128-bit tag over metadata + scan, replay window, ratchet | yes, 4 decoders | edge leakage on 8 sources (incl. open films + Kodak), jigsaw, U-Net (4 setups), NZCA + restart interval, key sensitivity/NPCR/UACI/entropy; 11 active attacks, 10-seed policy study |
+| **Ours** | Zynq-7020 (post-route) | 5,037 LUT, 2,950 FF, 24.5 BRAM36, 23 DSP (one pipeline); 2 lanes with E5 10,069 LUT | 100 MHz: 65 Mpx/s (212 fps VGA), 2/4 lanes 122/176 Mpx/s; 0 extra cycles for encryption; ~211 mW (SAIF) | Ascon-AEAD128 keystream on signs/amplitudes (+ keyed MCU shuffle in E5) | per-frame 128-bit tag over metadata + scan, replay window, ratchet | yes, 4 decoders | edge leakage on 9 sources (incl. open films + Kodak), jigsaw (greedy, MST), U-Net + GAN (5 setups), sign recovery, chosen plaintext, NZCA + restart interval, SVE-Bench vs 4 published schemes, standard metrics; 11 active attacks, 10-seed policy study |
 | Kishore et al. 2015 [JRTIP] | Stratix II / IV, 256×256 grey | 2250 ALUT, 47 mult., 1.26 Mbit (Stratix IV, with scrambler; +13-17 % ALUT, 2× memory vs. without) | 100 MHz, 170 frames/s (188 without) = 11.1 Mpx/s | lightweight block/symbol scrambling | no | yes (claimed) | visual |
 | Bağbaba & Örs 2015 [ELECO] | Virtex-6 | 2130 LUT, 1456 FF, 9 DSP | 87 MHz (no throughput) | TEA on DC (+5 AC) coefficients | no | – | PSNR |
 | Gladis Kurian & Chen 2025 [Electronics] | Artix-7 100T | 3.5–5.3 K LUT, 4.3 K FF, 32 BRAM, 0 DSP | 100 MHz; replay check ~0.8 µs | Ascon-128 (messages, not video) | AEAD + Bloom-filter replay check | n/a | false-positive rate |
@@ -511,8 +510,8 @@ Numbers are copied from each source. Ours are RTL simulation and a Yosys estimat
 | CAST JPEG-E-S (commercial) | Artix-7 | 3.1 K LUT, 2 BRAM, 16 DSP | 1 sample/clk @ 166 MHz | none | none | yes | – |
 | logicBRICKS logiJPGE (commercial) | Zynq-7020 | 3.2 K LUT, 2.0 K FF, 16 BRAM, 30 DSP | 1 px/clk @ 150 MHz, 1080p60 | none | none | yes | – |
 | Hirose, Imaizumi & Kiya 2024 [APSIPA ASC] | software | – | – | bitstream XOR + restart-marker block permutation (RI 2–32) | no | yes | key space/sensitivity, NZCA, histograms, PSNR/SSIM on 1338 UCID images |
-| Sirichotedumrong & Kiya [arXiv 2010.06198] | software | – | – | learnable block-wise encryption | no | – | learned attacks (ITN, GAN) reach SSIM 0.72–0.91 |
-| Qiu et al. 2025 [arXiv 2503.16287] | Raspberry Pi 4B + Zynq HLS prototype | – | 720p, 10 s clip in ~2.7 s | chaotic keystream XOR on raw frames | no | no (raw video) | entropy, correlation, NPCR/UACI, NIST/DIEHARD |
+| Sirichotedumrong & Kiya [arXiv 2010.06198] | software | – | – | learnable pixel/block-wise encryption for DNNs (not JPEG) | no | – | on 96×96 STL-10 images, ITN attack SSIM 0.91 and GAN attack 0.72 on Tanaka's scheme; not comparable with our SSIM numbers |
+| Qiu et al. 2025 [arXiv 2503.16287] | Raspberry Pi 4B (satellite payload); chaotic maps also in Zynq HLS | – | 720p, 10 s clip encrypted in ~2.7 s on the payload | chaotic keystream XOR on raw frames | no | no (raw video) | entropy, correlation, NPCR/UACI, NIST/DIEHARD |
 
 **Where we are stronger:**
 
@@ -529,13 +528,13 @@ Numbers are copied from each source. Ours are RTL simulation and a Yosys estimat
 
 | Weakness | Task |
 |---|---|
-| No post-route, power or board numbers yet | §4.1, §4.2 |
-| Throughput ~2.5× below commercial JPEG cores, which reach 1 px/clk at 150 MHz | B18 |
-| Each of our Ascon blocks (~1.4–1.7 K LUT, est.) is larger than published round-based Ascon cores (~0.8–1.1 K LUT) | B7, B19 |
-| More BRAM/DSP than commercial encoders | B19 |
+| No board numbers yet (frame rate with DMA, measured power) | §4.2 |
+| One pipeline is ~2.3× below commercial JPEG cores (1 px/clk at 150 MHz); only 4 lanes pass them, at 5× their LUTs | B18 |
+| More BRAM than commercial encoders (24 of our 24.5 BRAM36 are line buffers sized for 2048-pixel lines) | B19 |
+| Our baselines of published schemes are our own re-implementations, and the scope is Motion-JPEG, not H.264/HEVC | state in the paper ✅ |
 | Adjacent-pixel correlation and entropy are far from full-cipher values (by design; must be explained, not hidden) | §V text ✅ |
 | Our learned attacker is still small next to the ITN/GAN attacks in the literature | B17, B21 |
-| Leakage cells rest on 5–20 frames per source | B24 |
+| ~~Leakage cells rest on 5–20 frames per source~~ ✅ 60 frames per source with 95 % intervals | B24 |
 
 **Sources:**
 
