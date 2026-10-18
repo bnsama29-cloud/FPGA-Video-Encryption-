@@ -64,8 +64,8 @@ def test_nzca_reveals_outline_unless_shuffled():
 def test_decrypt_ignoring_tag_matches_the_receiver_and_wrong_key_scrambles():
     img = make_image(64, 48, "scene")
     an = analyse_frame(img)
-    for m in ("E2", "E5"):
-        c = package_frame(an, KEY, 7, 9, m).jpeg
+    for m, seg in (("E2", False), ("E5", False), ("E2", True), ("E5", True)):   # contract v2 and v3 (E5 hw form)
+        c = package_frame(an, KEY, 7, 9, m, segmented=seg).jpeg
         assert sm.decrypt_ignoring_tag(c, KEY) == receive_frame(c, KEY).plain_jpeg
         wrong = dec(sm.decrypt_ignoring_tag(c, sm.flip_bit(KEY, 3)))
         assert np.mean(wrong != dec(package_frame(an).jpeg)) > 0.5

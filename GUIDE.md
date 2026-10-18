@@ -215,6 +215,8 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ✅ Kaggle 17 Oct: 7 videos; in the paper (Table XII extended, one sentence in the conference version) | `experiments/video_fingerprint.py` |
 | B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ✅ flow (`--steps power`, 17 Oct) · ⏳ run in Vivado | `docs/HW_TODO.md` H4 |
 | B39 | **SVE-Bench**: ours and four published schemes (Van Droogenbroeck, Kishore, Auer, Hirose) under the same four attacks | P1 | 5 | ✅ Kaggle (received 18 Oct): 9 sources, 175 frames; `paper/data/benchmark/`, `tab_bench.tex` (not yet `\input` in the paper) | `experiments/benchmark_suite.py` |
+| B40 | Hardware figures of merit as hardware papers report them: Mpixel/s per kLUT, input Gbit/s, nJ/pixel, per mode (E5 rows) | P2 | 1 | ✅ from RTL throughput + Vivado run 6 (vectorless power, pre-E5 netlist) · ⏳ after the lane rebuild + `--steps power` | `experiments/hw_efficiency.py` |
+| B41 | **SVE-Bench method v2** (comparable with published work): A4 becomes a known-plaintext attacker (permutation and keystream recovered from one clear frame, nothing handed over); per scheme PSNR/SSIM, entropy, adjacent correlation, NPCR/UACI (key, 1 pixel); 95 % bootstrap CIs; Kodak at 768x512 with quality 50/75/90; standard metrics for E5's hardware form | P1 | 5 | ✅ code + local synthetic (18 Oct) · ⏳ Kaggle re-run (`JOB = "benchmark"`), then `paper/data/benchmark/` and `tab_bench*.tex` | `docs/BENCHMARK_METHOD.md` |
 | B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
 | B23 | **Recognition test** (Faster R-CNN persons) | P2 | 5 | ✅ plain 68-100 %, E1 up to 37 %, E2/E4 <= 3 %, E5 0 %; in the paper | below |
@@ -453,6 +455,8 @@ two restart-interval rows already moved to the repository).
 | E5 defeats the non-zero counting attack | restart_interval.py, NZCA ≤ 0.08 for all N | ✅ |
 | Longer restart intervals are as safe as N = 1 | beam solver finds 15–41 % successors at N = 32 | ❌ **do not claim** |
 | Standard metrics show security | they assume full-image ciphers | ❌ report for comparability only |
+| Schemes with fixed key material (Van Droogenbroeck, Kishore, Hirose) fall to one known frame; E5's per-frame keys and permutation do not transfer | SVE-Bench A4 (known plaintext), `docs/BENCHMARK_METHOD.md` | ⏳ synthetic only (320x240, q 50/75/90: A4 0.99 Van Droogenbroeck, 0.74-0.98 Hirose, 0.59-0.75 Kishore vs 0.01 E5); state after the Kaggle re-run |
+| E5 costs 3 % of 2-lane throughput (115 vs 119 Mpixel/s at 320x240) | `lanes_rtl_throughput.py --modes 2 5`, `hw_efficiency.py` | ✅ RTL simulation · ⏳ board |
 | 11 active attacks detected and mitigated in < 1 s on average, no false alarms | full_suite × 3, benign × 3 | ✅ simulation · ⏳ board (A6) |
 | Bandit: fewer encrypted bits, slower reaction | policy_seeds, 10 seeds, paired | ✅ |
 | Faster / lower energy than software on the same board | A2–A4 (+ B1) | ⏳ |

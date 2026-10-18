@@ -198,7 +198,9 @@ inputs with random stalls and compares every output with `model/`. `common.py` h
 | `learned_attack.py` | can a neural network (U-Net) undo the encryption? |
 | `recognition.py` | can a person detector find people in the eavesdropper's picture? |
 | `restart_interval.py`, `chosen_plaintext.py`, `block_transform.py` | attacks on E5's block shuffle |
-| `standard_metrics.py` | the usual image-encryption metrics (NPCR, UACI, entropy ...) |
+| `standard_metrics.py` | the usual image-encryption metrics (NPCR, UACI, entropy ...), for E1-E5 and E5's hardware form |
+| `benchmark_suite.py` | SVE-Bench: ours and four published schemes under the same attacks, incl. a known-plaintext attacker, plus the metrics those papers print (`docs/BENCHMARK_METHOD.md`) |
+| `hw_efficiency.py` | Mpixel/s per kLUT and nJ per pixel per design and mode, next to published FPGA designs |
 | `size_leak.py` | do frame sizes reveal motion? (yes, at every level) |
 | `stall_profile.py`, `parallel_lanes.py`, `lanes_rtl_throughput.py` | where the cycles go; the lanes, projected and measured |
 | `rate_control.py`, `change_driven.py` | bitrate control like a motor drive; retina-style change-driven coding |
