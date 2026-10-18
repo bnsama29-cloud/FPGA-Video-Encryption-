@@ -1061,6 +1061,8 @@ def standard_metrics():
     if not files:
         return
     lv = ["plain JPEG"] + MODES[1:]
+    if all("E5 (v3, hw)" in f for f in files.values()):     # runs since 18 Oct 2026 also measure E5's hardware form
+        lv.append("E5 (v3, hw)")
     avg = lambda m, k: st.mean(f[m][k] for f in files.values())
     corr = lambda m: st.mean((f[m]["corr_h"] + f[m]["corr_v"] + f[m]["corr_d"]) / 3 for f in files.values())
     rows = []
@@ -1068,7 +1070,7 @@ def standard_metrics():
         if m == "plain JPEG":
             rows.append(f"plain & -- & -- & -- & {avg(m, 'entropy'):.2f} & {corr(m):.2f} \\\\")
         else:
-            rows.append(f"{m} & {avg(m, 'wrong_key_ssim'):.2f} & {avg(m, 'npcr_key'):.1f} / {avg(m, 'uaci_key'):.1f} & "
+            rows.append(f"{'E5 (hw form)' if m == 'E5 (v3, hw)' else m} & {avg(m, 'wrong_key_ssim'):.2f} & {avg(m, 'npcr_key'):.1f} / {avg(m, 'uaci_key'):.1f} & "
                         f"{avg(m, 'npcr_plain'):.1f} & {avg(m, 'entropy'):.2f} & {corr(m):.2f} \\\\")
     write("tab_stdmetrics.tex", rf"""\begin{{table}}[t]
 \caption{{Standard image-encryption metrics, mean over {len(files)} sources (5--6 frames each). Wrong key: the receiver's output with a key that differs in one bit, compared with the original (SSIM) and with the right decryption (NPCR/UACI, \%). 1-pixel: NPCR between two ciphertexts of frames that differ in one pixel, same key and nonce. Ideal values for a full-image cipher: NPCR 99.6, UACI 33.5, entropy 8, adjacent correlation 0.}}
@@ -1200,12 +1202,17 @@ def benchmark():
     """SVE-Bench: every scheme under the same four attacks, pooled over the source files in
     paper/data/benchmark/benchmark_suite/ (mean over sources of each source's frame mean)."""
     d = BENCH / "benchmark_suite"
-    files = sorted(d.glob("*.json")) if d.exists() else []
+    # quality-sweep files (<source>_q50.json, ...) are extra views of a source, not extra sources
+    files = sorted(f for f in d.glob("*.json") if not re.search(r"_q\d+$", f.stem)) if d.exists() else []
     if not files:
         return
     runs = [J(f) for f in files]
     names = list(runs[0]["schemes"])
-    keys = ("decode", "replacement", "nzca", "cross_frame", "max_leak", "bytes_vs_plain")
+    # A4: "known_plaintext" (benchmark_suite.py since 18 Oct 2026: permutation and keystream recovered
+    # from one known frame) or "cross_frame" in older runs (the true permutation of frame 0 handed over)
+    kpa = all("known_plaintext" in r["schemes"][names[0]] for r in runs)
+    a4 = "known_plaintext" if kpa else "cross_frame"
+    keys = ("decode", "replacement", "nzca", a4, "max_leak", "bytes_vs_plain")
     pooled = {}
     for n in names:
         rs = [r["schemes"][n] for r in runs if n in r["schemes"]]
@@ -1222,17 +1229,23 @@ def benchmark():
         cite = "" if p["cite"] in ("-", "ours") else f"~\\cite{{{p['cite']}}}"
         lines.append(f"{label.get(n, n)}{cite} & {'yes' if p['per_frame'] == 'yes' else 'no' if p['per_frame'] == 'no' else '--'} & "
                      f"{'yes' if p['auth'] else 'no'} & {100 * p['bytes_vs_plain']:+.0f} & {f(p['decode'])} & "
-                     f"{f(p['replacement'])} & {f(p['nzca'])} & {f(p['cross_frame'])} & \\textbf{{{f(p['max_leak'])}}} \\\\")
+                     f"{f(p['replacement'])} & {f(p['nzca'])} & {f(p[a4])} & \\textbf{{{f(p['max_leak'])}}} \\\\")
         if n in ("plain", "E5 (v3, hw)"):
             lines.append("\\midrule")
     frames = sum(r["meta"]["scored_frames"] for r in runs)
+    sizes = sorted({r["meta"]["size"] for r in runs})
+    size = ", ".join(x.replace("x", "$\\times$") for x in sizes)
+    a4_text = ("A4 knows one frame in clear: it recovers the permutation and the keystream bits from that frame "
+               "and applies them to the following frames" if kpa else
+               "A4 applies the permutation recovered on one frame to the following frames")
+    a4_head = "A4 known plaintext" if kpa else "A4 cross-frame"
     write("tab_bench.tex", rf"""\begin{{table*}}[t]
-\caption{{SVE-Bench: format-compliant selective encryption schemes under the same attacks ({frames} frames of {len(runs)} sources, 320$\times$240). Values are edge correlations with the original (0: nothing leaks; plain JPEG sets the ceiling of each attack). A4 applies the permutation recovered on one frame to the following frames. Published schemes re-implemented from their papers with our keystream.}}
+\caption{{SVE-Bench: format-compliant selective encryption schemes under the same attacks ({frames} frames of {len(runs)} sources, {size}). Values are edge correlations with the original (0: nothing leaks; plain JPEG sets the ceiling of each attack). {a4_text}. Published schemes re-implemented from their papers with our keystream.}}
 \label{{tab:bench}}
 \centering\small
 \begin{{tabular}}{{lccrrrrrr}}
 \toprule
-Scheme & Per-frame key & Auth. & Bytes (\%) & A1 decode & A2 replacement & A3 NZCA & A4 cross-frame & Max \\
+Scheme & Per-frame key & Auth. & Bytes (\%) & A1 decode & A2 replacement & A3 NZCA & {a4_head} & Max \\
 \midrule
 {chr(10).join(lines)}
 \bottomrule
@@ -1248,8 +1261,35 @@ Scheme & Per-frame key & Auth. & Bytes (\%) & A1 decode & A2 replacement & A3 NZ
     macro("BenchPubMax", f"{max(pub.values()):.2f}")
     macro("BenchPlainNzca", f"{pooled['plain']['nzca']:.2f}")
     if "Hirose RI=1" in pooled:
-        macro("BenchHiroseOneCross", f"{pooled['Hirose RI=1']['cross_frame']:.2f}")
+        macro("BenchHiroseOneCross", f"{pooled['Hirose RI=1'][a4]:.2f}")
         macro("BenchHiroseOneBytes", f"{100 * pooled['Hirose RI=1']['bytes_vs_plain']:.0f}")
+    metric_keys = ("psnr_decode", "ssim_decode", "entropy", "corr_h", "corr_v", "corr_d",
+                   "npcr_key", "uaci_key", "npcr_px", "uaci_px")
+    if all("psnr_decode" in r["schemes"][names[0]] for r in runs):
+        rows = []
+        for n in names:
+            rs = [r["schemes"][n] for r in runs if n in r["schemes"]]
+            m = {k: (st.mean(x[k] for x in rs) if all(x.get(k) is not None for x in rs) else None) for k in metric_keys}
+            g = lambda k, nd=2: "--" if m[k] is None else f"{m[k]:.{nd}f}"
+            cite = "" if pooled[n]["cite"] in ("-", "ours") else f"~\\cite{{{pooled[n]['cite']}}}"
+            rows.append(f"{label.get(n, n)}{cite} & {g('psnr_decode', 1)} & {g('ssim_decode')} & {g('entropy')} & "
+                        f"{g('corr_h')} / {g('corr_v')} / {g('corr_d')} & {g('npcr_key', 1)} / {g('uaci_key', 1)} & "
+                        f"{g('npcr_px', 1)} / {g('uaci_px', 1)} \\\\")
+            if n in ("plain", "E5 (v3, hw)"):
+                rows.append("\\midrule")
+        write("tab_bench_metrics.tex", rf"""\begin{{table*}}[t]
+\caption{{The metrics image-encryption papers report, for every scheme of Table~\ref{{tab:bench}} (no-key picture; same frames). PSNR and SSIM of the luma against the original; entropy of the luma histogram (8: flat); correlation of adjacent pixels; NPCR/UACI between the pictures under two keys one bit apart, and between two frames one pixel apart. They were designed for full-image ciphers: a format-compliant scheme keeps the stream decodable by design, so read them next to Table~\ref{{tab:bench}}.}}
+\label{{tab:bench-metrics}}
+\centering\small
+\begin{{tabular}}{{lrrrccc}}
+\toprule
+Scheme & PSNR (dB) & SSIM & Entropy & Corr. h / v / d & NPCR / UACI key (\%) & NPCR / UACI 1 px (\%) \\
+\midrule
+{chr(10).join(rows)}
+\bottomrule
+\end{{tabular}}
+\end{{table*}}
+""")
 
 
 def restart_interval():

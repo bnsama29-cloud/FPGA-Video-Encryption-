@@ -53,6 +53,8 @@ Shorter variants:
 | `py vivado\run_vivado_day.py --steps bd_lanes parse` | only the lane overlay |
 | `py vivado\run_vivado_day.py --steps ooc --blocks --fmax` | per-block area, confirm fmax |
 | `py vivado\run_vivado_day.py --steps bd --fclk 90` | overlay at another clock |
+| `py vivado\run_vivado_day.py --steps xsim lanes bd_lanes power parse` | rebuild the lane encoder and overlay with E5 (17 Oct RTL) + power from simulated activity |
+| `py vivado\run_vivado_day.py --steps power parse` | only the power runs (needs `routed.dcp` from an earlier `ooc` / `lanes`) |
 | `py vivado\run_vivado_day.py --dry-run` | print the plan, run nothing |
 
 The same file also holds the three helper tools the steps use (no Vivado needed for them):
@@ -76,6 +78,7 @@ The same file also holds the three helper tools the steps use (no Vivado needed 
 | `lanes` | `secure_jpeg_lanes_top`: 2 lanes at 100 MHz and every `--periods` clock, 4 lanes (1024-pixel lines) at 100 MHz | as `ooc` |
 | `bd` | PYNQ-Z2 system: Zynq PS + AXI DMA (32-bit pixels) + v2 encoder → `overlay/secure_jpeg.bit` + `.hwh` | `RESULT overlay ... WNS >= 0`; if not, retried at 90 then 80 MHz |
 | `bd_lanes` | the same with the 2-lane encoder and a 64-bit pixel DMA → `overlay/secure_jpeg_lanes.bit` + `.hwh`, reports in `overlay/lanes/` | as `bd` |
+| `power` | after `ooc` / `lanes`: XSim records the switching activity of one 320×240 frame per mode (v2: E0, E2, E4; 2 lanes: E2, E5) into `activity.saif`, then `vivado/power_saif.tcl` reads it into `routed.dcp` and reports power → `power_saif_<run>.txt` (docs/HW_TODO.md H4) | `XSIM RESULT: PASS` and `RESULT power_saif` for every run |
 | `parse` | every report → `sim_out/vivado/vivado_tables.md` / `.json` (the paper's hardware numbers) | the table has no `?` |
 | collect | (always last) summary + reports → `vivado_results_<date>.zip` | |
 

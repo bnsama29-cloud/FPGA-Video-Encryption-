@@ -31,7 +31,7 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 | know what is done, what is left, and how to do each remaining task | **[GUIDE.md](GUIDE.md)** |
 | run the Vivado flow (XSim, post-route numbers, PYNQ overlay) | [docs/VIVADO_ONE_DAY.md](docs/VIVADO_ONE_DAY.md) |
 | bring up the PYNQ-Z2: bit-exact on silicon, fps, power, live link with the dashboard | [docs/BOARD_BRINGUP.md](docs/BOARD_BRINGUP.md) |
-| what is left for the FPGA (E5 in RTL, 125 MHz, measured power), with the test that says "done" | [docs/HW_TODO.md](docs/HW_TODO.md) |
+| what is left for the FPGA (125 MHz, power from simulated activity, board power), with the test that says "done" | [docs/HW_TODO.md](docs/HW_TODO.md) |
 | read or build the conference paper | [paper/README.md](paper/README.md) |
 | see every result table | [paper/data/paper_tables.md](paper/data/paper_tables.md) |
 | see the open-data, standard-metric and restart-interval results | [paper/data/extra/README.md](paper/data/extra/README.md) |
@@ -57,7 +57,7 @@ python -m link.run_all          # whole link + dashboard -> http://localhost:800
 | E2 | + DC-difference sign bits (default floor) | yes |
 | E3 | + AC amplitude bits | yes |
 | E4 | + DC amplitude bits | yes |
-| E5 | E4 + keyed shuffle of the 16×16 MCUs (restart interval 1) | model only (GUIDE.md B6) |
+| E5 | E4 + keyed shuffle of the 16×16 MCUs (restart interval 1) | yes, lane encoder (contract v3 mode 5: the fabric codes one segment per MCU, the ARM shuffles) |
 
 Sign and amplitude encryption cannot hide *which* coefficients are non-zero, so E1–E4 leak an
 outline sketch to an eavesdropper; E5 removes it. The measured numbers are in `paper/data/paper_tables.md`.

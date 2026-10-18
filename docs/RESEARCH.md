@@ -275,13 +275,16 @@ Features others have that we don't
 
 Evidence gaps vs. published crypto/hardware papers
 12. No board measurements yet (real fps, power, energy/frame) -- power is a vectorless
-    estimate only. Biggest gap for the paper's credibility.
-13. Ascon throughput never reported in Gbps or Gbps/LUT, the metric comparable NIST
+    estimate only (a SAIF-based flow exists since 17 Oct: GUIDE B37). Biggest gap for the paper's credibility.
+13. (Partly done 18 Oct 2026: `experiments/hw_efficiency.py` reports Mpixel/s per kLUT, input Gbit/s and
+    nJ/pixel per design and mode; the Ascon core on its own is still not measured.)
+    Ascon throughput never reported in Gbps or Gbps/LUT, the metric comparable NIST
     LWC hardware papers (Kurian, Khairallah, Mozaffari-Kermani et al.) use.
 14. No software (ARM/PS-side) baseline for comparison (GUIDE B1).
 15. No side-channel resistance -- no masking against power analysis; physical attacks are
     explicitly out of scope, but recent Ascon hardware papers address this.
-16. E5 (our strongest security result) exists only in the Python model, not in RTL.
+16. ~~E5 exists only in the Python model, not in RTL.~~ Done 17 Oct 2026: E5 is in the lane-encoder RTL
+    (contract v3 mode 5), bit-exact in simulation; not yet on the board.
 17. Frame-size padding exists only in `experiments/size_leak.py`, not in `link/sender.py`
     or hardware.
 

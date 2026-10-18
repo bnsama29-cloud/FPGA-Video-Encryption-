@@ -300,9 +300,9 @@ def test_fingerprint_identifies_by_shape_and_guesses_on_constant_size():
 def test_benchmark_schemes_decode_invert_and_rank():
     """Every re-implemented scheme must stay a decodable JPEG with the same coefficient count per block;
     undoing a scheme's own permutation must give back the clear block order (so A4 measures the scheme,
-    not a bug); and the ranking that the paper states must hold on a small scene."""
+    not a bug); and the ranking that the paper states must hold on a small scene, with A4 now a real
+    known-plaintext attacker (permutation and keystream recovered from frame 0, nothing handed over)."""
     import benchmark_suite as B
-    from model.container import parse_jpeg
     frames = [make_image(160, 128, "scene", seed=s) for s in (1, 2, 3)]   # 80 MCUs: enough blocks for a stable correlation
     ans = [analyse_frame(f) for f in frames]
     for name, sc in B.SCHEMES.items():
@@ -320,8 +320,65 @@ def test_benchmark_schemes_decode_invert_and_rank():
     def leak(name):
         sc = B.SCHEMES[name]
         out = [sc["fn"](an, ctr) for ctr, an in enumerate(ans)]
-        v = B.views(out[1][0], sc["fields"], y0s[1], en[1], out[0][1])
-        return max(x for x in (v["decode"], v["replacement"], v["nzca"], v["cross_frame"]) if x is not None)
-    e5, e5hw, kish, hir, e2 = (leak(n) for n in ("E5 (v2)", "E5 (v3, hw)", "Kishore", "Hirose RI=1", "E2"))
+        kind = B.PERM_KIND.get(name)
+        learned = B.learn_known_frame(ans[0], out[0][0], sc, kind) if (kind or sc["stream"]) else None
+        v = B.views(out[1][0], sc["fields"], y0s[1], en[1], learned)
+        return v, max(x for x in (v["decode"], v["replacement"], v["nzca"], v["known_plaintext"]) if x is not None)
+    (_, e5), (_, e5hw), (_, kish), (vh, hir), (_, e2), (vv, vd) = (
+        leak(n) for n in ("E5 (v2)", "E5 (v3, hw)", "Kishore", "Hirose RI=1", "E2", "VanDroogenbroeck"))
     assert e5 < 0.3 and e5hw < 0.3, (e5, e5hw)
     assert kish > 0.5 and hir > 0.5 and e2 > 0.5, (kish, hir, e2)
+    # fixed-key keystreams fall to one known frame: the later frame comes back almost exactly
+    assert vh["known_plaintext"] > 0.9 and vv["known_plaintext"] > 0.9, (vh["known_plaintext"], vv["known_plaintext"])
+
+
+def test_known_plaintext_recovers_permutation_and_keystream_of_the_known_frame():
+    """On the known frame itself the A4 attacker must get everything back: undoing its recovered
+    permutation and XORing its recovered keystream gives the clear symbols (up to segments or blocks
+    that are identical, which every attack treats alike)."""
+    import benchmark_suite as B
+    an = analyse_frame(make_image(96, 64, "scene", seed=4))
+    for name in ("E5 (v2)", "E5 (v3, hw)", "Hirose RI=1", "Hirose RI=4", "VanDroogenbroeck", "E3", "Kishore"):
+        sc = B.SCHEMES[name]
+        jpeg, true_perm = sc["fn"](an, 0)
+        kind = B.PERM_KIND.get(name)
+        learned = B.learn_known_frame(an, jpeg, sc, kind)
+        w, h, qy, qc, ri, segs = B.received_segments(jpeg)
+        nat = B.undo_permutation(w, h, ri, segs, learned["perm"]) if learned["perm"] else segs
+        if kind == "blocks":
+            got = [B.block_sig(b, {}) for b in B.split_blocks(nat[0])]
+            want = [B.block_sig(b, {}) for b in B.split_blocks(an.symbols)]
+            assert got == want, f"{name}: first differing block {next(i for i, (g, x) in enumerate(zip(got, want)) if g != x)}"
+            continue
+        ri2 = ri if (learned["perm"] is None or learned["perm"][0] == "segments") else 0
+        plain = B.plain_segments(an, ri2)
+        if learned["stream"] == "frame":
+            ks = B.Replay(learned["bits"][0])
+            dec = [B.xor_fields(g, ks, **sc["fields"]) for g in nat]
+        else:
+            dec = [B.xor_fields(g, B.Replay(b), **sc["fields"]) for g, b in zip(nat, learned["bits"])]
+        flat_got, flat_want = [s for g in dec for s in g], [s for g in plain for s in g]
+        bad = next((i for i, (g, x) in enumerate(zip(flat_got, flat_want)) if g != x), None)
+        assert bad is None and len(flat_got) == len(flat_want), \
+            f"{name}: symbol {bad}: got {flat_got[bad] if bad is not None else None}, expected {flat_want[bad] if bad is not None else None}"
+        if true_perm is not None:
+            sig = lambda g: tuple(B.sym_sig(s, sc["fields"]) for s in g)
+            psegs = B.plain_segments(an, ri)
+            assert [sig(psegs[i]) for i in learned["perm"][1]] == [sig(psegs[i]) for i in true_perm[1]], name
+
+
+def test_hw_efficiency_table_runs_on_the_snapshot(tmp_path):
+    """experiments/hw_efficiency.py joins measured throughput with the Vivado snapshot; every derived
+    column must follow from the joined numbers (Mpx/s per kLUT, nJ/pixel)."""
+    import json
+    import subprocess
+    import sys as _sys
+    root = Path(__file__).resolve().parents[1]
+    subprocess.run([_sys.executable, str(root / "experiments" / "hw_efficiency.py"), "--out", str(tmp_path),
+                    "--vivado", str(root / "paper/data/vivado/vivado_results.json"),
+                    "--throughput", str(root / "paper/data/lanes_rtl/results.json")], check=True, capture_output=True)
+    d = json.loads((tmp_path / "hw_efficiency.json").read_text())
+    assert {r["design"] for r in d["ours"]} >= {"ours, contract v2 (1 pipeline)", "ours, 2 lanes", "ours, 4 lanes"}
+    for r in d["ours"]:
+        assert abs(r["mpix_s_per_klut"] - r["mpix_s"] / r["lut"] * 1000) < 1e-9, r
+        assert abs(r["nj_per_px"] - r["power_w"] / r["mpix_s"] * 1000) < 1e-9, r

@@ -1,6 +1,8 @@
 // segment_merger.v -- contract v3: joins the lanes' restart segments back into one scan.
 //
-// Segment s (MCU row s) comes from lane s mod LANES. The merger copies segment s byte by byte
+// Segment s (MCU row s) comes from lane s mod LANES. In E5 (contract v3 §8.6) a segment is one
+// MCU and segment s comes from the lane of its MCU row, (s / cols) mod LANES; the merger tracks
+// the MCU row and column instead of dividing. The merger copies segment s byte by byte
 // from that lane until the byte marked "segment last", then (unless s is the frame's last
 // segment) writes the restart marker 0xFF, 0xD0 + (s mod 8) and moves on to the next lane.
 // The result is exactly model/entropy.py :: join_restart() of the segments in natural order,
@@ -15,7 +17,9 @@ module segment_merger #(
     input  wire               clk,
     input  wire               rst,
     input  wire               start,
-    input  wire [7:0]         segs,     // number of segments in the frame (MCU rows)
+    input  wire [15:0]        segs,     // number of segments in the frame (MCU rows, or MCUs in E5)
+    input  wire               e5,       // one segment per MCU
+    input  wire [7:0]         cols,     // MCUs per MCU row
     input  wire [LANES-1:0]   i_valid,
     output wire [LANES-1:0]   i_ready,
     input  wire [8*LANES-1:0] i_data,
@@ -27,13 +31,15 @@ module segment_merger #(
 );
     localparam P_DATA = 2'd0, P_FF = 2'd1, P_RST = 2'd2, P_DONE = 2'd3;
     reg [1:0] phase;
-    reg [7:0] s;
+    reg [15:0] s;
+    reg [7:0]  mrow, mcol;               // MCU row of segment s, and its column in E5
+    wire       last_seg = (s == segs - 16'd1);
     wire [LOG_L-1:0] lane;
     generate
         if (LANES == 1) begin : g_one
             assign lane = 1'b0;
         end else begin : g_many
-            assign lane = s[LOG_L-1:0];
+            assign lane = mrow[LOG_L-1:0];
         end
     endgenerate
 
@@ -46,21 +52,23 @@ module segment_merger #(
 
     always @(posedge clk) begin
         if (rst || start) begin
-            phase <= P_DATA; s <= 8'd0; o_valid <= 1'b0; o_last <= 1'b0;
+            phase <= P_DATA; s <= 16'd0; mrow <= 8'd0; mcol <= 8'd0; o_valid <= 1'b0; o_last <= 1'b0;
         end else begin
             if (o_valid && o_ready) o_valid <= 1'b0;
             case (phase)
             P_DATA: if (pop) begin
                 o_valid <= 1'b1; o_data <= in_d;
-                o_last  <= in_l && (s == segs - 8'd1);
-                if (in_l) phase <= (s == segs - 8'd1) ? P_DONE : P_FF;
+                o_last  <= in_l && last_seg;
+                if (in_l) phase <= last_seg ? P_DONE : P_FF;
             end
             P_FF: if (out_free) begin
                 o_valid <= 1'b1; o_data <= 8'hFF; o_last <= 1'b0; phase <= P_RST;
             end
             P_RST: if (out_free) begin
                 o_valid <= 1'b1; o_data <= {5'b11010, s[2:0]}; o_last <= 1'b0;
-                s <= s + 8'd1; phase <= P_DATA;
+                s <= s + 16'd1; phase <= P_DATA;
+                if (!e5 || mcol == cols - 8'd1) begin mcol <= 8'd0; mrow <= mrow + 8'd1; end
+                else mcol <= mcol + 8'd1;
             end
             default: ;
             endcase

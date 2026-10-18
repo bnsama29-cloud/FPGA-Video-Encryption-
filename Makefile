@@ -59,6 +59,7 @@ waves:
 
 lint:
 	cd rtl && verilator --lint-only -Wall $(LINT_WAIVE) -Iinclude --top-module secure_jpeg_top $(RTL_ALL)
+	cd rtl && verilator --lint-only -Wall $(LINT_WAIVE) -Iinclude --top-module secure_jpeg_lanes_top $(RTL_ALL)
 	@echo "lint clean (waived: unused bits, intentional width changes -- see 'make lint-strict')"
 
 lint-strict:
@@ -82,7 +83,7 @@ xsim-icarus: xsim-vectors
 	mkdir -p sim_build && iverilog -g2005 -o sim_build/tb_xsim.vvp -Irtl/include $(XSIM_SRC)
 	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work | tee sim_build/xsim_icarus.log | grep -E "^frame|RESULT|ERROR"
 	$(PY) vivado/run_vivado_day.py check
-	$(PY) vivado/run_vivado_day.py vectors --v3
+	$(PY) vivado/run_vivado_day.py vectors --v3 --modes 2 5
 	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work_v3 | tee sim_build/xsim_icarus_v3.log | grep -E "^frame|RESULT|ERROR"
 	$(PY) vivado/run_vivado_day.py check --dir vivado/xsim_work_v3
 

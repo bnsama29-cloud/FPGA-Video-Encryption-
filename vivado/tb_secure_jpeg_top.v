@@ -272,7 +272,10 @@ module tb_secure_jpeg_top;
         $fclose(fd); $fclose(fo); $fclose(ft);
         if (errors == 0) $display("XSIM RESULT: PASS (%0d frames bit-exact with the golden model)", frames);
         else             $display("XSIM RESULT: FAIL (%0d errors)", errors);
-        $finish;
+        // +SAIF (power flow, run_vivado_day.py --steps power): $stop hands control back to the
+        // XSim Tcl script so it can close the SAIF file; a plain run ends with $finish
+        if ($test$plusargs("SAIF")) $stop;
+        else                        $finish;
     end
 
     // watchdog: 200 ms of simulated time

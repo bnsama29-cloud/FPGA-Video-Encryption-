@@ -112,3 +112,48 @@ def test_missing_reports_are_reported_not_guessed(tmp_path):
     assert r["timing"]["met"] is False and set(r["missing"]) == {"utilization.txt", "power.txt"}
     md = pr.tables([r])
     assert "| NO |" in md and "missing utilization.txt, power.txt" in md and "| ? (" not in md
+
+
+POWER_SAIF = POWER.replace("0.152", "0.139").replace("0.047", "0.034").replace("| Low ", "| Medium ") + """
+1.3 Confidence Level
+--------------------
+
++-----------------------------+------------+--------------------------------------------------------+------------------------------------------------+
+| User Input Data             | Confidence | Details                                                | Action                                         |
++-----------------------------+------------+--------------------------------------------------------+------------------------------------------------+
+| Design implementation state | High       | Design is routed                                       |                                                |
+| Clock nodes activity        | High       | User specified more than 95% of clocks                 |                                                |
+| I/O nodes activity          | High       | User specified more than 95% of inputs                 |                                                |
+| Internal nodes activity     | Medium     | User specified more than 25% of internal nodes         |                                                |
++-----------------------------+------------+--------------------------------------------------------+------------------------------------------------+
+"""
+
+
+def test_power_with_simulated_activity(tmp_path):
+    """--steps power writes power_saif_<run>.txt next to power.txt; parse puts each run in its own
+    table, next to the vectorless number, with the confidence Vivado gave the activity data."""
+    d = tmp_path / "vivado_secure_jpeg_top"
+    d.mkdir()
+    for name, text in (("utilization.txt", UTIL), ("timing.txt", TIMING), ("power.txt", POWER),
+                       ("power_saif_v2_E2.txt", POWER_SAIF), ("power_saif_v2_E4.txt", POWER_SAIF)):
+        (d / name).write_text(text)
+    p = pr.parse_power(POWER_SAIF)
+    assert p["dynamic"] == 0.034 and p["confidence"] == "Medium" and p["internal"] == "Medium"
+    assert "25% of internal nodes" in p["internal_detail"]
+    r = pr.read_folder(d)
+    assert sorted(r["power_saif"]) == ["v2_E2", "v2_E4"]
+    md = pr.tables([r])
+    assert "Power with simulated switching activity" in md
+    assert "| secure_jpeg_top | v2_E2 | 0.139 | 0.034 | 0.047 | Medium | Medium: User specified more than 25% of internal nodes |" in md
+
+
+def test_power_step_dry_run():
+    import subprocess
+    r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--steps", "power", "--dry-run"], cwd=ROOT,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert "vectors --v3 --scene 320x240 --modes 5 --out vivado/xsim_power_v3_E5" in r.stdout
+    assert "run_xsim.sh saif xsim_power_v2_E4" in r.stdout or "run_xsim.bat saif xsim_power_v2_E4" in r.stdout
+    assert ("power_saif.tcl -tclargs sim_build/vivado_secure_jpeg_top/routed.dcp "
+            "vivado/xsim_power_v2_E0/activity.saif tb_secure_jpeg_top/dut "
+            "sim_build/vivado_secure_jpeg_top/power_saif_v2_E0.txt") in r.stdout

@@ -1148,14 +1148,19 @@ TIME (Kaggle CPU): downloads ~10 min, B35 ~1.5-2 h, B36 ~40 min.
 elif JOB == "benchmark":
     """Ours (E1-E5, both E5 forms) and four published schemes (Van Droogenbroeck 2002, Kishore 2015,
 Auer 2013, Hirose 2024 with RI = 1 and 4) under the same four attacks, on every source (GUIDE.md B39).
+Since 18 Oct 2026: A4 is a known-plaintext attacker (permutation and keystream recovered from frame 0),
+every scheme also gets the metrics papers report (PSNR/SSIM, entropy, adjacent correlation, NPCR/UACI)
+with 95 % bootstrap intervals, Kodak runs at its native 768x512 with a quality sweep (50, 75, 90), and
+standard_metrics.py (now with E5's hardware form) runs on every source too. Method: docs/BENCHMARK_METHOD.md.
 
 HOW TO RUN: Internet ON, Accelerator None (CPU), + Add Input -> your clips dataset, paste this whole
 file into ONE cell, Save Version -> Save & Run All (Commit), then send benchmark_results.zip.
 QUICK = True: 3-minute smoke test.
 """
     QUICK = False
-    REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
-    BRANCHES = ["e5-hardware", "main"]          # the first one that has experiments/benchmark_suite.py
+    # (repository, branch) tried in order: the first with the 18 Oct benchmark (known_plaintext) is used
+    CLONES = [("https://github.com/vij-ship-it/FPGA-Video-Encryption-.git", "claude/project-thread-yxa59j"),
+              ("https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git", "main")]
     OPEN_CLIPS = {
         "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
         "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
@@ -1192,6 +1197,8 @@ QUICK = True: 3-minute smoke test.
         res.mkdir()
         if (REPO / OUT).exists():
             shutil.copytree(REPO / OUT, res / "benchmark_suite")
+        if (REPO / "sim_out" / "standard_metrics").exists():
+            shutil.copytree(REPO / "sim_out" / "standard_metrics", res / "standard_metrics")
         (res / "run_log.json").write_text(json.dumps(dict(log=LOG, minutes=round((time.time() - T_START) / 60, 1),
                                                           quick=QUICK, sources=SOURCES), indent=1))
         shutil.make_archive(str(WORK / "benchmark_results"), "zip", res)
@@ -1218,13 +1225,13 @@ QUICK = True: 3-minute smoke test.
 
 
     shutil.rmtree(REPO, ignore_errors=True)
-    for b in BRANCHES:
-        if sh(f"git clone --depth 1 -b {b} {REPO_URL} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
-                (REPO / "experiments" / "benchmark_suite.py").exists():
+    for url, b in CLONES:
+        if sh(f"git clone --depth 1 -b {b} {url} {REPO}", "setup", f"clone ({b})", cwd=WORK, tail=2) and \
+                "known_plaintext" in (REPO / "experiments" / "benchmark_suite.py").read_text():
             break
         shutil.rmtree(REPO, ignore_errors=True)
     else:
-        raise SystemExit("no branch with experiments/benchmark_suite.py: push / merge e5-hardware first")
+        raise SystemExit("no branch with the known-plaintext benchmark: push / merge claude/project-thread-yxa59j first")
     sh("python -m pip install -q cryptography scikit-image opencv-python-headless pillow tomli numpy scipy",
        "setup", "pip install", tail=2)
     DATA.mkdir(exist_ok=True)
@@ -1256,11 +1263,14 @@ QUICK = True: 3-minute smoke test.
     for name, s in SOURCES.items():
         img = s.get("images")
         n, stride = (3, 5) if QUICK else ((24, 1) if img else (20, 10 if s["path"] == "synthetic" else 60))
-        size = "160x128" if QUICK else "320x240"
+        size = "160x128" if QUICK else ("768x512" if img else "320x240")      # Kodak at its native size
+        qual = "" if (QUICK or not img) else " --quality 50 75 90"              # the sweep papers report
         jobs.append((name, f"python experiments/benchmark_suite.py --video '{s['path']}' --frames {n} --stride {stride} "
-                           f"--size {size} --name {name} --out {OUT}"))
+                           f"--size {size} --name {name} --out {OUT}{qual}"))
+        jobs.append((name, f"python experiments/standard_metrics.py --video '{s['path']}' --frames {min(n, 6)} "
+                           f"--stride {stride} --size {size} --name {name}{qual}"))
     with ThreadPoolExecutor(max_workers=PARALLEL) as ex:
-        list(ex.map(lambda j: sh(j[1], j[0], "SVE-Bench"), jobs))
+        list(ex.map(lambda j: sh(j[1], j[0], "SVE-Bench" if "benchmark_suite" in j[1] else "standard metrics"), jobs))
     checkpoint()
     w = max(len(s) for _, s, _, _ in LOG)
     print("\n" + "\n".join(f"{sec:<16}{s:<{w + 2}}{st:<6}{t:>7.0f} s" for sec, s, st, t in LOG))

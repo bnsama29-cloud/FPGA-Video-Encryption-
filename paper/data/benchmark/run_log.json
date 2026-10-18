@@ -1,0 +1,156 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (claude/project-thread-yxa59j)",
+   "PASS",
+   1.8
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   4.8
+  ],
+  [
+   "synthetic",
+   "standard metrics",
+   "PASS",
+   34.4
+  ],
+  [
+   "17735",
+   "standard metrics",
+   "PASS",
+   61.1
+  ],
+  [
+   "avengers",
+   "standard metrics",
+   "PASS",
+   24.9
+  ],
+  [
+   "synthetic",
+   "SVE-Bench",
+   "PASS",
+   132.7
+  ],
+  [
+   "avengers",
+   "SVE-Bench",
+   "PASS",
+   132.4
+  ],
+  [
+   "challenge",
+   "standard metrics",
+   "PASS",
+   37.9
+  ],
+  [
+   "denzel",
+   "standard metrics",
+   "PASS",
+   34.7
+  ],
+  [
+   "17735",
+   "SVE-Bench",
+   "PASS",
+   251.7
+  ],
+  [
+   "challenge",
+   "SVE-Bench",
+   "PASS",
+   181.5
+  ],
+  [
+   "jailer",
+   "standard metrics",
+   "PASS",
+   32.3
+  ],
+  [
+   "sintel_trailer",
+   "standard metrics",
+   "PASS",
+   24.2
+  ],
+  [
+   "denzel",
+   "SVE-Bench",
+   "PASS",
+   159.2
+  ],
+  [
+   "jailer",
+   "SVE-Bench",
+   "PASS",
+   144.6
+  ],
+  [
+   "tearsofsteel",
+   "standard metrics",
+   "PASS",
+   34.6
+  ],
+  [
+   "sintel_trailer",
+   "SVE-Bench",
+   "PASS",
+   107.2
+  ],
+  [
+   "tearsofsteel",
+   "SVE-Bench",
+   "PASS",
+   167.8
+  ],
+  [
+   "kodak",
+   "standard metrics",
+   "PASS",
+   518.4
+  ],
+  [
+   "kodak",
+   "SVE-Bench",
+   "PASS",
+   2270.7
+  ]
+ ],
+ "minutes": 43.9,
+ "quick": false,
+ "sources": {
+  "synthetic": {
+   "path": "synthetic"
+  },
+  "17735": {
+   "path": "/kaggle/input/datasets/robedamoeba1012/fpga-video-5/17735.mp4"
+  },
+  "avengers": {
+   "path": "/kaggle/input/datasets/robedamoeba1012/fpga-video-5/avengers.mp4"
+  },
+  "challenge": {
+   "path": "/kaggle/input/datasets/robedamoeba1012/fpga-video-5/challenge.mp4"
+  },
+  "denzel": {
+   "path": "/kaggle/input/datasets/robedamoeba1012/fpga-video-5/denzel.mp4"
+  },
+  "jailer": {
+   "path": "/kaggle/input/datasets/robedamoeba1012/fpga-video-5/jailer.mp4"
+  },
+  "sintel_trailer": {
+   "path": "/kaggle/working/opendata/sintel_trailer.mp4"
+  },
+  "tearsofsteel": {
+   "path": "/kaggle/working/opendata/tearsofsteel.mov"
+  },
+  "kodak": {
+   "path": "/kaggle/working/opendata/kodak",
+   "images": true
+  }
+ }
+}

@@ -1,7 +1,8 @@
 // selective_enc.v -- XOR keystream onto selected symbol bits (format compliant).
 //
 // mode: 0 off | 1 E1 AC signs | 2 E2 +DC signs | 3 E3 +AC amplitude bits
-//       | 4 E4 +DC amplitude bits
+//       | 4 E4 +DC amplitude bits | 5 E5 (contract v3): the same fields as E4
+//       (the comparisons below are ">=", so mode 5 selects exactly what mode 4 selects)
 // For a symbol with size s > 0 that is selected:
 //   keystream bit 0 -> sign: if 1, invert all s amplitude bits (= negate value)
 //   keystream bits 1..s-1 -> XORed onto the low s-1 amplitude bits (E3/E4)

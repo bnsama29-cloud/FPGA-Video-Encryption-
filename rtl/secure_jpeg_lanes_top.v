@@ -16,10 +16,11 @@
 // restart marker is what makes the parts independent, and it already exists for E5.
 //
 // Same AXI4-Lite register map as secure_jpeg_top.v (rtl/axil_regs.v), except
-//   VERSION = 0x5EC0_03LL (contract v3, LL = LANES) and the input stream is 64 bits wide:
-//   tdata[31:0] = left pixel {pad, B, G, R}, tdata[63:32] = right pixel. Width multiple of 16.
-//   Modes 0..4 (E5 is contract v2 only). The ARM adds a DRI segment (restart interval =
-//   width/16) to the headers (model/hw.py :: build_frame(..., version=3)).
+//   VERSION = 0x5EC0_0380 + LANES (contract v3, bit 7 = mode 5 implemented) and the input stream
+//   is 64 bits wide: tdata[31:0] = left pixel {pad, B, G, R}, tdata[63:32] = right pixel. Width
+//   multiple of 16. Modes 0..5. The ARM adds a DRI segment (restart interval = width/16, or 1 in
+//   E5) to the headers (model/hw.py :: build_frame(..., version=3)). In E5 every MCU is a restart
+//   segment in raster order; the ARM permutes them (model/hw.py :: arm_shuffle).
 // Golden model: model/hw.py :: encode_frame_v3()  (== model/jpeg.py :: encode_frame(segmented=True))
 `default_nettype none
 module secure_jpeg_lanes_top #(
@@ -75,7 +76,7 @@ module secure_jpeg_lanes_top #(
     wire         done = scan_done && tag_valid;
     assign irq_done = done;
 
-    axil_regs #(.VERSION(32'h5EC0_0300 + LANES)) u_regs (
+    axil_regs #(.VERSION(32'h5EC0_0380 + LANES)) u_regs (
         .clk(clk), .rst(rst),
         .s_axil_awaddr(s_axil_awaddr), .s_axil_awprot(s_axil_awprot),
         .s_axil_awvalid(s_axil_awvalid), .s_axil_awready(s_axil_awready),
@@ -167,10 +168,15 @@ module secure_jpeg_lanes_top #(
     endgenerate
 
     // ---------------------------------------------------------------- merger
+    // segments per frame: MCU rows, or every MCU in E5 (registered: width, height and mode_l are
+    // stable long before the merger compares against it)
+    reg  [15:0] segs;
+    always @(posedge clk) segs <= (mode_l == 3'd5) ? mcu_rows * width[11:4] : {8'd0, mcu_rows};
+
     wire       b_valid, b_ready, b_last;
     wire [7:0] b_data;
     segment_merger #(.LANES(LANES), .LOG_L(LOG_L)) u_merge (
-        .clk(clk), .rst(rst), .start(start), .segs(mcu_rows),
+        .clk(clk), .rst(rst), .start(start), .segs(segs), .e5(mode_l == 3'd5), .cols(width[11:4]),
         .i_valid(l_valid), .i_ready(l_ready), .i_data(l_data), .i_slast(l_slast),
         .o_valid(b_valid), .o_ready(b_ready), .o_data(b_data), .o_last(b_last));
 

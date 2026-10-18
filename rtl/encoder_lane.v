@@ -12,6 +12,11 @@
 //   * the keystream restarts for every segment with nonce (s, frame_ctr) under K_seg.
 // The stages between are the contract-v2 blocks, unchanged.
 //
+// Mode 5 (E5, contract v3 §8.6): every MCU is its own restart segment. The lane ends a segment
+// after the 6th block of each MCU (Y0 Y1 Y2 Y3 Cb Cr) instead of after the MCU row, and the
+// segment index is the raster MCU index row * cols + col. The encrypted fields are those of E4
+// (selective_enc treats mode 5 like mode 4). The ARM permutes the segments afterwards.
+//
 // Keystream restart (the subtle part). When the encryption stage hands on a segment's last
 // symbol, `pend` is set and the lane's keystream window is hidden (ks_avail forced to 0) until the
 // generator has restarted with the next segment's nonce, so no bit of segment s can leak into
@@ -46,14 +51,26 @@ module encoder_lane #(
 );
     wire prst = rst | start;
 
-    wire       c_valid, c_ready, c_blast_unused, c_slast;
+    wire       e5 = (mode == 3'd5);
+    wire [7:0] cols = width[11:4];          // MCUs per MCU row
+
+    wire       c_valid, c_ready, c_blast, c_rlast;
     wire [7:0] c_data;
     wire [1:0] c_comp;
     rgb2ycbcr_2px #(.LOG_MAXW(LOG_MAXW)) u_conv (
         .clk(clk), .rst(rst), .start(start), .width(width), .rows(rows),
         .s_valid(s_valid), .s_ready(s_ready), .s_data(s_data),
         .m_valid(c_valid), .m_ready(c_ready), .m_data(c_data), .m_comp(c_comp),
-        .m_blast(c_blast_unused), .m_flast(c_slast));
+        .m_blast(c_blast), .m_flast(c_rlast));
+
+    // segment end at the converter output: the MCU row's last sample, or in E5 every MCU's last
+    // sample (the 6th block of the MCU; the row end is always also an MCU end)
+    reg  [2:0] blk6;
+    always @(posedge clk) begin
+        if (rst || start) blk6 <= 3'd0;
+        else if (c_valid && c_ready && c_blast) blk6 <= (blk6 == 3'd5) ? 3'd0 : blk6 + 3'd1;
+    end
+    wire c_slast = e5 ? (c_blast && blk6 == 3'd5) : c_rlast;
 
     wire               d_valid, d_ready, d_blast, d_slast;
     wire signed [15:0] d_data;
@@ -86,16 +103,29 @@ module encoder_lane #(
         .o_size(r_size), .o_amp(r_amp), .o_eob(r_eob), .o_comp(r_comp), .o_flast(r_slast));
 
     // ------------------------------------------------ per-segment keystream
-    reg  [63:0] seg;                    // segment index this lane is coding (MCU row)
+    // seg = MCU row (modes 0..4) or raster MCU index row * cols + col (E5). The lane codes MCU
+    // rows LANE, LANE + LANES, ...; rowbase = row * cols is kept as a running sum, no multiplier.
+    reg  [15:0] row, rowbase;
+    reg  [7:0]  col;
     reg         wait_k, pend;
     wire        seg_end = r_valid && r_ready && r_slast;
+    wire        row_end = seg_end && (!e5 || col == cols - 8'd1);
+    wire [15:0] seg     = e5 ? rowbase + {8'd0, col} : row;
     wire        ks_start = (wait_k || pend) && kseg_valid && !seg_end;
     always @(posedge clk) begin
         if (rst || start) begin
-            seg <= LANE; wait_k <= 1'b1; pend <= 1'b0;
+            row <= LANE; rowbase <= LANE * {8'd0, cols}; col <= 8'd0;
+            wait_k <= 1'b1; pend <= 1'b0;
         end else begin
             if (ks_start) begin wait_k <= 1'b0; pend <= 1'b0; end
-            if (seg_end)  begin seg <= seg + LANES; pend <= 1'b1; end
+            if (seg_end) begin
+                pend <= 1'b1;
+                col  <= row_end ? 8'd0 : col + 8'd1;
+            end
+            if (row_end) begin
+                row     <= row + LANES;
+                rowbase <= rowbase + LANES * {8'd0, cols};
+            end
         end
     end
 
@@ -103,7 +133,7 @@ module encoder_lane #(
     wire [4:0]  ks_avail_raw, ks_n;
     wire        ks_take;
     keystream_gen u_ks (
-        .clk(clk), .rst(rst), .start(ks_start), .key(kseg), .nonce({frame_ctr, 1'b0, seg}),
+        .clk(clk), .rst(rst), .start(ks_start), .key(kseg), .nonce({frame_ctr, 1'b0, 48'd0, seg}),
         .ks_bits(ks_bits), .ks_avail(ks_avail_raw), .ks_take(ks_take), .ks_n(ks_n));
     wire [4:0] ks_avail = (wait_k || pend) ? 5'd0 : ks_avail_raw;
 

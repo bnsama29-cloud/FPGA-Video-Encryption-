@@ -46,9 +46,10 @@ def board_command(base_port, policy, laptop="<LAPTOP IP>"):
 
 
 def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memory=None, quiet=False,
-        external_sender=None, wait_s=600):
+        external_sender=None, wait_s=600, board_max_mode="E4"):
     """external_sender = the board's IP: start only channel + receiver here, listen on the network,
-    and let the PYNQ-Z2 (future_work/board/board_sender.py) be the sender."""
+    and let the PYNQ-Z2 (future_work/board/board_sender.py) be the sender. board_max_mode = the top level
+    the bitstream offers: E4 for the run-6 bitstreams, E5 for a lane bitstream with VERSION bit 7."""
     sc = json.loads(Path(scenario).read_text())
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -59,8 +60,10 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
             f"sender.policy='{policy}'",
             f"defence.memory_file='{memory or (out / 'bandit_memory.json')}'"] + list(sc.get("set", [])) + list(extra_sets)
     if external_sender:
-        # the board caps protection at E4 (no E5 in the RTL: future_work/board/board_sender.py)
-        sets += ["link.bind_host='0.0.0.0'", f"link.sender_host='{external_sender}'", "defence.max_mode='E4'"]
+        # the top level is what the bitstream offers (future_work/board/board_sender.py caps at E4 unless
+        # VERSION bit 7 says the RTL has E5); 'mitigated' means reaching that level (bug #31)
+        sets += ["link.bind_host='0.0.0.0'", f"link.sender_host='{external_sender}'",
+                 f"defence.max_mode='{board_max_mode}'"]
     args = [x for s in sets for x in ("--set", s)]
     cfg = config.load(overrides=sets)
     log = BusLogger(base_port + 10, host="0.0.0.0" if external_sender else "127.0.0.1")
@@ -216,9 +219,12 @@ def main():
     ap.add_argument("--set", action="append", default=[], help="extra config override")
     ap.add_argument("--external-sender", metavar="BOARD_IP",
                     help="the PYNQ-Z2 (board_sender.py) is the sender; start only channel + receiver here")
+    ap.add_argument("--board-max-mode", default="E4", choices=["E4", "E5"],
+                    help="with --external-sender: E5 when the board runs a lane bitstream with E5 (VERSION bit 7)")
     a = ap.parse_args()
     out = a.out or ROOT / "sim_out" / "runs" / f"{Path(a.scenario).stem}_{a.policy}"
-    s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory, external_sender=a.external_sender)
+    s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory, external_sender=a.external_sender,
+          board_max_mode=a.board_max_mode)
     print_summary(s)
     print(f"\nwritten {out}/")
 

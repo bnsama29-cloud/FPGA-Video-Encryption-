@@ -97,8 +97,8 @@ python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/s
 
 What happens:
 
-1. The FPGA is programmed and the driver reads the `VERSION` register: `0x5EC00200` (v2) or `0x5EC00302`
-   (lanes). It prints `contract v2` or `contract v3, 2 lanes`.
+1. The FPGA is programmed and the driver reads the `VERSION` register: `0x5EC00200` (v2) or `0x5EC00382`
+   (lanes; bit 7 = E5 in the RTL). It prints `contract v2` or `contract v3, 2 lanes`.
 2. **Part 1, the gate:** for every size and mode E0–E4, 10 frames are encoded on the FPGA and compared
    **byte for byte** with the golden model (v2 or v3 bytes, from the VERSION register), then decrypted by
    the receiver. Any difference stops the run and names the frame and byte offset.
@@ -173,8 +173,8 @@ Open `http://localhost:8000` on the laptop. What changes with the board:
 * The log says `Sender started ... board encoder`; the Camera tile says *Input to the FPGA encoder*.
 * **Encode time** is the FPGA + DMA time per frame; **Encrypted bits** reads *not reported by the FPGA*
   (the fabric does not count them).
-* The top protection level is **E4** with today's bitstreams. A lane bitstream with E5 (`docs/HW_TODO.md` H1,
-  VERSION bit 7) lifts it to E5 automatically; rehearse that with `--mock-lanes 2 --mock-e5`.
+* The top protection level is **E4** with the run-6 bitstreams. A lane bitstream rebuilt from the current RTL
+  (E5 in RTL since 17 Oct, `docs/HW_TODO.md` H1, VERSION bit 7) lifts it to E5 automatically; rehearse that with `--mock-lanes 2 --mock-e5`.
 * Everything else is the same as the laptop demo: attack buttons, rejections, protection rising,
   rekeying, the eavesdropper view (for both bitstreams).
 
@@ -198,8 +198,9 @@ py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --ex
 
 It starts the channel and receiver, prints the exact `board_sender` command for these ports (replace
 `<LAPTOP IP>`), and starts the scenario clock when the board's first report arrives. Run `full_suite`
-and `benign` three times each (`_rep1`..`_rep3`). On the board the top protection level is E4, so the
-analysis counts an attack as mitigated when E4 is reached. Rehearsed with `--mock-lanes 2` on one laptop
+and `benign` three times each (`_rep1`..`_rep3`). With the run-6 bitstreams the top protection level is E4, so the
+analysis counts an attack as mitigated when E4 is reached; with a lane bitstream rebuilt from the current
+RTL (E5 in hardware) add `--board-max-mode E5`. Rehearsed with `--mock-lanes 2` on one laptop
 (17 Oct 2026, quick scenario): 4/4 attacks mitigated, 0 false alarms. Expect one difference from the
 laptop runs: E4 hides the outline no better than E2 (leakage under attack about 0.35, against about 0 with
 E5), which is why E5 in hardware (GUIDE.md B6) is the next security step.

@@ -117,7 +117,7 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 | Tag | Ascon-AEAD128 tag under (K, N_mac), empty message, AD = **26-byte prefix ‖ scan bytes (after 0xFF stuffing)** |
 | 26-byte prefix | `'SJV1'`, version 2, mode, session_id (8 B big-endian), frame_ctr (8 B BE), width (2 B BE), height (2 B BE). Model: `model/hw.py :: tag_prefix()` |
 | APP11 segment (0xFFEB, 38 B) | the first 22 prefix bytes + the 16-byte tag. Normal viewers ignore it. Always parse JPEGs by walking segments, never by searching for 0xFF 0xC0 (that byte pair can occur inside APP11) |
-| Modes | E0 tag only · E1 AC signs · E2 + DC-difference signs (**default floor**) · E3 + AC amplitudes · E4 + DC amplitudes · E5 = E4 + keyed MCU shuffle (restart interval 1 MCU, Fisher–Yates under a separately derived key; **Python model only, not in RTL yet**) |
+| Modes | E0 tag only · E1 AC signs · E2 + DC-difference signs (**default floor**) · E3 + AC amplitudes · E4 + DC amplitudes · E5 = E4 + keyed MCU shuffle (restart interval 1 MCU, Fisher–Yates under a separately derived key; **in the model and, since 17 Oct, in the lane-encoder RTL as contract v3 mode 5; not yet on the board**) |
 | DCT | two passes of 8-tap 13-bit integer DCT (`rtl/dct_stage.v`), rounding shifts 11 and 15 |
 | Quantiser | multiply by the 17-bit reciprocal `R = (131072 + Q) // (2Q)`, then `(abs(F)·R + 2^15) >> 16`; DC clamped to −1024..1023, AC to ±1023 |
 | Colour | `Y = (77R + 150G + 29B + 128) >> 8` etc., 4:2:0 average `(a+b+c+d+2) >> 2`; frame width and height must be multiples of 16 for the RTL |
@@ -147,7 +147,7 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 
 - **Golden model + contract v2.** All 1089 Ascon KATs pass in Python and RTL.
 - **RTL (E0–E4).** Bit-exact with the model under random stalls (cocotb + Icarus 12), with 0 extra
-  cycles for encryption.
+  cycles for encryption. **E5** in the contract-v3 lane encoder (17 Oct): bit-exact for 1, 2, 4 lanes.
 - **Vivado testbench.** Passes in Icarus.
 - **System simulation.** Feedback, ratchet, defence, 11 attacks and the dashboard.
 - **The complete simulation result set.** One Kaggle run on 14 Oct (`future_work/kaggle/kaggle_runs.py (JOB = "complete")`):
@@ -161,7 +161,7 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 
 **Not done yet.**
 
-- Vivado post-route numbers and the overlay (`docs/VIVADO_ONE_DAY.md`).
+- Vivado rebuild of the lane encoder/overlay with E5, and power from simulated activity (`--steps lanes bd_lanes power parse`, `docs/VIVADO_ONE_DAY.md`).
 - Everything on the board (GUIDE A1–A8).
 - The P1 polish items (GUIDE B1, B3, B20–B22) and the rest of GUIDE §4.3.
 - Finishing the paper (`paper/`, first full draft exists).
@@ -185,7 +185,7 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 ## 5. Honest limitations and claims to avoid (the paper must respect these)
 
 - **The sketch leak.** Sign and amplitude encryption never hides *which* coefficients are non-zero, so E1–E4 all leak an edge sketch, and E3/E4 don't reduce it. E5 hides block positions; a greedy jigsaw solver and a trained U-Net both fail to restore the outline (edge correlation ≤ 0.044), but a stronger solver is still to be tried (GUIDE B9). E5 also defeats the non-zero counting attack (NZCA).
-- **E5 overhead.** E5 costs 12–21% bitrate at restart interval 1 (10–23% per clip at 320×240), and the RTL doesn't support it yet. Longer intervals are cheap (0.5% at N = 32) but **not** safe: a beam-search solver re-chains 15–41% of the 10 segments (chance 11%). Keep N = 1.
+- **E5 overhead.** E5 costs 12–21% bitrate at restart interval 1 (10–23% per clip at 320×240); in RTL (lane encoder, since 17 Oct) it also costs 0.7–3.6% throughput. Longer intervals are cheap (0.5% at N = 32) but **not** safe: a beam-search solver re-chains 15–41% of the 10 segments (chance 11%). Keep N = 1.
 - **Passive eavesdroppers are invisible.** The defence reacts only to *active* attacks; a passive eavesdropper is handled only by the floor mode (E2).
 - **Loss vs jamming.** The receiver can't tell benign loss from partial jamming. Only near-total suppression (≥90% frame loss) escalates.
 - **Reaction time.** It is bounded by the 1 s decision window plus the 0.5 s heartbeat.
