@@ -38,6 +38,10 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 finished. Left: the board (§4.2, the critical path to 12 Nov), the ARM baseline (A3 + B1), then the
 board numbers in the paper and the final proof-reading.
 
+A full re-run on a fresh Windows 11 PC (WSL Ubuntu 24.04, 18 Oct) reproduced the simulation side:
+`make test` (154 + 16 passed), `RUN_SLOW=1 pytest tests/` (155 passed), `make xsim-icarus` (v2 5 frames,
+v3 7 frames incl. E5, bit-exact), the dashboard on port 8000; Vivado run 7 ran on the same PC.
+
 The headline results (generated tables in `paper/tables/`, numbers in `paper/tables/numbers.tex`):
 
 * **Encryption cost.** 0 extra cycles in RTL. The encoder meets 100 MHz post-route: 65 Mpixel/s,
@@ -74,8 +78,20 @@ pip install -r requirements.txt
 * **Icarus Verilog 12** for the RTL tests. Ubuntu 24.04: `sudo apt install iverilog`. Ubuntu 22.04
   ships 11, so build 12 from source as `kaggle_runs.py (JOB = "complete")` does.
 * **Verilator:** `pip install verilator`.
-* **Vivado ML Standard** (free, 2022.1 matches the PYNQ v3.0 image) for Role 1 only; see
+* **Vivado ML Standard 2026.1** (free; the version of runs 1–7) for Role 1 only; see
   `docs/VIVADO_ONE_DAY.md`.
+
+**Windows PCs: two copies of the repo.** Run tests and simulations in WSL (Ubuntu 24.04 gives
+Icarus 12) from a clone in `~/`. Vivado is a Windows program and needs a **separate Windows clone at a
+path without spaces** (e.g. `D:\FPGA-Video-Encryption-`), driven from a normal Command Prompt with
+`settings64.bat` loaded (or the AutoRun entry of `docs/VIVADO_ONE_DAY.md` §0). Open the WSL copy in
+VS Code through the WSL extension (`code .` from the Ubuntu terminal), not as `\\wsl.localhost\...`,
+or git and Python run on the Windows side.
+
+**Git: fork and upstream.** The team repository is `bnsama29-cloud/FPGA-Video-Encryption-`. Work is done
+on a fork branch (e.g. `vij-ship-it/FPGA-Video-Encryption-`, branch `claude/project-thread-yxa59j`)
+and reaches `main` through a pull request (#31, #32). `git fetch upstream && git log upstream/main..HEAD`
+shows exactly what a PR will bring.
 
 | Command | What it does |
 |---|---|
@@ -144,6 +160,10 @@ Run 7 (18 Oct, tom's PC, 27/27 steps) rebuilt the lane encoders and the 2-lane s
 limit (v2 -0.875 ns). Bitstreams (not in git): the run 6 pair on Samarth's laptop, and the **E5
 2-lane system from run 7** on tom's PC (`D:\FPGA-Video-Encryption-\future_work\board\overlay\secure_jpeg_lanes.bit` + `.hwh`).
 
+Run 7's E5 bitstream: 18 Oct 18:17, DRC 0 errors, WNS +0.228 ns; results in `vivado_results_20261018_1847.zip`.
+Note that the `xsim` step builds its contract-v3 vectors for E0–E4 only; E5 is checked bit-exact in XSim
+by the `power` step (one 320×240 frame) and in Icarus by `make xsim-icarus` (`--modes 2 5`).
+
 **Still to do:** share the `.bit` + `.hwh` pairs (commit them or copy them to the board's SD card) so
 teammates without Vivado can use the board.
 
@@ -205,7 +225,7 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B27 | Research R2: parallel lanes over restart segments (+ per-segment keystream, contract v3) | P3 | 1 + 2 | ✅ model, exact on 7 sources; ✅ **RTL built** (`rtl/secure_jpeg_lanes_top.v`, 16 Oct), measured 122 / 176 Mpx/s for 2 / 4 lanes; ✅ Vivado run 6: 100 MHz post-route, 2-lane overlay built; ⏳ board | `docs/INTERFACES.md` §8 |
 | B28 | Research R3: bitrate regulation (FF+PI) | P2 | 3 | ✅ synthetic + 6 real clips after bugs #22-#26 (error 3-7x lower than fixed quality; FF+PI settles in <= 2 frames) | `docs/RESEARCH.md` |
 | B29 | Research R4: change-driven coding, motion leakage, useful chaff + size padding | P2 | 5 | ✅ synthetic + 6 film clips (fixed-camera technique; static-camera clip wanted) | `docs/RESEARCH.md` |
-| B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | Vivado, laptop | `docs/RESEARCH.md` |
+| B30 | Research R5: clock sweep 125/150 MHz, critical blocks | P2 | 1 | ✅ run 6: 125 / 150 MHz fail (v2 -0.875 / -1.765 ns, colour converter; 2 lanes -1.071 / -2.023 ns, inside a lane); estimated fmax 104–108 MHz | `docs/RESEARCH.md` |
 | B31 | Frame-size side channel (R7: every level E0-E5 leaks the same; separability 0.95 fixed camera, 0.50-0.95 films): constant-size padding option in `link/` + static-camera clip | P1 | 2 + 5 | ✅ measured, in the paper (Discussion); padding option and FF+PI rerun open | `docs/RESEARCH.md` |
 | B33 | Research R8: chosen-plaintext attack (Li et al.) on the E5 shuffle, transferred across frames | P1 | 5 | ✅ 7 sources (chance-level placement) | `docs/RESEARCH.md` |
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
@@ -530,7 +550,8 @@ simulation. The paper's version of this table is generated (`tab_compare.tex` fr
 |---|---|
 | No board numbers yet (frame rate with DMA, measured power) | §4.2 |
 | One pipeline is ~2.3× below commercial JPEG cores (1 px/clk at 150 MHz); only 4 lanes pass them, at 5× their LUTs | B18 |
-| More BRAM than commercial encoders (24 of our 24.5 BRAM36 are line buffers sized for 2048-pixel lines) | B19 |
+| More BRAM than commercial encoders (24 of our 24.5 BRAM36 are line buffers sized for 2048-pixel lines; 512-pixel lines need 6.5, run 6) | B19 |
+| ~~Our Ascon blocks are larger than published cores~~ resolved post-route: 861–969 LUT per core, as small as the round-per-cycle cores of Khairallah & Yadhunathan | – |
 | Our baselines of published schemes are our own re-implementations, and the scope is Motion-JPEG, not H.264/HEVC | state in the paper ✅ |
 | Adjacent-pixel correlation and entropy are far from full-cipher values (by design; must be explained, not hidden) | §V text ✅ |
 | Our learned attacker is still small next to the ITN/GAN attacks in the literature | B17, B21 |
@@ -547,5 +568,7 @@ simulation. The paper's version of this table is generated (`tab_compare.tex` fr
 * [Qiu et al.](https://arxiv.org/abs/2503.16287)
 * [Malal 2024 (ISCTR, Ascon throughput/area)](https://avesis.metu.edu.tr/yayin/6f2daa79-8ad3-46de-aec5-5fd1bd1b9937/high-performance-fpga-implementations-of-lightweight-ascon-128-and-ascon-128a-with-enhanced-throughput-to-area-efficiency)
 
-Kishore et al. and Bağbaba & Örs are in `paper/refs.bib`. Read a source before citing it, and add it
-to `refs.bib` with a "checked:" comment.
+Kishore et al., Bağbaba & Örs, Sirichotedumrong & Kiya and Qiu et al. are in `paper/refs.bib`. Read a
+source before citing it, and add it to `refs.bib` with a "checked:" comment. Never copy a number into the
+paper from a summary table (this one included): take it from the source, or from `paper/data/` through
+`make_assets.py`.
