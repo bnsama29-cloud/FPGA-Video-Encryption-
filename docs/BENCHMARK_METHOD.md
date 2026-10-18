@@ -16,9 +16,9 @@ with the papers we compare against. Every number comes from a script in `experim
 | Hardware compared by raw LUT and Mpixel/s | `experiments/hw_efficiency.py` adds Mpixel/s per kLUT, input Gbit/s and nJ per pixel, per mode (E5 has its own rows) | Hardware papers compare throughput per area and energy per unit of work |
 
 E5 itself is unchanged: the RTL, the model and contract v3 are exactly as in commit b41c733. Only the
-way it is measured changed. The SVE-Bench numbers in `paper/data/benchmark/` were made with the old A4
-and without the new metrics, so they must be re-run (Kaggle `JOB = "benchmark"`) before the new columns
-can go into the paper.
+way it is measured changed. The Kaggle re-run with this method (18 Oct 2026, after the known-frame fix
+below) is in `paper/data/benchmark/` and builds `tab_bench.tex` and `tab_bench_metrics.tex`; the first run
+with the old A4 is in git history (commit 3588feb).
 
 ## 2. Threat model of each attack (SVE-Bench, `experiments/benchmark_suite.py`)
 
