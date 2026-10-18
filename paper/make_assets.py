@@ -1202,7 +1202,8 @@ def benchmark():
     """SVE-Bench: every scheme under the same four attacks, pooled over the source files in
     paper/data/benchmark/benchmark_suite/ (mean over sources of each source's frame mean)."""
     d = BENCH / "benchmark_suite"
-    files = sorted(d.glob("*.json")) if d.exists() else []
+    # quality-sweep files (<source>_q50.json, ...) are extra views of a source, not extra sources
+    files = sorted(f for f in d.glob("*.json") if not re.search(r"_q\d+$", f.stem)) if d.exists() else []
     if not files:
         return
     runs = [J(f) for f in files]

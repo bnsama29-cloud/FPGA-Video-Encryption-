@@ -26,7 +26,7 @@ keep the stream decodable and part of its structure, so read them next to the at
 Levels: E1-E5 in contract v2 (the model reference) and "E5 (v3, hw)", E5 as the hardware lane encoder
 produces it (docs/INTERFACES.md §8.6: one restart segment per MCU, each with its own keystream).
 Each mean has a 95 % percentile-bootstrap interval over frames in the json (ci).
-Writes sim_out/standard_metrics/<name>[_q<Q>].json / .md.
+Writes sim_out/standard_metrics/<name>.json (quality 75) and <name>_q<Q>.json (other qualities) / .md.
 """
 import argparse
 import io
@@ -217,7 +217,7 @@ def main():
                                                   if m != "plain JPEG"), flush=True)
         summ = {m: {k: statistics.mean(f[m][k] for f in per) for k in per[0][m]} for m in per[0]}
         ci = {m: {k: bootstrap_ci([f[m][k] for f in per]) for k in per[0][m]} for m in per[0]}
-        tag = name if (len(a.quality) == 1 and q == DEFAULT_QUALITY) else f"{name}_q{q}"
+        tag = name if q == DEFAULT_QUALITY else f"{name}_q{q}"   # the default quality keeps the plain name; a sweep adds _q<Q> files
         (out / f"{tag}.json").write_text(json.dumps(dict(source=str(a.video), size=a.size, quality=q, frames=len(per),
                                                          summary=summ, ci=ci), indent=1))
         g = lambda m, k, nd=2: f"{summ[m][k]:.{nd}f}" if k in summ[m] else "–"

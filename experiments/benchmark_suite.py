@@ -46,7 +46,7 @@ METRICS THAT PAPERS REPORT (computed on the no-key picture, A1, so the numbers l
   NPCR / UACI px   between the no-key pictures of two frames that differ in one pixel, same key and counter
 Every mean comes with a 95 % percentile-bootstrap interval over the scored frames (frames 1..n-1).
 Also reported: bytes vs plain JPEG, whether every output decodes (PIL and OpenCV), per-frame randomness,
-frame authentication. Writes sim_out/benchmark_suite/<name>[_q<Q>].json and .md.
+frame authentication. Writes sim_out/benchmark_suite/<name>.json (quality 75) and <name>_q<Q>.json (other qualities) and .md.
 """
 import argparse
 import io
@@ -687,7 +687,7 @@ def main():
                   f"repl {r['replacement']:.2f}  nzca {r['nzca']:.2f}  kpa {('%.2f' % kp) if kp is not None else '  - '}  "
                   f"-> max {r['max_leak']:.2f}  PSNR {r['psnr_decode']:.1f}" + ("" if r["compliant"] else "  NOT COMPLIANT"),
                   flush=True)
-        tag = a.name if (len(a.quality) == 1 and q == DEFAULT_QUALITY) else f"{a.name}_q{q}"
+        tag = a.name if q == DEFAULT_QUALITY else f"{a.name}_q{q}"   # the default quality keeps the plain name; a sweep adds _q<Q> files
         meta = dict(source=a.video, frames=len(frames), scored_frames=len(frames) - 1, size=size, quality=q,
                     known_frame=0, ci="95 % percentile bootstrap over scored frames (2000 resamples)",
                     note="attacks: edge correlation with the original luma (0 = nothing); max_leak = the best attack; "
