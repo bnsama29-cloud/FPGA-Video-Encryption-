@@ -456,7 +456,7 @@ two restart-interval rows already moved to the repository).
 | Longer restart intervals are as safe as N = 1 | beam solver finds 15–41 % successors at N = 32 | ❌ **do not claim** |
 | Standard metrics show security | they assume full-image ciphers | ❌ report for comparability only |
 | Schemes with fixed key material (Van Droogenbroeck, Kishore, Hirose) fall to one known frame; E5's per-frame keys and permutation do not transfer | SVE-Bench A4 (known plaintext), `docs/BENCHMARK_METHOD.md` | ⏳ synthetic only (320x240, q 50/75/90: A4 0.99 Van Droogenbroeck, 0.74-0.98 Hirose, 0.59-0.75 Kishore vs 0.01 E5); state after the Kaggle re-run |
-| E5 costs 3 % of 2-lane throughput (115 vs 119 Mpixel/s at 320x240) | `lanes_rtl_throughput.py --modes 2 5`, `hw_efficiency.py` | ✅ RTL simulation · ⏳ board |
+| E5 costs 2-4 % throughput at 640x480 and 100 MHz (1 lane 63.5 vs 65.8, 2 lanes 118.0 vs 122.3, 4 lanes 171.4 vs 175.7 Mpixel/s, E5 vs E2) | `lanes_rtl_throughput.py --sizes 640x480 --modes 2 5`, `hw_efficiency.py` | ✅ RTL simulation (18 Oct) · ⏳ board |
 | 11 active attacks detected and mitigated in < 1 s on average, no false alarms | full_suite × 3, benign × 3 | ✅ simulation · ⏳ board (A6) |
 | Bandit: fewer encrypted bits, slower reaction | policy_seeds, 10 seeds, paired | ✅ |
 | Faster / lower energy than software on the same board | A2–A4 (+ B1) | ⏳ |
