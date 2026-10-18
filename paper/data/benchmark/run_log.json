@@ -1,0 +1,102 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (e5-hardware)",
+   "PASS",
+   1.6
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   5.2
+  ],
+  [
+   "synthetic",
+   "SVE-Bench",
+   "PASS",
+   67.0
+  ],
+  [
+   "avengers",
+   "SVE-Bench",
+   "PASS",
+   77.5
+  ],
+  [
+   "challenge",
+   "SVE-Bench",
+   "PASS",
+   100.8
+  ],
+  [
+   "17735",
+   "SVE-Bench",
+   "PASS",
+   134.7
+  ],
+  [
+   "denzel",
+   "SVE-Bench",
+   "PASS",
+   85.8
+  ],
+  [
+   "jailer",
+   "SVE-Bench",
+   "PASS",
+   80.2
+  ],
+  [
+   "sintel_trailer",
+   "SVE-Bench",
+   "PASS",
+   59.7
+  ],
+  [
+   "tearsofsteel",
+   "SVE-Bench",
+   "PASS",
+   66.1
+  ],
+  [
+   "kodak",
+   "SVE-Bench",
+   "PASS",
+   74.6
+  ]
+ ],
+ "minutes": 4.1,
+ "quick": false,
+ "sources": {
+  "synthetic": {
+   "path": "synthetic"
+  },
+  "17735": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/17735.mp4"
+  },
+  "avengers": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/avengers.mp4"
+  },
+  "challenge": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/challenge.mp4"
+  },
+  "denzel": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/denzel.mp4"
+  },
+  "jailer": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/jailer.mp4"
+  },
+  "sintel_trailer": {
+   "path": "/kaggle/working/opendata/sintel_trailer.mp4"
+  },
+  "tearsofsteel": {
+   "path": "/kaggle/working/opendata/tearsofsteel.mov"
+  },
+  "kodak": {
+   "path": "/kaggle/working/opendata/kodak",
+   "images": true
+  }
+ }
+}
