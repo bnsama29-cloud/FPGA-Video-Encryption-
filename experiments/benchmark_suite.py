@@ -29,14 +29,15 @@ ATTACKS (each gives the edge correlation of its picture or sketch with the origi
                    size category for amplitude fields, DC difference 0), re-coded, decoded
   A3 NZCA          non-zero AC count per 8x8 luma block, as received (the sketch attack applied by Hirose et al.),
                    correlated with the original block edge energy
-  A4 known plain.  the attacker knows frame 0 in clear and its ciphertext (one leaked or designed frame, as in
+  A4 known plain.  the attacker knows one frame in clear and its ciphertext (the loaded frame with the most
+                   detail, so a black opening frame does not hide the attack) (one leaked or designed frame, as in
                    Li et al.'s chosen-plaintext attack on block shuffling [li2025shuffle]). From that pair alone it
                    (a) recovers the permutation by matching each received segment / block to a clear one with the
                    same structure (run/size pattern, plus clear amplitudes), and (b) recovers the keystream bits by
                    XORing clear and received fields. It applies both to every later frame (decrypt with the
                    recovered bits, or replacement after undoing the permutation, or NZCA, whichever leaks most).
                    Schemes whose key material does not change per frame fall to this; per-frame keys do not transfer.
-                   Also reported: the share of frame 0's permutation recovered exactly.
+                   Also reported: the share of the known frame's permutation recovered exactly.
 
 METRICS THAT PAPERS REPORT (computed on the no-key picture, A1, so the numbers line up with the papers)
   PSNR / SSIM      luma of the no-key picture vs the original frame (Hirose et al., Kishore, Auer report PSNR)
@@ -44,7 +45,7 @@ METRICS THAT PAPERS REPORT (computed on the no-key picture, A1, so the numbers l
   adjacent corr.   horizontal / vertical / diagonal, all neighbour pairs of the luma
   NPCR / UACI key  between the no-key pictures of the same frame under two keys one bit apart
   NPCR / UACI px   between the no-key pictures of two frames that differ in one pixel, same key and counter
-Every mean comes with a 95 % percentile-bootstrap interval over the scored frames (frames 1..n-1).
+Every mean comes with a 95 % percentile-bootstrap interval over the scored frames (all but the known one).
 Also reported: bytes vs plain JPEG, whether every output decodes (PIL and OpenCV), per-frame randomness,
 frame authentication. Writes sim_out/benchmark_suite/<name>.json (quality 75) and <name>_q<Q>.json (other qualities) and .md.
 """
@@ -419,7 +420,7 @@ class Replay:
 
 
 def learn_known_frame(an0, jpeg0, sc, kind):
-    """Everything the A4 attacker gets from frame 0 (clear) and its ciphertext."""
+    """Everything the A4 attacker gets from the known frame (clear) and its ciphertext."""
     w, h, qy, qc, ri, segs = received_segments(jpeg0)
     perm = recover_perm(kind, an0, segs, ri, sc["fields"]) if kind else None
     bits = None
@@ -601,14 +602,23 @@ def one_pixel(rgb):
     return out
 
 
-def evaluate(name, frames, quality, y0s, energies, ans, ans_px, plain_bytes):
-    """All attacks and metrics for one scheme over the frames; frame 0 is the attacker's known frame."""
+def known_frame(ans):
+    """The attacker's known frame: the one with the most non-zero AC coefficients. A black or faded
+    opening frame (common in films) has no structure to match and almost no encrypted bits, so taking
+    frame 0 blindly would understate what one known frame gives away."""
+    nz = [sum(1 for s in an.symbols if s.size and not s.is_dc) for an in ans]
+    return max(range(len(ans)), key=lambda t: (nz[t], -t))
+
+
+def evaluate(name, frames, quality, y0s, energies, ans, ans_px, plain_bytes, kf=0):
+    """All attacks and metrics for one scheme over the frames; frame kf is the attacker's known frame
+    and every other frame is scored."""
     sc = SCHEMES[name]
     out = [sc["fn"](an, ctr) for ctr, an in enumerate(ans)]
     kind = PERM_KIND.get(name)
-    learned = learn_known_frame(ans[0], out[0][0], sc, kind) if (kind or sc["stream"]) else None
+    learned = learn_known_frame(ans[kf], out[kf][0], sc, kind) if (kind or sc["stream"]) else None
     per = []
-    for t in range(1, len(ans)):
+    for t in (t for t in range(len(ans)) if t != kf):
         k2 = sc["fn"](ans[t], t, KEY2)[0] if name != "plain" else None
         px = sc["fn"](ans_px[t], t)[0]
         per.append(views(out[t][0], sc["fields"], y0s[t], energies[t], learned, k2, px))
@@ -621,8 +631,8 @@ def evaluate(name, frames, quality, y0s, energies, ans, ans_px, plain_bytes):
         if vals:
             r["ci"][k] = bootstrap_ci(vals)
     r["perm_recovered"] = None
-    if learned is not None and learned["perm"] is not None and out[0][1] is not None:
-        true, got = perm_items(out[0][1]), perm_items(learned["perm"])
+    if learned is not None and learned["perm"] is not None and out[kf][1] is not None:
+        true, got = perm_items(out[kf][1]), perm_items(learned["perm"])
         r["perm_recovered"] = float(np.mean([a == b for a, b in zip(true, got)]))
     r["keystream_bits_recovered"] = (sum(len(b) for b in learned["bits"])
                                      if learned is not None and learned["bits"] is not None else None)
@@ -658,7 +668,7 @@ def tables(name, size, quality, n_scored, rows):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--video", default="synthetic")
-    ap.add_argument("--frames", type=int, default=6, help="frames; the first is the attacker's known frame")
+    ap.add_argument("--frames", type=int, default=6, help="frames; the one with the most detail is the attacker's known frame")
     ap.add_argument("--stride", type=int, default=10)
     ap.add_argument("--size", default="320x240", help="WxH, or 'native' (the source's own size, whole MCUs)")
     ap.add_argument("--quality", type=int, nargs="+", default=[DEFAULT_QUALITY],
@@ -679,9 +689,10 @@ def main():
         ans_px = [analyse_frame(f, quality=q) for f in frames_px]
         plain_bytes = [len(jpeg_of(an, an.symbols)) for an in ans]
         energies = [block_energy(y, (an.height // 8, an.width // 8)) for y, an in zip(y0s, ans)]
+        k = known_frame(ans)
         rows = {}
         for name in a.schemes:
-            r = rows[name] = evaluate(name, frames, q, y0s, energies, ans, ans_px, plain_bytes)
+            r = rows[name] = evaluate(name, frames, q, y0s, energies, ans, ans_px, plain_bytes, k)
             kp = r["known_plaintext"]
             print(f"q{q} {name:18s} bytes {r['bytes_vs_plain']:+.1%}  decode {r['decode']:.2f}  "
                   f"repl {r['replacement']:.2f}  nzca {r['nzca']:.2f}  kpa {('%.2f' % kp) if kp is not None else '  - '}  "
@@ -689,7 +700,7 @@ def main():
                   flush=True)
         tag = a.name if q == DEFAULT_QUALITY else f"{a.name}_q{q}"   # the default quality keeps the plain name; a sweep adds _q<Q> files
         meta = dict(source=a.video, frames=len(frames), scored_frames=len(frames) - 1, size=size, quality=q,
-                    known_frame=0, ci="95 % percentile bootstrap over scored frames (2000 resamples)",
+                    known_frame=k, ci="95 % percentile bootstrap over scored frames (2000 resamples)",
                     note="attacks: edge correlation with the original luma (0 = nothing); max_leak = the best attack; "
                          "metrics on the no-key picture (A1)")
         (out / f"{tag}.json").write_text(json.dumps(dict(meta=meta, schemes=rows), indent=1))

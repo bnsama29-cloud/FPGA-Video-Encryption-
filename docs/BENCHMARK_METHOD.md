@@ -29,10 +29,10 @@ The attacker knows every scheme (Kerckhoffs) and sees only the bytes on the netw
 | A1 decode | the stream | opens it in a normal viewer | edge correlation of the picture with the original |
 | A2 replacement | the stream | replaces every encrypted field with a fixed guess and decodes | same |
 | A3 NZCA | the stream | counts non-zero AC coefficients per luma block (sketch attack) | correlation with the original block edge energy |
-| A4 known plaintext | the stream **and frame 0 in clear** | matches received segments/blocks to clear ones by structure (run, size, EOB, and amplitudes that are not encrypted) to recover the permutation; XORs clear and received fields to recover the keystream bits; on later frames it undoes the permutation and decrypts with those bits (and, for permuting schemes, also tries replacement and NZCA) | best of those |
+| A4 known plaintext | the stream **and one frame in clear** (the loaded frame with the most detail) | matches received segments/blocks to clear ones by structure (run, size, EOB, and amplitudes that are not encrypted) to recover the permutation; XORs clear and received fields to recover the keystream bits; on every other frame it undoes the permutation and decrypts with those bits (and, for permuting schemes, also tries replacement and NZCA) | best of those |
 
-**Max leak** is the strongest of A1-A4 (means over the scored frames 1..n-1, with the interval of that attack).
-The share of frame 0's permutation recovered exactly is printed next to A4; structurally identical segments
+**Max leak** is the strongest of A1-A4 (means over the scored frames, i.e. all but the known one, with the interval of that attack).
+The share of the known frame's permutation recovered exactly is printed next to A4; structurally identical segments
 (e.g. flat sky) can be swapped without changing any attack's result.
 
 What to expect, and why:
@@ -43,10 +43,16 @@ What to expect, and why:
   Van Droogenbroeck, 0.74 / 0.95 for Hirose RI = 1 / 4 and 0.71 for Kishore, against 0.01 for E5 in both
   forms (quality 50 and 90 give the same picture).
 * **Per-frame keys hold.** E1-E5 draw a fresh keystream (and E5 a fresh permutation) from the frame counter,
-  so what A4 learns from frame 0 is useless on frame 1. E1-E4 still leak through A3 (NZCA) because they do not
+  so what A4 learns from the known frame is useless on any other frame. E1-E4 still leak through A3 (NZCA) because they do not
   permute; that is a known, stated weakness (GUIDE §5).
-* **A4 is not a full attack on a per-frame scheme.** For E5 it recovers frame 0's own permutation (91 % of
+* **A4 is not a full attack on a per-frame scheme.** For E5 it recovers the known frame's own permutation (91 % of
   positions on the synthetic scene; the rest are identical segments), but this does not help on other frames.
+
+**Which frame is known (fixed 18 Oct 2026 after the first Kaggle run of this method).** The first run used
+frame 0. Four sources (Denzel, Jailer, Sintel, Tears of Steel) open on a black frame, which has no structure to
+match and no encrypted AC bits, so A4 recovered nothing there and the published schemes' A4 dropped to about 0
+on those sources (pooled: Hirose RI = 1 0.50, Kishore 0.42). The attacker now uses the loaded frame with the most
+non-zero AC coefficients, the realistic worst case for the defender. E5's result does not depend on the choice.
 
 ## 3. Metrics that papers report (computed on the no-key picture)
 
