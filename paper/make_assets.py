@@ -809,7 +809,7 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
                 body += f"{label} & {t[0]} & {t[1]} & {t[2]:g} & {t[3]} \\\\\n"
         wns, mhz = r["timing"].get("wns", 0), 1000 / r["period"]
         src = (f"Vivado post-route, out of context, {mhz:.0f}\\,MHz with I/O delays of 20\\,\\% of the period, "
-               f"WNS {wns:+.3f}\\,ns; power is Vivado's vectorless estimate")
+               f"WNS {wns:+.3f}\\,ns")
         macro("ResourceSource", "Vivado post-route")
         macro("TopLuts", f"{u['lut'][0]:,.0f}".replace(",", "{,}"))
         macro("TopLutPct", f"{u['lut'][2]:.1f}")
@@ -820,6 +820,15 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
         macro("TopMhz", f"{mhz:.0f}")
         macro("TopPowerMw", f"{1000 * r['power'].get('total', 0):.0f}")
         macro("TopDynMw", f"{1000 * r['power'].get('dynamic', 0):.0f}")
+        # power from simulated switching activity (SAIF, GUIDE.md B37), when the run has it
+        saif = r.get("power_saif") or {}
+        if saif:
+            macro("SaifTopMw", f"{1000 * max(v['total'] for v in saif.values()):.0f}")
+        lanes2 = next((x for x in J(viv) if x["name"] == "secure_jpeg_lanes_top_lanes2_log_l1"), {})
+        ls = lanes2.get("power_saif") or {}
+        if "v3_E2" in ls and "v3_E5" in ls:
+            macro("SaifLanesEtwoMw", f"{1000 * ls['v3_E2']['total']:.0f}")
+            macro("SaifLanesEfiveMw", f"{1000 * ls['v3_E5']['total']:.0f}")
         if "u_ks" in h and "u_tag" in h:
             macro("CryptoLutShare", f"{100 * (h['u_ks'][3] + h['u_tag'][3]) / u['lut'][0]:.0f}")
         if "u_conv" in h:
