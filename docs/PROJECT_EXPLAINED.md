@@ -248,7 +248,7 @@ inputs with random stalls and compares every output with `model/`. `common.py` h
 | Format compliance | all six levels open in Pillow, OpenCV, scikit-image and FFmpeg | `future_work/figures/format_compliance.py` |
 | Encryption cost | 0 extra cycles (E0–E4 differ by at most 2 cycles per frame, handshake noise) | `benchmark_crypto.py --rtl` |
 | Throughput (RTL, 640x480, 100 MHz) | 65 Mpixel/s (1 pipeline), 122 (2 lanes), 176 (4 lanes) | `stall_profile.py`, `lanes_rtl_throughput.py` |
-| Area + timing (Vivado run 6) | encoder 5,037 LUT / 24.5 BRAM / 23 DSP; 2 lanes 9,869 LUT; 4 lanes 16,573 LUT; **all meet 100 MHz**; both PYNQ-Z2 systems meet 100 MHz | `paper/data/vivado/` |
+| Area + timing (Vivado runs 6-7) | encoder 5,037 LUT / 24.5 BRAM / 23 DSP; 2 lanes with E5 10,069 LUT; 4 lanes with E5 16,893 LUT; **all meet 100 MHz**; both PYNQ-Z2 systems meet 100 MHz (the 2-lane one with E5) | `paper/data/vivado/` |
 | Visual security | E1–E4: eavesdropper sees an outline (edge correlation 0.28–0.56); E5: none (jigsaw solvers at chance) | `measure_mode_tradeoff.py`, `future_work/attacks/` |
 | Learned attacker | a U-Net breaks E1 (edge correlation 0.69); adds little on E2/E4; nothing on E5 | `learned_attack.py` |
 | Person detection | 68–100 % of people found in plain frames, ≤ 3 % under E2/E4, 0 % under E5 | `recognition.py` |

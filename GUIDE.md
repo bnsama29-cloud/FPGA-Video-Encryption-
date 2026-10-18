@@ -139,12 +139,12 @@ docs/           INTERFACES (contracts v2, v3), TESTING (+ bug log, debugging wit
 
 Status key: ⏳ ready to run (scripts exist) · 📝 to be written · ✅ done.
 
-### 4.1 Vivado ✅ (run 6, 17 Oct 2026)
+### 4.1 Vivado ✅ (run 6, 17 Oct 2026; run 7 with E5, 18 Oct)
 
 Everything in **`docs/VIVADO_ONE_DAY.md`** (install, the one command, results, board first contact,
 troubleshooting, history of runs 1-6). Run 6 passed all 20 steps: encoder WNS +0.554 ns, 2 lanes
 +0.400, 4 lanes +0.440 (out of context), v2 overlay +0.788, 2-lane overlay +0.208 ns at 100 MHz.
-Snapshot in `paper/data/vivado/`, already in the paper. At 125 MHz the colour converter is the next
+Run 7 (18 Oct, tom's PC, 27/27 steps) rebuilt the lane encoders and the 2-lane system **with E5**: 2 lanes 10,069 LUT (+200) WNS +0.359, 4 lanes 16,893 (+320) +0.293, 2-lane overlay 11,913 (+197) +0.228 ns, no extra BRAM/DSP; SAIF power 0.318 W (E5) vs 0.319 W (E2) for 2 lanes. Snapshot (runs 6 + 7) in `paper/data/vivado/`, in the paper. At 125 MHz the colour converter is the next
 limit (v2 -0.875 ns). Both bitstreams exist on Samarth's laptop (`future_work\board\overlay\`).
 
 **Still to do:** commit the two `.bit` + `.hwh` pairs so teammates without Vivado can use the board.
@@ -213,9 +213,9 @@ Every item has a **Done when** line: that is the test the reviewer of the pull r
 | B34 | Deployable size padding (running max / 10 s window) in `link/sender.py`, measured in R7 | P1 | 2 + 5 | ✅ 0.54 for +3 % (fixed camera), 0.54-0.78 on clips; sender option open | `docs/RESEARCH.md` |
 | B35 | **Sign-bit recovery attack** (Lin et al. 2024, LP relaxation) against E1-E4, with a check in their own setting | P1 | 5 | ✅ Kaggle 17 Oct: 29 frames, 9 source sets (Kodak, open films, private clips); in the paper | `experiments/sign_recovery.py`, `docs/RESEARCH.md` |
 | B36 | **Video identification from frame sizes** (Schuster et al. 2017) for E2, E5 and the padding schemes | P2 | 5 | ✅ Kaggle 17 Oct: 7 videos; in the paper (Table XII extended, one sentence in the conference version) | `experiments/video_fingerprint.py` |
-| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ✅ flow (`--steps power`, 17 Oct) · ⏳ run in Vivado | `docs/HW_TODO.md` H4 |
+| B37 | Vivado power with simulated switching activity (SAIF from the XSim testbench) instead of the vectorless estimate | P2 | 1 | ✅ run 7 (18 Oct): v2 0.210-0.211 W (E0/E2/E4), 2 lanes 0.319 W (E2) / 0.318 W (E5); `paper/data/vivado/` · ⏳ board | `docs/HW_TODO.md` H4 |
 | B39 | **SVE-Bench**: ours and four published schemes (Van Droogenbroeck, Kishore, Auer, Hirose) under the same four attacks | P1 | 5 | ✅ Kaggle (re-run with method v2, received 18 Oct 10:01): 9 sources, 175 frames; `paper/data/benchmark/`, `tab_bench.tex`, `tab_bench_metrics.tex` (not yet `\input` in the paper) | `experiments/benchmark_suite.py` |
-| B40 | Hardware figures of merit as hardware papers report them: Mpixel/s per kLUT, input Gbit/s, nJ/pixel, per mode (E5 rows) | P2 | 1 | ✅ from RTL throughput + Vivado run 6 (vectorless power, pre-E5 netlist) · ⏳ after the lane rebuild + `--steps power` | `experiments/hw_efficiency.py` |
+| B40 | Hardware figures of merit as hardware papers report them: Mpixel/s per kLUT, input Gbit/s, nJ/pixel, per mode (E5 rows) | P2 | 1 | ✅ from RTL throughput + Vivado run 7 (E5 netlist, SAIF power for v2 and 2 lanes; 4 lanes vectorless): 2 lanes E5 2.7 nJ/pixel · ⏳ board | `experiments/hw_efficiency.py` |
 | B41 | **SVE-Bench method v2** (comparable with published work): A4 becomes a known-plaintext attacker (permutation and keystream recovered from one clear frame, nothing handed over); per scheme PSNR/SSIM, entropy, adjacent correlation, NPCR/UACI (key, 1 pixel); 95 % bootstrap CIs; Kodak at 768x512 with quality 50/75/90; standard metrics for E5's hardware form | P1 | 5 | ✅ code + Kaggle re-run (18 Oct, every step PASS, 43.9 min): `paper/data/benchmark/` (with `standard_metrics/` and the Kodak q50/q90 files), `tab_bench.tex`, `tab_bench_metrics.tex` | `docs/BENCHMARK_METHOD.md` |
 | B38 | Last `refs.bib` fields from the publisher pages: lin2024 volume, hirose2024 pages, puech2005 pages, wampler2015 DOI | P1 | 4 | ⏳ 15 min with IEEE Xplore / ScienceDirect | `paper/refs.bib` |
 | B32 | Research R6: keyed DCT-domain block transforms for E5 -- negative result (flips = sign changes, already encrypted) | P3 | 5 | ✅ confirmed on 7 sources | `docs/RESEARCH.md` |
@@ -439,11 +439,11 @@ two restart-interval rows already moved to the repository).
 | Output stays a valid, playable JPEG/MJPEG in every mode | format compliance (4 decoders, 6 modes) | ✅ |
 | Key holder recovers the frame bit-exactly | tests + figure row 3 | ✅ |
 | Encryption adds 0 cycles to the encoder | `benchmark_crypto.py --rtl` | ✅ RTL simulation |
-| Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder and both PYNQ-Z2 systems post-route at 100 MHz (run 6, 17 Oct) · power = vectorless estimate (SAIF flow ready: B37) · ⏳ board |
+| Resources / timing / power on the Zynq-7020 | Vivado | ✅ encoder and both PYNQ-Z2 systems post-route at 100 MHz (runs 6-7; the 2-lane system with E5) · power = SAIF estimate for the encoders (B37), vectorless for the systems · ⏳ board |
 | 1.5 + a/MCU rows cycles per pixel; 65 Mpixel/s at 640x480 and 100 MHz | `stall_profile.py --scaling` (RTL, 5 frame sizes) | ✅ RTL simulation |
 | Lane encoder (contract v3) bit-exact with the model for 1, 2, 4 lanes, all levels, under stalls; same bytes for every lane count | `tb/test_lanes_top.py`, `make xsim-icarus` | ✅ RTL simulation · ✅ XSim in Vivado (runs 5, 6) |
 | 2 lanes 122 Mpixel/s, 4 lanes 176 Mpixel/s at 640x480 and 100 MHz | `experiments/lanes_rtl_throughput.py` | ✅ RTL simulation (no DMA stalls) · ⏳ board |
-| The lane encoder fits the xc7z020 and meets 100 MHz; its LUT/BRAM/DSP | Vivado run 6 (`lanes`, `bd_lanes` steps) | ✅ post-route: 2 lanes 9,869 LUT / 50 BRAM / 46 DSP, 4 lanes 16,573 / 52 / 92 (out of context); 2-lane PYNQ-Z2 system meets 100 MHz · ⏳ 4-lane system not built; whether DDR feeds ~700 MB/s: board |
+| The lane encoder fits the xc7z020 and meets 100 MHz; its LUT/BRAM/DSP | Vivado run 6 (`lanes`, `bd_lanes` steps) | ✅ post-route with E5 (run 7): 2 lanes 10,069 LUT / 50 BRAM / 46 DSP, 4 lanes 16,893 / 52 / 92 (out of context); 2-lane PYNQ-Z2 system with E5 meets 100 MHz; E5 costs +2 % LUT, no BRAM/DSP · ⏳ 4-lane system not built; whether DDR feeds ~700 MB/s: board |
 | Peculiar case 1: a bit flip is caught at the first frame, held-back frames only as jamming (their late return is benign reordering), silenced feedback only by the dead-man rule, with the highest leakage while active | `paper/make_assets.py :: peculiar_cases` on the full-suite runs (`experiments/scenario.py`) | ✅ system simulation, 3 runs (extended paper, Fig. 7) |
 | Peculiar case 2: 6 % packet loss loses ~37 % of frames (fragmentation, 1-(1-p)^n), and the defence still never escalates (5-90 % frame loss = degraded network) | same, on the benign runs | ✅ system simulation, 3 runs (extended paper, Fig. 8) |
 | Faster than the commercial encoders | only as "more Mpixel/s at 100 MHz than logiJPGE reports at 150 MHz" | ✅ throughput only; ❌ never "better" overall (they use less BRAM and no cipher) |

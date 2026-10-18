@@ -3,8 +3,10 @@
 One command runs everything: XSim, post-route numbers, both PYNQ-Z2 overlays and the paper tables.
 Give this file to Claude together with `docs/TEAM_CONTEXT.md` if anything fails.
 
-**Status (17 Oct 2026, run 6): all 20 steps pass, every design meets 100 MHz.** Results in
-`paper/data/vivado/` (the paper is built from them); the history of runs 1-6 is in §6.
+**Status (18 Oct 2026, run 7): all 27 steps pass; the lane encoders and the 2-lane PYNQ-Z2 system now
+include E5 and still meet 100 MHz.** Results in `paper/data/vivado/` (the paper is built from them); the
+history of runs 1-7 is in §6. E5 is only on branch `claude/project-thread-yxa59j` until PR #1 is merged:
+clone or `git checkout` that branch instead of `main`.
 
 ---
 
@@ -88,7 +90,7 @@ Waveforms for the report: `vivado\run_xsim.bat gui`, or `vivado -mode gui -sourc
 
 ---
 
-## 3. Run 6 results (17 Oct 2026)
+## 3. Run 6 results (17 Oct 2026; run 7 with E5 in §6)
 
 Post-route, xc7z020clg400-1, slack at 100 MHz (full table: `paper/data/vivado/vivado_tables.md`):
 
@@ -167,3 +169,4 @@ Commit what the team needs: `future_work/board/overlay/*.bit`, `*.hwh` and repor
 | 4 | 15 Oct | one more converter stage; clock and memory sweeps | superseded by run 5 (which includes it): v2 overlay +0.014 ns, encoder +0.020 ns |
 | 5 | 16-17 Oct | + contract-v3 lane encoder and its overlay | lanes -0.13 ns (zig-zag stage, #27); 90/80 MHz retries stopped on a clock wizard (#28) |
 | 6 | 17 Oct | zig-zag stage split in two, byte-FIFO flag registered, wrapper clock fixed | **20/20 steps pass, everything meets 100 MHz** |
+| 7 | 18 Oct | E5 in the lane encoder (H1); `--steps xsim ooc lanes bd_lanes power parse`, tom's PC, 61 min | **27/27 pass**: 2 lanes 10,069 LUT (+200) +0.359 ns, 4 lanes 16,893 (+320) +0.293 ns, 2-lane system 11,913 (+197) +0.228 ns; E5 bit-exact in XSim; SAIF power 2 lanes 0.318 W (E5) / 0.319 W (E2) |
