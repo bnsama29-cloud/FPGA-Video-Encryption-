@@ -31,6 +31,7 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 | know what is done, what is left, and how to do each remaining task | **[GUIDE.md](GUIDE.md)** |
 | run the Vivado flow (XSim, post-route numbers, PYNQ overlay) | [docs/VIVADO_ONE_DAY.md](docs/VIVADO_ONE_DAY.md) |
 | bring up the PYNQ-Z2: bit-exact on silicon, fps, power, live link with the dashboard | [docs/BOARD_BRINGUP.md](docs/BOARD_BRINGUP.md) |
+| demonstrate the dashboard and MJPEG streams on a LAN / VLC | [docs/DASHBOARD_LAN_DEMO.md](docs/DASHBOARD_LAN_DEMO.md) |
 | what is left for the FPGA (125 MHz, power from simulated activity, board power), with the test that says "done" | [docs/HW_TODO.md](docs/HW_TODO.md) |
 | read or build the conference paper | [paper/README.md](paper/README.md) |
 | see every result table | [paper/data/paper_tables.md](paper/data/paper_tables.md) |

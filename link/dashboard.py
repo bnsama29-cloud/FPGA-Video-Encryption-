@@ -3,6 +3,9 @@
     python -m link.dashboard          (normally started by python -m link.run_all)
     open http://localhost:8000
 
+For trusted-LAN access, start with:
+    python -m link.run_all --set dashboard.bind_host=0.0.0.0
+
 Listens on the telemetry bus (UDP) and serves:
   /                         the dashboard page (link/static/dashboard.html)
   /events                   Server-Sent Events: every telemetry event as JSON
@@ -185,9 +188,12 @@ def main():
     hub = Hub(cfg)
     threading.Thread(target=hub.loop, daemon=True).start()
     port = cfg["dashboard"]["http_port"]
-    srv = QuietServer(("0.0.0.0", port), make_handler(hub))
+    bind_host = cfg["dashboard"]["bind_host"]
+    srv = QuietServer((bind_host, port), make_handler(hub))
     srv.daemon_threads = True
-    print(f"dashboard: http://localhost:{port}   (bus port {cfg['link']['bus'][0]})")
+    print(f"dashboard: http://localhost:{port}   (HTTP bind {bind_host}; bus port {cfg['link']['bus'][0]})")
+    if bind_host == "0.0.0.0":
+        print(f"LAN clients: http://<host-LAN-IP>:{port}")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

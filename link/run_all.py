@@ -2,6 +2,7 @@
 
     python -m link.run_all                         # then open http://localhost:8000
     python -m link.run_all --set sender.policy=bandit --set sender.source=clip.mp4
+    python -m link.run_all --set dashboard.bind_host=0.0.0.0  # trusted-LAN dashboard access
     python -m link.run_all --no-dashboard
 
 Each node is a separate process talking UDP on localhost, exactly as they would

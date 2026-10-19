@@ -82,6 +82,7 @@ DEFAULTS = {
         "w_cost": 0.5,
     },
     "dashboard": {
+        "bind_host": "127.0.0.1",  # loopback by default; set to 0.0.0.0 for trusted-LAN access
         "http_port": 8000,
     },
 }
