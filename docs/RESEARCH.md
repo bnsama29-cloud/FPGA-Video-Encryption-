@@ -324,7 +324,7 @@ the line buffers), 9-11, 12-17.
 ## Reference check (17 Oct 2026): every cited sentence against the full PDF
 
 The team collected the PDFs of all 30 references (`references.zip`, kept outside the repository:
-copyrighted). Every sentence of `paper/main.tex` that carries a `\cite` was checked against the source.
+copyrighted). Every sentence of the paper (then `paper/main.tex`, now `conference.tex` and `access.tex`) that carries a `\cite` was checked against the source.
 
 | Key | What the paper uses it for | Verdict | Change |
 |---|---|---|---|

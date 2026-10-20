@@ -293,3 +293,14 @@ def test_scenario_board_command_matches_the_run_ports():
     for part in ("link.host=10.0.0.5", "link.video_in=47300", "link.fb_out=47303", "link.sender_control=47305",
                  "link.bus=[47310]", "sender.policy=threshold", "future_work.board.board_sender"):
         assert part in cmd, part
+
+
+def test_scenario_board_command_carries_the_demo_key():
+    """A run with a fresh key (scripts/demo_key.py, --set keys.master=...) must print a board command with
+    the same key, or every frame from the board fails its tag; other overrides stay on the laptop."""
+    sys.path.insert(0, str(ROOT / "experiments"))
+    import scenario
+    cmd = scenario.board_command(47300, "threshold", "10.0.0.5",
+                                 extra_sets=["keys.master=0f" * 1 + "e" * 30, "channel.loss=0.05"])
+    assert "--set keys.master=0f" + "e" * 30 in cmd
+    assert "channel.loss" not in cmd

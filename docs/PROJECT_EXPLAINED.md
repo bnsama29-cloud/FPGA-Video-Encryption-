@@ -224,7 +224,7 @@ inputs with random stalls and compares every output with `model/`. `common.py` h
 
 | Folder | In simple words |
 |---|---|
-| `paper/main.tex` | one source for both papers: 6-page conference (`main.pdf`) and IEEE Access (`extended.pdf`) |
+| `paper/conference.tex`, `paper/access.tex` | the 6-page conference paper and the full IEEE Access paper (sections in `paper/sections/`) |
 | `paper/data/` | the frozen results the paper is built from (never edit by hand) |
 | `paper/make_assets.py` | turns `paper/data/` into every table, figure and number in the paper |
 | `docs/INTERFACES.md` | the exact byte formats, register map, nonce layout (contracts v2, v3) |
@@ -277,7 +277,7 @@ inputs with random stalls and compares every output with `model/`. `common.py` h
 | B3, B22 | One page of threat model + nonce argument; E1's status after the U-Net result | 2 (+5) | GUIDE.md §4.3 |
 | B6 | E5 in hardware: ✅ RTL done (H1); rebuild the lane bitstream in Vivado | 1 | `docs/HW_TODO.md` |
 | — | Commit the two `.bit` + `.hwh` pairs so everyone can use the board | 1 | — |
-| — | Paper: author e-mails, order, bios, funding line, AI-assistance statement; the board-results section after A1–A4 | all | `paper/main.tex` (red `TODO`s) |
+| — | Paper: author e-mails, order, bios, funding line, AI-assistance statement; the board-results section after A1–A4 | all | `paper/conference.tex`, `paper/access.tex` (red `TODO`s) |
 
 Nice-to-have (paper future work): a shared Ascon core (B7), Ascon-XOF key derivation (B8), the colour
 converter pipelined for 125 MHz, multiple receivers (B11), masking against power analysis.

@@ -1,0 +1,157 @@
+% Conference version: IEEEtran [conference], 6 pages including references.
+% Build: cd paper && make conference.pdf     (full-length journal version: access.tex)
+% Every number comes from tables/numbers.tex or tables/tab_*.tex (paper/make_assets.py). Never type results.
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\input{common/preamble.tex}
+\usepackage[hidelinks]{hyperref}
+\extendedfalse
+
+\begin{document}
+\title{Playable but Private: In-Encoder Selective Encryption with Ascon-AEAD128 and Attack-Adaptive Protection for MJPEG Video on an FPGA SoC}
+
+\author{
+\IEEEauthorblockN{Aravind R, Suhas V J, Rishab H R, Samarth B N, Vijaysurya B S, Chetana G\,\TODO{order}}
+\IEEEauthorblockA{Department of Electronics and Communication Engineering, RV College of Engineering, Bengaluru, India\\
+\TODO{e-mails}}
+}
+
+\maketitle
+
+\begin{abstract}
+We present a JPEG/MJPEG encoder for a Zynq-7020 FPGA SoC that encrypts the sign and amplitude bits of DCT coefficients while they are entropy-coded, with a keystream from the NIST lightweight standard Ascon-AEAD128. Code lengths do not change, so every protection level is a valid JPEG, and a 128-bit tag over the frame metadata and scan rejects modified, replayed and forged frames. The strongest level hides block positions with a keyed per-frame shuffle of restart segments that needs no frame buffer: the fabric codes and authenticates the segments and the ARM core only reorders them. The register-transfer-level design is bit-exact with a golden model, adds no cycles for encryption, closes timing at \TopMhz\,MHz and reaches \RtlFourLanesMpix\,Mpixel/s with four lanes. On \BenchSources{} sources, four re-implemented published schemes leak \BenchPubMin--\BenchPubMax{} edge correlation under the same attacks, while our shuffle level stays at or below \BenchEfiveMax{}, also against jigsaw solvers and a trained U-Net. An authenticated feedback loop mitigates all \NumAttacks{} modelled network attacks in \TtmMean\,s on average with no false alarms.
+\end{abstract}
+
+\begin{IEEEkeywords}
+selective encryption, MJPEG, Ascon, FPGA, authenticated encryption, video surveillance
+\end{IEEEkeywords}
+
+% =====================================================================================================
+\section{Introduction}
+Cameras on doors, corridors and machines stream over networks they do not control. The viewer needs confidentiality (no bystander watches the scene) and integrity (no frame is edited, replayed or injected). Encrypting the transport with TLS or SRTP~\cite{rfc3711} gives both, but hides the stream from every standard tool and costs cipher work on every byte. Selective encryption instead encrypts the parts of the compressed stream that carry most of the picture and keeps the format~\cite{massoudi2008}: for JPEG, the sign and amplitude bits of DCT coefficients can be changed without changing any code length~\cite{vandroogenbroeck2002,auer2013}. Such schemes are weaker than they look, because the positions of non-zero coefficients stay public~\cite{massoudi2008,lin2024}.
+
+We ask how much of a secure camera link fits into the encoder hardware, and what an eavesdropper still learns. Our contributions are:
+\begin{enumerate}
+\item An MJPEG encoder in Verilog that XORs an Ascon-AEAD128~\cite{sp800232} keystream onto coefficient fields during entropy coding, with zero added cycles, a per-frame tag over metadata and scan, and a lane variant at \RtlFourLanesMpix\,Mpixel/s (Section~\ref{sec:design}).
+\item A hardware form of a keyed macroblock shuffle (E5): the fabric codes one restart segment per macroblock, the processor reorders them, and the tag binds the order.
+\item An evaluation of six protection levels and four published schemes under one benchmark of keyless attacks, including a trained U-Net, on \NumVideoClips{} clips and the Kodak set (Section~\ref{sec:security}).
+\item An authenticated feedback loop with a forward-secure ratchet that raises protection under attack (Section~\ref{sec:protocol}).
+\end{enumerate}
+
+% =====================================================================================================
+\section{Related Work}
+Van Droogenbroeck and Benedett encrypted the appended bits of AC coefficients of baseline JPEG~\cite{vandroogenbroeck2002}; Auer et al.\ permuted and toggled bitstream fields at 25 VGA frames/s~\cite{auer2013}. Massoudi et al.\ warn that visual distortion is not security~\cite{massoudi2008}; Lin et al.\ recover DCT sign bits by linear programming~\cite{lin2024}; Hirose et al.\ show that shuffling blocks delimited by restart markers leaks unless the restart interval is small~\cite{hirose2024}; Li et al.\ recover block shuffles with a chosen plaintext~\cite{li2025shuffle}. In hardware, Kishore et al.\ scrambled blocks and symbols inside an FPGA JPEG encoder at 13--17\,\% more ALUTs~\cite{kishore2015}, and Ba\u{g}baba and \"Ors added TEA encryption of DC and low AC coefficients~\cite{bagbaba2015}; neither authenticates frames, and both use fixed key material. Ascon is small in hardware (7\,kGE for one unrolled round)~\cite{gross2017,ascon}, and has been built on Artix-7 with replay detection~\cite{kurian2025}. Frame sizes of encrypted streams identify the video~\cite{schuster2017}. We found no design that puts a standardized AEAD inside a hardware JPEG encoder, keeps every level playable while authenticating each frame, and closes the loop from receiver to encoder.
+
+% =====================================================================================================
+\section{System Design}\label{sec:design}
+\begin{figure*}[t]
+\centering
+\resizebox{0.92\textwidth}{!}{\input{figures/tikz/arch_system.tex}}
+\caption{System architecture. The fabric (PL) encodes, encrypts and tags; the ARM core (PS) adds headers, reorders E5 segments and runs the key ratchet and policy; the receiver undoes the order, verifies the tag and decrypts, and reports back over an authenticated feedback channel. Shaded red: cryptographic operations.}
+\label{fig:system}
+\end{figure*}
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{\input{figures/tikz/arch_pl.tex}}
+\caption{Fabric datapath of the lane encoder (\texttt{secure\_jpeg\_lanes\_top}); numbers on arrows are bus widths in bits. MCU row $r$ goes to lane $r \bmod L$; every lane restarts DC prediction and its keystream per restart segment; the merger restores raster order and inserts restart markers; the tag unit authenticates the merged scan.}
+\label{fig:pl}
+\end{figure*}
+
+\textit{Threat model.} The attacker on the network path observes all traffic and may modify, drop, delay, replay or inject video and feedback datagrams; it holds no key. Sender and receiver share a master key $K_{\mathrm{m}}$ provisioned at installation; key distribution, physical and side-channel attacks are out of scope.
+
+\textit{Encryption inside the entropy coder.} For a quantized coefficient $v \neq 0$ JPEG writes a Huffman code for (run, $s$), $s = \lfloor \log_2 |v| \rfloor + 1$, followed by the $s$-bit field
+\begin{equation}
+\amp(v) = \begin{cases} v, & v > 0\\ v + 2^s - 1, & v < 0~.\end{cases}
+\end{equation}
+Given keystream bits $z_0 z_1 \ldots$, a selected symbol is encrypted as
+\begin{equation}
+\amp' = \amp \xor z_0 (2^s - 1) \xor \alpha \textstyle\sum_{k=1}^{s-1} z_k 2^{k-1},
+\label{eq:enc}
+\end{equation}
+where $\alpha = 1$ if amplitudes are selected. Since $\amp(v) \xor (2^s - 1) = \amp(-v)$, the first term is exactly a sign change; the second changes only the $s-1$ low bits, so $|v|$ stays in $[2^{s-1}, 2^s - 1]$. Hence $s$, the Huffman code and the stream length never change, and the output is a valid JPEG for any key. Fig.~\ref{fig:circuit} shows the gate-level circuit; it consumes $n = [\text{sign}] + \alpha (s - 1) \le 11$ bits per symbol in one clock from a 16-bit window, while the Ascon core delivers 128 bits every 9 cycles, so the cipher never stalls the encoder.
+
+\begin{figure*}[t]
+\centering
+\resizebox{0.86\textwidth}{!}{\input{figures/tikz/circuit_selenc.tex}}
+\caption{Gate-level logic of the selective-encryption stage (\texttt{selective\_enc.v}): mode decoding, the enables, one of the 11 bit slices that implement~\eqref{eq:enc}, and the valid/ready handshake that takes $n$ keystream bits per symbol.}
+\label{fig:circuit}
+\end{figure*}
+
+\textit{Keys, nonces and tag.} The video key follows a one-way ratchet, $K_{e+1} = \KDF(K_e, \text{ratchet}, e{+}1)$, with $\KDF$ the Ascon tag under a reserved nonce; a separate key $\Kfb$ protects feedback. The 128-bit nonce is $N(\sigma, t, b) = \sigma \cat t \cat b$: a 64-bit session identifier $\sigma$ (48 random bits per boot and a 16-bit epoch), a 63-bit frame counter $t$ and a purpose bit $b$. Each frame derives a segment key and authenticates its scan:
+\begin{align}
+\Kseg &= \MAC_{K_e}\bigl(N(\sigma, t, 0), \text{``lanes''}\bigr),\\
+Z_s &= \Enc_{\Kseg}\bigl(N(s, t, 0), 0^\ell\bigr),\\
+T_t &= \MAC_{K_e}\bigl(N(\sigma, t, 1), P_t \cat \text{scan}_t\bigr),
+\end{align}
+where $Z_s$ is the keystream of restart segment $s$ and $P_t$ is a 26-byte prefix (version, level, $\sigma$, $t$, width, height). Binding the level stops downgrades; $(K, N)$ never repeats because $t$ increases, a rekey changes $K_e$ and $\sigma$, and two boots share $\sigma$ with probability $2^{-48}$ per pair.
+
+\textit{Protection levels.} E0 only tags; E1 encrypts AC signs, E2 also DC signs (the default floor), E3 AC amplitudes, E4 DC amplitudes. Huffman symbols reveal where non-zero coefficients are, so E1--E4 leak outlines. E5 encrypts like E4 and sends the $M$ macroblocks in a keyed order $\pi_t$ (Fig.~\ref{fig:e5}): Fisher--Yates with rejection sampling on the keystream of $(K_\pi, N(\sigma, t, 0))$ yields a uniform permutation, $\log_2 M! = \PermBitsQVGA$ bits at 320$\times$240 ($M = \McuQVGA$), new in every frame. Each macroblock is a restart segment, so the fabric needs no frame buffer; the ARM only reorders segments and the receiver restores raster order before checking $T_t$, so a moved segment fails the tag.
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{\input{figures/tikz/e5_flow.tex}}
+\caption{E5 in hardware form: raster-order segments from the fabric, keyed order on the wire, raster order again before the tag check.}
+\label{fig:e5}
+\end{figure}
+
+\textit{Lanes.} One pipeline takes one sample per clock and 4:2:0 has 1.5 samples per pixel; a 64-bit input brings two pixels per clock. With $L$ lanes the cost per pixel is therefore bounded by
+\begin{equation}
+c_L \ge \max\!\left(\tfrac{1.5}{L}, \tfrac{1}{2}\right)\ \text{cycles/pixel},\qquad \Theta_L = f_{\mathrm{clk}} / c_L,
+\end{equation}
+i.e.\ at most \BoundOneMpix, \BoundTwoMpix{} and \BoundFourMpix\,Mpixel/s for $L = 1, 2, 4$ at 100\,MHz. Restart segments make lanes independent (Fig.~\ref{fig:pl}); the bytes do not depend on $L$.
+
+\textit{Feedback and policy.} The receiver checks a 64-frame replay window and returns authenticated heartbeats and alerts. Missing heartbeats for 3\,s raise the top level and rekey (dead-man rule). A threshold policy escalates on tag failures, replays, loss patterns and forged feedback; a contextual bandit is the alternative.
+
+% =====================================================================================================
+\section{Implementation and Verification}\label{sec:impl}
+A Python golden model passes all 1089 Ascon-AEAD128 known-answer tests; every RTL block has a cocotb testbench with random back-pressure that reports the first mismatch, and the encoders are byte-exact with the model in Icarus and Vivado XSim, for one, two and four lanes and all six levels. Encryption costs no cycles (E0--E4 differ by at most \MaxExtraCycles{} cycles per frame); cycles per pixel follow $1.5 + \FillA/r$ for $r$ MCU rows, \CppVGA{} at 640$\times$480. After place and route the encoder meets \TopMhz\,MHz (WNS $+$\TopWns\,ns): \TopMpix\,Mpixel/s, \FpsVGA{} frames/s at VGA, \TopLuts{} LUTs and about \SaifTopMw\,mW with simulated switching activity (Table~\ref{tab:resources}). Two and four lanes reach \RtlTwoLanesMpix{} and \RtlFourLanesMpix\,Mpixel/s in RTL simulation and close 100\,MHz; E5 costs no BRAM, and with two lanes it draws \SaifLanesEfiveMw\,mW against \SaifLanesEtwoMw\,mW for E2. Both PYNQ-Z2 systems (Zynq PS, AXI DMA, encoder) close timing. Each Ascon core takes \AsconLutMin--\AsconLutMax{} LUTs (Table~\ref{tab:compare}).
+
+\input{tables/tab_resources.tex}
+\input{tables/tab_compare.tex}
+
+% =====================================================================================================
+\section{Security Evaluation}\label{sec:security}
+\textit{Setup.} We score what a keyless observer can reconstruct: the stream decoded as is, and a \emph{replacement attack} that substitutes fixed guesses for encrypted values. Leakage is the Pearson correlation of Sobel gradient magnitudes with the original (edge correlation, 0: no outline). Sources: a synthetic scene, \NumClips{} private clips, \NumOpenClips{} Blender films and the 24 Kodak images. All levels decode without error in \Decoders.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{figures/fig_visual_grid.pdf}
+\caption{One frame of the Sintel trailer (\copyright{} Blender Foundation, CC~BY~3.0). Top: any viewer without the key. Middle: the eavesdropper's best picture with its edge correlation (E5: after the jigsaw solver). Bottom: the key holder, bit-exact.}
+\label{fig:grid}
+\end{figure*}
+
+\textit{Outline leakage.} Under E1--E4 the eavesdropper sees the scene's outline (edge correlation \LeakEOneFourMin--\LeakEOneFourMax, Table~\ref{tab:leakage}, Fig.~\ref{fig:grid}); encrypting amplitudes does not help, because positions and sizes stay public. E5 removes it (\LeakEFiveMin{} to \LeakEFiveMax) for \CostEfive\,\% encrypted bits, against \CostEfour\,\% for E4, at \OverheadEfiveQVGA--\OverheadEfiveVGA\,\% more bytes for the restart markers.
+
+\input{tables/tab_leakage.tex}
+
+\textit{Benchmark against published schemes.} We re-implemented four format-compliant schemes~\cite{vandroogenbroeck2002,kishore2015,auer2013,hirose2024} with our keystream and scored all schemes under four attacks on \BenchFrames{} frames of \BenchSources{} sources (Fig.~\ref{fig:bench}): A1 decoding, A2 replacement, A3 non-zero counting (NZCA, \cite{hirose2024}) and A4, which recovers the permutation and keystream bits from one known frame and applies them to the next frames. Every published scheme leaks \BenchPubMin--\BenchPubMax{} under its worst attack; fixed key material falls to A4, including Hirose et al.\ with one block per segment (\BenchHiroseOneCross), although it costs as many bytes as E5. E5, keyed anew per frame, stays at or below \BenchEfiveMax{} in both its model and hardware form.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_bench.pdf}
+\caption{SVE-Bench: edge correlation under each attack, pooled over \BenchSources{} sources (byte cost over plain JPEG in brackets when above 2\,\%).}
+\label{fig:bench}
+\end{figure}
+
+\textit{Stronger attackers.} Greedy and minimum-spanning-tree jigsaw solvers~\cite{pomeranz2011,gallagher2012} place at most \JigsawNeighboursMax{} and \MstNbMax\,\% of E5 neighbours (chance), and one frame's exact permutation places \CpaPlacedEfive\,\% of the next frame's tiles~\cite{li2025shuffle}. The linear program of Lin et al.\ recovers \SrEoneSigns\,\% of E1's signs and \SrEtwoSigns\,\% of E2's (chance 50\,\%). A U-Net~\cite{unet} trained on \LearnBigTrain{} frames and tested on unseen sources breaks E1 (edge \LearnEoneEdge, SSIM \LearnEoneSsim) but learns only brightness and colour under E5 (SSIM \LearnEfiveSsimBig{} against \CtrlTrueSsim{} for a frame-statistics oracle; edge \LearnEfiveEdgeBig, Table~\ref{tab:learned}).
+
+\input{tables/tab_learned.tex}
+
+% =====================================================================================================
+\section{Protocol and Defence Evaluation}\label{sec:protocol}
+Sender, network channel with attacker and receiver run as separate processes over UDP (320$\times$240, 10 frames/s). Eleven attacks run 25\,s apart: scan bit flips, mode downgrade, splicing, injection, replay, delay, dropping, junk flood, and dropping, forging or replaying feedback. Over \SuiteRuns{} runs all were mitigated, on average \TtmMean{}\,$\pm$\,\TtmSd\,s after they began, with \SuiteFalse{} false alarms (Table~\ref{tab:attacks}); integrity attacks are caught at the first frame, attacks by absence only by timeouts (dropped feedback, \FbDropTtm\,s). Benign loss up to 6\,\%, delay and reordering raised no alarm (\BenignFalse{} windows). The bandit encrypts \PolCostSave\,\% fewer bits than the threshold rule but reacts later (\PolTtmB{} against \PolTtmT\,s).
+
+\input{tables/tab_attacks.tex}
+
+% =====================================================================================================
+\section{Limitations and Conclusion}
+Board measurements (frame rate with DMA, power, ARM baseline) are pending \TODO{PYNQ-Z2 results, GUIDE.md A1--A4}; our power figures come from simulated switching activity. No level hides frame sizes: ten sizes identify one of \FpVideos{} videos \FpEtwoTen\,\% of the time under E2 (\FpEfiveTen\,\% under E5), and only constant-size frames prevent it, at up to $+$\PadFilmMax\,\% bytes on edited clips. Our attackers are greedy or trained on few clips.
+
+Encrypting coefficient fields with Ascon inside a JPEG encoder costs no cycles, keeps every level playable and, with a per-frame tag, turns MJPEG into an authenticated stream. Published format-compliant schemes fall to non-zero counting or one known frame; a per-frame keyed shuffle of restart segments, built in hardware without a frame buffer, does not.
+
+\section*{Acknowledgment}
+We thank Dr.~Chetana~G for her guidance. \TODO{AI-assistance disclosure as required by the conference.}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+\end{document}

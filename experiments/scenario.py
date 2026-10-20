@@ -36,11 +36,13 @@ from link.buslog import BusLogger           # noqa: E402
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
-def board_command(base_port, policy, laptop="<LAPTOP IP>"):
-    """The board_sender command whose ports match a scenario run on base_port (GUIDE.md A6)."""
+def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=()):
+    """The board_sender command whose ports match a scenario run on base_port (GUIDE.md A6). Settings that
+    both ends must share (the pre-shared key, keys.*) are passed on, or every frame would fail its tag."""
     ports = [f"link.host={laptop}", "link.bind_host=0.0.0.0", f"link.video_in={base_port}",
              f"link.fb_out={base_port + 3}", f"link.sender_control={base_port + 5}",
              f"link.bus=[{base_port + 10}]", f"sender.policy={policy}"]
+    ports += [x for x in extra_sets if x.startswith("keys.")]
     return ("python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes.bit "
             + " ".join(f"--set {x}" for x in ports))
 
@@ -73,7 +75,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
              for n in nodes]
     if external_sender:
         print("\nStart the sender on the board now (same ports as this run):\n  "
-              + board_command(base_port, policy) + "\nWaiting for the board's first report ...", flush=True)
+              + board_command(base_port, policy, extra_sets=extra_sets) + "\nWaiting for the board's first report ...", flush=True)
         t_wait = time.time()
         while not log.take("window", "sender"):
             if time.time() - t_wait > wait_s:
