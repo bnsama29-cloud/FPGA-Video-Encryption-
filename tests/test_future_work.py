@@ -148,6 +148,39 @@ def test_block_design_wrapper_compiles(tmp_path):
     assert r.returncode == 0, r.stderr
 
 
+def test_block_design_connects_both_dma_masters_to_ddr():
+    """Bug #32: the second AXI automation call targeted ps7/S_AXI_HP0, which the first call had already
+    connected, so M_AXI_S2MM stayed unconnected; on the board the receive DMA never wrote and hung."""
+    tcl = (ROOT / "future_work" / "board" / "block_design.tcl").read_text()
+    calls = [l.split() for l in tcl.splitlines() if l.startswith("axi_auto ")]
+    targets = [c[3] for c in calls]
+    assert len(targets) == len(set(targets)), f"two automation calls share a target: {targets}"
+    assert "dma/M_AXI_S2MM" in targets or "dma/M_AXI_MM2S" in targets
+    assert all(f"dma/Data_{ch}" in tcl for ch in ("MM2S", "S2MM")), "the address-segment guard is missing"
+
+
+def test_pynq_backend_dma_wait_times_out_instead_of_hanging():
+    """Bug #32: pynq's channel.wait() blocks forever when a DMA never finishes."""
+    from future_work.board import pynq_driver as pd
+
+    class Channel:
+        def __init__(self, idle):
+            self.idle = idle
+
+        def wait(self):
+            pass
+
+    class Regs:
+        def read(self, addr):
+            return 0
+
+    b = object.__new__(pd.PynqBackend)
+    b.ip, b.dma = Regs(), Regs()
+    b._wait(Channel(True), "send", 0.05)                       # finished: returns
+    with pytest.raises(TimeoutError, match="receive"):
+        b._wait(Channel(False), "receive", 0.05)
+
+
 def test_learned_attack_cache_depends_on_the_source():
     """Bug #13: the cache name ignored the video, so a second run reused the first run's frames."""
     pytest.importorskip("torch")

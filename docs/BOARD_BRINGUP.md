@@ -220,6 +220,8 @@ E5), which is why E5 in hardware (GUIDE.md B6) is the next security step.
 |---|---|
 | `Overlay(...)` fails to load | `.bit` and `.hwh` not side by side with the same base name; or run as root (§3) |
 | `VERSION register reads ...` | the IP or DMA was not found by name: `python3 -c "from pynq import Overlay; print(Overlay('future_work/board/overlay/secure_jpeg.bit').ip_dict.keys())"`, then pass `--ip-name` / `--dma-name` to `first_contact` |
+| `TimeoutError: DMA receive (S2MM, scan out) not finished` (older drivers: hangs in `recvchannel.wait()`) | a bitstream built before bug #32 (20 Oct 2026): the DMA's write master was not connected to DDR. Rebuild the overlay with the current `block_design.tcl` (`py vivado\run_vivado_day.py --steps bd_lanes --jobs 2`) |
+| `RuntimeError: No Devices Found` / `is the XRT environment sourced?` | root without a login shell (`sudo bash -c ...`): use `sudo -i` (or `source /etc/profile.d/xrt_setup.sh` as well as `pynq_venv.sh`) |
 | `TimeoutError: STATUS.DONE never set` | DMA lengths, FCLK0 not running, reset polarity, `tlast`. Try 64x48 first (`--sizes 64x48`) |
 | Bytes differ at a small offset | header or registers: quality tables, the HI words of session id / frame counter |
 | Bytes differ deep in the scan | pixel word order `{pad, B, G, R}`, or a real data-path difference: rerun XSim on the same frame |

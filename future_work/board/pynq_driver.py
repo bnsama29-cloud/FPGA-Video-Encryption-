@@ -175,14 +175,26 @@ class PynqBackend:
     def read(self, addr):
         return self.ip.read(addr)
 
-    def transfer(self, words):
+    def _wait(self, channel, name, timeout_s):
+        """pynq's channel.wait() has no timeout: a DMA that never finishes hung the first board run
+        silently (bug #32). Poll `idle` instead and fail with the registers that say why."""
+        t0 = time.monotonic()
+        while not channel.idle:
+            if time.monotonic() - t0 > timeout_s:
+                raise TimeoutError(
+                    f"DMA {name} not finished after {timeout_s} s: STATUS=0x{self.read(STATUS):x} "
+                    f"OUT_BYTES={self.read(OUT_BYTES)} MM2S_SR=0x{self.dma.read(0x04):08x} "
+                    f"S2MM_SR=0x{self.dma.read(0x34):08x} (see docs/BOARD_BRINGUP.md section 9)")
+        channel.wait()                                             # idle: returns at once, raises on DMA errors
+
+    def transfer(self, words, timeout_s=2.0):
         n = len(words)
         self.inbuf[:n] = words
         self.inbuf.flush()
         self.dma.recvchannel.transfer(self.outbuf)                 # receive first
         self.dma.sendchannel.transfer(self.inbuf[:n])
-        self.dma.sendchannel.wait()
-        self.dma.recvchannel.wait()
+        self._wait(self.dma.sendchannel, "send (MM2S, pixels in)", timeout_s)
+        self._wait(self.dma.recvchannel, "receive (S2MM, scan out)", timeout_s)
         nbytes = self.read(OUT_BYTES)
         self.outbuf.invalidate()
         return self.outbuf.view(np.uint8)[:nbytes].tobytes()

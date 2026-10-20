@@ -312,6 +312,8 @@ then the power switch. Pulling power while Linux writes can corrupt the SD card.
 | `ModuleNotFoundError: pynq` | forgot `source /etc/profile.d/pynq_venv.sh` (and `sudo -i` before it) |
 | `Overlay(...)` fails / `.hwh` not found | `.bit` and `.hwh` not side by side with the **same base name** |
 | `VERSION register reads 0x…` or IP not found | names in the block design differ: `python3 -c "from pynq import Overlay; print(Overlay('future_work/board/overlay/secure_jpeg_lanes.bit').ip_dict.keys())"`, then pass `--ip-name` / `--dma-name` |
+| `TimeoutError: DMA receive (S2MM, scan out) not finished` (older drivers: hangs in `recvchannel.wait()`) | a bitstream built before bug #32 (20 Oct 2026): the DMA's write master was not connected to DDR. Rebuild the overlay with the current `block_design.tcl` (`py vivado\run_vivado_day.py --steps bd_lanes --jobs 2`) |
+| `RuntimeError: No Devices Found` / `is the XRT environment sourced?` | root without a login shell (`sudo bash -c ...`): use `sudo -i` (or `source /etc/profile.d/xrt_setup.sh` as well as `pynq_venv.sh`) |
 | `TimeoutError: STATUS.DONE never set` | DMA lengths, `tlast`, clock or reset → try `--sizes 64x48` first; paste the first error into Claude with `docs/TEAM_CONTEXT.md` |
 | bytes differ at a small offset | header or registers: quality tables, the HI words of session id / frame counter |
 | bytes differ deep in the scan | pixel word order `{pad, B, G, R}` or a real datapath difference → rerun XSim on the same frame (`docs/VIVADO_ONE_DAY.md`) |
