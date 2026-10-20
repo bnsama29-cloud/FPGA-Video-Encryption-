@@ -1,0 +1,107 @@
+{
+ "backend": "pynq",
+ "bitfile": "future_work/board/overlay/secure_jpeg_lanes.bit",
+ "all_bit_exact": true,
+ "exactness": [
+  {
+   "size": "64x48",
+   "mode": 0,
+   "frames": 1,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "64x48",
+   "mode": 1,
+   "frames": 1,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "64x48",
+   "mode": 2,
+   "frames": 1,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "64x48",
+   "mode": 3,
+   "frames": 1,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "64x48",
+   "mode": 4,
+   "frames": 1,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "64x48",
+   "mode": 5,
+   "frames": 1,
+   "bit_exact": true,
+   "first_mismatch": null
+  }
+ ],
+ "speed": [
+  {
+   "size": "64x48",
+   "mode": 0,
+   "frames": 2,
+   "encode_ms": 3.22,
+   "encode_fps": 310.1,
+   "full_ms": 4.66,
+   "full_fps": 214.8
+  },
+  {
+   "size": "64x48",
+   "mode": 1,
+   "frames": 2,
+   "encode_ms": 3.37,
+   "encode_fps": 296.8,
+   "full_ms": 4.79,
+   "full_fps": 208.8
+  },
+  {
+   "size": "64x48",
+   "mode": 2,
+   "frames": 2,
+   "encode_ms": 3.26,
+   "encode_fps": 306.4,
+   "full_ms": 4.68,
+   "full_fps": 213.6
+  },
+  {
+   "size": "64x48",
+   "mode": 3,
+   "frames": 2,
+   "encode_ms": 3.34,
+   "encode_fps": 299.4,
+   "full_ms": 4.76,
+   "full_fps": 209.9
+  },
+  {
+   "size": "64x48",
+   "mode": 4,
+   "frames": 2,
+   "encode_ms": 3.28,
+   "encode_fps": 304.9,
+   "full_ms": 4.7,
+   "full_fps": 212.8
+  },
+  {
+   "size": "64x48",
+   "mode": 5,
+   "frames": 2,
+   "encode_ms": 3.39,
+   "encode_fps": 295.2,
+   "full_ms": 5.69,
+   "full_fps": 175.7
+  }
+ ],
+ "source": "synthetic",
+ "quality": 75
+}
