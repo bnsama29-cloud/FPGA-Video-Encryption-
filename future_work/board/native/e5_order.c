@@ -69,3 +69,32 @@ void e5_order(const uint8_t key[16], const uint8_t nonce[16], int32_t n, int32_t
         int32_t t = order[i]; order[i] = order[j]; order[j] = t;
     }
 }
+
+/* The whole ARM step of E5 in one call (21 Oct 2026, board speed-up): split the raster-order scan at
+ * its RSTm markers exactly like model/hw.py :: split_segments (an 0xFF followed by 0xD0..0xD7; a
+ * stuffed 0xFF00 is not a marker), draw the keyed order, and write the segments in that order with
+ * the markers renumbered RST((p-1) mod 8). `out` has room for `len` bytes (the length does not
+ * change). Returns the number of segments, or -1 if there are more than `maxseg`. */
+int32_t e5_shuffle(const uint8_t key[16], const uint8_t nonce[16], const uint8_t *scan, int32_t len,
+                   uint8_t *out, int32_t *starts, int32_t *lens, int32_t *order, int32_t maxseg) {
+    int32_t n = 0, start = 0, j = 0;
+    while (j < len - 1) {
+        if (scan[j] == 0xFF && scan[j + 1] >= 0xD0 && scan[j + 1] <= 0xD7) {
+            if (n == maxseg) return -1;
+            starts[n] = start; lens[n] = j - start; n++;
+            start = j + 2; j += 2;
+        } else {
+            j++;
+        }
+    }
+    if (n == maxseg) return -1;
+    starts[n] = start; lens[n] = len - start; n++;
+    e5_order(key, nonce, n, order);
+    int32_t o = 0;
+    for (int32_t p = 0; p < n; p++) {
+        if (p) { out[o++] = 0xFF; out[o++] = (uint8_t)(0xD0 + (p - 1) % 8); }
+        const uint8_t *s = scan + starts[order[p]];
+        for (int32_t b = 0; b < lens[order[p]]; b++) out[o++] = s[b];
+    }
+    return n;
+}

@@ -35,6 +35,10 @@ def _load():
         lib = ctypes.CDLL(str(so))
         lib.e5_order.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int32, ctypes.POINTER(ctypes.c_int32)]
         lib.e5_order.restype = None
+        i32p = ctypes.POINTER(ctypes.c_int32)
+        lib.e5_shuffle.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int32,
+                                   ctypes.c_char_p, i32p, i32p, i32p, ctypes.c_int32]
+        lib.e5_shuffle.restype = ctypes.c_int32
         _lib = lib
     except Exception:
         _lib = False                                   # no compiler: use the model
@@ -49,9 +53,7 @@ def e5_order(key, session_id, frame_ctr, n):
     lib = _load()
     if lib is None:
         return hw.e5_order(key, session_id, frame_ctr, n)
-    sk = _shuffle_keys.get(key)
-    if sk is None:
-        sk = _shuffle_keys[key] = hw.shuffle_key(key)   # one Ascon MAC per key, not per frame
+    sk = _shuffle_key(key)                             # one Ascon MAC per key, not per frame
     out = (ctypes.c_int32 * n)()
     lib.e5_order(sk, ascon.make_nonce(session_id, frame_ctr, 0), n, out)
     return list(out)
@@ -73,9 +75,26 @@ def split_segments(scan):
     return out
 
 
+def _shuffle_key(key):
+    sk = _shuffle_keys.get(key)
+    if sk is None:
+        sk = _shuffle_keys[key] = hw.shuffle_key(key)
+    return sk
+
+
 def arm_shuffle(jpeg, key, session_id, frame_ctr):
-    """Byte-identical to model/hw.py :: arm_shuffle."""
+    """Byte-identical to model/hw.py :: arm_shuffle. With the C library, split + order + reassembly run
+    in one native call (e5_shuffle); otherwise the Python path below."""
     head, scan = hw.split_scan(jpeg)
+    lib = _load()
+    if lib is not None:
+        maxseg = len(scan) // 2 + 1                       # a segment is at least the 2-byte marker apart
+        out = ctypes.create_string_buffer(len(scan))
+        arr = ctypes.c_int32 * maxseg
+        n = lib.e5_shuffle(_shuffle_key(key), ascon.make_nonce(session_id, frame_ctr, 0), scan, len(scan),
+                           out, arr(), arr(), arr(), maxseg)
+        if n > 0:
+            return head + out.raw + b"\xFF\xD9"
     segs = split_segments(scan)
     order = e5_order(key, session_id, frame_ctr, len(segs))
     rst = hw.RST_MARKERS

@@ -29,6 +29,7 @@ from model.testimage import make_image
 CTRL, STATUS, VERSION = 0x00, 0x04, 0x08
 WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
+CYCLES, IN_WAIT, OUT_STALL = 0x54, 0x58, 0x5C          # performance counters (axil_regs.v)
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
 E5_CAP = 0x80                  # VERSION bit 7: the RTL implements mode 5 (docs/INTERFACES.md §8.6)
 OUT_DIR = ROOT / "sim_out"
@@ -218,6 +219,9 @@ async def back_to_back_with_stalls(dut):
         jpgs.append((await check_frame(dut, enc, make_image(w, h, kind, seed=ctr), quality, mode,
                                        ctr, key, sid, rx, f"b2b_{w}x{h}_{kind}"))[0])
     assert rx.process(jpgs[-1])[0] == "replay"
+    # with random pauses on both DMA streams the performance counters must see them
+    in_wait, out_stall = await enc.rd(IN_WAIT), await enc.rd(OUT_STALL)
+    assert in_wait > 0 and out_stall > 0, f"IN_WAIT={in_wait} OUT_STALL={out_stall} under random stalls"
     bad = bytearray(jpgs[1]); bad[-10] ^= 0x04
     assert J.Receiver(key, sid).process(bytes(bad))[0] == "tag-mismatch"
     # the version byte is authenticated: a v3 frame relabelled as v2 must fail
@@ -244,7 +248,12 @@ async def throughput(dut):
     model = J.encode_frame_v3(img, quality, mode, key, 1, sid)
     assert scan == model["scan"] and tag == model["tag"], "throughput frame not bit-exact"
     cpp = clocks / (w * h)
+    # the hardware's own cycle counter (what the board reports) must equal the testbench's count
+    hw_cycles, in_wait, out_stall = await enc.rd(CYCLES), await enc.rd(IN_WAIT), await enc.rd(OUT_STALL)
+    assert abs(hw_cycles - clocks) <= 1, f"CYCLES register {hw_cycles} != {clocks} clocks counted by the testbench"
+    assert in_wait < hw_cycles and out_stall < hw_cycles
     res = dict(lanes=lanes_of(dut), mode=mode, width=w, height=h, clocks=clocks, clocks_per_pixel=cpp,
+               hw_cycles=hw_cycles, in_wait=in_wait, out_stall=out_stall,
                mpx_per_s_at_100mhz=100 / cpp, scan_bytes=len(scan),
                latency_clocks=enc.latency, latency_lines=(enc.latency / (w / 2)) if enc.latency else None,
                measured_from="internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate")

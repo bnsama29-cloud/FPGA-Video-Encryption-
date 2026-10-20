@@ -78,7 +78,8 @@ module secure_jpeg_top #(
         .start(start), .mode(mode), .width(width), .height(height),
         .frame_ctr(frame_ctr), .session_id(session_id), .key(key),
         .qt_we(qt_we), .qt_addr(qt_addr), .qt_data(qt_data),
-        .done(done), .busy(busy), .tag_valid(tag_valid), .out_bytes(out_bytes), .tag(tag));
+        .done(done), .busy(busy), .tag_valid(tag_valid), .out_bytes(out_bytes), .tag(tag),
+        .in_wait(busy && s_axis_tready && !s_axis_tvalid), .out_stall(m_axis_tvalid && !m_axis_tready));
 
     wire prst = rst | start;                  // pipeline stages restart per frame
     reg  [2:0] mode_l;                        // mode latched for the whole frame

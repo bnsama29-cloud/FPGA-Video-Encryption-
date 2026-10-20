@@ -97,5 +97,52 @@ async def ascon_random_vs_model(dut):
         assert got == ascon.encrypt(key, nonce, ad, pt)
 
 
+@cocotb.test()
+async def ascon_block_rate(dut):
+    """Throughput: plaintext blocks offered every clock; clocks per 128-bit block once running (the figure
+    behind the Gbps of the core, paper/make_assets.py). Writes sim_out/ascon_rate/ascon_rate.json."""
+    import json
+    rng = rng_for(dut)
+    dut.init.value = 0
+    dut.blk_valid.value = 0
+    await start(dut)
+    key = bytes(rng.randrange(256) for _ in range(16))
+    nonce = bytes(rng.randrange(256) for _ in range(16))
+    pt = bytes(rng.randrange(256) for _ in range(16 * 64))
+    dut.key.value = int.from_bytes(key, "little")
+    dut.nonce.value = int.from_bytes(nonce, "little")
+    dut.init.value = 1
+    await RisingEdge(dut.clk)
+    dut.init.value = 0
+    accepts, ct, clk = [], bytearray(), 0
+    dut.blk_bytes.value, dut.blk_type.value, dut.blk_last.value = 16, 1, 0
+    i = 0
+    while i < 64 and clk < 5000:
+        dut.blk_data.value = int.from_bytes(pt[16 * i:16 * i + 16], "little")
+        dut.blk_valid.value = 1
+        await RisingEdge(dut.clk)
+        clk += 1
+        if int(dut.blk_ready.value):
+            accepts.append(clk)
+            i += 1
+        if int(dut.ct_valid.value):
+            ct += int(dut.ct_data.value).to_bytes(16, "little")
+    dut.blk_valid.value = 0
+    for _ in range(20):
+        await RisingEdge(dut.clk)
+        if int(dut.ct_valid.value):
+            ct += int(dut.ct_data.value).to_bytes(16, "little")
+    exp = ascon.encrypt(key, nonce, b"", pt + b"")[:len(pt)]          # full blocks: CT does not depend on the end
+    assert bytes(ct[:len(pt)]) == exp, "keystream of the throughput run differs from the model"
+    gaps = [b - a for a, b in zip(accepts, accepts[1:])]
+    cpb = sum(gaps) / len(gaps)
+    assert max(gaps) == min(gaps), f"irregular block rate {sorted(set(gaps))}"
+    out = ROOT / "sim_out" / "ascon_rate"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "ascon_rate.json").write_text(json.dumps(dict(cycles_per_block=cpb, block_bits=128, blocks=len(accepts),
+                                                         init_cycles=accepts[0]), indent=1))
+    dut._log.info("Ascon core: %.1f clocks per 128-bit block (first block accepted after %d)", cpb, accepts[0])
+
+
 def test_ascon_core():
     run_sim("ascon_aead128_core", "test_ascon_core")

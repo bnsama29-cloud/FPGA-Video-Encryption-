@@ -13,7 +13,7 @@
 // 1.5 samples per pixel, so a lane needs 1.5 clocks per pixel. With 1 pixel per clock in, the
 // input alone would cap the whole encoder at 1 clock per pixel however many lanes there are
 // (experiments/parallel_lanes.py, R2). Two pixels per clock lets two lanes reach 0.75 clocks/pixel.
-// Same pipeline as rgb2ycbcr_block.v (bug #20: D1 -> C multiply-add -> D2 clamp -> buffer write),
+// Same pipeline as rgb2ycbcr_block.v (bug #20: D1 -> C multiply-add -> D2 clamp -> D3 buffer write),
 // duplicated for the two pixels. The Y line buffer is split into an even-x and an odd-x bank so
 // both pixels are written in one clock; the chroma pair (x, x+1) arrives in the same beat, so the
 // horizontal sum needs no "previous pixel" register.
@@ -42,7 +42,14 @@ module rgb2ycbcr_2px #(
     localparam LH = LOG_MAXW - 1;            // bits of x/2
 
     // ------------------------------------------------------------ write pipeline
-    reg              d1_v, c_v, d2_v;
+    // D3 (21 Oct 2026, for 125 MHz): pair sums and row-sum reads registered, all buffer writes one clock
+    // later (same order, same contents; a row sum is read one line after it is written).
+    reg              d1_v, c_v, d2_v, d3_v;
+    reg              d3_sel, d3_last;
+    reg [3:0]        d3_y;
+    reg [LH-1:0]     d3_x;
+    reg [7:0]        d3_y0, d3_y1;
+    reg [9:0]        d3_cbp, d3_crp, d3_cbs, d3_crs;
     reg [23:0]       d1_rgb0, d1_rgb1;
     reg              d1_sel, c_sel, d2_sel, d1_last, c_last, d2_last;
     reg [3:0]        d1_y, c_y, d2_y;
@@ -91,8 +98,8 @@ module rgb2ycbcr_2px #(
 
     wire [9:0] cb_pair = d2_cb0 + d2_cb1;
     wire [9:0] cr_pair = d2_cr0 + d2_cr1;
-    wire [9:0] cb_avg  = (cbsum[d2_x] + cb_pair + 10'd2) >> 2;
-    wire [9:0] cr_avg  = (crsum[d2_x] + cr_pair + 10'd2) >> 2;
+    wire [9:0] cb_avg  = (d3_cbs + d3_cbp + 10'd2) >> 2;
+    wire [9:0] cr_avg  = (d3_crs + d3_crp + 10'd2) >> 2;
 
     always @(posedge clk) begin
         d1_rgb0 <= s_data[23:0]; d1_rgb1 <= s_data[55:32];
@@ -103,14 +110,16 @@ module rgb2ycbcr_2px #(
         d2_y0 <= sat8(c_yt0); d2_cb0 <= sat8(c_cbt0); d2_cr0 <= sat8(c_crt0);
         d2_y1 <= sat8(c_yt1); d2_cb1 <= sat8(c_cbt1); d2_cr1 <= sat8(c_crt1);
         d2_sel <= c_sel; d2_y <= c_y; d2_x <= c_x; d2_last <= c_last;
-        if (d2_v) begin
-            ybuf_e[{d2_sel, d2_y, d2_x}] <= d2_y0;
-            ybuf_o[{d2_sel, d2_y, d2_x}] <= d2_y1;
-            if (!d2_y[0]) begin
-                cbsum[d2_x] <= cb_pair; crsum[d2_x] <= cr_pair;
+        d3_sel <= d2_sel; d3_y <= d2_y; d3_x <= d2_x; d3_last <= d2_last; d3_y0 <= d2_y0; d3_y1 <= d2_y1;
+        d3_cbp <= cb_pair; d3_crp <= cr_pair; d3_cbs <= cbsum[d2_x]; d3_crs <= crsum[d2_x];
+        if (d3_v) begin
+            ybuf_e[{d3_sel, d3_y, d3_x}] <= d3_y0;
+            ybuf_o[{d3_sel, d3_y, d3_x}] <= d3_y1;
+            if (!d3_y[0]) begin
+                cbsum[d3_x] <= d3_cbp; crsum[d3_x] <= d3_crp;
             end else begin
-                cbbuf[{d2_sel, d2_y[3:1], d2_x}] <= cb_avg[7:0];
-                crbuf[{d2_sel, d2_y[3:1], d2_x}] <= cr_avg[7:0];
+                cbbuf[{d3_sel, d3_y[3:1], d3_x}] <= cb_avg[7:0];
+                crbuf[{d3_sel, d3_y[3:1], d3_x}] <= cr_avg[7:0];
             end
         end
     end
@@ -139,9 +148,9 @@ module rgb2ycbcr_2px #(
             wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start && (rows != 8'd0);
             rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
-            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0;
+            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
         end else begin
-            d1_v <= take; c_v <= d1_v; d2_v <= c_v;
+            d1_v <= take; c_v <= d1_v; d2_v <= c_v; d3_v <= d2_v;
             if (take) begin
                 if (wx == width - 12'd2) begin
                     wx <= 12'd0;
@@ -170,7 +179,7 @@ module rgb2ycbcr_2px #(
                 if (last_b) rmcu <= last_m ? 8'd0 : rmcu + 8'd1;
                 if (last_m) rsel <= ~rsel;
             end
-            if (d2_v && d2_last)  full[d2_sel] <= 1'b1;
+            if (d3_v && d3_last)  full[d3_sel] <= 1'b1;
             if (rd_go && last_m)  full[rsel] <= 1'b0;
         end
     end

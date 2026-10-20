@@ -28,6 +28,7 @@ from model.testimage import make_image, psnr
 CTRL, STATUS, VERSION = 0x00, 0x04, 0x08
 WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
+CYCLES, IN_WAIT, OUT_STALL = 0x54, 0x58, 0x5C          # performance counters (axil_regs.v)
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
 
 OUT_DIR = ROOT / "sim_out"
@@ -202,6 +203,9 @@ async def throughput(dut):
     await enc.encode(img, 2, 0)                          # warm-up
     scan, tag, cycles = await enc.encode(img, 2, 1)
     cpp = cycles / (w * h)
+    hw_cycles = await enc.rd(CYCLES)     # START..DONE in hardware; the polled count adds AXI-Lite latency
+    assert 0 < hw_cycles <= cycles, f"CYCLES register {hw_cycles} vs {cycles:.0f} polled clocks"
+    assert cycles - hw_cycles < 200, f"CYCLES register {hw_cycles} far below {cycles:.0f} polled clocks"
     dut._log.info("%dx%d: %.0f cycles, %.3f cycles/pixel -> 640x480 @100MHz ~ %.0f fps, "
                   "1280x720 ~ %.0f fps (register-polling overhead included)",
                   w, h, cycles, cpp, 100e6 / (cpp * 640 * 480), 100e6 / (cpp * 1280 * 720))

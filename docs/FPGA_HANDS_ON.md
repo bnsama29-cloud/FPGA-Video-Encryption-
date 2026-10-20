@@ -221,15 +221,27 @@ limit (next step: camera straight into the fabric), not the encoder's.
 
 ## 9. ARM baseline (A3) and power (A4)
 
-**A3 [board]** the fair software comparison on the same chip (the Cortex-A9 has no AES instructions):
+**A3 [board]** The fair comparison is the **same function** on the **same chip's** processing system (PS: two
+Cortex-A9 cores, no AES instructions). `future_work/arm/` holds our whole encoder in C
+(`native/sjpeg_sw.c`), bit-exact with the golden model and therefore with the fabric, plus the standard
+software alternatives:
 
 ```
-pip3 install cryptography          # once, if missing
-python3 -m future_work.baselines.bench_software_codecs --sizes 320x240 640x480 --frames 30
+pip3 install cryptography            # if missing (for the AES-GCM row)
+# after first_contact (A1/A2) has written sim_out/board/first_contact.json:
+CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30
 ```
 
-Output: `future_work/results/baselines_<host>.md` (libjpeg-turbo, + AES-128-GCM, + ChaCha20-Poly1305,
-+ our selective encryption in Python).
+It first checks that the PS encoder is bit-exact with the model (every mode, 1 and 2 threads), then
+times: our encoder on 1 and 2 ARM cores (E0, E2, E4, E5, incl. headers and the E5 order), libjpeg-turbo
+alone, libjpeg-turbo + Ascon-AEAD128 over the whole file (C), libjpeg-turbo + AES-128-GCM (OpenSSL), and
+puts the fabric's round trip and fabric-only time (CYCLES) from `first_contact.json` next to them →
+`sim_out/board/arm_baseline.md`. Copy it with first_contact.json to `paper/data/board/<run>/`.
+The older `future_work.baselines.bench_software_codecs` (selective encryption in Python) is kept for
+reference only: Python is not a fair baseline.
+
+The same C encoder also runs the camera node without a bitstream (PS only):
+`python3 -m future_work.board.board_sender --software 2 ...` (same bytes, the receiver cannot tell).
 
 **A4 power with the USB meter.** Wiring: USB supply → **meter** → micro-USB cable → PROG/UART port.
 

@@ -41,11 +41,14 @@ Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAX
 | 0x48 | QT_DATA | WO | 17-bit reciprocal `round(65536/Q)`, written at QT_ADDR, then QT_ADDR++ |
 | 0x4C | SESSION_ID_HI | RW | session id bits [63:32] |
 | 0x50 | FRAME_CTR_HI | RW | frame counter bits [62:32] (register bit 31 reads 0) |
+| 0x54 | CYCLES | RO | clocks from START to DONE of the last frame: the fabric-only time measured on silicon (saturates at 2^32-1) |
+| 0x58 | IN_WAIT | RO | clocks of that frame in which the encoder could take a pixel but the DMA offered none |
+| 0x5C | OUT_STALL | RO | clocks in which a scan word was offered but the DMA could not take it |
 
 `WSTRB` is honoured; writes to unused addresses are ignored with an OKAY response.
 
 Per-frame sequence (identical in `tb/test_top.py::Encoder` and the future PYNQ driver):
-once per session write KEY0..3, SESSION_ID, SESSION_ID_HI and the 128 QT_DATA values (QT_ADDR=0 first); per frame write WIDTH, HEIGHT, FRAME_CTR, FRAME_CTR_HI, then `CTRL = 1 | mode << 1`, start both DMA channels (receive first), wait for STATUS.DONE, read OUT_BYTES and TAG0..3.
+once per session write KEY0..3, SESSION_ID, SESSION_ID_HI and the 128 QT_DATA values (QT_ADDR=0 first); per frame write WIDTH, HEIGHT, FRAME_CTR, FRAME_CTR_HI, then `CTRL = 1 | mode << 1`, start both DMA channels (receive first), wait for STATUS.DONE, read OUT_BYTES and TAG0..3 (and, for timing, CYCLES / IN_WAIT / OUT_STALL; bitstreams built before 21 Oct 2026 read 0 there).
 
 ## 4. Cryptography
 
