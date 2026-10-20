@@ -38,5 +38,28 @@ Ours & PYNQ-Z2 (Zynq-7020) & post-route, OOC + system & cycle-accurate RTL & bit
 \end{tabular}}
 \end{table*}
 
+\subsection{Weaknesses of prior designs and how we address them}\label{sec:weak}
+Table~\ref{tab:weak} collects, from the sources above, the weaknesses that recur in format-compliant and hardware video encryption, and the part of this work that answers each. Every answer is evaluated in the sections named in the last column; none is claimed beyond what is measured there.
+
+\begin{table*}[t]
+\caption{Recurring weaknesses of prior work (from each source) and where this work addresses them.}
+\label{tab:weak}
+\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.30\textwidth}p{0.17\textwidth}p{0.33\textwidth}p{0.11\textwidth}}
+\toprule
+Weakness & Seen in & This work & Where \\
+\midrule
+No authentication: a tampered, replayed or downgraded frame is displayed & \cite{kishore2015,bagbaba2015,qiu2025} & per-frame Ascon tag over metadata and scan, replay window, authenticated level & Sec.~\ref{sec:tag}, \ref{sec:feedback} \\
+Key material that does not change per frame: one known frame breaks the rest & \cite{vandroogenbroeck2002,kishore2015,hirose2024,li2025shuffle} & keystream and E5 permutation drawn anew from (session, frame counter) & Sec.~\ref{sec:nonce}, \ref{sec:bench} \\
+Field encryption leaves outlines (non-zero counts per block) & \cite{hirose2024} & E5 permutes every MCU, keyed per frame, without a frame buffer & Sec.~\ref{sec:e5}, \ref{sec:leakage} \\
+Visual distortion (PSNR) used as the security measure & \cite{bagbaba2015,kishore2015,massoudi2008} & the same hand-made and learned attacks against every scheme (SVE-Bench) & Sec.~\ref{sec:bench} \\
+Grey 256$\times$256 images, or a few test images & \cite{kishore2015} & colour 4:2:0 video: open films and private clips & Sec.~\ref{sec:security} \\
+Throughput computed from the synthesized clock & \cite{kishore2015,khairallah2023} & cycle-accurate RTL, post-route timing, bit-exact on the board & Sec.~\ref{sec:hwresults} \\
+Probabilistic replay detection (Bloom filter false positives) & \cite{kurian2025} & a sliding 64-frame window with no false positives & Sec.~\ref{sec:feedback} \\
+Output not a compressed, playable stream & \cite{qiu2025} & every level is baseline JPEG (Lemma~\ref{lem:format}) & Sec.~\ref{sec:selenc} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
 \subsection{Gap}
 We found no design that (i)~places a standardized lightweight AEAD inside a hardware JPEG encoder at the entropy-coding stage, (ii)~keeps every protection level playable while authenticating each frame together with its metadata, (iii)~hides block positions in hardware without a frame buffer, and (iv)~closes the loop from the receiver back to the encoder so that the protection level follows observed attacks. We also could not find an evaluation that scores published format-compliant schemes and new ones under the same attacks, including learned attackers, on real video.

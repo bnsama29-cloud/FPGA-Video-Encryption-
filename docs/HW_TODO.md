@@ -1,4 +1,4 @@
-# What is left for the hardware (as of 20 Oct 2026)
+# What is left for the hardware (as of 21 Oct 2026)
 
 All software and all RTL are done and tested: the golden model, the receiver, the board driver, the board
 sender, the bit-exact gate, the XSim vector and check tools, the dashboard, and **E5 in the lane encoder**
@@ -9,7 +9,10 @@ left needs the board, or Vivado time.
 |---|---|---|---|---|---|
 | H1 | E5 in the lane encoder | ✅ done (17–18 Oct, run 7: +2 % LUT, no BRAM/DSP, 318 mW SAIF) | the strongest level in hardware | — | `docs/INTERFACES.md` §8.6 |
 | H2 | **Board bring-up A1–A6** | ⏳ waiting for the board | every board number in the papers (red TODOs) | 1–2 days | **`docs/FPGA_HANDS_ON.md`** (step by step), `docs/BOARD_BRINGUP.md` (task list) |
-| H3 | 125 MHz: one more pipeline stage in the colour converter | open | 1 lane 82, 2 lanes ~150 Mpixel/s | 1–2 days + Vivado run | below |
+| H3 | 125 MHz: one more pipeline stage in the colour converter | RTL done 21 Oct (D3 stage, all tests bit-exact); needs a Vivado run at 8 ns | 1 lane 82, 2 lanes ~150 Mpixel/s | Vivado run | below |
+| H6 | Fabric cycle counters CYCLES / IN_WAIT / OUT_STALL (0x54..0x5C) | RTL done 21 Oct; needs a bitstream rebuild | fabric-only time on silicon (the paper's A2 TODO) | rebuild | `py vivado\run_vivado_day.py --steps bd bd_lanes parse` |
+| H7 | ARM (PS) baseline A3: our encoder in C on the Cortex-A9 | code done 21 Oct (`future_work/arm/`, bit-exact gate) | like-for-like PL vs PS speed-up | 1 h on the board | `docs/BOARD_BRINGUP.md` §6 |
+| H8 | Faster driver: pixels straight into the DMA buffer, cache ops on the frame's bytes only, E5 order + split in one C call, time breakdown | done 21 Oct | board fps (92 ms at VGA was the Python copy, not the fabric) | rerun first_contact | — |
 | H4 | Power with simulated switching activity (SAIF) | ✅ done (run 7: 211 mW encoder, 318/319 mW 2 lanes E5/E2) | replaces the vectorless estimate | — | `vivado/power_saif.tcl` |
 | H5 | Keep the bitstreams safe | open | the E5 pair exists only on tom's PC | 10 min | below |
 
@@ -33,10 +36,11 @@ the baseline and power tables are filled, and the scenario runs are committed. T
 
 ## H3 — 125 MHz
 
-Vivado run 6/7: at 125 MHz the colour converter fails by 0.875 ns (v2). Add one register stage in
-`rgb2ycbcr_block.v` / `rgb2ycbcr_2px.v` behind the existing valid/ready handshake (the same technique as
-bugs #17, #20, #27 in `docs/TESTING.md`). Done when every RTL test is still bit-exact and
-`py vivado\run_vivado_day.py --steps ooc lanes --periods 8.0` shows WNS ≥ 0 at 8 ns. Then the block
+Vivado run 6/7: at 125 MHz the colour converter fails by 0.875 ns (v2). **Done in RTL (21 Oct):** a D3
+stage in `rgb2ycbcr_block.v` / `rgb2ycbcr_2px.v` registers the chroma pair sums and the row-sum read, and
+all buffer writes happen one clock later (same order, same contents; every RTL test still bit-exact).
+Left: `py vivado\run_vivado_day.py --steps ooc lanes --periods 8.0`. If WNS is still < 0, send the
+`timing_*.rpt` of that run (the path names of the worst 10 paths), not only the WNS. Then the block
 design at 125 MHz: `block_design.tcl` takes the FCLK0 frequency as its first argument.
 
 ## H5 — Keep the bitstreams safe

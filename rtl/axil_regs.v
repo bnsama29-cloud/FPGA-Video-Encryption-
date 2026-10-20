@@ -16,6 +16,12 @@
 //  0x48   QT_DATA     WO      write a 17-bit reciprocal at QT_ADDR, QT_ADDR++
 //  0x4C   SESSION_ID_HI RW    session id bits [63:32]
 //  0x50   FRAME_CTR_HI  RW    frame counter bits [62:32] (bit 31 of the register reads 0)
+//  0x54   CYCLES      RO      performance counter: clocks from START to DONE of the last frame (the
+//                             fabric-only time, measured on silicon; saturates at 2^32-1)
+//  0x58   IN_WAIT     RO      clocks of that frame in which the encoder could take a pixel but the DMA
+//                             offered none (DDR/DMA starvation)
+//  0x5C   OUT_STALL   RO      clocks in which a scan word was offered but the DMA could not take it
+//  Bitstreams built before 21 Oct 2026 read 0 at 0x54..0x5C (unused addresses read 0).
 // WSTRB is honoured for RW registers.
 `default_nettype none
 module axil_regs #(
@@ -59,9 +65,27 @@ module axil_regs #(
     input  wire         busy,
     input  wire         tag_valid,
     input  wire [31:0]  out_bytes,
-    input  wire [127:0] tag
+    input  wire [127:0] tag,
+    // performance counters (one-clock conditions from the datapath)
+    input  wire         in_wait,      // encoder ready for a pixel, none offered
+    input  wire         out_stall     // scan word offered, not taken
 );
     reg [6:0] qt_ptr;                         // the QT_ADDR register
+    // ------------------------------------------------ performance counters (CYCLES, IN_WAIT, OUT_STALL)
+    reg        counting;
+    reg [31:0] cycles, in_wait_cnt, out_stall_cnt;
+    always @(posedge clk) begin
+        if (rst) begin
+            counting <= 1'b0; cycles <= 32'd0; in_wait_cnt <= 32'd0; out_stall_cnt <= 32'd0;
+        end else if (start) begin
+            counting <= 1'b1; cycles <= 32'd0; in_wait_cnt <= 32'd0; out_stall_cnt <= 32'd0;
+        end else if (counting) begin
+            if (done) counting <= 1'b0;
+            if (cycles != 32'hFFFF_FFFF) cycles <= cycles + 32'd1;
+            if (in_wait && in_wait_cnt != 32'hFFFF_FFFF)     in_wait_cnt   <= in_wait_cnt + 32'd1;
+            if (out_stall && out_stall_cnt != 32'hFFFF_FFFF) out_stall_cnt <= out_stall_cnt + 32'd1;
+        end
+    end
 
     assign s_axil_bresp = 2'b00;
     assign s_axil_rresp = 2'b00;
@@ -139,6 +163,9 @@ module axil_regs #(
                 6'h0F: s_axil_rdata <= tag[95:64];
                 6'h10: s_axil_rdata <= tag[127:96];
                 6'h11: s_axil_rdata <= {25'd0, qt_ptr};
+                6'h15: s_axil_rdata <= cycles;
+                6'h16: s_axil_rdata <= in_wait_cnt;
+                6'h17: s_axil_rdata <= out_stall_cnt;
                 default: s_axil_rdata <= 32'd0;   // KEYx and unused read as 0
                 endcase
             end

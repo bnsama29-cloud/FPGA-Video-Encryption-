@@ -280,7 +280,10 @@ Evidence gaps vs. published crypto/hardware papers
     nJ/pixel per design and mode; the Ascon core on its own is still not measured.)
     Ascon throughput never reported in Gbps or Gbps/LUT, the metric comparable NIST
     LWC hardware papers (Kurian, Khairallah, Mozaffari-Kermani et al.) use.
-14. No software (ARM/PS-side) baseline for comparison (GUIDE B1).
+    21 Oct 2026: Ascon block rate measured in RTL (9 clocks per 128-bit block, `tb/test_ascon_core.py ::
+    ascon_block_rate`) → `\AsconGbps`, `\AsconGbpsPerKlut` in the papers.
+14. No software (ARM/PS-side) baseline for comparison (GUIDE B1). **Code done 21 Oct 2026:** `future_work/arm/` -- the whole encoder in C on the PS, bit-exact with
+    the model (1 and 2 cores), vs libjpeg-turbo ± whole-file Ascon / AES-GCM (`arm_baseline.py`); needs the board run.
 15. No side-channel resistance -- no masking against power analysis; physical attacks are
     explicitly out of scope, but recent Ascon hardware papers address this.
 16. ~~E5 exists only in the Python model, not in RTL.~~ Done 17 Oct 2026: E5 is in the lane-encoder RTL

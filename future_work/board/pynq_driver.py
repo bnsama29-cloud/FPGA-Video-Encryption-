@@ -35,6 +35,8 @@ CTRL, STATUS, VERSION = 0x00, 0x04, 0x08
 WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
+CYCLES, IN_WAIT, OUT_STALL = 0x54, 0x58, 0x5C   # performance counters (bitstreams from 21 Oct 2026; older read 0)
+FABRIC_HZ = 100e6                               # fabric clock of the overlay (FCLK_CLK0)
 EXPECTED_VERSION = 0x5EC00200          # contract v2
 V3_VERSION_BASE = 0x5EC00300           # contract v3: 0x5EC003LL, LL = number of lanes
 E5_CAP = 0x80                          # v3 VERSION bit 7: the RTL implements mode 5 (INTERFACES.md §8.6)
@@ -58,6 +60,16 @@ def pixels_to_words(rgb):
     """H x W x 3 uint8 RGB -> uint32 words {pad, B, G, R} (R in bits [7:0]), raster order."""
     p = rgb.astype(np.uint32)
     return (p[..., 0] | (p[..., 1] << 8) | (p[..., 2] << 16)).ravel()
+
+
+def load_pixels_into(words_u32, rgb):
+    """Write the pixel words straight into a uint32 buffer (the DMA buffer) without temporaries: viewed
+    as bytes, word i is R, G, B, pad, so one strided uint8 copy does it (on the A9 this replaces three
+    uint32 temporaries and two shifts per pixel). The pad byte is left as it is (the RTL ignores bits
+    [31:24]). Returns the number of words written. Same words as pixels_to_words."""
+    n = rgb.shape[0] * rgb.shape[1]
+    words_u32.view(np.uint8).reshape(-1, 4)[:n, :3] = rgb.reshape(n, 3)
+    return n
 
 
 class MockBackend:
@@ -103,6 +115,15 @@ class MockBackend:
         if addr in (KEY0, KEY0 + 4, KEY0 + 8, KEY0 + 12):
             return 0
         return self.regs.get(addr, 0)
+
+    def load(self, rgb):
+        """Put one frame into the (emulated) DMA buffer; returns the number of pixel words."""
+        self._words = pixels_to_words(rgb)
+        return len(self._words)
+
+    def run(self, n, timeout_s=2.0):
+        """Start both DMA channels on the loaded frame and return the scan bytes."""
+        return self.transfer(self._words[:n])
 
     def transfer(self, words):
         """Send the pixel words, receive the scan bytes (what the two DMA channels do)."""
@@ -158,7 +179,7 @@ class PynqBackend:
     UNTESTED until the bitstream exists: names of the IP and the DMA in the overlay
     may differ -- print(Overlay(...).ip_dict.keys()) and pass ip_name / dma_name."""
 
-    def __init__(self, bitfile, ip_name=None, dma_name=None, max_pixels=640 * 480):
+    def __init__(self, bitfile, ip_name=None, dma_name=None, max_pixels=640 * 480, partial_cache=True):
         from pynq import Overlay, allocate          # only available on the board
         self.ol = Overlay(bitfile)
         names = list(self.ol.ip_dict)
@@ -168,6 +189,48 @@ class PynqBackend:
         self.dma = getattr(self.ol, dma_name)
         self.inbuf = allocate(shape=(max_pixels,), dtype=np.uint32)
         self.outbuf = allocate(shape=(max_pixels,), dtype=np.uint32)   # >= worst-case scan
+        self.inbuf[:] = 0                                          # pad bytes stay 0 from here on
+        self.inbuf.flush()
+        # Flush / invalidate only the bytes of this frame (a slice of a PynqBuffer keeps its physical
+        # address, which is how the DMA already receives inbuf[:n]). If this pynq version cannot do it on
+        # a slice, fall back to the whole buffer; the bit-exact gate would catch a wrong cache operation.
+        self.partial_cache = partial_cache
+        self.n = 0
+
+    def _flush(self, buf):
+        if self.partial_cache:
+            try:
+                buf.flush()
+                return
+            except Exception:
+                self.partial_cache = False
+        self.inbuf.flush()
+
+    def _invalidate(self, buf):
+        if self.partial_cache:
+            try:
+                buf.invalidate()
+                return
+            except Exception:
+                self.partial_cache = False
+        self.outbuf.invalidate()
+
+    def load(self, rgb):
+        """Write the frame straight into the DMA buffer and flush those bytes from the cache."""
+        n = load_pixels_into(self.inbuf, rgb)
+        self._flush(self.inbuf[:n])
+        self.n = n
+        return n
+
+    def run(self, n, timeout_s=2.0):
+        """Start both DMA channels on the loaded frame; return the scan bytes."""
+        self.dma.recvchannel.transfer(self.outbuf)                 # receive first
+        self.dma.sendchannel.transfer(self.inbuf[:n])
+        self._wait(self.dma.sendchannel, "send (MM2S, pixels in)", timeout_s)
+        self._wait(self.dma.recvchannel, "receive (S2MM, scan out)", timeout_s)
+        nbytes = self.read(OUT_BYTES)
+        self._invalidate(self.outbuf[:(nbytes + 3) // 4])
+        return self.outbuf.view(np.uint8)[:nbytes].tobytes()
 
     def write(self, addr, value):
         self.ip.write(addr, value & 0xFFFFFFFF)
@@ -188,16 +251,11 @@ class PynqBackend:
         channel.wait()                                             # idle: returns at once, raises on DMA errors
 
     def transfer(self, words, timeout_s=2.0):
+        """Old interface (uint32 words already packed): kept for scripts written before load/run."""
         n = len(words)
         self.inbuf[:n] = words
-        self.inbuf.flush()
-        self.dma.recvchannel.transfer(self.outbuf)                 # receive first
-        self.dma.sendchannel.transfer(self.inbuf[:n])
-        self._wait(self.dma.sendchannel, "send (MM2S, pixels in)", timeout_s)
-        self._wait(self.dma.recvchannel, "receive (S2MM, scan out)", timeout_s)
-        nbytes = self.read(OUT_BYTES)
-        self.outbuf.invalidate()
-        return self.outbuf.view(np.uint8)[:nbytes].tobytes()
+        self._flush(self.inbuf[:n])
+        return self.run(n, timeout_s)
 
 
 class SecureJpegIP:
@@ -214,6 +272,7 @@ class SecureJpegIP:
         self.contract, self.lanes = known
         self.e5 = has_e5(version)
         self.key = None
+        self.last_timing = {}
 
     @property
     def max_mode(self):
@@ -243,16 +302,28 @@ class SecureJpegIP:
         self.b.write(HEIGHT, h)
         self.b.write(FRAME_CTR, frame_ctr & 0xFFFFFFFF)
         self.b.write(FRAME_CTR_HI, frame_ctr >> 32)
+        t0 = time.perf_counter()
+        npix = self.b.load(rgb)                                    # pixels into the DMA buffer (+ cache flush)
+        t1 = time.perf_counter()
         self.b.write(CTRL, 1 | (mode << 1))
-        scan = self.b.transfer(pixels_to_words(rgb))
-        t0 = time.monotonic()
+        scan = self.b.run(npix, timeout_s)
+        t2 = time.perf_counter()
+        t0w = time.monotonic()
         while not self.b.read(STATUS) & 1:
-            if time.monotonic() - t0 > timeout_s:
+            if time.monotonic() - t0w > timeout_s:
                 raise TimeoutError("STATUS.DONE never set (check DMA, clock, reset and irq wiring)")
         n = self.b.read(OUT_BYTES)
         if n != len(scan):
             raise RuntimeError(f"OUT_BYTES = {n} but DMA returned {len(scan)} bytes")
         tag = b"".join(self.b.read(TAG0 + 4 * i).to_bytes(4, "little") for i in range(4))
+        cyc = self.b.read(CYCLES)
+        # Where the time went (ms): load = ARM writes the pixels and flushes; dma = start, wait, invalidate,
+        # copy out; fabric = START..DONE in the fabric's own clock (None if the bitstream has no counter or
+        # this is the mock); in_wait / out_stall = fabric clocks lost waiting for pixels / for the DMA.
+        self.last_timing = dict(load_ms=1e3 * (t1 - t0), dma_ms=1e3 * (t2 - t1),
+                                fabric_ms=1e3 * cyc / FABRIC_HZ if cyc else None, cycles=cyc or None,
+                                in_wait=self.b.read(IN_WAIT) if cyc else None,
+                                out_stall=self.b.read(OUT_STALL) if cyc else None)
         return scan, tag
 
     def build_jpeg(self, width, height, mode, frame_ctr, scan, tag):

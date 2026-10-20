@@ -271,6 +271,46 @@ def test_board_e5_path_on_an_emulated_e5_bitstream(tmp_path):
         assert fast_e5.arm_shuffle(raw, key, 42, 1000 + n) == hw.arm_shuffle(raw, key, 42, 1000 + n)
 
 
+def test_load_pixels_into_gives_the_same_words():
+    """The zero-copy pixel path of the driver writes the same uint32 words as pixels_to_words, into a
+    larger buffer, for odd strides too (a cropped, non-contiguous frame)."""
+    from future_work.board.pynq_driver import load_pixels_into
+    rgb = np.random.default_rng(3).integers(0, 256, (40, 70, 3), dtype=np.uint8)[4:36, 3:67]
+    buf = np.zeros(4000, np.uint32)
+    n = load_pixels_into(buf, rgb)
+    assert n == 32 * 64
+    exp = pixels_to_words(rgb)
+    bad = np.flatnonzero(buf[:n] != exp)
+    assert bad.size == 0, f"word {bad[0]}: got {buf[bad[0]]:#x} expected {exp[bad[0]]:#x}"
+    assert not buf[n:].any()
+
+
+def test_driver_reports_time_breakdown_and_no_counter_on_mock():
+    ip = SecureJpegIP(MockBackend(contract=3, lanes=2))
+    ip.setup_session(bytes(16), 1)
+    ip.encode(make_image(32, 32, "scene"), 2, 1)
+    t = ip.last_timing
+    assert t["load_ms"] >= 0 and t["dma_ms"] >= 0 and t["fabric_ms"] is None and t["cycles"] is None
+
+
+def test_native_e5_shuffle_matches_model_on_adversarial_scans():
+    """The one-call C shuffle (native/e5_order.c :: e5_shuffle) splits exactly like model/hw.py ::
+    split_segments, also for scans full of 0xFF, stuffed 0xFF00, 0xFF 0xFF 0xD0 and a trailing 0xFF."""
+    import random
+    from future_work.board import fast_e5
+    if not fast_e5.native_available():
+        pytest.skip("no C compiler")
+    key, rnd, checked = bytes(range(16)), random.Random(5), 0
+    head, _ = hw.split_scan(hw.encode_frame_v3(make_image(16, 16, "scene"), 75, 5, key, 1, 42)["jpeg"])
+    for t in range(400):
+        body = bytes(rnd.choice([0xFF, 0xD0, 0xD7, 0xD8, 0x00, 0x12]) for _ in range(rnd.randint(0, 300)))
+        jpeg = head + body + b"\xFF\xD9"
+        exp, got = hw.arm_shuffle(jpeg, key, 7, t), fast_e5.arm_shuffle(jpeg, key, 7, t)
+        assert got == exp, f"case {t}: scan {body.hex()}: got {got[len(head):].hex()} expected {exp[len(head):].hex()}"
+        checked += 1
+    assert checked == 400
+
+
 def test_vivado_driver_dry_run():
     r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--dry-run", "--blocks"], cwd=ROOT,
                        capture_output=True, text=True)

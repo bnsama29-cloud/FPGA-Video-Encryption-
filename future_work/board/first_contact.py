@@ -14,7 +14,9 @@ Part 1 -- bit-exactness (the gate: nothing else counts until this passes)
     is wrong, not the model: check the clock, reset polarity, DMA lengths, pixel word order.
 Part 2 -- speed (only after Part 1 passed)
     Times ip.encode alone (registers + DMA + fabric) and the full frame (+ headers on the ARM)
-    over --timing-frames frames per size and mode -> fps and ms/frame.
+    over --timing-frames frames per size and mode -> fps and ms/frame, split into: load (ARM writes the
+    pixels into the DMA buffer + cache flush), DMA (both channels + invalidate), ARM after (headers, E5
+    shuffle) and the fabric-only time from the CYCLES register (bitstreams from 21 Oct 2026).
 Writes sim_out/board/first_contact.json and .md (paper_tables.py picks the .md up).
 """
 import argparse
@@ -79,7 +81,7 @@ def timing(ip, sizes, n, source):
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
         for mode in range(ip.max_mode + 1):
-            t_enc, t_full = [], []
+            t_enc, t_full, parts = [], [], []
             for i, rgb in enumerate(imgs):
                 t0 = time.perf_counter()
                 scan, tag = ip.encode(rgb, mode, 50_000 + i)
@@ -88,11 +90,25 @@ def timing(ip, sizes, n, source):
                 t2 = time.perf_counter()
                 t_enc.append(t1 - t0)
                 t_full.append(t2 - t0)
+                parts.append(dict(ip.last_timing, arm_ms=1e3 * (t2 - t1)))
             me, mf = statistics.median(t_enc), statistics.median(t_full)
-            rows.append(dict(size=f"{w}x{h}", mode=mode, frames=n, encode_ms=round(1000 * me, 2),
-                             encode_fps=round(1 / me, 1), full_ms=round(1000 * mf, 2), full_fps=round(1 / mf, 1)))
+
+            def med(k, nd=2):
+                v = [p[k] for p in parts if p.get(k) is not None]
+                return round(statistics.median(v), nd) if v else None
+            row = dict(size=f"{w}x{h}", mode=mode, frames=n, encode_ms=round(1000 * me, 2),
+                       encode_fps=round(1 / me, 1), full_ms=round(1000 * mf, 2), full_fps=round(1 / mf, 1),
+                       load_ms=med("load_ms"), dma_ms=med("dma_ms"), arm_ms=med("arm_ms"),
+                       fabric_ms=med("fabric_ms", 3), cycles=med("cycles", 0), in_wait=med("in_wait", 0),
+                       out_stall=med("out_stall", 0))
+            if row["fabric_ms"]:
+                row["fabric_fps"] = round(1000 / row["fabric_ms"], 1)
+            rows.append(row)
+            fab = (f", fabric {row['fabric_ms']:.3f} ms = {row['fabric_fps']} fps (in_wait {row['in_wait']:.0f}, "
+                   f"out_stall {row['out_stall']:.0f} clocks)") if row["fabric_ms"] else ", fabric: no counter"
             print(f"  {w}x{h} E{mode}: encode {1000 * me:.2f} ms ({1 / me:.1f} fps), "
-                  f"with headers {1000 * mf:.2f} ms ({1 / mf:.1f} fps)", flush=True)
+                  f"with headers {1000 * mf:.2f} ms ({1 / mf:.1f} fps); load {row['load_ms']} + DMA {row['dma_ms']} "
+                  f"+ ARM {row['arm_ms']} ms{fab}", flush=True)
     return rows
 
 
@@ -111,6 +127,8 @@ def main():
     ap.add_argument("--ip-name")
     ap.add_argument("--dma-name")
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--full-cache-ops", action="store_true",
+                    help="flush/invalidate the whole DMA buffers instead of only the frame's bytes")
     a = ap.parse_args()
     sizes = [tuple(int(v) for v in s.split("x")) for s in a.sizes]
     a.mock = a.mock or bool(a.mock_lanes)
@@ -118,7 +136,8 @@ def main():
         backend = MockBackend(contract=3, lanes=a.mock_lanes, e5=a.mock_e5) if a.mock_lanes else MockBackend()
     else:
         from future_work.board.pynq_driver import PynqBackend
-        backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes))
+        backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes),
+                              partial_cache=not a.full_cache_ops)
     ip = SecureJpegIP(backend)                      # checks the VERSION register
     ip.setup_session(KEY, SID, a.quality)
     print(f"IP found ({'mock' if a.mock else a.bitfile}), VERSION ok: contract v{ip.contract}"
@@ -139,9 +158,13 @@ def main():
     md = [f"Backend: {res['backend']}. Bit-exact with the golden model in every size and mode: "
           f"**{'yes' if ok else 'NO'}** ({a.frames} frames each).", ""]
     if speed:
-        md += ["| Size | Mode | Encode only (ms) | fps | Incl. headers on ARM (ms) | fps |", "|---|---|---|---|---|---|"]
-        md += [f"| {r['size']} | E{r['mode']} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} |"
-               for r in speed]
+        md += ["| Size | Mode | Encode only (ms) | fps | Incl. headers on ARM (ms) | fps | load (ms) | DMA (ms) "
+               "| ARM after (ms) | fabric (ms) | fabric fps |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+        md += [f"| {r['size']} | E{r['mode']} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} "
+               f"| {r['load_ms']} | {r['dma_ms']} | {r['arm_ms']} | {r['fabric_ms'] if r['fabric_ms'] else '-'} "
+               f"| {r.get('fabric_fps', '-')} |" for r in speed]
+        md += ["", "fabric = CYCLES register (START to DONE, 100 MHz clocks): the encoder alone, without the ARM; "
+               "'-' = bitstream built before the counters (21 Oct 2026)."]
         if a.mock:
             md += ["", "MOCK backend: these times are the Python emulation, NOT the FPGA. Do not report them."]
     (out / "first_contact.md").write_text("\n".join(md) + "\n")

@@ -36,10 +36,19 @@ module rgb2ycbcr_block #(
     //   D1    registered pixel + where it goes
     //   C     registered sums (multiply-add)            D2  registered, clamped Y, Cb, Cr
     //   (C added after the second overlay run: multiply-add + clamp in one clock missed by 0.24 ns)
-    //   write line buffers / chroma sums from D2, and `full` is set when the last pixel lands there
-    // The writes happen 3 clocks after the handshake, in the same order, so the buffers
-    // end up with the same contents; the reader starts 3 clocks later.
-    reg                d1_v, c_v, d2_v;
+    //   D3    registered pair sums and row-sum reads; line buffers / chroma sums written from D3, `full` set there
+    // The writes happen 4 clocks after the handshake, in the same order, so the buffers
+    // end up with the same contents; the reader starts 4 clocks later.
+    //   D3 (21 Oct 2026, for 125 MHz: Vivado placed the converter on the critical path, -0.875 ns at
+    //   8 ns): the chroma pair sum and the read of the row-sum memory are registered, and every buffer
+    //   write happens one clock later from D3. The row sum of column cx is written on an even line and
+    //   read on the next odd line, at least 8 pixels later, so the extra clock cannot read a stale value.
+    reg                d1_v, c_v, d2_v, d3_v;
+    reg                d3_sel, d3_last;
+    reg [3:0]          d3_y;
+    reg [LOG_MAXW-1:0] d3_x;
+    reg [7:0]          d3_yp;
+    reg [9:0]          d3_cbp, d3_crp, d3_cbs, d3_crs;
     reg [23:0]         d1_rgb;
     reg                d1_sel, c_sel, d2_sel, d1_last, c_last, d2_last;
     reg [3:0]          d1_y, c_y, d2_y;
@@ -83,9 +92,10 @@ module rgb2ycbcr_block #(
 
     wire [9:0] cb_pair = cb_prev + d2_cb;
     wire [9:0] cr_pair = cr_prev + d2_cr;
-    wire [LOG_MAXW-2:0] cx = d2_x[LOG_MAXW-1:1];
-    wire [9:0] cb_avg = (cbsum[cx] + cb_pair + 10'd2) >> 2;
-    wire [9:0] cr_avg = (crsum[cx] + cr_pair + 10'd2) >> 2;
+    wire [LOG_MAXW-2:0] cx  = d2_x[LOG_MAXW-1:1];
+    wire [LOG_MAXW-2:0] cx3 = d3_x[LOG_MAXW-1:1];
+    wire [9:0] cb_avg = (d3_cbs + d3_cbp + 10'd2) >> 2;
+    wire [9:0] cr_avg = (d3_crs + d3_crp + 10'd2) >> 2;
     wire last_px_of_row = (wx == width - 12'd1) && (wy == 4'd15);
 
     // datapath registers (no reset: qualified by d1_v / d2_v)
@@ -96,15 +106,19 @@ module rgb2ycbcr_block #(
         c_sel <= d1_sel; c_y <= d1_y; c_x <= d1_x; c_last <= d1_last;
         d2_yp <= y_px; d2_cb <= cb_px; d2_cr <= cr_px;
         d2_sel <= c_sel; d2_y <= c_y; d2_x <= c_x; d2_last <= c_last;
-        if (d2_v) begin
-            ybuf[{d2_sel, d2_y, d2_x}] <= d2_yp;
-            if (!d2_x[0]) begin
-                cb_prev <= d2_cb; cr_prev <= d2_cr;
-            end else if (!d2_y[0]) begin
-                cbsum[cx] <= cb_pair; crsum[cx] <= cr_pair;
-            end else begin
-                cbbuf[{d2_sel, d2_y[3:1], cx}] <= cb_avg[7:0];
-                crbuf[{d2_sel, d2_y[3:1], cx}] <= cr_avg[7:0];
+        if (d2_v && !d2_x[0]) begin
+            cb_prev <= d2_cb; cr_prev <= d2_cr;
+        end
+        // D3: registered pair sums and row-sum reads; all buffer writes from here
+        d3_sel <= d2_sel; d3_y <= d2_y; d3_x <= d2_x; d3_last <= d2_last; d3_yp <= d2_yp;
+        d3_cbp <= cb_pair; d3_crp <= cr_pair; d3_cbs <= cbsum[cx]; d3_crs <= crsum[cx];
+        if (d3_v) begin
+            ybuf[{d3_sel, d3_y, d3_x}] <= d3_yp;
+            if (d3_x[0] && !d3_y[0]) begin
+                cbsum[cx3] <= d3_cbp; crsum[cx3] <= d3_crp;
+            end else if (d3_x[0]) begin
+                cbbuf[{d3_sel, d3_y[3:1], cx3}] <= cb_avg[7:0];
+                crbuf[{d3_sel, d3_y[3:1], cx3}] <= cr_avg[7:0];
             end
         end
     end
@@ -132,9 +146,9 @@ module rgb2ycbcr_block #(
             wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start;
             rrow <= 8'd0; rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
-            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0;
+            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
         end else begin
-            d1_v <= take; c_v <= d1_v; d2_v <= c_v;
+            d1_v <= take; c_v <= d1_v; d2_v <= c_v; d3_v <= d2_v;
             // writer counters
             if (take) begin
                 if (wx == width - 12'd1) begin
@@ -167,7 +181,7 @@ module rgb2ycbcr_block #(
                 end
             end
             // buffer ownership: set by writer, cleared by reader
-            if (d2_v && d2_last)        full[d2_sel] <= 1'b1;
+            if (d3_v && d3_last)        full[d3_sel] <= 1'b1;
             if (rd_go && last_m)        full[rsel] <= 1'b0;
         end
     end

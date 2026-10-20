@@ -10,7 +10,8 @@ On the laptop (channel + receiver + dashboard, listening on the network):
 
 Without a board (development / tests): --mock uses the golden-model emulation of the IP
 (--mock-lanes 2 emulates the lane bitstream secure_jpeg_lanes.bit), so everything except the
-FPGA itself can be exercised on a laptop.
+FPGA itself can be exercised on a laptop. --software 2 runs the same encoder (bit-exact, C) on the two
+ARM cores of the processing system instead of the fabric: the PS-only configuration and the A3 baseline.
 
 Everything else (keys, ratchet, feedback, defence policy, dashboard telemetry) is the
 unchanged link/sender.py. The ARM keeps the policy loop; the fabric does the encoding.
@@ -47,9 +48,12 @@ class BoardEncoder:
         return EncodedOut(jpeg, payload_bits=8 * len(scan), enc_bits=0, scan_bytes=len(scan))
 
 
-def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None, mock_e5=False):
+def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None, mock_e5=False, software=0):
     cfg["sender"]["encoder"] = "model"                     # placeholder, replaced below
-    if mock_lanes:
+    if software:                                           # PS only: the C encoder on the A9's cores
+        from future_work.arm.sw_encoder import SoftwareBackend
+        backend = SoftwareBackend(contract=3, lanes=2, e5=True, threads=software)
+    elif mock_lanes:
         backend = MockBackend(contract=3, lanes=mock_lanes, e5=mock_e5)
     else:
         backend = MockBackend() if mock else PynqBackend(bitfile)
@@ -69,9 +73,11 @@ def main():
     ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
                     help="emulate the lane bitstream (contract v3) with this many lanes (no board)")
     ap.add_argument("--mock-e5", action="store_true", help="with --mock-lanes: the emulated bitstream has E5")
+    ap.add_argument("--software", type=int, metavar="THREADS", default=0,
+                    help="no bitstream: run the encoder on the ARM cores (future_work/arm/sw_encoder.py, same bytes)")
     a = ap.parse_args()
     cfg = config.load(a.config, a.set)
-    make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes, a.mock_e5).run()
+    make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes, a.mock_e5, a.software).run()
 
 
 if __name__ == "__main__":

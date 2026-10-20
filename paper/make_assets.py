@@ -837,6 +837,13 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
         if cores:
             macro("AsconLutMin", f"{min(c[3] for c in cores)}")
             macro("AsconLutMax", f"{max(c[3] for c in cores)}")
+            rate = SIM / "ascon_rate" / "ascon_rate.json"         # tb/test_ascon_core.py :: ascon_block_rate
+            if rate.exists():
+                cpb = J(rate)["cycles_per_block"]
+                gbps = 128 / cpb * (1000 / r["period"]) / 1000
+                macro("AsconCyclesPerBlock", f"{cpb:g}")
+                macro("AsconGbps", f"{gbps:.2f}")
+                macro("AsconGbpsPerKlut", f"{gbps / (max(c[3] for c in cores) / 1000):.2f}")
         compare(r, cores)
         system_and_lanes(J(viv))
     else:                                                 # until then: Yosys estimate, clearly labelled
@@ -1769,6 +1776,11 @@ def board():
             macro(f"BoardMs{k}", f"{sp[2]['full_ms']:.0f}")
             macro(f"BoardFps{k}", f"{sp[2]['full_fps']:.1f}" if sp[2]['full_fps'] < 20 else f"{sp[2]['full_fps']:.0f}")
             macro(f"BoardSpreadMs{k}", f"{max(enc) - min(enc):.2f}")
+            if sp[2].get("fabric_ms"):                 # CYCLES register, bitstreams from 21 Oct 2026
+                macro(f"BoardFabricMs{k}", f"{sp[2]['fabric_ms']:.2f}")
+                macro(f"BoardFabricFps{k}", f"{1000 / sp[2]['fabric_ms']:.0f}")
+                macro(f"BoardLoadMs{k}", f"{sp[2]['load_ms']:.1f}")
+                macro(f"BoardDmaMs{k}", f"{sp[2]['dma_ms']:.1f}")
             if 5 in sp:
                 macro(f"BoardEfiveFps{k}", f"{sp[5]['full_fps']:.1f}" if sp[5]['full_fps'] < 20 else f"{sp[5]['full_fps']:.0f}")
                 macro(f"BoardEfiveExtraMs{k}", f"{sp[5]['full_ms'] - sp[2]['full_ms']:.0f}")
