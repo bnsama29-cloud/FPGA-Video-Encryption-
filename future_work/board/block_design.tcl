@@ -118,8 +118,11 @@ proc axi_auto {master slave target} {
 }
 axi_auto /ps7/M_AXI_GP0  /dma/S_AXI_LITE   dma/S_AXI_LITE
 axi_auto /ps7/M_AXI_GP0  /sjpeg/s_axil     sjpeg/s_axil
+# The second master must be the automation TARGET (bug #32): the first call connects HP0; a call that
+# targets ps7/S_AXI_HP0 again finds it already connected and does nothing, which left M_AXI_S2MM
+# unconnected with no address (on the board the receive DMA never wrote a byte and hung).
 axi_auto /dma/M_AXI_MM2S /ps7/S_AXI_HP0    ps7/S_AXI_HP0
-axi_auto /dma/M_AXI_S2MM /ps7/S_AXI_HP0    ps7/S_AXI_HP0
+axi_auto /dma/M_AXI_S2MM /ps7/S_AXI_HP0    dma/M_AXI_S2MM
 
 # ---- clock and reset for our IP (active-high, synchronous, from the automation's reset block)
 # (the AXI automation above may already have wired them: only connect what is still open)
@@ -137,6 +140,12 @@ connect_bd_net [get_bd_pins dma/s2mm_introut]       [get_bd_pins irq_concat/In2]
 connect_bd_net [get_bd_pins irq_concat/dout]        [get_bd_pins ps7/IRQ_F2P]
 
 assign_bd_address
+# Every DMA master must reach DDR through HP0, or the overlay loads but the DMA hangs on the board (bug #32).
+foreach space {dma/Data_MM2S dma/Data_S2MM} {
+    if {[llength [get_bd_addr_segs -quiet -of_objects [get_bd_addr_spaces $space]]] == 0} {
+        error "$space has no address segment: the DMA master is not connected to ps7/S_AXI_HP0"
+    }
+}
 if {[llength [get_bd_cells -quiet -filter {VLNV =~ "*clk_wiz*"}]] > 0} {
     error "the AXI automation added a clk_wiz: every block must run on ps7/FCLK_CLK0 (see the comment at sjpeg/clk)"
 }
