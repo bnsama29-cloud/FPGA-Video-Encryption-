@@ -8,7 +8,8 @@ Two papers are built from the same data, figures and bibliography:
 | `access.tex` + `sections/access_*.tex` → `access.pdf` | IEEE Access (`ieeeaccess.cls`) | 24 pages | the journal version: every derivation (lemmas, propositions, algorithms), every experiment, every table |
 
 Shared: `common/preamble.tex` (packages, notation macros), `figures/tikz/*.tex` (architecture, datapath,
-gate-level circuits, block design, key hierarchy, E5 flow: hand-drawn in TikZ from the RTL),
+block design, key hierarchy, E5 flow: TikZ from the RTL), `figures/netlist/` (gate-level schematics
+generated from Verilog),
 `figures/fig_*.pdf` and `tables/*.tex` (generated), `refs.bib`.
 
 ## Build
@@ -17,7 +18,8 @@ gate-level circuits, block design, key hierarchy, E5 flow: hand-drawn in TikZ fr
 cd paper
 make tables      # tables/*.tex, tables/numbers.tex, figures/fig_*.pdf from data/  (python3)
 make             # conference.pdf and access.pdf (pdflatex + bibtex); or make conference.pdf / make access.pdf
-make figures-tikz   # regenerate figures/tikz/circuit_ascon.tex (generated from rtl/ascon_round.v's netlist)
+make schematics     # gate-level figures from Verilog: figures/netlist/*.v -> Yosys -> netlistsvg -> fig_*_slice.pdf
+                    # (pip install yowasp-yosys cairosvg; npm install -g netlistsvg)
 ```
 
 * **Requirements:** a TeX installation with `IEEEtran` (TeX Live: `texlive-publishers`), `booktabs`,
@@ -51,8 +53,8 @@ make figures-tikz   # regenerate figures/tikz/circuit_ascon.tex (generated from 
 |---|---|---|
 | System architecture | `figures/tikz/arch_system.tex` | `future_work/board/block_design.tcl`, `pynq_driver.py`, `link/` |
 | Fabric datapath | `figures/tikz/arch_pl.tex` | `rtl/secure_jpeg_lanes_top.v`, `rtl/encoder_lane.v` (bus widths = port widths) |
-| Gate-level encryption stage | `figures/tikz/circuit_selenc.tex` | `rtl/selective_enc.v` (every gate is one operator) |
-| Ascon round bit slice | `figures/tikz/circuit_ascon.tex` (generated) | `rtl/ascon_round.v` via `gen_ascon_slice.py` |
+| Gate-level encryption bit slice | `figures/fig_selective_enc_bitslice.pdf` (**generated**, `make schematics`) | `figures/netlist/selective_enc_bitslice.v` = one bit of `rtl/selective_enc.v`; `tests/test_paper_figures.py` checks it exhaustively against the golden model |
+| Ascon round bit slice | `figures/fig_ascon_sbox_slice.pdf` (**generated**) | `figures/netlist/ascon_sbox_slice.v` = one slice of `rtl/ascon_round.v`; the same test checks 64 slices + linear layer against a model round |
 | PYNQ-Z2 block design | `figures/tikz/zynq_bd.tex` | `future_work/board/block_design.tcl` |
 | Key and nonce hierarchy | `figures/tikz/keys.tex` | `link/keys.py`, `model/ascon.py`, `model/hw.py` |
 | E5 hardware form | `figures/tikz/e5_flow.tex` | `docs/INTERFACES.md` §8.6 |

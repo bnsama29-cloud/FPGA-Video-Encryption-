@@ -20,6 +20,6 @@ access.pdf: access.tex $(wildcard sections/access_*.tex) ieeeaccess.cls $(SHARED
 tables/numbers.tex: make_assets.py $(shell find data -name '*.json' -o -name '*.md' -o -name '*.txt' | head -400)
 	$(PY) make_assets.py
 tables: ; $(PY) make_assets.py
-figures-tikz: ; $(PY) figures/tikz/gen_ascon_slice.py
+schematics: ; sh figures/netlist/make_schematics.sh   # needs yowasp-yosys, netlistsvg, cairosvg
 clean: ; rm -f *.aux *.bbl *.blg *.log *.out conference.pdf access.pdf
-.PHONY: all tables figures-tikz clean
+.PHONY: all tables schematics clean
