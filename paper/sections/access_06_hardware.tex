@@ -21,13 +21,13 @@ Fig.~\ref{fig:pl} shows the encoder. All stages are joined by valid/ready handsh
 \textit{Merger, tag and output.} \texttt{segment\_merger} copies segment $s$ byte by byte from its lane's FIFO until the byte marked last, then writes 0xFF, 0xD0 $+ (s \bmod 8)$ unless $s$ is the last segment, and moves to the next lane. \texttt{tag\_unit} absorbs the prefix and every merged byte into an Ascon core; \texttt{scan\_word\_packer} packs bytes into 32-bit little-endian words with TKEEP and TLAST and counts them for the OUT\_BYTES register.
 
 \subsection{Circuit of the encryption stage}\label{sec:circuit}
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\resizebox{0.9\textwidth}{!}{\input{figures/tikz/circuit_selenc.tex}}
-\caption{Gate-level logic of \texttt{selective\_enc.v}. Mode decoding and two multiplexers select the sign and amplitude enables for DC or AC symbols; a mask generator forms $2^s - 1$; each of the 11 bit slices XORs the field bit with the sign flip and the masked keystream bit, as in~\eqref{eq:selenc}, into an output register enabled by the handshake; the handshake logic accepts a symbol only when the output is free and the keystream window holds the $n$ bits it needs, and then takes them.}
+\includegraphics[width=\columnwidth]{figures/fig_selective_enc_bitslice.pdf}
+\caption{Gate-level circuit of bit slice $k$ of \texttt{selective\_enc.v}, generated from the RTL by Yosys and netlistsvg. The OR of the size bits gives $[s \ne 0]$; comparators on the mode and two multiplexers selected by is\_dc form the sign enable $\gamma$ (upper path) and the amplitude enable $\alpha$ (lower path); the two XORs implement~\eqref{eq:slice}. $m_k = [k < s]$ and $m_{k+1}$ are bits of the mask $2^s - 1$; ks0 and ks\_k1 are bits 0 and $k{+}1$ of the keystream window. A test simulates the slice exhaustively and compares it with the golden model.}
 \label{fig:circuit}
-\end{figure*}
-Fig.~\ref{fig:circuit} is the stage at gate level, drawn from its RTL. The control part decodes $\gamma = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 2 : \text{mode} \ge 1)$ and $\alpha = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 4 : \text{mode} \ge 3)$; mode 5 selects the same fields as mode 4 because all comparisons are $\ge$. The data part is eleven identical bit slices,
+\end{figure}
+Fig.~\ref{fig:circuit} is one bit slice of the stage at gate level, generated from its RTL; the handshake around it is described by the equations below. The control part decodes $\gamma = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 2 : \text{mode} \ge 1)$ and $\alpha = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 4 : \text{mode} \ge 3)$; mode 5 selects the same fields as mode 4 because all comparisons are $\ge$. The data part is eleven identical bit slices,
 \begin{equation}
 \amp'_k = \amp_k \xor (\gamma z_0 \wedge m_k) \xor (\alpha z_{k+1} \wedge m_{k+1}), \quad m = 2^s - 1,
 \label{eq:slice}
@@ -45,12 +45,12 @@ The stage accepts at most one symbol per clock and takes $n \le 11$ bits per sym
 The first block costs an initialization ($p^{12}$, 12 cycles) and one data block (nine cycles). At the start of a frame this overlaps with filling the first MCU row (16 lines), so it is invisible; RTL simulation confirms that the cycle counts of E0--E4 differ by at most \MaxExtraCycles{} cycles per frame. In the lane encoder every segment restarts its keystream, and in E5 every MCU does; a segment of one MCU takes at least 384 cycles, so a 21-cycle restart overlapped with the previous segment costs a few per cent of throughput, which we measure in Section~\ref{sec:hwresults}.
 
 \subsection{Ascon core}\label{sec:asconcore}
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\resizebox{0.95\textwidth}{!}{\input{figures/tikz/circuit_ascon.tex}}
-\caption{One of the 64 bit slices of the Ascon round of \texttt{ascon\_round.v}: constant addition on $x_2$, the input XOR layer, the $\chi$ layer~\eqref{eq:chi} of five NOT, AND and XOR gates, and the output layer. The linear layer $p_L$ acts on whole 64-bit words (two rotations and two XORs per bit).}
+\includegraphics[width=\columnwidth]{figures/fig_ascon_sbox_slice.pdf}
+\caption{One of the 64 bit slices of the Ascon round of \texttt{ascon\_round.v} ($p_C$ and $p_S$), generated from the RTL by Yosys and netlistsvg: twelve XOR (one for the round-constant bit rc\_j, zero for $j \ge 8$), five AND and six NOT gates. The linear layer $p_L$ acts on whole 64-bit words (two rotations and two XORs per bit). A test checks that 64 such slices followed by $p_L$ reproduce a round of the golden model.}
 \label{fig:asconslice}
-\end{figure*}
+\end{figure}
 \texttt{ascon\_aead128\_core} computes one round per clock cycle: a 320-bit state register, a 4-bit round counter $r$ and the combinational round of Fig.~\ref{fig:asconslice}, with the round constant $c = \bar r \cat r$ (eight bits, $\bar r$ the complement of $r$), which equals $16(15 - i) + i$ for round $i$. The $p^{12}$ permutation counts $r$ from 0 to 11, the $p^8$ permutation from 4 to 11. Counting the operators of \texttt{ascon\_round.v}, one bit slice of $p_S$ has 22 gates (eleven XOR, five AND, six NOT), so $p_S$ is $64 \times 22 = 1408$ gates, $p_L$ adds $2 \times 320$ two-input XORs and $p_C$ eight. A block interface accepts associated data and message blocks with byte masks and the padding rule of the standard; the same core serves as keystream generator (message blocks of zeros, never finalized), as MAC (associated data only, empty message) and as key-derivation unit. The design instantiates one core per lane for keystreams, one for the segment key and one for the tag.
 
 \textit{Tag unit.} \texttt{tag\_unit} latches the 26-byte prefix at frame start, absorbs it, then gathers scan bytes into 128-bit blocks. A block of 16 bytes arrives in at least 16 cycles at one byte per clock, while absorbing it takes nine, so the tag unit never slows the merger; the final partial block, the empty message and the $p^{12}$ finalization add a fixed number of cycles after the last byte.
