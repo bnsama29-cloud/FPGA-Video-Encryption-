@@ -23,6 +23,7 @@ Field top-bit flip as ``sign'' & changed the magnitude too ($5 \to -6$) & exact 
 47\,MHz after routing, all tests passing & a full DCT row summed in one clock & five-stage pipeline, post-route numbers in every claim \\
 System missed timing, encoder alone met it & unconstrained input ports in the out-of-context run & I/O delays in every run \\
 Board gate compared lanes with the wrong contract & reference chosen before the second contract existed & reference from the VERSION register \\
+On the board the overlay loaded but the DMA hung & the block-design automation left the DMA's write master unconnected; simulation tests the IP, not the system around it & address-map check in the build, timeouts in the driver \\
 \bottomrule
 \end{tabular}
 \end{table*}
