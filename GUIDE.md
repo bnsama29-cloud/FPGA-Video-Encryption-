@@ -177,8 +177,8 @@ Step by step, from unboxing to every number below: **`docs/FPGA_HANDS_ON.md`** (
 
 | # | Task | Owner | Time | How | Done when |
 |---|---|---|---|---|---|
-| A1 | **Bit-exact gate on silicon** | 1 | ½ day | copy the repo and the `.bit` + `.hwh` to `/home/xilinx/fpga`, then `sudo -E python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10` (already passes with `--mock --mock-lanes 2 --mock-e5`) | all modes E0–E5 byte-identical with the model |
-| A2 | FPGA speed | 1 | same run | part 2 of the same script | fps table in `sim_out/board/first_contact.md` |
+| A1 | **Bit-exact gate on silicon** ✅ 20 Oct (`paper/data/board/`) | 1 | ½ day | copy the repo and the `.bit` + `.hwh` to `/home/xilinx/fpga`, then `sudo -E python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10` (already passes with `--mock --mock-lanes 2 --mock-e5`) | all modes E0–E5 byte-identical with the model |
+| A2 | FPGA speed ✅ 20 Oct, Python round trip only (fabric-only time still open) | 1 | same run | part 2 of the same script | fps table in `sim_out/board/first_contact.md` |
 | A3 | ARM baseline on the same board | 2 | ½ day | `python3 -m future_work.baselines.bench_software_codecs --sizes 320x240 640x480 --frames 30` | `baselines_<host>.md` |
 | A4 | Power and energy per frame | 1 + 5 | 1 day | USB meter: idle / ARM / FPGA per mode, 30 s averages → `future_work/baselines/power_template.csv` → `python -m future_work.baselines.energy_table <csv>` | mJ/frame, FPGA vs ARM |
 | A5 | Live link board → laptop | 3 + 4 | 1 day | board: `python3 -m future_work.board.board_sender --bitfile ... --set link.host=<laptop> --set link.bind_host=0.0.0.0`; laptop: `python -m link.run_all --no-sender --set link.bind_host=0.0.0.0 --set link.sender_host=<board>` | the dashboard shows the board's stream |
@@ -486,7 +486,9 @@ usually by moving detail into `access.tex` / `sections/access_*.tex` (the IEEE A
 | E5's per-frame permutation defeats a chosen-plaintext (learned-permutation) attack | `chosen_plaintext.py` | ✅ 7 sources |
 | The sign-recovery LP of Lin et al. recovers 88-93 % of signs in its own setting but 59 % of E1's and 49 % of E2's; it still sharpens E1's outline (edge 0.41 vs 0.33) | `sign_recovery.py` | ✅ 29 frames, 9 source sets |
 | One second of frame sizes identifies which of 7 known videos plays (98 % E1-E4, 99 % E5, chance 14 %); only constant-size frames (+81 % bytes) reach chance | `video_fingerprint.py` | ✅ 7 videos |
-| E5 in hardware | B6 | ✅ RTL simulation (lane encoder, 1/2/4 lanes bit-exact) · ✅ Vivado run 7: XSim bit-exact, post-route at 100 MHz, +2 % LUT · ⏳ board. Until the board run the paper says "in RTL" / "post-route", not "on the board" |
+| E5 in hardware | B6 | ✅ RTL simulation (lane encoder, 1/2/4 lanes bit-exact) · ✅ Vivado run 7: XSim bit-exact, post-route at 100 MHz, +2 % LUT · ✅ **board (20 Oct)**: bit-exact E0–E5 on the PYNQ-Z2 (`paper/data/board/`) |
+| The 2-lane encoder with E5 is bit-exact with the golden model on the PYNQ-Z2, every level E0–E5 (64x48 × 1, 320x240 × 10, 640x480 × 3 frames) | `future_work/board/first_contact.py`, `paper/data/board/` | ✅ board (20 Oct, rebuilt bitstream after bug #32) |
+| Board speed: 45 fps at 320x240 and 10.8 fps at 640x480 incl. headers, same in every level (E5 34 / 8.5 fps: shuffle on the ARM) | same | ✅ board, **Python round trip on the ARM** (pixel copy, cache flush, DMA, polling); ❌ not the fabric's speed, which is not yet measured on the board |
 
 **Claims to avoid:**
 
