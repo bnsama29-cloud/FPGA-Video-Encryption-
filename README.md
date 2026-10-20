@@ -23,10 +23,38 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
                 adaptive defence on the ARM: protection level E2..E5, rekey, dead-man rule
 ```
 
+## Status (21 Oct 2026)
+
+| Part | State |
+|---|---|
+| Golden model, RTL (single pipeline + 1/2/4 lanes, E0–E5), cocotb + XSim | done, every RTL test bit-exact with the model |
+| Vivado run 8 (counters + D3 stage) | 30/30 steps pass; 100 MHz met by every design and both PYNQ-Z2 systems; 125 MHz still fails (v2 −0.487 ns, 2 lanes −0.914 ns) |
+| 125 MHz fix (product stage P in both converters) | RTL done and bit-exact; needs Vivado run 9 |
+| Board (PYNQ-Z2) | 2-lane E5 bitstream bit-exact with the model on silicon, E0–E5 (A1); first speed numbers (A2) |
+| ARM side (PS) | the same encoder in C, bit-exact, for the A3 baseline and a no-bitstream camera node |
+| Laptop receiver | decryption in C (`link/fastrx.py`), same results as the model, keeps up with E5 frames from the board |
+| Open | A2 fabric-only time (counters), A3, A4 power, A5/A6 attacks with the board, 4-lane board image, 125 MHz |
+
+How the work is split on the Zynq: the **programmable logic** does every per-pixel step (colour
+conversion, DCT, quantiser, entropy coding, Ascon encryption and tag); the **ARM processing system**
+does the per-frame and per-session work (headers, the E5 segment order, keys, network, defence policy).
+See [docs/RUNBOOK.md](docs/RUNBOOK.md) §1.
+
+## Next steps
+
+1. **Vivado run 9** (Vivado PC, ~1.5 h): `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes bd_lanes4 power parse --periods 8.0`
+   → 125 MHz check with the product stage, new 2-lane image, and the first **4-lane** PYNQ-Z2 image.
+2. **Board, A1–A3** (~1 h): `first_contact` with `--zero-copy`, then `future_work.arm.arm_baseline`.
+3. **Board, A4–A6** (~3 h): power meter, then the attack suite with the board as sender.
+4. **Paper**: copy the results to `paper/data/`, `python paper/make_assets.py`, `make -C paper`, replace the red TODOs.
+
+Exact commands and order: [docs/RUNBOOK.md](docs/RUNBOOK.md) §3.
+
 ## Start here
 
 | You want to… | Read |
 |---|---|
+| every program, which machine it runs on, and the order for the hardware days | **[docs/RUNBOOK.md](docs/RUNBOOK.md)** |
 | understand the whole project from the basics, every folder and program, and its status | **[docs/PROJECT_EXPLAINED.md](docs/PROJECT_EXPLAINED.md)** |
 | know what is done, what is left, and how to do each remaining task | **[GUIDE.md](GUIDE.md)** |
 | run the Vivado flow (XSim, post-route numbers, PYNQ overlay) | [docs/VIVADO_ONE_DAY.md](docs/VIVADO_ONE_DAY.md) |
@@ -44,7 +72,7 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-make test                       # golden model + system + every RTL block in Icarus 12 (~1 min)
+make test                       # golden model + system + every RTL block in Icarus 12 (~6 min)
 make xsim-icarus                # the Vivado testbench, run in Icarus
 python -m link.run_all          # whole link + dashboard -> http://localhost:8000
 ```
@@ -73,8 +101,8 @@ See GUIDE.md §3. In short:
 | `rtl/` | the Verilog encoder |
 | `tb/` | cocotb tests |
 | `vivado/` | Vivado flow |
-| `link/` | system simulation |
+| `link/` | system simulation (sender, channel, receiver with C fast path, dashboard) |
 | `experiments/` | every paper number |
-| `future_work/` | board kit, baselines, attacks, figures, the Kaggle script |
+| `future_work/` | board kit (`board/`), the encoder on the ARM in C (`arm/`), baselines, attacks, figures, the Kaggle script |
 | `paper/` | the IEEE draft and the data it is built from |
 | `docs/` | contract, testing, Vivado guide |

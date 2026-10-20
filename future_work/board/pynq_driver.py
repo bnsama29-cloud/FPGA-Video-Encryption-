@@ -68,8 +68,16 @@ def load_pixels_into(words_u32, rgb):
     uint32 temporaries and two shifts per pixel). The pad byte is left as it is (the RTL ignores bits
     [31:24]). Returns the number of words written. Same words as pixels_to_words."""
     n = rgb.shape[0] * rgb.shape[1]
-    words_u32.view(np.uint8).reshape(-1, 4)[:n, :3] = rgb.reshape(n, 3)
+    dst = words_u32.view(np.uint8).reshape(-1, 4)[:n, :3]
+    if not np.shares_memory(dst, rgb):                 # a frame already in the buffer needs no copy
+        dst[...] = rgb.reshape(n, 3)
     return n
+
+
+def pixel_view(words_u32, w, h):
+    """An H x W x 3 uint8 view on the DMA buffer: a camera or decoder that writes its frame here puts
+    the pixels where the DMA reads them, so the ARM copies nothing (load() then only flushes)."""
+    return words_u32.view(np.uint8)[:4 * w * h].reshape(h, w, 4)[..., :3]
 
 
 class MockBackend:
@@ -115,6 +123,11 @@ class MockBackend:
         if addr in (KEY0, KEY0 + 4, KEY0 + 8, KEY0 + 12):
             return 0
         return self.regs.get(addr, 0)
+
+    def pixel_buffer(self, w, h):
+        if getattr(self, "_buf", None) is None or self._buf.size < w * h:
+            self._buf = np.zeros(w * h, np.uint32)
+        return pixel_view(self._buf, w, h)
 
     def load(self, rgb):
         """Put one frame into the (emulated) DMA buffer; returns the number of pixel words."""
@@ -215,6 +228,11 @@ class PynqBackend:
                 self.partial_cache = False
         self.outbuf.invalidate()
 
+    def pixel_buffer(self, w, h):
+        """Zero-copy input: fill this view (e.g. cv2 capture.read(image=...) or np.copyto) and pass it to
+        encode(); the ARM then only flushes the cache (see load_pixels_into)."""
+        return pixel_view(self.inbuf, w, h)
+
     def load(self, rgb):
         """Write the frame straight into the DMA buffer and flush those bytes from the cache."""
         n = load_pixels_into(self.inbuf, rgb)
@@ -273,6 +291,11 @@ class SecureJpegIP:
         self.e5 = has_e5(version)
         self.key = None
         self.last_timing = {}
+
+    def pixel_buffer(self, w, h):
+        """H x W x 3 view on the DMA input buffer (zero-copy path; None if the backend has none)."""
+        f = getattr(self.b, "pixel_buffer", None)
+        return f(w, h) if f else None
 
     @property
     def max_mode(self):

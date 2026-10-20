@@ -33,6 +33,7 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
          --periods clock, 4 lanes (1024-pixel lines) at 100 MHz
   bd     PYNQ-Z2 block design + bitstream -> future_work/board/overlay/secure_jpeg.bit/.hwh
   bd_lanes  the same for the lane encoder -> overlay/secure_jpeg_lanes.bit/.hwh (reports in overlay/lanes/)
+  bd_lanes4 the same with 4 lanes, lines up to 1024 px -> overlay/secure_jpeg_lanes4.bit/.hwh (overlay/lanes4/)
   power  post-route power with SIMULATED switching activity (needs ooc and/or lanes first): XSim
          encodes --power-size scene frames in each mode and records activity.saif, then Vivado
          re-reports the routed design's power with it -> power_saif_<v2|v3>_E<m>.txt next to power.txt
@@ -406,8 +407,8 @@ def parse_hier(text, depth=2):
 
 def _name(folder):
     """Design name from the folder: vivado_<design> (OOC runs), overlay, overlay/lanes -> overlay_lanes."""
-    if folder.name == "lanes" and folder.parent.name == "overlay":
-        return "overlay_lanes"
+    if folder.name in ("lanes", "lanes4") and folder.parent.name == "overlay":
+        return f"overlay_{folder.name}"
     return folder.name.replace("vivado_", "")
 
 
@@ -487,7 +488,8 @@ def parse_main(argv=None):
         sys.exit(PARSE_DOC)
     folders = [Path(a) for a in argv] or sorted((ROOT / "sim_build").glob("vivado_*")) + \
         [p for p in [ROOT / "future_work" / "board" / "overlay",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes"] if (p / "timing.txt").exists()]
+                     ROOT / "future_work" / "board" / "overlay" / "lanes",
+                     ROOT / "future_work" / "board" / "overlay" / "lanes4"] if (p / "timing.txt").exists()]
     folders = [f for f in folders if f.is_dir() and f.name != "vivado_logs"]   # logs are not a design
     if not folders:
         sys.exit("no report folders: run vivado/vivado_ooc.tcl (or vivado/run_vivado_day.py) first")
@@ -545,7 +547,7 @@ def step_xsim(a):
     sim = "vivado\\run_xsim.bat" if WIN else "bash vivado/run_xsim.sh"
     run("xsim_run", sim, check=r"XSIM RESULT: PASS", dry=a.dry_run)
     run("xsim_check", f"{sys.executable} vivado/run_vivado_day.py check", dry=a.dry_run)
-    if "lanes" in a.steps or "bd_lanes" in a.steps:      # the contract-v3 lane encoder in XSim too
+    if "lanes" in a.steps or "bd_lanes" in a.steps or "bd_lanes4" in a.steps:      # the contract-v3 lane encoder in XSim too
         run("xsim_vectors_v3", f"{sys.executable} vivado/run_vivado_day.py vectors --v3", dry=a.dry_run)
         run("xsim_run_v3", f"{sim} batch xsim_work_v3", check=r"XSIM RESULT: PASS", dry=a.dry_run)
         run("xsim_check_v3", f"{sys.executable} vivado/run_vivado_day.py check --dir vivado/xsim_work_v3",
@@ -633,8 +635,8 @@ def overlay_wns(out):
 
 def step_bd(a, design="v2"):
     overlay = ROOT / "future_work" / "board" / "overlay"
-    rpt = overlay / "lanes" if design == "lanes" else overlay
-    base = "block_design_lanes" if design == "lanes" else "block_design"
+    rpt = overlay if design == "v2" else overlay / design
+    base = "block_design" if design == "v2" else f"block_design_{design}"
     clocks = [a.fclk] + ([] if a.no_fallback else [f for f in FALLBACK_MHZ if f < a.fclk])
     for i, f in enumerate(clocks):
         name = base if i == 0 else f"{base}_{f}MHz"
@@ -685,7 +687,7 @@ def step_collect(a):
             z.write(f, f"sim_out/vivado/{f.name}")
         reports = ("timing*.txt", "utilization*.txt", "power.txt", "power_saif_*.txt")
         ov = ROOT / "future_work" / "board" / "overlay"
-        for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov, ov / "lanes"]:
+        for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov, ov / "lanes", ov / "lanes4"]:
             for pat in reports:
                 for f in sorted(d.glob(pat)) if d.is_dir() else []:
                     z.write(f, f"{d.name}/{f.name}")
@@ -720,7 +722,7 @@ def check_python():
 def day_main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
-                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "power", "parse"])
+                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "bd_lanes4", "power", "parse"])
     ap.add_argument("--power-size", default="320x240",
                     help="WxH of the scene frame whose switching activity the power step records")
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
@@ -743,6 +745,8 @@ def day_main(argv=None):
     for s in a.steps:
         if s == "bd_lanes":
             step_bd(a, "lanes")
+        elif s == "bd_lanes4":
+            step_bd(a, "lanes4")
         else:
             globals()[f"step_{s}"](a)
     step_collect(a)

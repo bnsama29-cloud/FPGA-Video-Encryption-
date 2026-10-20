@@ -681,7 +681,7 @@ def system_and_lanes(results):
     post-route), the lane encoders out of context, and the v2 encoder at 125 MHz (which block limits it)."""
     res = {x["name"]: x for x in results}
     n = lambda v, nd=0: f"{v:,.{nd}f}".replace(",", "{,}")
-    for key, name in (("overlay", "Overlay"), ("overlay_lanes", "OverlayLanes")):
+    for key, name in (("overlay", "Overlay"), ("overlay_lanes", "OverlayLanes"), ("overlay_lanes4", "OverlayLanesFour")):
         r = res.get(key)
         if r and r["timing"].get("wns") is not None:
             macro(f"{name}Wns", f"{r['timing']['wns']:+.3f}")
@@ -1750,9 +1750,9 @@ def board():
         if d.get("backend") != "pynq":
             continue                                    # never report mock runs
         for e in d["exactness"]:
-            runs.setdefault(e["size"], {"exact": [], "speed": {}})["exact"].append(e)
+            runs.setdefault(e["size"], {"exact": [], "speed": {}, "zc": {}})["exact"].append(e)
         for sp in d["speed"]:
-            runs[sp["size"]]["speed"][sp["mode"]] = sp
+            runs[sp["size"]]["zc" if sp.get("zero_copy") else "speed"][sp["mode"]] = sp
     if not runs:
         return
     order = sorted(runs, key=lambda s: int(s.split("x")[0]) * int(s.split("x")[1]))
@@ -1781,6 +1781,10 @@ def board():
                 macro(f"BoardFabricFps{k}", f"{1000 / sp[2]['fabric_ms']:.0f}")
                 macro(f"BoardLoadMs{k}", f"{sp[2]['load_ms']:.1f}")
                 macro(f"BoardDmaMs{k}", f"{sp[2]['dma_ms']:.1f}")
+            zc = runs[sz]["zc"].get(2)
+            if zc:                                       # first_contact --zero-copy: frame already in the DMA buffer
+                macro(f"BoardZcMs{k}", f"{zc['full_ms']:.1f}")
+                macro(f"BoardZcFps{k}", f"{zc['full_fps']:.0f}")
             if 5 in sp:
                 macro(f"BoardEfiveFps{k}", f"{sp[5]['full_fps']:.1f}" if sp[5]['full_fps'] < 20 else f"{sp[5]['full_fps']:.0f}")
                 macro(f"BoardEfiveExtraMs{k}", f"{sp[5]['full_ms'] - sp[2]['full_ms']:.0f}")

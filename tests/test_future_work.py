@@ -285,6 +285,18 @@ def test_load_pixels_into_gives_the_same_words():
     assert not buf[n:].any()
 
 
+def test_zero_copy_pixel_buffer_gives_the_same_frame():
+    """A frame written into ip.pixel_buffer() (the DMA buffer view a camera could fill) encodes to the
+    same scan and tag as the same frame passed as an array."""
+    ip = SecureJpegIP(MockBackend(contract=3, lanes=2, e5=True))
+    ip.setup_session(bytes(16), 1)
+    rgb = make_image(64, 48, "scene")
+    view = ip.pixel_buffer(64, 48)
+    np.copyto(view, rgb)
+    for mode in (0, 2, 5):
+        assert ip.encode(view, mode, 9) == ip.encode(rgb, mode, 9), f"E{mode}"
+
+
 def test_driver_reports_time_breakdown_and_no_counter_on_mock():
     ip = SecureJpegIP(MockBackend(contract=3, lanes=2))
     ip.setup_session(bytes(16), 1)

@@ -49,26 +49,26 @@ Three configurations of the camera node, all producing the **same bytes**:
 
 ## 3. End-to-end order (hardware in one or two days)
 
-**Day 1 — Vivado PC (morning)**
-1. `git pull`, then rebuild both overlays with the new counters and the D3 converter stage:
-   `py vivado\run_vivado_day.py --steps bd bd_lanes parse`
-2. In parallel, the 125 MHz check: `py vivado\run_vivado_day.py --steps ooc lanes --periods 8.0`.
-   If WNS < 0, keep the `timing_*.rpt` (worst 10 paths) and send it, not only the WNS.
-3. Copy `secure_jpeg_lanes.bit` + `.hwh` to the board and to the shared drive (H5).
+**Day 1 — Vivado PC (morning)** — run 8 done 21 Oct (counters + D3: 100 MHz everywhere, 125 MHz not yet)
+1. `git pull`, then run 9 (product stage P for 125 MHz, the 2-lane image again, the first 4-lane image):
+   `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes bd_lanes4 power parse --periods 8.0 --jobs 2`
+2. Send `vivado_results_<date>.zip`; copy `future_work\board\overlay\secure_jpeg_lanes*.bit` + `.hwh`
+   to the board and to the shared drive (H5).
 
 **Day 1 — board (afternoon)**
-4. A1 + A2: `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes.bit`
+3. A1 + A2: `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes.bit --zero-copy`
+   (and once with `secure_jpeg_lanes4.bit` and `--out sim_out/board/lanes4` when run 9 built it)
    → `sim_out/board/first_contact.md` now has load / DMA / ARM / **fabric ms** columns.
    If it fails only with the new driver, rerun with `--full-cache-ops` and report it.
-5. A3: `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" sudo -E python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30`
-6. Copy both `.json/.md` into `paper/data/board/<date>_lanes/`.
+4. A3: `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" sudo -E python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30`
+5. Copy both `.json/.md` into `paper/data/board/<date>_lanes/`.
 
 **Day 2 — board + laptop**
-7. A4 power: meter inline; idle, `first_contact … --timing-frames 2000`, `arm_baseline … --frames 2000`;
+6. A4 power: meter inline; idle, `first_contact … --timing-frames 2000`, `arm_baseline … --frames 2000`;
    fill `future_work/baselines/power_template.csv`; `py -m future_work.baselines.energy_table …`.
-8. A5/A6: `py scripts\demo_key.py`, then `py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <BOARD IP> --board-max-mode E5`
+7. A5/A6: `py scripts\demo_key.py`, then `py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <BOARD IP> --board-max-mode E5`
    and the printed board command on the board; three runs each of `full_suite` and `benign`.
-9. Laptop: `python paper/make_assets.py && make -C paper`, check `pdfinfo paper/conference.pdf` = 6 pages,
+8. Laptop: `python paper/make_assets.py && make -C paper`, check `pdfinfo paper/conference.pdf` = 6 pages,
    replace the red `\TODO{A2…A4}`, commit the data.
 
 ## 4. Rehearsal without a board (works today, tested)

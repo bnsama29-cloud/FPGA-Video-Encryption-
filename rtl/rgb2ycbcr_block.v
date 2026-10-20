@@ -37,13 +37,20 @@ module rgb2ycbcr_block #(
     //   C     registered sums (multiply-add)            D2  registered, clamped Y, Cb, Cr
     //   (C added after the second overlay run: multiply-add + clamp in one clock missed by 0.24 ns)
     //   D3    registered pair sums and row-sum reads; line buffers / chroma sums written from D3, `full` set there
-    // The writes happen 4 clocks after the handshake, in the same order, so the buffers
-    // end up with the same contents; the reader starts 4 clocks later.
+    // The writes happen 5 clocks after the handshake (P added 21 Oct 2026), in the same order, so the buffers
+    // end up with the same contents; the reader starts 5 clocks later.
     //   D3 (21 Oct 2026, for 125 MHz: Vivado placed the converter on the critical path, -0.875 ns at
     //   8 ns): the chroma pair sum and the read of the row-sum memory are registered, and every buffer
     //   write happens one clock later from D3. The row sum of column cx is written on an even line and
     //   read on the next odd line, at least 8 pixels later, so the extra clock cannot read a stale value.
-    reg                d1_v, c_v, d2_v, d3_v;
+    //   P  (21 Oct 2026, run 8: at 125 MHz the multiply-add D1 -> C was the critical path, 12 logic levels,
+    //   -0.487 ns): the nine constant products are registered first and C only adds them, so each stage
+    //   has about half the carry chain. Same integers, so the same bytes; one clock more latency.
+    reg                d1_v, p_v, c_v, d2_v, d3_v;
+    reg                p_sel, p_last;
+    reg [3:0]          p_y;
+    reg [LOG_MAXW-1:0] p_x;
+    reg signed [18:0]  p_y1, p_y2, p_y3, p_cb1, p_cb2, p_cb3, p_cr1, p_cr2, p_cr3;
     reg                d3_sel, d3_last;
     reg [3:0]          d3_y;
     reg [LOG_MAXW-1:0] d3_x;
@@ -58,9 +65,12 @@ module rgb2ycbcr_block #(
 
     // ---------------------------------------------------- colour conversion (on D1)
     wire [7:0] r = d1_rgb[7:0], g = d1_rgb[15:8], b = d1_rgb[23:16];
-    wire signed [18:0] y_t  = 77 * r + 150 * g + 29 * b + 128;
-    wire signed [18:0] cb_t = -43 * $signed({1'b0, r}) - 85 * $signed({1'b0, g}) + 128 * $signed({1'b0, b}) + 32896;
-    wire signed [18:0] cr_t = 128 * $signed({1'b0, r}) - 107 * $signed({1'b0, g}) - 21 * $signed({1'b0, b}) + 32896;
+    // y_t  = 77 r + 150 g + 29 b + 128
+    // cb_t = -43 r - 85 g + 128 b + 32896
+    // cr_t = 128 r - 107 g - 21 b + 32896          (products on P, sums on C)
+    wire signed [18:0] y_t  = p_y1 + p_y2 + p_y3 + 19'sd128;
+    wire signed [18:0] cb_t = p_cb1 + p_cb2 + p_cb3 + 19'sd32896;
+    wire signed [18:0] cr_t = p_cr1 + p_cr2 + p_cr3 + 19'sd32896;
     function [7:0] sat8;                     // (v >> 8) clamped to 0..255
         input signed [18:0] v;
         begin
@@ -102,8 +112,12 @@ module rgb2ycbcr_block #(
     always @(posedge clk) begin
         d1_rgb <= s_data[23:0];
         d1_sel <= wsel; d1_y <= wy; d1_x <= wx[LOG_MAXW-1:0]; d1_last <= last_px_of_row;
+        p_y1  <= 77 * $signed({1'b0, r});  p_y2  <= 150 * $signed({1'b0, g}); p_y3  <= 29 * $signed({1'b0, b});
+        p_cb1 <= -43 * $signed({1'b0, r}); p_cb2 <= -85 * $signed({1'b0, g}); p_cb3 <= 128 * $signed({1'b0, b});
+        p_cr1 <= 128 * $signed({1'b0, r}); p_cr2 <= -107 * $signed({1'b0, g}); p_cr3 <= -21 * $signed({1'b0, b});
+        p_sel <= d1_sel; p_y <= d1_y; p_x <= d1_x; p_last <= d1_last;
         c_yt <= y_t; c_cbt <= cb_t; c_crt <= cr_t;
-        c_sel <= d1_sel; c_y <= d1_y; c_x <= d1_x; c_last <= d1_last;
+        c_sel <= p_sel; c_y <= p_y; c_x <= p_x; c_last <= p_last;
         d2_yp <= y_px; d2_cb <= cb_px; d2_cr <= cr_px;
         d2_sel <= c_sel; d2_y <= c_y; d2_x <= c_x; d2_last <= c_last;
         if (d2_v && !d2_x[0]) begin
@@ -146,9 +160,9 @@ module rgb2ycbcr_block #(
             wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start;
             rrow <= 8'd0; rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
-            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
+            d1_v <= 1'b0; p_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
         end else begin
-            d1_v <= take; c_v <= d1_v; d2_v <= c_v; d3_v <= d2_v;
+            d1_v <= take; p_v <= d1_v; c_v <= p_v; d2_v <= c_v; d3_v <= d2_v;
             // writer counters
             if (take) begin
                 if (wx == width - 12'd1) begin

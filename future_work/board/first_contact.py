@@ -76,13 +76,17 @@ def check(ip, sizes, n, source, quality):
     return ok_all, rows
 
 
-def timing(ip, sizes, n, source):
+def timing(ip, sizes, n, source, zero_copy=False):
     rows = []
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
         for mode in range(ip.max_mode + 1):
             t_enc, t_full, parts = [], [], []
             for i, rgb in enumerate(imgs):
+                if zero_copy:                      # the frame is already in the DMA buffer (as a camera
+                    buf = ip.pixel_buffer(w, h)    # writing there would leave it): not timed
+                    np.copyto(buf, rgb)
+                    rgb = buf
                 t0 = time.perf_counter()
                 scan, tag = ip.encode(rgb, mode, 50_000 + i)
                 t1 = time.perf_counter()
@@ -96,7 +100,7 @@ def timing(ip, sizes, n, source):
             def med(k, nd=2):
                 v = [p[k] for p in parts if p.get(k) is not None]
                 return round(statistics.median(v), nd) if v else None
-            row = dict(size=f"{w}x{h}", mode=mode, frames=n, encode_ms=round(1000 * me, 2),
+            row = dict(size=f"{w}x{h}", mode=mode, frames=n, zero_copy=zero_copy, encode_ms=round(1000 * me, 2),
                        encode_fps=round(1 / me, 1), full_ms=round(1000 * mf, 2), full_fps=round(1 / mf, 1),
                        load_ms=med("load_ms"), dma_ms=med("dma_ms"), arm_ms=med("arm_ms"),
                        fabric_ms=med("fabric_ms", 3), cycles=med("cycles", 0), in_wait=med("in_wait", 0),
@@ -127,6 +131,9 @@ def main():
     ap.add_argument("--ip-name")
     ap.add_argument("--dma-name")
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--zero-copy", action="store_true",
+                    help="Part 2 with each frame already in the DMA buffer (ip.pixel_buffer): what a camera "
+                         "writing straight into that buffer would give; reported in its own column")
     ap.add_argument("--full-cache-ops", action="store_true",
                     help="flush/invalidate the whole DMA buffers instead of only the frame's bytes")
     a = ap.parse_args()
@@ -148,6 +155,9 @@ def main():
     if ok:
         print("Part 2: speed", flush=True)
         speed = timing(ip, sizes, a.timing_frames, a.source)
+        if a.zero_copy:
+            print("Part 2b: speed with the frame already in the DMA buffer (zero copy)", flush=True)
+            speed += timing(ip, sizes, a.timing_frames, a.source, zero_copy=True)
     else:
         print("Part 1 FAILED: speed not measured (a fast wrong encoder is worthless). See the docstring.")
     out = Path(a.out)
@@ -158,9 +168,9 @@ def main():
     md = [f"Backend: {res['backend']}. Bit-exact with the golden model in every size and mode: "
           f"**{'yes' if ok else 'NO'}** ({a.frames} frames each).", ""]
     if speed:
-        md += ["| Size | Mode | Encode only (ms) | fps | Incl. headers on ARM (ms) | fps | load (ms) | DMA (ms) "
-               "| ARM after (ms) | fabric (ms) | fabric fps |", "|---|---|---|---|---|---|---|---|---|---|---|"]
-        md += [f"| {r['size']} | E{r['mode']} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} "
+        md += ["| Size | Mode | Zero copy | Encode only (ms) | fps | Incl. headers on ARM (ms) | fps | load (ms) | DMA (ms) "
+               "| ARM after (ms) | fabric (ms) | fabric fps |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        md += [f"| {r['size']} | E{r['mode']} | {'yes' if r.get('zero_copy') else 'no'} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} "
                f"| {r['load_ms']} | {r['dma_ms']} | {r['arm_ms']} | {r['fabric_ms'] if r['fabric_ms'] else '-'} "
                f"| {r.get('fabric_fps', '-')} |" for r in speed]
         md += ["", "fabric = CYCLES register (START to DONE, 100 MHz clocks): the encoder alone, without the ARM; "

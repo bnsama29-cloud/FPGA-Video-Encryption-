@@ -8,6 +8,9 @@
 #   ... -tclargs 100 2 lanes                             (contract-v3 lane encoder, 2 lanes,
 #                                                         64-bit pixel DMA; own project + overlay
 #                                                         secure_jpeg_lanes.bit/.hwh)
+#   ... -tclargs 100 2 lanes4                            (the same with 4 lanes, lines up to 1024
+#                                                         pixels: secure_jpeg_lanes4.bit/.hwh,
+#                                                         reports in overlay/lanes4/)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
@@ -38,6 +41,13 @@ set design  [expr {[llength $argv] > 2 ? [lindex $argv 2] : "v2"}]
 if {$design eq "lanes"} {
     set projdir [file join $root future_work board vivado_proj_lanes]
     set outname secure_jpeg_lanes
+    set bdtop   sjpeg_lanes_bd_top
+    set pxbits  64
+} elseif {$design eq "lanes4"} {
+    # 4 lanes: same wrapper, LANES = 4, lines up to 1024 pixels (the OOC run that met 100 MHz used the
+    # same LOG_MAXW = 10; 2048-pixel lines with 4 lanes would double the line-buffer BRAM)
+    set projdir [file join $root future_work board vivado_proj_lanes4]
+    set outname secure_jpeg_lanes4
     set bdtop   sjpeg_lanes_bd_top
     set pxbits  64
 } else {
@@ -88,6 +98,9 @@ set_property -dict [list \
 
 # ---- our IP (RTL module reference, no packaging step needed)
 set sjpeg [create_bd_cell -type module -reference $bdtop sjpeg]
+if {$design eq "lanes4"} {
+    set_property -dict [list CONFIG.LANES {4} CONFIG.LOG_L {2} CONFIG.LOG_MAXW {10}] $sjpeg
+}
 
 # ---- AXI DMA, simple (register) mode
 set dma [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma dma]
@@ -175,7 +188,7 @@ file copy -force [lindex $bit 0] [file join $outdir ${outname}.bit]
 file copy -force [lindex $hwh 0] [file join $outdir ${outname}.hwh]
 open_run impl_1
 # reports: overlay/ for v2 (as before), overlay/lanes/ for the lane encoder
-set rptdir [expr {$design eq "lanes" ? [file join $outdir lanes] : $outdir}]
+set rptdir [expr {$design eq "v2" ? $outdir : [file join $outdir $design]}]
 file mkdir $rptdir
 report_utilization    -file [file join $rptdir utilization.txt]
 report_utilization    -hierarchical -hierarchical_depth 3 -file [file join $rptdir utilization_hier.txt]

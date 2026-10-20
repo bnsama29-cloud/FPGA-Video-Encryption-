@@ -1,265 +1,5 @@
 [
  {
-  "folder": "run6/vivado_secure_jpeg_top_8.0ns",
-  "name": "secure_jpeg_top_8.0ns",
-  "util": {
-   "lut": [
-    5057.0,
-    53200.0,
-    9.51
-   ],
-   "ff": [
-    2954.0,
-    106400.0,
-    2.78
-   ],
-   "bram": [
-    24.5,
-    140.0,
-    17.5
-   ],
-   "dsp": [
-    23.0,
-    220.0,
-    10.45
-   ]
-  },
-  "timing": {
-   "wns": -0.875,
-   "tns": -7.267,
-   "whs": 0.072,
-   "met": false
-  },
-  "power": {
-   "total": 0.251,
-   "dynamic": 0.145,
-   "static": 0.106,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {},
-  "hier": [
-   [
-    0,
-    "secure_jpeg_top",
-    "(top)",
-    5057,
-    2954,
-    24.5,
-    23
-   ],
-   [
-    1,
-    "(secure_jpeg_top)",
-    "(top)",
-    0,
-    5,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_conv",
-    "rgb2ycbcr_block",
-    773,
-    219,
-    24.0,
-    0
-   ],
-   [
-    1,
-    "u_dct",
-    "dct8x8",
-    805,
-    69,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_cols",
-    "dct_stage__parameterized0",
-    505,
-    36,
-    0.0,
-    11
-   ],
-   [
-    2,
-    "u_rows",
-    "dct_stage",
-    300,
-    33,
-    0.0,
-    11
-   ],
-   [
-    1,
-    "u_enc",
-    "selective_enc",
-    82,
-    24,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_huff",
-    "huffman_enc",
-    268,
-    34,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_ks",
-    "keystream_gen",
-    951,
-    851,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_ks)",
-    "keystream_gen",
-    90,
-    266,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core_0",
-    861,
-    585,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_pack",
-    "bit_packer",
-    216,
-    84,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_regs",
-    "axil_regs",
-    349,
-    355,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_rle",
-    "zigzag_rle",
-    221,
-    110,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_tag",
-    "tag_unit",
-    1346,
-    1072,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_tag)",
-    "tag_unit",
-    377,
-    614,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core",
-    969,
-    458,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_words",
-    "scan_word_packer",
-    22,
-    95,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    -0.875,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.76,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.666,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.649,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.63,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.589,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.478,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.337,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.334,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    -0.298,
-    "u_conv",
-    "u_conv"
-   ]
-  ],
-  "period": 8.0,
-  "missing": [],
-  "fmax_mhz": 112.7
- },
- {
   "folder": "run6/vivado_secure_jpeg_top_6.667ns",
   "name": "secure_jpeg_top_6.667ns",
   "util": {
@@ -526,7 +266,8 @@
   ],
   "period": 6.667,
   "missing": [],
-  "fmax_mhz": 118.6
+  "fmax_mhz": 118.6,
+  "run": 6
  },
  {
   "folder": "run6/vivado_secure_jpeg_top_log_maxw9",
@@ -786,7 +527,8 @@
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 107.9
+  "fmax_mhz": 107.9,
+  "run": 6
  },
  {
   "folder": "run6/vivado_secure_jpeg_top_log_maxw10",
@@ -1046,357 +788,8 @@
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 106.5
- },
- {
-  "folder": "run6/vivado_secure_jpeg_lanes_top_8.0ns_lanes2_log_l1",
-  "name": "secure_jpeg_lanes_top_8.0ns_lanes2_log_l1",
-  "util": {
-   "lut": [
-    9989.0,
-    53200.0,
-    18.78
-   ],
-   "ff": [
-    5382.0,
-    106400.0,
-    5.06
-   ],
-   "bram": [
-    50.0,
-    140.0,
-    35.71
-   ],
-   "dsp": [
-    46.0,
-    220.0,
-    20.91
-   ]
-  },
-  "timing": {
-   "wns": -1.071,
-   "tns": -27.143,
-   "whs": 0.076,
-   "met": false
-  },
-  "power": {
-   "total": 0.448,
-   "dynamic": 0.337,
-   "static": 0.111,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {},
-  "hier": [
-   [
-    0,
-    "secure_jpeg_lanes_top",
-    "(top)",
-    9989,
-    5382,
-    50.0,
-    46
-   ],
-   [
-    1,
-    "(secure_jpeg_lanes_top)",
-    "(top)",
-    3,
-    21,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[0].u_lane",
-    "encoder_lane",
-    3053,
-    1526,
-    25.0,
-    23
-   ],
-   [
-    2,
-    "(g_lane[0].u_lane)",
-    "encoder_lane",
-    23,
-    65,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_conv",
-    "rgb2ycbcr_2px_2",
-    439,
-    215,
-    24.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8_3",
-    805,
-    70,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc_4",
-    82,
-    24,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc_6",
-    226,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen_7",
-    950,
-    851,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer_8",
-    220,
-    84,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle_10",
-    262,
-    110,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[1].u_lane",
-    "encoder_lane__parameterized0",
-    4339,
-    1581,
-    25.0,
-    23
-   ],
-   [
-    2,
-    "(g_lane[1].u_lane)",
-    "encoder_lane__parameterized0",
-    23,
-    65,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_conv",
-    "rgb2ycbcr_2px",
-    1718,
-    270,
-    24.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8",
-    802,
-    70,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc",
-    87,
-    24,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc",
-    225,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen",
-    951,
-    851,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer",
-    217,
-    84,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle",
-    269,
-    110,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_kseg",
-    "kseg_unit",
-    790,
-    591,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_kseg)",
-    "kseg_unit",
-    4,
-    133,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core_0",
-    786,
-    458,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_regs",
-    "axil_regs",
-    429,
-    356,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_tag",
-    "tag_unit",
-    1311,
-    1191,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_tag)",
-    "tag_unit",
-    336,
-    605,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core",
-    975,
-    586,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_words",
-    "scan_word_packer",
-    36,
-    95,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    -1.071,
-    "g_lane[1].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    -1.043,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.956,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.857,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.843,
-    "g_lane[1].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    -0.828,
-    "g_lane[1].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    -0.813,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.762,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.76,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.746,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ]
-  ],
-  "period": 8.0,
-  "missing": [],
-  "fmax_mhz": 110.2
+  "fmax_mhz": 106.5,
+  "run": 6
  },
  {
   "folder": "run6/vivado_secure_jpeg_lanes_top_6.667ns_lanes2_log_l1",
@@ -1764,463 +1157,27 @@
   ],
   "period": 6.667,
   "missing": [],
-  "fmax_mhz": 115.1
+  "fmax_mhz": 115.1,
+  "run": 6
  },
  {
-  "folder": "run6/overlay",
-  "name": "overlay",
+  "folder": "E:\\FPGA-Video-Encryption-\\sim_build\\vivado_secure_jpeg_lanes_top_8.0ns_lanes2_log_l1",
+  "name": "secure_jpeg_lanes_top_8.0ns_lanes2_log_l1",
   "util": {
    "lut": [
-    6933.0,
+    9650.0,
     53200.0,
-    13.03
+    18.14
    ],
    "ff": [
-    5575.0,
+    5504.0,
     106400.0,
-    5.24
+    5.17
    ],
    "bram": [
-    26.5,
+    52.0,
     140.0,
-    18.93
-   ],
-   "dsp": [
-    23.0,
-    220.0,
-    10.45
-   ]
-  },
-  "timing": {
-   "wns": 0.788,
-   "tns": 0.0,
-   "whs": 0.026,
-   "met": true
-  },
-  "power": {
-   "total": 1.799,
-   "dynamic": 1.657,
-   "static": 0.142,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {},
-  "hier": [
-   [
-    0,
-    "system_wrapper",
-    "(top)",
-    6933,
-    5575,
-    26.5,
-    23
-   ],
-   [
-    1,
-    "system_i",
-    "system",
-    6933,
-    5575,
-    26.5,
-    23
-   ],
-   [
-    2,
-    "sjpeg",
-    "system_sjpeg_0",
-    5001,
-    2950,
-    24.5,
-    23
-   ],
-   [
-    2,
-    "axi_mem_intercon",
-    "system_axi_mem_intercon_0",
-    202,
-    315,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "dma",
-    "system_dma_0",
-    1199,
-    1601,
-    2.0,
-    0
-   ],
-   [
-    2,
-    "ps7_axi_periph",
-    "system_ps7_axi_periph_0",
-    514,
-    675,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    0.788,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.83,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.848,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.883,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.888,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.89,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.899,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.925,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.941,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.983,
-    "system_i",
-    "system_i"
-   ]
-  ],
-  "period": 10.0,
-  "missing": [],
-  "fmax_mhz": 108.6
- },
- {
-  "folder": "run7/vivado_secure_jpeg_top",
-  "name": "secure_jpeg_top",
-  "util": {
-   "lut": [
-    5037.0,
-    53200.0,
-    9.47
-   ],
-   "ff": [
-    2950.0,
-    106400.0,
-    2.77
-   ],
-   "bram": [
-    24.5,
-    140.0,
-    17.5
-   ],
-   "dsp": [
-    23.0,
-    220.0,
-    10.45
-   ]
-  },
-  "timing": {
-   "wns": 0.554,
-   "tns": 0.0,
-   "whs": 0.082,
-   "met": true
-  },
-  "power": {
-   "total": 0.223,
-   "dynamic": 0.117,
-   "static": 0.106,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {
-   "v2_E0": {
-    "total": 0.211,
-    "dynamic": 0.105,
-    "static": 0.105,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   },
-   "v2_E2": {
-    "total": 0.21,
-    "dynamic": 0.104,
-    "static": 0.105,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   },
-   "v2_E4": {
-    "total": 0.21,
-    "dynamic": 0.104,
-    "static": 0.105,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   }
-  },
-  "hier": [
-   [
-    0,
-    "secure_jpeg_top",
-    "(top)",
-    5037,
-    2950,
-    24.5,
-    23
-   ],
-   [
-    1,
-    "(secure_jpeg_top)",
-    "(top)",
-    0,
-    5,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_conv",
-    "rgb2ycbcr_block",
-    762,
-    215,
-    24.0,
-    0
-   ],
-   [
-    1,
-    "u_dct",
-    "dct8x8",
-    806,
-    69,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_cols",
-    "dct_stage__parameterized0",
-    505,
-    36,
-    0.0,
-    11
-   ],
-   [
-    2,
-    "u_rows",
-    "dct_stage",
-    301,
-    33,
-    0.0,
-    11
-   ],
-   [
-    1,
-    "u_enc",
-    "selective_enc",
-    82,
-    24,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_huff",
-    "huffman_enc",
-    268,
-    34,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_ks",
-    "keystream_gen",
-    950,
-    851,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_ks)",
-    "keystream_gen",
-    89,
-    266,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core_0",
-    861,
-    585,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_pack",
-    "bit_packer",
-    211,
-    84,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_regs",
-    "axil_regs",
-    351,
-    355,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_rle",
-    "zigzag_rle",
-    219,
-    110,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_tag",
-    "tag_unit",
-    1345,
-    1072,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_tag)",
-    "tag_unit",
-    376,
-    614,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core",
-    969,
-    458,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_words",
-    "scan_word_packer",
-    22,
-    95,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    0.554,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    0.799,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    0.801,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    0.912,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    1.008,
-    "(top)",
-    "u_pack"
-   ],
-   [
-    1.028,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    1.037,
-    "(top)",
-    "u_pack"
-   ],
-   [
-    1.103,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    1.139,
-    "u_conv",
-    "u_conv"
-   ],
-   [
-    1.189,
-    "u_conv",
-    "u_conv"
-   ]
-  ],
-  "period": 10.0,
-  "missing": [],
-  "fmax_mhz": 105.9
- },
- {
-  "folder": "run7/vivado_secure_jpeg_lanes_top_lanes2_log_l1",
-  "name": "secure_jpeg_lanes_top_lanes2_log_l1",
-  "util": {
-   "lut": [
-    10069.0,
-    53200.0,
-    18.93
-   ],
-   "ff": [
-    5367.0,
-    106400.0,
-    5.04
-   ],
-   "bram": [
-    50.0,
-    140.0,
-    35.71
+    37.14
    ],
    "dsp": [
     46.0,
@@ -2229,45 +1186,28 @@
    ]
   },
   "timing": {
-   "wns": 0.359,
-   "tns": 0.0,
-   "whs": 0.059,
-   "met": true
+   "wns": -0.914,
+   "tns": -36.638,
+   "whs": 0.077,
+   "met": false
   },
   "power": {
-   "total": 0.38,
-   "dynamic": 0.27,
-   "static": 0.11,
+   "total": 0.443,
+   "dynamic": 0.332,
+   "static": 0.111,
    "confidence": "Medium",
    "internal": "Medium",
    "internal_detail": "User specified less than 25% of internal nodes"
   },
-  "power_saif": {
-   "v3_E2": {
-    "total": 0.319,
-    "dynamic": 0.21,
-    "static": 0.109,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   },
-   "v3_E5": {
-    "total": 0.318,
-    "dynamic": 0.21,
-    "static": 0.109,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   }
-  },
+  "power_saif": {},
   "hier": [
    [
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    10069,
-    5367,
-    50.0,
+    9650,
+    5504,
+    52.0,
     46
    ],
    [
@@ -2275,7 +1215,7 @@
     "(secure_jpeg_lanes_top)",
     "(top)",
     4,
-    37,
+    40,
     0.0,
     0
    ],
@@ -2283,16 +1223,16 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    3058,
-    1505,
-    25.0,
+    2802,
+    1523,
+    26.0,
     23
    ],
    [
     2,
     "u_rle",
     "zigzag_rle_10",
-    262,
+    274,
     110,
     0.0,
     0
@@ -2301,17 +1241,17 @@
     2,
     "u_conv",
     "rgb2ycbcr_2px_2",
-    440,
-    216,
-    24.0,
+    147,
+    235,
+    25.0,
     0
    ],
    [
     2,
     "u_dct",
     "dct8x8_3",
-    803,
-    70,
+    801,
+    69,
     0.0,
     22
    ],
@@ -2319,7 +1259,7 @@
     2,
     "u_enc",
     "selective_enc_4",
-    82,
+    85,
     24,
     0.0,
     0
@@ -2328,7 +1268,7 @@
     2,
     "u_huff",
     "huffman_enc_6",
-    218,
+    226,
     34,
     0.0,
     0
@@ -2337,7 +1277,7 @@
     2,
     "u_ks",
     "keystream_gen_7",
-    963,
+    966,
     851,
     0.0,
     0
@@ -2346,7 +1286,7 @@
     2,
     "u_pack",
     "bit_packer_8",
-    207,
+    218,
     84,
     0.0,
     0
@@ -2355,16 +1295,16 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    4297,
-    1554,
-    25.0,
+    4088,
+    1573,
+    26.0,
     23
    ],
    [
     2,
     "u_rle",
     "zigzag_rle",
-    262,
+    274,
     110,
     0.0,
     0
@@ -2373,9 +1313,9 @@
     2,
     "u_conv",
     "rgb2ycbcr_2px",
-    1670,
-    264,
-    24.0,
+    1423,
+    284,
+    25.0,
     0
    ],
    [
@@ -2383,7 +1323,7 @@
     "u_dct",
     "dct8x8",
     805,
-    70,
+    69,
     0.0,
     22
    ],
@@ -2400,7 +1340,7 @@
     2,
     "u_huff",
     "huffman_enc",
-    217,
+    226,
     34,
     0.0,
     0
@@ -2409,7 +1349,7 @@
     2,
     "u_ks",
     "keystream_gen",
-    963,
+    966,
     851,
     0.0,
     0
@@ -2418,7 +1358,7 @@
     2,
     "u_pack",
     "bit_packer",
-    207,
+    219,
     84,
     0.0,
     0
@@ -2463,8 +1403,8 @@
     1,
     "u_regs",
     "axil_regs",
-    496,
-    356,
+    552,
+    453,
     0.0,
     0
    ],
@@ -2472,7 +1412,7 @@
     1,
     "u_tag",
     "tag_unit",
-    1321,
+    1336,
     1191,
     0.0,
     0
@@ -2481,7 +1421,7 @@
     2,
     "(u_tag)",
     "tag_unit",
-    346,
+    359,
     605,
     0.0,
     0
@@ -2490,7 +1430,7 @@
     2,
     "u_core",
     "ascon_aead128_core",
-    975,
+    977,
     586,
     0.0,
     0
@@ -2499,7 +1439,7 @@
     1,
     "u_words",
     "scan_word_packer",
-    52,
+    24,
     95,
     0.0,
     0
@@ -2507,78 +1447,438 @@
   ],
   "critical": [
    [
-    0.359,
-    "g_lane[0].u_lane",
+    -0.914,
+    "g_lane[1].u_lane",
     "g_lane[0].u_lane"
    ],
    [
-    0.359,
-    "g_lane[0].u_lane",
+    -0.904,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    -0.864,
+    "g_lane[1].u_lane",
     "g_lane[0].u_lane"
    ],
    [
-    0.359,
-    "g_lane[0].u_lane",
+    -0.854,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    -0.848,
+    "g_lane[1].u_lane",
     "g_lane[0].u_lane"
    ],
    [
-    0.359,
-    "g_lane[0].u_lane",
+    -0.819,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    -0.801,
+    "g_lane[1].u_lane",
     "g_lane[0].u_lane"
    ],
    [
-    0.359,
-    "g_lane[0].u_lane",
+    -0.746,
+    "g_lane[1].u_lane",
     "g_lane[0].u_lane"
    ],
    [
-    0.382,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    -0.724,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
    ],
    [
-    0.382,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.382,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.403,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.403,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    -0.714,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
    ]
   ],
-  "period": 10.0,
+  "period": 8.0,
   "missing": [],
-  "fmax_mhz": 103.7
+  "fmax_mhz": 112.2,
+  "run": 8
  },
  {
-  "folder": "run7/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
-  "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
+  "folder": "E:\\FPGA-Video-Encryption-\\sim_build\\vivado_secure_jpeg_lanes_top_lanes2_log_l1",
+  "name": "secure_jpeg_lanes_top_lanes2_log_l1",
   "util": {
    "lut": [
-    16893.0,
+    9528.0,
     53200.0,
-    31.75
+    17.91
    ],
    "ff": [
-    8254.0,
+    5503.0,
     106400.0,
-    7.76
+    5.17
    ],
    "bram": [
     52.0,
     140.0,
     37.14
+   ],
+   "dsp": [
+    46.0,
+    220.0,
+    20.91
+   ]
+  },
+  "timing": {
+   "wns": 0.491,
+   "tns": 0.0,
+   "whs": 0.071,
+   "met": true
+  },
+  "power": {
+   "total": 0.374,
+   "dynamic": 0.265,
+   "static": 0.11,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {
+   "v3_E2": {
+    "total": 0.318,
+    "dynamic": 0.209,
+    "static": 0.109,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "v3_E5": {
+    "total": 0.317,
+    "dynamic": 0.209,
+    "static": 0.109,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   }
+  },
+  "hier": [
+   [
+    0,
+    "secure_jpeg_lanes_top",
+    "(top)",
+    9528,
+    5503,
+    52.0,
+    46
+   ],
+   [
+    1,
+    "(secure_jpeg_lanes_top)",
+    "(top)",
+    4,
+    40,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[0].u_lane",
+    "encoder_lane",
+    2763,
+    1523,
+    26.0,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_10",
+    261,
+    110,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_conv",
+    "rgb2ycbcr_2px_2",
+    147,
+    235,
+    25.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_3",
+    801,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_4",
+    82,
+    24,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_6",
+    218,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_7",
+    964,
+    851,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_8",
+    208,
+    84,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[1].u_lane",
+    "encoder_lane__parameterized0",
+    4003,
+    1572,
+    26.0,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle",
+    263,
+    110,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_conv",
+    "rgb2ycbcr_2px",
+    1380,
+    283,
+    25.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8",
+    802,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc",
+    82,
+    24,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc",
+    217,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen",
+    963,
+    851,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer",
+    208,
+    84,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_kseg",
+    "kseg_unit",
+    790,
+    591,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_kseg)",
+    "kseg_unit",
+    4,
+    133,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    786,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_merge",
+    "segment_merger",
+    56,
+    38,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    554,
+    453,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1337,
+    1191,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    360,
+    605,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    978,
+    586,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    24,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.491,
+    "g_lane[1].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.491,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.514,
+    "g_lane[1].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.547,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.561,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.567,
+    "g_lane[1].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.6,
+    "g_lane[1].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.656,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.662,
+    "g_lane[1].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.664,
+    "g_lane[1].u_lane",
+    "g_lane[0].u_lane"
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 105.2,
+  "run": 8
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\sim_build\\vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
+  "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
+  "util": {
+   "lut": [
+    16345.0,
+    53200.0,
+    30.72
+   ],
+   "ff": [
+    8523.0,
+    106400.0,
+    8.01
+   ],
+   "bram": [
+    56.0,
+    140.0,
+    40.0
    ],
    "dsp": [
     92.0,
@@ -2587,14 +1887,14 @@
    ]
   },
   "timing": {
-   "wns": 0.293,
+   "wns": 0.243,
    "tns": 0.0,
-   "whs": 0.062,
+   "whs": 0.041,
    "met": true
   },
   "power": {
-   "total": 0.555,
-   "dynamic": 0.442,
+   "total": 0.543,
+   "dynamic": 0.43,
    "static": 0.113,
    "confidence": "Medium",
    "internal": "Medium",
@@ -2606,9 +1906,9 @@
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    16893,
-    8254,
-    52.0,
+    16345,
+    8523,
+    56.0,
     92
    ],
    [
@@ -2616,7 +1916,7 @@
     "(secure_jpeg_lanes_top)",
     "(top)",
     4,
-    38,
+    41,
     0.0,
     0
    ],
@@ -2624,9 +1924,9 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    2905,
-    1473,
-    13.0,
+    2757,
+    1515,
+    14.0,
     23
    ],
    [
@@ -2642,16 +1942,16 @@
     2,
     "u_conv",
     "rgb2ycbcr_2px_26",
-    291,
-    187,
-    12.0,
+    140,
+    229,
+    13.0,
     0
    ],
    [
     2,
     "u_dct",
     "dct8x8_27",
-    802,
+    804,
     69,
     0.0,
     22
@@ -2678,7 +1978,7 @@
     2,
     "u_ks",
     "keystream_gen_31",
-    962,
+    963,
     851,
     0.0,
     0
@@ -2696,16 +1996,16 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    2906,
-    1474,
-    13.0,
+    2756,
+    1516,
+    14.0,
     23
    ],
    [
     2,
     "(g_lane[1].u_lane)",
     "encoder_lane__parameterized0",
-    105,
+    106,
     43,
     0.0,
     0
@@ -2714,9 +2014,9 @@
     2,
     "u_conv",
     "rgb2ycbcr_2px_14",
-    297,
-    187,
-    12.0,
+    144,
+    229,
+    13.0,
     0
    ],
    [
@@ -2750,7 +2050,7 @@
     2,
     "u_ks",
     "keystream_gen_19",
-    970,
+    971,
     851,
     0.0,
     0
@@ -2768,7 +2068,7 @@
     2,
     "u_rle",
     "zigzag_rle_22",
-    257,
+    258,
     110,
     0.0,
     0
@@ -2777,16 +2077,16 @@
     1,
     "g_lane[2].u_lane",
     "encoder_lane__parameterized1",
-    2921,
-    1475,
-    13.0,
+    2763,
+    1516,
+    14.0,
     23
    ],
    [
     2,
     "u_rle",
     "zigzag_rle_10",
-    265,
+    264,
     110,
     0.0,
     0
@@ -2795,17 +2095,17 @@
     2,
     "u_conv",
     "rgb2ycbcr_2px_2",
-    294,
-    187,
-    12.0,
+    141,
+    229,
+    13.0,
     0
    ],
    [
     2,
     "u_dct",
     "dct8x8_3",
-    804,
-    70,
+    803,
+    69,
     0.0,
     22
    ],
@@ -2840,7 +2140,7 @@
     2,
     "u_pack",
     "bit_packer_8",
-    210,
+    208,
     84,
     0.0,
     0
@@ -2849,9 +2149,9 @@
     1,
     "g_lane[3].u_lane",
     "encoder_lane__parameterized2",
-    5351,
-    1522,
-    13.0,
+    5212,
+    1565,
+    14.0,
     23
    ],
    [
@@ -2867,17 +2167,17 @@
     2,
     "u_conv",
     "rgb2ycbcr_2px",
-    2740,
-    235,
-    12.0,
+    2598,
+    277,
+    13.0,
     0
    ],
    [
     2,
     "u_dct",
     "dct8x8",
-    721,
-    68,
+    724,
+    69,
     0.0,
     22
    ],
@@ -2903,7 +2203,7 @@
     2,
     "u_ks",
     "keystream_gen",
-    971,
+    970,
     851,
     0.0,
     0
@@ -2921,7 +2221,7 @@
     2,
     "u_rle",
     "zigzag_rle",
-    259,
+    258,
     110,
     0.0,
     0
@@ -2966,8 +2266,8 @@
     1,
     "u_regs",
     "axil_regs",
-    583,
-    356,
+    639,
+    454,
     0.0,
     0
    ],
@@ -2975,7 +2275,7 @@
     1,
     "u_tag",
     "tag_unit",
-    1320,
+    1338,
     1191,
     0.0,
     0
@@ -2984,7 +2284,7 @@
     2,
     "(u_tag)",
     "tag_unit",
-    345,
+    361,
     605,
     0.0,
     0
@@ -2993,7 +2293,7 @@
     2,
     "u_core",
     "ascon_aead128_core",
-    975,
+    977,
     586,
     0.0,
     0
@@ -3002,7 +2302,7 @@
     1,
     "u_words",
     "scan_word_packer",
-    52,
+    24,
     95,
     0.0,
     0
@@ -3010,95 +2310,643 @@
   ],
   "critical": [
    [
-    0.293,
+    0.243,
+    "g_lane[3].u_lane",
+    "g_lane[2].u_lane"
+   ],
+   [
+    0.327,
+    "g_lane[3].u_lane",
+    "g_lane[2].u_lane"
+   ],
+   [
+    0.347,
+    "g_lane[3].u_lane",
+    "g_lane[2].u_lane"
+   ],
+   [
+    0.422,
+    "g_lane[3].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.45,
+    "g_lane[3].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.461,
+    "g_lane[3].u_lane",
+    "g_lane[2].u_lane"
+   ],
+   [
+    0.469,
+    "g_lane[3].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.513,
+    "g_lane[3].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.534,
+    "g_lane[3].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.54,
     "g_lane[3].u_lane",
     "g_lane[3].u_lane"
-   ],
-   [
-    0.363,
-    "g_lane[3].u_lane",
-    "g_lane[2].u_lane"
-   ],
-   [
-    0.395,
-    "g_lane[3].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.419,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.419,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.44,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.445,
-    "g_lane[3].u_lane",
-    "g_lane[3].u_lane"
-   ],
-   [
-    0.447,
-    "g_lane[3].u_lane",
-    "g_lane[2].u_lane"
-   ],
-   [
-    0.467,
-    "g_lane[3].u_lane",
-    "g_lane[2].u_lane"
-   ],
-   [
-    0.472,
-    "g_lane[3].u_lane",
-    "g_lane[0].u_lane"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 103.0
+  "fmax_mhz": 102.5,
+  "run": 8
  },
  {
-  "folder": "run7/overlay/lanes",
-  "name": "overlay_lanes",
+  "folder": "E:\\FPGA-Video-Encryption-\\sim_build\\vivado_secure_jpeg_top",
+  "name": "secure_jpeg_top",
   "util": {
    "lut": [
-    11913.0,
+    4785.0,
     53200.0,
-    22.39
+    8.99
    ],
    "ff": [
-    7836.0,
+    3051.0,
     106400.0,
-    7.36
+    2.87
    ],
    "bram": [
-    52.5,
+    25.5,
     140.0,
-    37.5
+    18.21
    ],
    "dsp": [
-    46.0,
+    23.0,
     220.0,
-    20.91
+    10.45
    ]
   },
   "timing": {
-   "wns": 0.228,
+   "wns": 0.63,
    "tns": 0.0,
-   "whs": 0.027,
+   "whs": 0.093,
    "met": true
   },
   "power": {
-   "total": 1.946,
-   "dynamic": 1.797,
-   "static": 0.149,
+   "total": 0.218,
+   "dynamic": 0.112,
+   "static": 0.106,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {
+   "v2_E0": {
+    "total": 0.206,
+    "dynamic": 0.1,
+    "static": 0.105,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "v2_E2": {
+    "total": 0.205,
+    "dynamic": 0.099,
+    "static": 0.105,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "v2_E4": {
+    "total": 0.205,
+    "dynamic": 0.099,
+    "static": 0.105,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   }
+  },
+  "hier": [
+   [
+    0,
+    "secure_jpeg_top",
+    "(top)",
+    4785,
+    3051,
+    25.5,
+    23
+   ],
+   [
+    1,
+    "(secure_jpeg_top)",
+    "(top)",
+    0,
+    5,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_conv",
+    "rgb2ycbcr_block",
+    459,
+    220,
+    25.0,
+    0
+   ],
+   [
+    1,
+    "u_dct",
+    "dct8x8",
+    806,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_cols",
+    "dct_stage__parameterized0",
+    506,
+    36,
+    0.0,
+    11
+   ],
+   [
+    2,
+    "u_rows",
+    "dct_stage",
+    300,
+    33,
+    0.0,
+    11
+   ],
+   [
+    1,
+    "u_enc",
+    "selective_enc",
+    82,
+    24,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_huff",
+    "huffman_enc",
+    268,
+    34,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_ks",
+    "keystream_gen",
+    949,
+    851,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_ks)",
+    "keystream_gen",
+    89,
+    266,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    860,
+    585,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_pack",
+    "bit_packer",
+    210,
+    84,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    392,
+    451,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_rle",
+    "zigzag_rle",
+    219,
+    110,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1358,
+    1072,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    388,
+    614,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    970,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    20,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.63,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    0.761,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.761,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.761,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.8,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.8,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.8,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.814,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.814,
+    "u_rle",
+    "u_ks"
+   ],
+   [
+    0.849,
+    "u_conv",
+    "u_conv"
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 106.7,
+  "run": 8
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\sim_build\\vivado_secure_jpeg_top_8.0ns",
+  "name": "secure_jpeg_top_8.0ns",
+  "util": {
+   "lut": [
+    4820.0,
+    53200.0,
+    9.06
+   ],
+   "ff": [
+    3052.0,
+    106400.0,
+    2.87
+   ],
+   "bram": [
+    25.5,
+    140.0,
+    18.21
+   ],
+   "dsp": [
+    23.0,
+    220.0,
+    10.45
+   ]
+  },
+  "timing": {
+   "wns": -0.487,
+   "tns": -3.24,
+   "whs": 0.071,
+   "met": false
+  },
+  "power": {
+   "total": 0.247,
+   "dynamic": 0.141,
+   "static": 0.106,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "secure_jpeg_top",
+    "(top)",
+    4820,
+    3052,
+    25.5,
+    23
+   ],
+   [
+    1,
+    "(secure_jpeg_top)",
+    "(top)",
+    0,
+    5,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_conv",
+    "rgb2ycbcr_block",
+    467,
+    221,
+    25.0,
+    0
+   ],
+   [
+    1,
+    "u_dct",
+    "dct8x8",
+    807,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_cols",
+    "dct_stage__parameterized0",
+    506,
+    36,
+    0.0,
+    11
+   ],
+   [
+    2,
+    "u_rows",
+    "dct_stage",
+    301,
+    33,
+    0.0,
+    11
+   ],
+   [
+    1,
+    "u_enc",
+    "selective_enc",
+    82,
+    24,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_huff",
+    "huffman_enc",
+    278,
+    34,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_ks",
+    "keystream_gen",
+    950,
+    851,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_ks)",
+    "keystream_gen",
+    89,
+    266,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    861,
+    585,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_pack",
+    "bit_packer",
+    220,
+    84,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    391,
+    451,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_rle",
+    "zigzag_rle",
+    223,
+    110,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1359,
+    1072,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    389,
+    614,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    970,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    20,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    -0.487,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.403,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.385,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.383,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.345,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.25,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.234,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.185,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.139,
+    "u_conv",
+    "u_conv"
+   ],
+   [
+    -0.131,
+    "u_conv",
+    "u_conv"
+   ]
+  ],
+  "period": 8.0,
+  "missing": [],
+  "fmax_mhz": 117.8,
+  "run": 8
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay",
+  "name": "overlay",
+  "util": {
+   "lut": [
+    7433.0,
+    53200.0,
+    13.97
+   ],
+   "ff": [
+    6731.0,
+    106400.0,
+    6.33
+   ],
+   "bram": [
+    27.5,
+    140.0,
+    19.64
+   ],
+   "dsp": [
+    23.0,
+    220.0,
+    10.45
+   ]
+  },
+  "timing": {
+   "wns": 0.76,
+   "tns": 0.0,
+   "whs": 0.03,
+   "met": true
+  },
+  "power": {
+   "total": 1.799,
+   "dynamic": 1.656,
+   "static": 0.142,
    "confidence": "Medium",
    "internal": "Medium",
    "internal_detail": "User specified less than 25% of internal nodes"
@@ -3109,35 +2957,35 @@
     0,
     "system_wrapper",
     "(top)",
-    11913,
-    7836,
-    52.5,
-    46
+    7433,
+    6731,
+    27.5,
+    23
    ],
    [
     1,
     "system_i",
     "system",
-    11913,
-    7836,
-    52.5,
-    46
+    7433,
+    6731,
+    27.5,
+    23
    ],
    [
     2,
     "sjpeg",
     "system_sjpeg_0",
-    10082,
-    5367,
-    50.0,
-    46
+    4747,
+    3052,
+    25.5,
+    23
    ],
    [
     2,
     "axi_mem_intercon",
     "system_axi_mem_intercon_0",
-    43,
-    89,
+    814,
+    1007,
     0.0,
     0
    ],
@@ -3145,9 +2993,9 @@
     2,
     "dma",
     "system_dma_0",
-    1257,
-    1671,
-    2.5,
+    1341,
+    1963,
+    2.0,
     0
    ],
    [
@@ -3162,58 +3010,212 @@
   ],
   "critical": [
    [
-    0.228,
+    0.76,
     "system_i",
     "system_i"
    ],
    [
-    0.373,
+    0.783,
     "system_i",
     "system_i"
    ],
    [
-    0.379,
+    0.79,
     "system_i",
     "system_i"
    ],
    [
-    0.458,
+    0.83,
     "system_i",
     "system_i"
    ],
    [
-    0.49,
+    0.862,
     "system_i",
     "system_i"
    ],
    [
-    0.52,
+    0.864,
     "system_i",
     "system_i"
    ],
    [
-    0.615,
+    0.878,
     "system_i",
     "system_i"
    ],
    [
-    0.618,
+    0.893,
     "system_i",
     "system_i"
    ],
    [
-    0.622,
+    0.914,
     "system_i",
     "system_i"
    ],
    [
-    0.68,
+    0.923,
     "system_i",
     "system_i"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 102.3
+  "fmax_mhz": 108.2,
+  "run": 8
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay\\lanes",
+  "name": "overlay_lanes",
+  "util": {
+   "lut": [
+    12099.0,
+    53200.0,
+    22.74
+   ],
+   "ff": [
+    9026.0,
+    106400.0,
+    8.48
+   ],
+   "bram": [
+    54.5,
+    140.0,
+    38.93
+   ],
+   "dsp": [
+    46.0,
+    220.0,
+    20.91
+   ]
+  },
+  "timing": {
+   "wns": 0.311,
+   "tns": 0.0,
+   "whs": 0.016,
+   "met": true
+  },
+  "power": {
+   "total": 1.94,
+   "dynamic": 1.791,
+   "static": 0.149,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "system_wrapper",
+    "(top)",
+    12099,
+    9026,
+    54.5,
+    46
+   ],
+   [
+    1,
+    "system_i",
+    "system",
+    12099,
+    9026,
+    54.5,
+    46
+   ],
+   [
+    2,
+    "sjpeg",
+    "system_sjpeg_0",
+    9516,
+    5503,
+    52.0,
+    46
+   ],
+   [
+    2,
+    "axi_mem_intercon",
+    "system_axi_mem_intercon_0",
+    655,
+    781,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "dma",
+    "system_dma_0",
+    1397,
+    2033,
+    2.5,
+    0
+   ],
+   [
+    2,
+    "ps7_axi_periph",
+    "system_ps7_axi_periph_0",
+    514,
+    675,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.311,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.406,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.422,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.584,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.613,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.631,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.643,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.646,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.653,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.706,
+    "system_i",
+    "system_i"
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 103.2,
+  "run": 8
  }
 ]
