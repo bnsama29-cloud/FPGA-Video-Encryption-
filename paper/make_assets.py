@@ -4,7 +4,7 @@
 
 Reads   paper/data/ (the Kaggle results snapshot, plus yosys/ and, when they exist, vivado/ and board/)
 Writes  paper/tables/numbers.tex   \\newcommand macros used in the prose (e.g. \\TtmMean)
-        paper/tables/tab_*.tex     the tables, \\input by main.tex
+        paper/tables/tab_*.tex     the tables, \\input by conference.tex and access.tex
         paper/figures/fig_*.pdf    the plots, and the visual-security grid copied from the data
 A missing input becomes a red \\TODO{} in the PDF instead of a made-up number.
 """
@@ -321,8 +321,9 @@ def final_results():
         ax.set_ylabel("neighbours restored")
         ax.set_ylim(0, 1.08)
         ax.legend(fontsize=6.5, frameon=False, ncol=2, loc="upper center", bbox_to_anchor=(0.45, 1.2))
-        ax.annotate(f"{yg[-1]:.2f} / {ym[-1]:.2f}", (x[-1], max(yg[-1], ym[-1])), xytext=(0, 3),
-                    textcoords="offset points", ha="center", fontsize=6, color=INK)   # E5 bars are tiny
+        ax.annotate(f"greedy {yg[-1]:.2f}\nMST {ym[-1]:.2f}", (x[-1], max(yg[-1], ym[-1])), xytext=(x[-1] - 0.3, 0.32),
+                    textcoords="data", ha="left", va="bottom", fontsize=6, color=INK,
+                    arrowprops=dict(arrowstyle="-", color=INK2, lw=0.6))   # E5 bars are too small to see
         _clean(ax)
         fig.tight_layout()
         fig.savefig(FIG / "fig_jigsaw.pdf")
@@ -483,7 +484,7 @@ Mode & {' & '.join('R & N' for _ in tags)} \\
 \end{{table}}
 """)
         if "P4" in L and "P5" in L:
-            fig, axs = plt.subplots(1, 2, figsize=(7.0, 1.9), sharey=True)
+            fig, axs = plt.subplots(1, 2, figsize=(7.0, 2.1), sharey=True)
             modes = ["E1", "E2", "E4", "E5"]
             for ax, t in zip(axs, ("P4", "P5")):
                 r = L[t]
@@ -504,7 +505,7 @@ Mode & {' & '.join('R & N' for _ in tags)} \\
                 _clean(ax, grid="x")
             axs[0].plot([], [], color=INK2, ls=(0, (4, 3)), label="no stream (median frame)")
             axs[0].plot([], [], color=INK, ls=(0, (1, 2)), label="+ true frame statistics")
-            fig.legend(*axs[0].get_legend_handles_labels(), fontsize=6.5, frameon=False, ncol=4,
+            fig.legend(*axs[0].get_legend_handles_labels(), fontsize=7.5, frameon=False, ncol=4,
                        loc="upper center", bbox_to_anchor=(0.5, 1.02))
             fig.tight_layout(rect=(0, 0, 1, 0.9))
             fig.savefig(FIG / "fig_learned.pdf")
@@ -536,13 +537,13 @@ Mode & {' & '.join('R & N' for _ in tags)} \\
         cf = [c for c in J(plj)["configs"] if c["frame"] == "640x480"]
         fig, ax = plt.subplots(figsize=(3.4, 2.0))
         # configurations with the same area sit on top of each other: label them below / above
-        offs = {(1, 1, False): ((6, -9), "left"), (1, 1, True): ((6, 2), "left"), (2, 1, False): ((6, -9), "left"),
-                (2, 1, True): ((6, 2), "left"), (2, 2, True): ((6, -3), "left"), (4, 2, True): ((-6, -3), "right")}
+        offs = {(1, 1, False): ((7, -13), "left"), (1, 1, True): ((7, 6), "left"), (2, 1, False): ((7, -13), "left"),
+                (2, 1, True): ((7, 6), "left"), (2, 2, True): ((7, -3), "left"), (4, 2, True): ((-7, -3), "right")}
         for c in sorted(cf, key=lambda c: c["lanes"] == 1 and c["px_per_clk"] == 1 and not c["overlap"]):
             key = (c["lanes"], c["px_per_clk"], c["overlap"])
             meas = key == (1, 1, False)
-            lab = f"{c['lanes']} lane{'s' if c['lanes'] > 1 else ''}, {c['px_per_clk']} px/clk" + \
-                  (", next frame overlaps" if c["overlap"] else "") + (" (today, measured)" if meas else "")
+            # short labels (L = lanes, px = pixels per clock, ov = next frame overlaps; see the caption)
+            lab = f"{c['lanes']}L {c['px_per_clk']}px" + (" ov" if c["overlap"] else "") + (" (measured)" if meas else "")
             ax.plot(c["area"]["lut"] / 1000, c["mpix"]["100"], "o" if meas else "D", ms=5.5,
                     color=BLUE if meas else ORANGE, mec=SURFACE, mew=0.8, zorder=4 if meas else 3)
             (dx, dy), ha = offs.get(key, ((5, -3), "left"))
@@ -551,7 +552,7 @@ Mode & {' & '.join('R & N' for _ in tags)} \\
         ax.set_xlabel("LUTs (thousands)")
         ax.set_ylabel("Mpixel/s at 100 MHz")
         ax.set_xlim(4, 14)
-        ax.set_ylim(50, 215)
+        ax.set_ylim(40, 215)
         _clean(ax)
         fig.tight_layout()
         fig.savefig(FIG / "fig_lanes.pdf")
@@ -1272,6 +1273,33 @@ Scheme & Per-frame key & Auth. & Bytes (\%) & A1 decode & A2 replacement & A3 NZ
     if "Hirose RI=1" in pooled:
         macro("BenchHiroseOneCross", f"{pooled['Hirose RI=1'][a4]:.2f}")
         macro("BenchHiroseOneBytes", f"{100 * pooled['Hirose RI=1']['bytes_vs_plain']:.0f}")
+    # dot plot of the same pooled values (conference version: the table does not fit)
+    plt = _style()
+    order = [n for n in names if n not in ("E1", "E3")]
+    fig, ax = plt.subplots(figsize=(3.4, 2.7))
+    y = np.arange(len(order))[::-1]
+    marks = (("decode", "o", "A1 decode"), ("replacement", "s", "A2 replace"), ("nzca", "^", "A3 NZCA"),
+             (a4, "D", "A4 known frame"))
+    for n, yy in zip(order, y):
+        ax.plot([0, pooled[n]["max_leak"]], [yy, yy], color=GRID, lw=5, solid_capstyle="butt", zorder=1)
+    cols = (INK2, BLUE, ORANGE, "#1b9e77")
+    for (k, mk, lab), c in zip(marks, cols):
+        xs = [pooled[n][k] for n in order]
+        ax.plot([x if x is not None else np.nan for x in xs], y, mk, ms=3.6, color=c, mec=SURFACE, mew=0.5,
+                ls="none", label=lab, zorder=3)
+    ax.set_yticks(y)
+    ax.set_yticklabels([label.get(n, n).replace("\\,", "") + (f"  (+{100 * pooled[n]['bytes_vs_plain']:.0f}%)"
+                        if pooled[n]["bytes_vs_plain"] and pooled[n]["bytes_vs_plain"] > 0.02 else "") for n in order],
+                       fontsize=6.3)
+    ax.axvline(0, color=INK2, lw=0.6)
+    ax.set_xlim(-0.05, 1.0)
+    ax.set_xlabel("edge correlation (bar: worst attack)", fontsize=7)
+    ax.legend(fontsize=5.8, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.42, 1.0),
+              handletextpad=0.1, columnspacing=0.5)
+    _clean(ax, grid="x")
+    fig.tight_layout()
+    fig.savefig(FIG / "fig_bench.pdf", bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
     metric_keys = ("psnr_decode", "ssim_decode", "entropy", "corr_h", "corr_v", "corr_d",
                    "npcr_key", "uaci_key", "npcr_px", "uaci_px")
     if all("psnr_decode" in r["schemes"][names[0]] for r in runs):
@@ -1451,8 +1479,7 @@ Metric & Threshold & Bandit & Bandit better \\
     ax.set_xlim(0, 1.8)
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
-    ax.legend(frameon=False, fontsize=7, loc="upper right")
-    fig.tight_layout()
+    fig.tight_layout()     # the points are labelled in place; a legend would repeat the labels
     fig.savefig(FIG / "fig_policies.pdf")
     plt.close(fig)
 
@@ -1644,6 +1671,70 @@ def peculiar_cases():
     plt.close(fig)
 
 
+def hw_efficiency():
+    """Throughput per area and energy per pixel (experiments/hw_efficiency.py, snapshot in paper/data)."""
+    f = DATA / "hw_efficiency" / "hw_efficiency.json"
+    if not f.exists():
+        return
+    d = J(f)
+    key = {"ours, contract v2 (1 pipeline)": "Top", "ours, 2 lanes": "Two", "ours, 4 lanes": "Four"}
+    rows = []
+    for r in d["ours"]:
+        k = key.get(r["design"])
+        if k is None or r["mode"] != "E2":
+            continue
+        macro(f"He{k}Nj", f"{r['nj_per_px']:.1f}")
+        macro(f"He{k}PerKlut", f"{r['mpix_s_per_klut']:.1f}")
+        macro(f"He{k}Gbit", f"{r['gbit_s_in']:.1f}")
+        macro(f"He{k}Fhd", f"{r['fps_1080p']:.0f}")
+        src = "SAIF" if r["power_source"].startswith("SAIF") else "vectorless"
+        rows.append(f"{r['design'].replace('ours, ', 'Ours, ').replace('contract v2 (1 pipeline)', 'single pipeline (v2)')} & "
+                    f"{r['lut']:,.0f}".replace(",", "{,}") + f" & {r['mpix_s']:.0f} & {r['mpix_s_per_klut']:.1f} & "
+                    f"{r['gbit_s_in']:.2f} & {r['fps_1080p']:.0f} & {1000 * r['power_w']:.0f} ({src}) & {r['nj_per_px']:.2f} \\\\")
+    for p in d["published"]:
+        if p.get("mpix_s_per_klut"):
+            k = {"logijpge": "Logi", "kishore2015": "Kishore"}.get(p.get("cite"))
+            if k:
+                macro(f"He{k}PerKlut", f"{p['mpix_s_per_klut']:.1f}")
+    write("tab_hweff.tex", rf"""\begin{{table}}[t]
+\caption{{Hardware figures of merit at 100\,MHz, 640$\times$480, E2: throughput from cycle-accurate RTL simulation (no DMA stalls), area and power post-route. Energy per pixel = on-chip power / throughput.}}
+\label{{tab:hweff}}
+\centering\small\setlength{{\tabcolsep}}{{2.5pt}}
+\resizebox{{\columnwidth}}{{!}}{{%
+\begin{{tabular}}{{lrrrrrrr}}
+\toprule
+Design & LUT & Mpx/s & Mpx/s per kLUT & Gbit/s in & fps 1080p & Power (mW) & nJ/pixel \\
+\midrule
+{chr(10).join(rows)}
+\bottomrule
+\end{{tabular}}}}
+\end{{table}}
+""")
+
+
+def maths():
+    """Constants the analysis section derives from the design parameters (no measurement involved)."""
+    import math
+    for name, (w, h) in (("QVGA", (320, 240)), ("VGA", (640, 480))):
+        m = (w // 16) * (h // 16)
+        macro(f"Mcu{name}", f"{m:,}".replace(",", "{,}"))
+        bits = math.lgamma(m + 1) / math.log(2)                      # log2(m!) = entropy of a uniform permutation
+        macro(f"PermBits{name}", f"{bits:,.0f}".replace(",", "{,}"))
+        # Fisher-Yates with rejection: step i draws b = bit_length(i) bits until j <= i; E[draws] = 2^b / (i + 1)
+        used = sum(i.bit_length() * (2 ** i.bit_length()) / (i + 1) for i in range(1, m))
+        macro(f"FyBits{name}", f"{used:,.0f}".replace(",", "{,}"))
+        macro(f"FyRatio{name}", f"{used / bits:.2f}")
+    boots = 10 ** 4                                   # boots of one device under one master key (daily for 27 years)
+    p = boots * (boots - 1) / 2 / 2 ** 48
+    macro("BootCount", "10^4")
+    macro("BootCollide", f"{p:.1e}".replace("e-0", "\\times 10^{-").replace("e-", "\\times 10^{-") + "}")
+    f = 100.0
+    for k, L in (("One", 1), ("Two", 2), ("Four", 4)):
+        cpp = max(1.5 / L, 0.5) if L > 1 else 1.5                     # 4:2:0 sample floor, 2 px/clk input
+        macro(f"Bound{k}Cpp", f"{cpp:.3g}")
+        macro(f"Bound{k}Mpix", f"{f / cpp:.0f}")
+
+
 def main():
     TAB.mkdir(exist_ok=True)
     FIG.mkdir(exist_ok=True)
@@ -1654,6 +1745,8 @@ def main():
     sign_recovery()
     video_fingerprint()
     benchmark()
+    hw_efficiency()
+    maths()
     restart_interval()
     size_channel()
     lanes_rtl()

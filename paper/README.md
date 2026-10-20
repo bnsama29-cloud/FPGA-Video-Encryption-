@@ -1,54 +1,74 @@
-# The conference paper
+# The papers
 
-`main.tex` is a complete first draft in the IEEE two-column conference format (IEEEtran), currently
-6 pages with references. It reports what has been measured: RTL simulation, a Yosys area estimate
-and the full system simulation. Everything that still waits for Vivado or the board is a red
-`[TODO: ...]` in the PDF, so nothing unfinished can slip through.
+Two papers are built from the same data, figures and bibliography:
+
+| File | Format | Length | What it is for |
+|---|---|---|---|
+| `conference.tex` → `conference.pdf` | IEEEtran `[conference]` | **exactly 6 pages** incl. references | the conference submission: condensed, figure-led, short reference list |
+| `access.tex` + `sections/access_*.tex` → `access.pdf` | IEEE Access (`ieeeaccess.cls`) | 24 pages | the journal version: every derivation (lemmas, propositions, algorithms), every experiment, every table |
+
+Shared: `common/preamble.tex` (packages, notation macros), `figures/tikz/*.tex` (architecture, datapath,
+gate-level circuits, block design, key hierarchy, E5 flow: hand-drawn in TikZ from the RTL),
+`figures/fig_*.pdf` and `tables/*.tex` (generated), `refs.bib`.
 
 ## Build
 
 ```bash
 cd paper
 make tables      # tables/*.tex, tables/numbers.tex, figures/fig_*.pdf from data/  (python3)
-make             # main.pdf (pdflatex + bibtex)
+make             # conference.pdf and access.pdf (pdflatex + bibtex); or make conference.pdf / make access.pdf
+make figures-tikz   # regenerate figures/tikz/circuit_ascon.tex (generated from rtl/ascon_round.v's netlist)
 ```
 
-* **Requirements:** a TeX installation with `IEEEtran` (TeX Live: `texlive-publishers`), `booktabs`
-  and `tikz`.
-* **Overleaf:** upload the `paper/` folder after running `make tables` locally.
+* **Requirements:** a TeX installation with `IEEEtran` (TeX Live: `texlive-publishers`), `booktabs`,
+  `tikz`, `circuitikz`, `algorithmicx` (`texlive-science`, `texlive-pictures`). Overleaf works: upload the
+  whole `paper/` folder after `make tables`, set the main document to `conference.tex` or `access.tex`.
+* **Page limit.** Check `pdfinfo conference.pdf` after every edit of `conference.tex`: it must stay at 6.
+  To make room, cut sentences or move detail to `access.tex`; never shrink fonts or margins.
 
-## How the numbers get into the paper
+## How the numbers get into the papers
 
-1. `paper/data/` is the snapshot of the results the paper is built from. It holds:
-   * the Kaggle run of 14 Oct 2026 (`kaggle_runs.py (JOB = "complete")`, 47 steps);
-   * the one clip rerun noted in `data/run_log.json`;
-   * the Yosys estimate in `data/yosys/`.
+1. `paper/data/` is the snapshot of the results the papers are built from (Kaggle runs, Vivado runs,
+   RTL throughput, SVE-Bench, hardware efficiency; see `data/*/README.md`).
 2. `make_assets.py` turns these files into:
    * the LaTeX tables in `tables/`;
-   * the macros in `tables/numbers.tex` (e.g. `\TtmMean`), which the prose uses;
-   * the figures in `figures/`.
-3. **Never type a result into `main.tex`.** If a number in the text needs to change, change the data
-   or the script. `tests/test_paper_assets.py` fails if `main.tex` uses an undefined number, or if the
-   committed tables no longer match the data.
+   * the macros in `tables/numbers.tex` (e.g. `\TtmMean`), which the prose uses; this includes derived
+     constants of the analysis (`\PermBitsQVGA` = log2 of 300!, the lane bounds `\BoundFourMpix`, the
+     boot-collision bound `\BootCollide`), so even those are computed, not typed;
+   * the figures `figures/fig_*.pdf`.
+3. **Never type a result into a `.tex` file.** If a number in the text needs to change, change the data
+   or the script. `tests/test_paper_assets.py` fails if either paper uses an undefined number, if the
+   committed tables no longer match the data, or if a reference is cited by neither paper.
 4. **New results:**
-   * **Vivado:** copy `sim_out/vivado/vivado_results.json` to `data/vivado/`, and the resource table
-     switches from the Yosys estimate to post-route automatically.
-   * **Board:** copy the board results to `data/board/`, then write §VI's board paragraph from them.
+   * **Vivado:** copy `sim_out/vivado/vivado_results.json` to `data/vivado/`.
+   * **Board:** copy the board results to `data/board/`, then replace the red `\TODO{A1--A4 ...}` in
+     `sections/access_08_hwresults.tex` (Section VIII-D) and the limitation sentence of `conference.tex`.
    * After either, run `make tables && make`.
 
-## Open items in the draft (search the PDF for "TODO")
+## Hand-drawn figures (TikZ) and what they must match
+
+| Figure | File | Source of truth |
+|---|---|---|
+| System architecture | `figures/tikz/arch_system.tex` | `future_work/board/block_design.tcl`, `pynq_driver.py`, `link/` |
+| Fabric datapath | `figures/tikz/arch_pl.tex` | `rtl/secure_jpeg_lanes_top.v`, `rtl/encoder_lane.v` (bus widths = port widths) |
+| Gate-level encryption stage | `figures/tikz/circuit_selenc.tex` | `rtl/selective_enc.v` (every gate is one operator) |
+| Ascon round bit slice | `figures/tikz/circuit_ascon.tex` (generated) | `rtl/ascon_round.v` via `gen_ascon_slice.py` |
+| PYNQ-Z2 block design | `figures/tikz/zynq_bd.tex` | `future_work/board/block_design.tcl` |
+| Key and nonce hierarchy | `figures/tikz/keys.tex` | `link/keys.py`, `model/ascon.py`, `model/hw.py` |
+| E5 hardware form | `figures/tikz/e5_flow.tex` | `docs/INTERFACES.md` §8.6 |
+
+If you change the RTL or the block design, update the figure in the same commit.
+
+## Open items (search the PDFs for "TODO")
 
 | Where | What is needed | From |
 |---|---|---|
-| Author block | author order, initials, e-mails; whether the mentor is a co-author | team + mentor |
-| §III-A | nonce-uniqueness argument, reboot behaviour | GUIDE.md B3 |
-| §IV | XSim result; Table III post-route numbers | GUIDE.md 4.1 |
-| §V "Learned attacker" | no-ciphertext control for the E5 SSIM | GUIDE.md B21 |
-| §VI, last paragraph | ARM baseline, FPGA fps, energy per frame | GUIDE.md A1–A4, B1 |
-| Acknowledgment | AI-assistance disclosure (below) | team |
-| refs.bib | 3 small gaps marked `TODO` (pages/volume for Puech, Lin, Boyadjis) | IEEE Xplore / ScienceDirect |
-| §II / §IV | comparison table with prior designs (numbers ready in GUIDE.md §7) | GUIDE.md B14, after Vivado |
-| §V | standard image-encryption metrics (key sensitivity, NPCR/UACI, entropy, histograms) | GUIDE.md B13 |
+| Author block (both) | author order, initials, e-mails; whether the mentor is a co-author | team + mentor |
+| access §VIII-D, conference §VII | board bit-exact gate, fps with DMA, ARM baseline, power, energy per frame | GUIDE.md A1–A4, `docs/FPGA_HANDS_ON.md` |
+| access Table 1 (our row) | the same board items | as above |
+| Acknowledgment (both) | AI-assistance disclosure (below) | team |
+| access front matter | biographies + photos, IEEE membership, funding line, corresponding author | team |
+| refs.bib | small gaps marked `TODO` (pages/DOI: Lin, Hirose, Puech, Wampler, Farahmand) | IEEE Xplore / ScienceDirect |
 
 ## References: how they were checked
 
@@ -72,7 +92,6 @@ NIST, arXiv, or the authors' institutional page. Before submission:
   are copyrighted: the paper reports numbers only and shows no frames from them. Fig. 2 shows a frame
   of the Sintel trailer (© Blender Foundation, CC BY 3.0); the licence requires the attribution that
   is in its caption. Keep it there.
-* **Page limit.** The draft is exactly 6 pages; check `pdfinfo main.pdf` after every edit.
 * **AI assistance.** IEEE's policy is that AI-generated content (text, code, figures) must be
   disclosed in the acknowledgments, naming the tool and the sections where it was used; AI tools
   cannot be listed as authors. Check the specific conference's call for papers as well. Fill in the
@@ -92,13 +111,10 @@ NIST, arXiv, or the authors' institutional page. Before submission:
 * **Format.** Most IEEE conferences use this exact template. Some require the compsoc or A4 variant;
   change only the `\documentclass` options.
 
-## Two builds from one source
+## IEEE Access template notes
 
-* `make main.pdf` -- conference version (IEEEtran `[conference]`, 6 pages).
-* `make extended.pdf` -- journal version in the **IEEE Access** format (`ieeeaccess.cls` and `access/*.png`
-  from the IEEE Access LaTeX template, unmodified except that image paths are the template's own names).
-  `extended.tex` sets `\makeextended` and `\makeaccess`; `main.tex` switches class and front matter.
-  Two workarounds live in `main.tex`, not in the class: the class redefines the TeX primitive `\year`
-  (pgf and `\today` need it), and its PANTONE spot colour is written without a colour space, so the blue
-  is redefined as its CMYK equivalent. Biographies, IEEE membership, funding and corresponding author are
-  `\TODO`s.
+`access.tex` uses `ieeeaccess.cls` and `access/*.png` from the IEEE Access LaTeX template, unmodified.
+Two workarounds live in `access.tex`, not in the class: the class redefines the TeX primitive `\year`
+(pgf and `\today` need it), and its PANTONE spot colour is written without a colour space, so the blue is
+redefined as its CMYK equivalent. The template's commercial fonts fall back to standard ones (harmless
+font warnings in the log).

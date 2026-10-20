@@ -19,7 +19,7 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 
 ---
 
-## 1. Where the project stands (18 Oct 2026, after Vivado run 7 and SVE-Bench)
+## 1. Where the project stands (20 Oct 2026: papers split into conference + IEEE Access, board guide ready)
 
 | Part | State | Evidence |
 |---|---|---|
@@ -31,8 +31,9 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
 | Simulation results (private clips, open data, learned attackers, jigsaw, sign recovery, recognition, size channel) | ✅ Kaggle runs 14–17 Oct | `paper/data/simulation/`, `paper/data/extra/` |
 | SVE-Bench: ours vs four published schemes under the same attacks | ✅ Kaggle 18 Oct (method v2), in the paper | `paper/data/benchmark/`, B39/B41 |
-| PYNQ-Z2 board tests | ⏳ E5 bitstream built (tom's PC, not in git); `first_contact` passes against the emulated board for E0–E5; **not yet run on the board** | §4.2 |
-| Paper | 📝 complete draft: conference version exactly 6 pages, extended version 14 pages; open TODOs are author details, board/ARM results and the AI disclosure | `paper/main.tex`, `cd paper && make` |
+| PYNQ-Z2 board tests | ⏳ E5 bitstream built (tom's PC, not in git: keep a copy, `docs/HW_TODO.md` H5); `first_contact` passes against the emulated board for E0–E5; **not yet run on the board**. Step-by-step manual: `docs/FPGA_HANDS_ON.md` | §4.2 |
+| Phase 2 demo | ✅ LAN dashboard + VLC (Aravind, `docs/DASHBOARD_LAN_DEMO.md`); fresh pre-shared key `scripts/demo_key.py`; script and judge Q&A `docs/PHASE2_DEMO.md` | `tests/test_dashboard.py`, `tests/test_demo_key.py` |
+| Paper | 📝 two papers: `conference.pdf` (exactly 6 pages, condensed, 7 figures) and `access.pdf` (IEEE Access, 24 pages, maths with lemmas/propositions, gate-level and block-design figures); open TODOs are author details, board/ARM results and the AI disclosure | `paper/conference.tex`, `paper/access.tex`, `cd paper && make` |
 
 **Rough position: ~75 % of the project.** Design, simulation, Vivado and the security evaluation are
 finished. Left: the board (§4.2, the critical path to 12 Nov), the ARM baseline (A3 + B1), then the
@@ -109,7 +110,7 @@ shows exactly what a PR will bring.
 | `python vivado/run_vivado_day.py` | XSim + post-route numbers + overlay + tables (Vivado; on Windows: `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes power parse --jobs 2`) |
 | `python -m future_work.board.first_contact` | bit-exact gate + fps on the PYNQ-Z2 |
 | `python -m future_work.figures.paper_tables --root <results>` | every paper table from result files |
-| `cd paper && make` | build the paper PDF (`make tables` first after new results); `make extended.pdf` for the long version. Needs `texlive-latex-extra texlive-publishers texlive-science` (or Overleaf) |
+| `cd paper && make` | build `conference.pdf` and `access.pdf` (`make tables` first after new results). Needs `texlive-latex-extra texlive-publishers texlive-science texlive-pictures` (or Overleaf) |
 
 **The remaining GPU tasks in one Kaggle run:** `future_work/kaggle/kaggle_runs.py (JOB = "remaining")` (GPU T4, Internet on,
 your clips dataset attached). With `RERUN = True` (the default now) it only repeats what the fixes of
@@ -137,12 +138,15 @@ experiments/    every paper number: scenarios, policies, policy_seeds, mode trad
                 learned attack
 future_work/    board/ (PYNQ driver, block design, board sender, first_contact), baselines/, attacks/
                 (jigsaw), figures/ (grid, compliance, paper_tables), kaggle/kaggle_runs.py (every Kaggle run)
-paper/          IEEE conference draft (main.tex, refs.bib), data/ (the results it is built from),
+paper/          conference.tex (6 pages), access.tex + sections/ (IEEE Access), refs.bib, data/ (the results they are built from),
                 make_assets.py (tables + figures from data/)
-scripts/        tools.py: older golden-model tools (encode-image, video-eval, mjpeg-server, export-vectors, bundle)
+scripts/        tools.py: older golden-model tools (encode-image, video-eval, mjpeg-server, export-vectors, bundle);
+                demo_key.py: fresh pre-shared demo key + the laptop/board commands
 tests/          pytest for model, contract, system, future_work, report parsers
 docs/           INTERFACES (contracts v2, v3), TESTING (+ bug log, debugging with Claude), TEAM_CONTEXT
-                (for Claude), VIVADO_ONE_DAY, RESEARCH (R1-R8 + throughput notes)
+                (for Claude), VIVADO_ONE_DAY, RESEARCH (R1-R8 + throughput notes), FPGA_HANDS_ON (board
+                manual), BOARD_BRINGUP (task list), HW_TODO, PHASE2_DEMO (demo script + judge Q&A),
+                DASHBOARD_LAN_DEMO (LAN + VLC)
 ```
 
 ---
@@ -169,7 +173,7 @@ teammates without Vivado can use the board.
 
 ### 4.2 Board (critical path, deadline 12 Nov) ⏳
 
-Step by step, from the SD card to every number below: **`docs/BOARD_BRINGUP.md`**.
+Step by step, from unboxing to every number below: **`docs/FPGA_HANDS_ON.md`** (wiring, jumpers, LEDs, which machine runs which command, expected output, troubleshooting, demo checklist); short task list: `docs/BOARD_BRINGUP.md`; what is left in hardware: `docs/HW_TODO.md`.
 
 | # | Task | Owner | Time | How | Done when |
 |---|---|---|---|---|---|
@@ -414,7 +418,7 @@ us near the commercial cores plus one ~1 K-LUT Ascon.
 Placeholders that wait for results are marked `\TODO{...}` in red. The PDF lists them, so nothing
 unfinished slips through. **The conference version is exactly 6 pages with no slack** (commit 6f1bc20,
 18 Oct: the last reference ends on page 6). Anything added must be paid for with text cut elsewhere,
-usually by moving detail into `\ifextended ... \fi` (the extended version, `extended.tex`, has no page limit).
+usually by moving detail into `access.tex` / `sections/access_*.tex` (the IEEE Access version has no page limit).
 
 | Paper part | Waits for | Owner |
 |---|---|---|

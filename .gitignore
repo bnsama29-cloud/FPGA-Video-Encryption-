@@ -32,3 +32,6 @@ future_work/board/vivado_proj/
 vivado_pid*.str
 *.backup.jou
 vivado_results_*.zip
+
+# fresh demo key (scripts/demo_key.py): never commit it
+configs/demo_key.txt

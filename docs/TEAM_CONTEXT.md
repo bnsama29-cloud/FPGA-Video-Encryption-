@@ -164,7 +164,8 @@ The full specification is in `docs/INTERFACES.md`. Section 7 there explains why 
 - Vivado rebuild of the lane encoder/overlay with E5, and power from simulated activity (`--steps lanes bd_lanes power parse`, `docs/VIVADO_ONE_DAY.md`).
 - Everything on the board (GUIDE A1–A8).
 - The P1 polish items (GUIDE B1, B3, B20–B22) and the rest of GUIDE §4.3.
-- Finishing the paper (`paper/`, first full draft exists).
+- Finishing the papers: `paper/conference.tex` (6 pages) and `paper/access.tex` + `paper/sections/` (IEEE Access, full maths); only the board numbers and author details are open.
+- Board day: `docs/FPGA_HANDS_ON.md`; demo: `docs/PHASE2_DEMO.md`.
 
 **Where to find what.**
 

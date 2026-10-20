@@ -1,6 +1,11 @@
 # Board bring-up: from the bitstream to measured numbers on the PYNQ-Z2
 
-This is the hardware headstart. It takes the two bitstreams Vivado run 6 built and turns them into the
+> **First time with the board? Use `docs/FPGA_HANDS_ON.md`:** the same plan step by step, with wiring,
+> jumpers, LEDs, which machine runs which command, expected output and a demo-day checklist. This file is
+> the short task list.
+
+This is the hardware headstart. It takes the bitstreams Vivado built (run 6: v2 + 2 lanes; **run 7: the
+2-lane system with E5**, preferred) and turns them into the
 numbers the paper is still missing: **bit-exact on silicon, real frames per second, ARM baseline,
 power and energy per frame, and the live link with the dashboard.** GUIDE.md §4.2 lists the same work
 as tasks A1–A6 with owners; this file is the how-to.
@@ -173,8 +178,10 @@ Open `http://localhost:8000` on the laptop. What changes with the board:
 * The log says `Sender started ... board encoder`; the Camera tile says *Input to the FPGA encoder*.
 * **Encode time** is the FPGA + DMA time per frame; **Encrypted bits** reads *not reported by the FPGA*
   (the fabric does not count them).
-* The top protection level is **E4** with the run-6 bitstreams. A lane bitstream rebuilt from the current RTL
-  (E5 in RTL since 17 Oct, `docs/HW_TODO.md` H1, VERSION bit 7) lifts it to E5 automatically; rehearse that with `--mock-lanes 2 --mock-e5`.
+* The top protection level is **E5** with the run-7 lane bitstream (VERSION bit 7 set) and **E4** with the
+  run-6 bitstreams; the driver decides from the VERSION register. Rehearse E5 with `--mock-lanes 2 --mock-e5`.
+* **Key:** both commands need the same `--set keys.master=<KEY>`; make a fresh one with `py scripts\demo_key.py`
+  (the key in `configs/default.toml` is public).
 * Everything else is the same as the laptop demo: attack buttons, rejections, protection rising,
   rekeying, the eavesdropper view (for both bitstreams).
 

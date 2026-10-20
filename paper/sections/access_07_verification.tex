@@ -1,0 +1,30 @@
+% =====================================================================================================
+\section{Verification Methodology}\label{sec:verification}
+\textit{One referee.} A Python golden model implements Ascon, the integer transforms of Section~\ref{sec:background}, entropy coding, the encryption of~\eqref{eq:selenc}, the container, E5 and the receiver. Two views of it exist: a frame-level one used by the network simulation and the receiver, and a stage-level one whose functions match the RTL module boundaries; a test proves the two byte-identical on random frames for every level and both contracts (single pipeline and lanes). The Ascon model passes all 1089 known-answer tests of the official file for Ascon-AEAD128, and so does the RTL core. When the model and an RTL block disagree, the model is changed only if it contradicts T.81 or SP~800-232.
+
+\textit{Block tests.} Every RTL module has a cocotb testbench that drives random inputs with random idle cycles and random back-pressure on every handshake and compares every output with the corresponding model function, reporting the first mismatch with its index, input, obtained and expected value. Throughput tests check one item per clock at full rate; mutation checks confirm that a stage which ignores back-pressure fails them.
+
+\textit{System tests.} The complete encoders are compared byte for byte with the model for all levels, with 64-bit session identifiers and counters above $2^{32}$, for frames with fewer MCU rows than lanes, and under random stalls of both DMA streams; for the lane encoder with one, two and four lanes, including E5, where the test also runs the ARM permutation and the receiver. A self-checking Verilog-2001 testbench encodes stored frames in every level and is bit-exact with the model both in Icarus Verilog and in Vivado's simulator (XSim 2026.1). The board driver, the bit-exact board gate and the live sender are tested against an emulation of the bitstream that answers the register map with the model's bytes.
+
+\textit{Bug log.} Every defect found, in the RTL, the model, the board scripts or the experiment scripts, received a regression test and an entry with its root cause and lesson. Table~\ref{tab:bugs} lists those that shaped the design. Two patterns recur: bit-exact simulation cannot reveal timing failures, and experiment scripts were wrong more often than the RTL.
+
+\begin{table*}[t]
+\caption{Defects that shaped the design (from our bug log).}
+\label{tab:bugs}
+\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.3\textwidth}p{0.33\textwidth}p{0.3\textwidth}}
+\toprule
+Symptom & Root cause & Consequence \\
+\midrule
+Two models gave different scans for one frame & sign rule, bit order, nonce layout and tag coverage had drifted & one contract, an equivalence test between the views \\
+A level downgrade E2$\to$E1 went undetected & the tag covered the scan only & 26-byte authenticated prefix \eqref{eq:tag} \\
+32-bit session identifiers & a repeat expected after about $2^{16}$ sessions & 64-bit $\sigma$, high-word registers \\
+Field top-bit flip as ``sign'' & changed the magnitude too ($5 \to -6$) & exact negation, Lemma~\ref{lem:format} \\
+47\,MHz after routing, all tests passing & a full DCT row summed in one clock & five-stage pipeline, post-route numbers in every claim \\
+System missed timing, encoder alone met it & unconstrained input ports in the out-of-context run & I/O delays in every run \\
+Board gate compared lanes with the wrong contract & reference chosen before the second contract existed & reference from the VERSION register \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\textit{Results from data.} Every number in this paper is produced by a script from stored results and inserted by a generator, never typed; a test fails if a table in the manuscript differs from what the data produce, or if the text uses a number that the data do not define.

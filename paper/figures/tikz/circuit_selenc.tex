@@ -1,0 +1,110 @@
+% Gate-level logic of the selective encryption stage, one bit slice k of the 11-bit amplitude field.
+% Drawn from rtl/selective_enc.v (every gate below is one operator of that file):
+%   has_bits = (size != 0); sgn_en = has_bits & (is_dc ? mode>=2 : mode>=1);
+%   amp_en = has_bits & (is_dc ? mode>=4 : mode>=3); mask_s = (1<<size)-1; mask_s1 = mask_s>>1;
+%   flip = ((sgn_en & ks[0]) ? mask_s : 0) ^ (amp_en ? ks[11:1] & mask_s1 : 0); o_amp <= amp ^ flip
+%   need = sgn_en + amp_en*(size-1); i_ready = (!o_valid | o_ready) & (ks_avail >= need);
+%   go = i_valid & i_ready; ks_take = go & (need != 0)
+\begin{tikzpicture}[x=1cm, y=1cm, font=\tiny]
+\ctikzset{logic ports=ieee, logic ports/scale=0.55}
+\tikzset{w/.style={inkc, line width=0.45pt}, bw/.style={inkc, line width=1.1pt},
+         sig/.style={font=\tiny, inner sep=1pt}, box/.style={draw=inkc, fill=white, font=\tiny, align=center, inner sep=1.5pt, minimum height=5mm},
+         dot/.style={circle, fill=inkc, inner sep=0.8pt}}
+% ------------------------------------------------------------------ mode decode
+\node[sig, anchor=east] (mode) at (0,6.2) {mode[2:0]};
+\node[box, minimum height=14mm, minimum width=8mm] (cmp) at (1.0,6.2) {$\ge 1$\\[1pt]$\ge 2$\\[1pt]$\ge 3$\\[1pt]$\ge 4$};
+\draw[bw] (mode) -- (cmp.west);
+\node[sig, anchor=east] (dc) at (0,4.75) {is\_dc};
+\draw[w] (dc) -- ++(0.35,0) node[sig, right]{(select of both multiplexers)};
+% two 2:1 multiplexers (select = is_dc, drawn as net labels)
+\node[box, trapezium, trapezium angle=70, shape border rotate=270, minimum width=7mm, minimum height=5mm, draw=inkc, inner sep=1pt] (ms) at (2.4,6.55) {};
+\node[box, trapezium, trapezium angle=70, shape border rotate=270, minimum width=7mm, minimum height=5mm, draw=inkc, inner sep=1pt] (ma) at (2.4,5.55) {};
+\node[sig] at (ms.center) {\tiny mux}; \node[sig] at (ma.center) {\tiny mux};
+\draw[w] ([yshift=4.5mm]cmp.east) -- ++(0.3,0) |- ([yshift=1.2mm]ms.west) node[sig, pos=0.98, above left]{0};
+\draw[w] ([yshift=1.5mm]cmp.east) -- ++(0.45,0) |- ([yshift=-1.2mm]ms.west) node[sig, pos=0.98, below left]{1};
+\draw[w] ([yshift=-1.5mm]cmp.east) -- ++(0.3,0) |- ([yshift=1.2mm]ma.west) node[sig, pos=0.98, above left]{0};
+\draw[w] ([yshift=-4.5mm]cmp.east) -- ++(0.45,0) |- ([yshift=-1.2mm]ma.west) node[sig, pos=0.98, below left]{1};
+\draw[w] (ms.south) -- ++(0,-0.12) node[sig, below]{is\_dc};
+\draw[w] (ma.south) -- ++(0,-0.12) node[sig, below]{is\_dc};
+% size != 0 (OR of the four size bits)
+\node[sig, anchor=east] (size) at (0,3.9) {size[3:0] $= s$};
+\node[box, minimum width=9mm] (orz) at (2.4,3.9) {$s \neq 0$\\(OR$_4$)};
+\draw[bw] (size) -- (0.9,3.9) coordinate (sz) -- (orz.west);
+\node[dot] at (sz) {};
+% enables
+\node[and port] (gs) at (4.3,6.4) {};
+\node[and port] (ga) at (4.3,5.35) {};
+\draw[w] (ms.east) -- ++(0.3,0) |- (gs.in 1);
+\draw[w] (ma.east) -- ++(0.3,0) |- (ga.in 1);
+\draw[w] (orz.east) -- ++(0.75,0) coordinate (hb) |- (gs.in 2);
+\draw[w] (hb) |- (ga.in 2); \node[dot] at (hb |- ga.in 2) {};
+\node[sig, anchor=south west] at (gs.out) {sgn\_en};
+\node[sig, anchor=north west] at (ga.out) {amp\_en};
+% keystream bit 0 and the sign-flip enable
+\node[sig, anchor=east] (k0) at (0,7.45) {ks[0]};
+\node[and port] (gk) at (5.9,7.1) {};
+\draw[w] (k0) -| ([xshift=-3mm]gk.in 1) -- (gk.in 1);
+\draw[w] (gs.out) -- ++(0.35,0) coordinate (se) |- (gk.in 2);
+\node[sig, anchor=south] at (gk.out) {\ \ \ \ \ flip all};
+% mask generator
+\node[box, minimum width=17mm] (mg) at (3.0,2.6) {$m = (1 \ll s) - 1$};
+\node[box, minimum width=10mm] (sh) at (5.2,2.6) {$m \gg 1$};
+\draw[bw] (sz) |- (mg.west);
+\draw[bw] (mg) -- (sh);
+% ------------------------------------------------------------------ bit slice k
+\node[sig, anchor=east] (kk) at (0,1.35) {ks[$k{+}1$]};
+\node[and port] (as) at (7.6,3.65) {};
+\node[and port, number inputs=3] (aa) at (7.6,2.15) {};
+\draw[w] (gk.out) -- ++(0.25,0) |- (as.in 1);
+\draw[w] (mg.east) ++(0,0) -- ++(0.25,0) coordinate (mk) |- (as.in 2); \node[dot] at (mk) {};
+\node[sig, anchor=east] at ($(mk)+(0,0.6)$) {$m_k$};
+\draw[w] (sh.east) -- ++(0.6,0) |- (aa.in 2);  \node[sig, anchor=south] at ($(sh.east)+(0.3,0)$) {$m_{k+1}$};
+\draw[w] (ga.out) -- (6.95,0 |- ga.out) coordinate (ae) |- (aa.in 1);
+\draw[w] (kk) -| ([xshift=-2.5mm]aa.in 3) -- (aa.in 3);
+\node[xor port] (xf) at (9.2,2.9) {};
+\draw[w] (as.out) -| ([xshift=-2mm]xf.in 1) -- (xf.in 1);
+\draw[w] (aa.out) -| ([xshift=-2mm]xf.in 2) -- (xf.in 2);
+\node[sig, anchor=south west] at (xf.out) {flip$_k$};
+\node[sig, anchor=east] (am) at (0,0.75) {amp[$k$]};
+\node[xor port] (xo) at (10.6,2.4) {};
+\draw[w] (xf.out) -| ([xshift=-2mm]xo.in 1) -- (xo.in 1);
+\draw[w] (am) -| ([xshift=-2.5mm]xo.in 2) -- (xo.in 2);
+% output register with enable
+\node[box, minimum width=10mm, minimum height=12mm] (ff) at (12.0,2.2) {};
+\node[sig, anchor=west] at ([yshift=2mm]ff.west) {D};
+\node[sig, anchor=east] at ([yshift=2mm]ff.east) {Q};
+\node[sig, anchor=south] at (ff.south) {EN};
+\draw[w] ([yshift=-2.6mm]ff.west) -- ++(0.16,0.1) -- ++(-0.16,0.1);
+\draw[w] ([yshift=-1.6mm]ff.west) -- ++(-0.35,0) node[sig, left]{clk};
+\draw[w] (xo.out) -- ([yshift=2mm]ff.west);
+\draw[w] ([yshift=2mm]ff.east) -- ++(0.4,0) node[sig, right]{o\_amp[$k$]};
+\node[sig, anchor=north, align=center] at ([yshift=-1mm]ff.north) {\phantom{x}};
+% ------------------------------------------------------------------ handshake and keystream budget
+\node[box, minimum width=27mm] (nd) at (5.6,0.25) {need $= \text{sgn\_en} + \text{amp\_en}\cdot(s-1)$};
+\node[box, minimum width=14mm] (ok) at (8.6,0.25) {ks\_avail $\ge$ need};
+\draw[w] (nd) -- (ok);
+\draw[w] (se) |- (nd.north west) ;
+\node[sig, anchor=east] (ov) at (0,-0.75) {o\_valid};
+\node[sig, anchor=east] (or) at (0,-1.25) {o\_ready};
+\node[not port] (nv) at (7.0,-0.75) {};
+\node[or port] (of) at (8.4,-0.95) {};
+\draw[w] (ov) -- (nv.in);
+\draw[w] (nv.out) -- (of.in 1);
+\draw[w] (or) -| ([xshift=-2mm]of.in 2) -- (of.in 2);
+\node[and port] (rd) at (10.4,-0.45) {};
+\draw[w] (ok.east) -| ([xshift=-2mm]rd.in 1) -- (rd.in 1);
+\draw[w] (of.out) -| ([xshift=-2mm]rd.in 2) -- (rd.in 2);
+\node[sig, anchor=east] (iv) at (0,-1.75) {i\_valid};
+\node[and port] (go) at (11.95,-1.05) {};
+\draw[w] (rd.out) -- ++(0.2,0) coordinate (ir) |- (go.in 1); \node[dot] at (ir) {};
+\draw[w] (ir) |- ++(0.4,0.55) node[sig, right]{i\_ready};
+\draw[w] (iv) -| ([xshift=-2mm]go.in 2) -- (go.in 2);
+\draw[w] (go.out) -| node[sig, pos=0.2, below]{go} (ff.south);
+\node[and port] (tk) at (13.2,-1.75) {};
+\draw[w] (go.out) -- ++(0.15,0) coordinate (gx) |- (tk.in 1); \node[dot] at (gx) {};
+\draw[w] (nd.south) |- node[sig, pos=0.75, below]{need $\neq 0$} ([xshift=-2mm]tk.in 2) -- (tk.in 2);
+\draw[w] (tk.out) -- ++(0.3,0) node[sig, right]{ks\_take};
+\begin{scope}[on background layer]
+\node[draw=inkc, dashed, rounded corners=2pt, fit=(as)(aa)(xf)(xo)(ff), inner sep=2.5mm, label={[sig, anchor=south east]north east:bit slice $k$, repeated for $k = 0 \ldots 10$}] {};
+\end{scope}
+\end{tikzpicture}
