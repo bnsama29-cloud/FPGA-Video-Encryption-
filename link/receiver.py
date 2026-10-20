@@ -18,7 +18,7 @@ import os
 import time
 
 from model.container import parse_jpeg
-from model.jpeg import receive_frame, verify_frame
+from .fastrx import receive_frame, verify_frame   # model/jpeg.py results, heavy work in C (tests/test_fastrx.py)
 
 from . import config, keys, wire
 from .feedback import FeedbackWriter, ReplayWindow
