@@ -1735,6 +1735,65 @@ def maths():
         macro(f"Bound{k}Mpix", f"{f / cpp:.0f}")
 
 
+def board():
+    """Results measured on the PYNQ-Z2 (future_work/board/first_contact.py; snapshot in paper/data/board/)."""
+    runs = {}
+    for f in sorted((DATA / "board").glob("*/first_contact.json")):
+        d = J(f)
+        if d.get("backend") != "pynq":
+            continue                                    # never report mock runs
+        for e in d["exactness"]:
+            runs.setdefault(e["size"], {"exact": [], "speed": {}})["exact"].append(e)
+        for sp in d["speed"]:
+            runs[sp["size"]]["speed"][sp["mode"]] = sp
+    if not runs:
+        return
+    order = sorted(runs, key=lambda s: int(s.split("x")[0]) * int(s.split("x")[1]))
+    allok = all(e["bit_exact"] for r in runs.values() for e in r["exact"])
+    modes = sorted({e["mode"] for r in runs.values() for e in r["exact"]})
+    per_mode = {sz: max(e["frames"] for e in runs[sz]["exact"]) for sz in order}
+    macro("BoardAllExact", "yes" if allok else "no")
+    macro("BoardModes", f"E{modes[0]}--E{modes[-1]}")
+    macro("BoardSizes", ", ".join(sz.replace("x", "$\\times$") for sz in order[:-1]) + " and "
+          + order[-1].replace("x", "$\\times$"))
+    macro("BoardFramesTotal", str(sum(per_mode.values()) * len(modes)))
+    named = {"320x240": "QVGA", "640x480": "VGA"}
+    rows = []
+    for sz in order:
+        sp = runs[sz]["speed"]
+        if not sp:
+            continue
+        enc = [sp[m]["encode_ms"] for m in sp if m != 5]
+        if sz in named:
+            k = named[sz]
+            macro(f"BoardMs{k}", f"{sp[2]['full_ms']:.0f}")
+            macro(f"BoardFps{k}", f"{sp[2]['full_fps']:.1f}" if sp[2]['full_fps'] < 20 else f"{sp[2]['full_fps']:.0f}")
+            macro(f"BoardSpreadMs{k}", f"{max(enc) - min(enc):.2f}")
+            if 5 in sp:
+                macro(f"BoardEfiveFps{k}", f"{sp[5]['full_fps']:.1f}" if sp[5]['full_fps'] < 20 else f"{sp[5]['full_fps']:.0f}")
+                macro(f"BoardEfiveExtraMs{k}", f"{sp[5]['full_ms'] - sp[2]['full_ms']:.0f}")
+        ok = all(e["bit_exact"] for e in runs[sz]["exact"])
+        rows.append(f"{sz.replace('x', '$\\times$')} & {per_mode[sz]} & {'yes' if ok else 'no'} & "
+                    f"{sp[2]['encode_ms']:.1f} & {sp[2]['full_ms']:.1f} ({sp[2]['full_fps']:.1f}) & "
+                    f"{sp[5]['full_ms']:.1f} ({sp[5]['full_fps']:.1f}) \\\\" if 5 in sp else "")
+    w, h = 640, 480
+    if "RtlTwoLanesMpix" in macros:
+        macro("RtlTwoLanesVgaMs", f"{w * h / (float(macros['RtlTwoLanesMpix']) * 1e6) * 1e3:.1f}")
+    write("tab_board.tex", rf"""\begin{{table}}[t]
+\caption{{Two-lane E5 bitstream on the PYNQ-Z2 (100\,MHz): every frame of every level {macros['BoardModes']} compared byte for byte (scan and tag) with the golden model, and the time of a Python round trip on the ARM (pixel copy, cache flush, registers, DMA both ways), median of 50 frames; ``frame'' adds the JPEG headers (and for E5 the segment order) on the ARM. E0--E4 take the same time.}}
+\label{{tab:board}}
+\centering\small\setlength{{\tabcolsep}}{{3pt}}
+\begin{{tabular}}{{lrcrrr}}
+\toprule
+Size & Frames/level & Bit-exact & Encode (ms) & E2 frame, ms (fps) & E5 frame, ms (fps) \\
+\midrule
+{chr(10).join(r for r in rows if r)}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+
+
 def main():
     TAB.mkdir(exist_ok=True)
     FIG.mkdir(exist_ok=True)
@@ -1750,6 +1809,7 @@ def main():
     restart_interval()
     size_channel()
     lanes_rtl()
+    board()
     research_figures()
     protocol()
     peculiar_cases()
