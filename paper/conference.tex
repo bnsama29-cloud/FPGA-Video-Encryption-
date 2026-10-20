@@ -70,12 +70,12 @@ Given keystream bits $z_0 z_1 \ldots$, a selected symbol is encrypted as
 \end{equation}
 where $\alpha = 1$ if amplitudes are selected. Since $\amp(v) \xor (2^s - 1) = \amp(-v)$, the first term is exactly a sign change; the second changes only the $s-1$ low bits, so $|v|$ stays in $[2^{s-1}, 2^s - 1]$. Hence $s$, the Huffman code and the stream length never change, and the output is a valid JPEG for any key. Fig.~\ref{fig:circuit} shows the gate-level circuit; it consumes $n = [\text{sign}] + \alpha (s - 1) \le 11$ bits per symbol in one clock from a 16-bit window, while the Ascon core delivers 128 bits every 9 cycles, so the cipher never stalls the encoder.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\resizebox{0.86\textwidth}{!}{\input{figures/tikz/circuit_selenc.tex}}
-\caption{Gate-level logic of the selective-encryption stage (\texttt{selective\_enc.v}): mode decoding, the enables, one of the 11 bit slices that implement~\eqref{eq:enc}, and the valid/ready handshake that takes $n$ keystream bits per symbol.}
+\includegraphics[width=\columnwidth]{figures/fig_selective_enc_bitslice.pdf}
+\caption{Gate-level circuit of bit $k$ of the encryption stage, generated from the RTL (Yosys, netlistsvg): the comparators and multiplexers (select: is\_dc) form the sign and amplitude enables, and two XORs apply~\eqref{eq:enc}. $m_k = [k < s]$; ks0, ks\_k1: keystream bits 0 and $k{+}1$. Eleven such slices form the stage.}
 \label{fig:circuit}
-\end{figure*}
+\end{figure}
 
 \textit{Keys, nonces and tag.} The video key follows a one-way ratchet, $K_{e+1} = \KDF(K_e, \text{ratchet}, e{+}1)$, with $\KDF$ the Ascon tag under a reserved nonce; a separate key $\Kfb$ protects feedback. The 128-bit nonce is $N(\sigma, t, b) = \sigma \cat t \cat b$: a 64-bit session identifier $\sigma$ (48 random bits per boot and a 16-bit epoch), a 63-bit frame counter $t$ and a purpose bit $b$. Each frame derives a segment key and authenticates its scan:
 \begin{align}
@@ -84,6 +84,13 @@ Z_s &= \Enc_{\Kseg}\bigl(N(s, t, 0), 0^\ell\bigr),\\
 T_t &= \MAC_{K_e}\bigl(N(\sigma, t, 1), P_t \cat \text{scan}_t\bigr),
 \end{align}
 where $Z_s$ is the keystream of restart segment $s$ and $P_t$ is a 26-byte prefix (version, level, $\sigma$, $t$, width, height). Binding the level stops downgrades; $(K, N)$ never repeats because $t$ increases, a rekey changes $K_e$ and $\sigma$, and two boots share $\sigma$ with probability $2^{-48}$ per pair.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{figures/fig_ascon_sbox_slice.pdf}
+\caption{One of 64 bit slices of the Ascon round in our RTL ($p_C$ and $p_S$), generated from the Verilog: 12 XOR, 5 AND, 6 NOT gates; one round per clock cycle.}
+\label{fig:ascon}
+\end{figure}
 
 \textit{Protection levels.} E0 only tags; E1 encrypts AC signs, E2 also DC signs (the default floor), E3 AC amplitudes, E4 DC amplitudes. Huffman symbols reveal where non-zero coefficients are, so E1--E4 leak outlines. E5 encrypts like E4 and sends the $M$ macroblocks in a keyed order $\pi_t$ (Fig.~\ref{fig:e5}): Fisher--Yates with rejection sampling on the keystream of $(K_\pi, N(\sigma, t, 0))$ yields a uniform permutation, $\log_2 M! = \PermBitsQVGA$ bits at 320$\times$240 ($M = \McuQVGA$), new in every frame. Each macroblock is a restart segment, so the fabric needs no frame buffer; the ARM only reorders segments and the receiver restores raster order before checking $T_t$, so a moved segment fails the tag.
 
@@ -104,7 +111,14 @@ i.e.\ at most \BoundOneMpix, \BoundTwoMpix{} and \BoundFourMpix\,Mpixel/s for $L
 
 % =====================================================================================================
 \section{Implementation and Verification}\label{sec:impl}
-A Python golden model passes all 1089 Ascon-AEAD128 known-answer tests; every RTL block has a cocotb testbench with random back-pressure that reports the first mismatch, and the encoders are byte-exact with the model in Icarus and Vivado XSim, for one, two and four lanes and all six levels. Encryption costs no cycles (E0--E4 differ by at most \MaxExtraCycles{} cycles per frame); cycles per pixel follow $1.5 + \FillA/r$ for $r$ MCU rows, \CppVGA{} at 640$\times$480. After place and route the encoder meets \TopMhz\,MHz (WNS $+$\TopWns\,ns): \TopMpix\,Mpixel/s, \FpsVGA{} frames/s at VGA, \TopLuts{} LUTs and about \SaifTopMw\,mW with simulated switching activity (Table~\ref{tab:resources}). Two and four lanes reach \RtlTwoLanesMpix{} and \RtlFourLanesMpix\,Mpixel/s in RTL simulation and close 100\,MHz; E5 costs no BRAM, and with two lanes it draws \SaifLanesEfiveMw\,mW against \SaifLanesEtwoMw\,mW for E2. Both PYNQ-Z2 systems (Zynq PS, AXI DMA, encoder) close timing. Each Ascon core takes \AsconLutMin--\AsconLutMax{} LUTs (Table~\ref{tab:compare}).
+A Python golden model passes all 1089 Ascon-AEAD128 known-answer tests; every RTL block has a cocotb testbench with random back-pressure that reports the first mismatch, and the encoders are byte-exact with the model in Icarus and Vivado XSim, for one, two and four lanes and all six levels. Encryption costs no cycles (E0--E4 differ by at most \MaxExtraCycles{} cycles per frame); cycles per pixel follow $1.5 + \FillA/r$ for $r$ MCU rows, \CppVGA{} at 640$\times$480. After place and route the encoder meets \TopMhz\,MHz (WNS $+$\TopWns\,ns): \TopMpix\,Mpixel/s, \FpsVGA{} frames/s at VGA, \TopLuts{} LUTs and about \SaifTopMw\,mW with simulated switching activity (Table~\ref{tab:resources}). Two and four lanes reach \RtlTwoLanesMpix{} and \RtlFourLanesMpix\,Mpixel/s in RTL simulation and close 100\,MHz; E5 costs no BRAM, and with two lanes it draws \SaifLanesEfiveMw\,mW against \SaifLanesEtwoMw\,mW for E2. Both PYNQ-Z2 systems (Zynq PS, AXI DMA, encoder) close timing. Each Ascon core (Fig.~\ref{fig:ascon}) takes \AsconLutMin--\AsconLutMax{} LUTs (Table~\ref{tab:compare}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{figures/fig_lanes_rtl.pdf}
+\caption{Lane encoder throughput at 100\,MHz, 640$\times$480, cycle-accurate RTL simulation with every frame bit-exact (bars); diamonds: event-model projection with overlapping frames; dashed: a commercial encoder without cryptography~\cite{logijpge}.}
+\label{fig:lanesrtl}
+\end{figure}
 
 \input{tables/tab_resources.tex}
 \input{tables/tab_compare.tex}
