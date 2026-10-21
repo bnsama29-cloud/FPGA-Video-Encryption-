@@ -34,9 +34,9 @@ module secure_jpeg_lanes_top #(
     // With YUYV the lanes, not the input, set the rate, so 4 lanes keep two line-buffer sets.
     parameter PIXFMT   = 0,
     // converter line-buffer sets per lane (rgb2ycbcr_2px.v): 2 = ping-pong (default, full speed), 1 = half
-    // the block RAM. Measured (experiments/lanes_rtl_throughput.py --nbuf 1): with 4 lanes one set costs
-    // 2-5 % (0.613 vs 0.603 clocks/pixel at 320x240, 0.601 vs 0.569 at 640x480) and makes 4 lanes with
-    // 2048-pixel lines (1080p) fit the xc7z020; with 2 lanes it costs 22-27 %, so keep 2 there.
+    // the block RAM. Measured (experiments/lanes_rtl_throughput.py --nbuf 1, 2 KB lane FIFOs): with 4 lanes
+    // one set costs under 2 % (0.604 vs 0.603 clocks/pixel at 320x240, 0.559 vs 0.551 at 640x480) and lets
+    // 4 lanes take 2048-pixel lines (1080p) on the xc7z020; with 2 lanes it costs 22-29 %, so keep 2 there.
     parameter NBUF     = 2
 ) (
     input  wire        clk,

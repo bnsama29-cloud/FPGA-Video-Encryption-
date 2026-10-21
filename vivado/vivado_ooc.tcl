@@ -81,7 +81,14 @@ report_utilization    -file $out/utilization.txt
 report_utilization    -hierarchical -hierarchical_depth 3 -file $out/utilization_hier.txt
 report_timing_summary -max_paths 10 -file $out/timing.txt
 report_power          -file $out/power.txt
-write_checkpoint -force $out/routed.dcp
 set wns [get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]]
 puts "RESULT top=$top period=${period}ns $gen WNS=${wns}ns impl=$impl -> reports in $out/"
 puts "WNS >= 0 means the design meets ${period} ns. Estimated fmax = 1000 / (period - WNS) MHz."
+# The checkpoint is only needed by the power step. Written last and inside catch (run 10: Vivado died
+# silently in write_checkpoint while a second run was routing, and the finished result was lost).
+# A stale checkpoint of an older run is deleted first, so the power step can never use the wrong netlist.
+file delete -force $out/routed.dcp
+if {[catch {write_checkpoint -force $out/routed.dcp} err]} {
+    puts "WARNING: checkpoint not written ($err): the power step will skip this design"
+}
+puts "CHECKPOINT written $out/routed.dcp"

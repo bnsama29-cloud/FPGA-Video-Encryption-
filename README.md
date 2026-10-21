@@ -30,8 +30,8 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 | Golden model, RTL (single pipeline + 1/2/4 lanes, E0–E5), cocotb + XSim | done, every RTL test bit-exact with the model |
 | Vivado run 9 (product stage P) | 30/30 steps; **125 MHz met** (single pipeline +0.060 ns, 2 lanes +0.213 ns); every PYNQ-Z2 system meets 100 MHz, **including 4 lanes** (18,683 LUT, WNS +0.461 ns) |
 | 150 / 166 MHz (the commercial cores' clocks) | RTL done, bit-exact: register slices on the stall chains, keystream ring, packer and zig-zag fixes, timing-driven flow; needs Vivado run 10 |
-| Camera-native YUYV input (4 pixels per beat) | RTL + model + driver done, bit-exact for 2 and 4 lanes: 4 lanes 208 Mpixel/s at 100 MHz in simulation, half the DDR bytes |
-| 4 lanes with 1080p lines | option done (one line-buffer set per lane: half the BRAM, 2–5 % slower) |
+| Camera-native YUYV input (4 pixels per beat) | RTL + model + driver done, bit-exact for 2 and 4 lanes: 4 lanes 230 Mpixel/s at 100 MHz in simulation, half the DDR bytes |
+| 4 lanes with 1080p lines | option done (one line-buffer set per lane: half the BRAM, under 2 % slower) |
 | Board (PYNQ-Z2) | 2-lane E5 bitstream bit-exact with the model on silicon, E0–E5 (A1); first speed numbers (A2) |
 | ARM side (PS) | the same encoder in C, bit-exact (A3 baseline, no-bitstream camera node); post-quantum session key (ML-KEM-768 + X25519) |
 | Link | decryption in C on the laptop; frame-size padding against the size side channel (`link.pad`) |

@@ -55,7 +55,8 @@ Three configurations of the camera node, all producing the **same bytes**:
 1. `git pull` on branch `hw-polish-arm-baseline` (check `git log --oneline -1`), then run 10 (150 / 166 MHz,
    4-lane variants, 4-lane system at 142.9 MHz; ~5 h with two runs in parallel, 16 GB RAM):
    `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
-   (8 GB RAM: `--parallel 1`, ~8 h). Optional, ~1 h more: `--steps bd_lanes4hd bd_lanes4yuyv --fclk 142`
+   (8 GB RAM: `--parallel 1`, ~8 h). A job that dies without a result is rerun once on its own; to repeat
+   one job later: `--steps ooc power parse --only ooc_secure_jpeg_top v2` (the name is in the summary). Optional, ~1 h more: `--steps bd_lanes4hd bd_lanes4yuyv --fclk 142`
    for the 1080p and the YUYV-camera board images.
 2. Send `vivado_results_<date>.zip` (its `summary.txt` starts with the git commit and the SHA-256 of every
    bitstream); copy `future_work\board\overlay\secure_jpeg_lanes*.bit` + `.hwh` to the board and to the
