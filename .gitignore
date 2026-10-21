@@ -25,6 +25,7 @@ vivado*.log
 xsim.dir/
 vivado/xsim_work/
 vivado/xsim_work_v3/
+vivado/xsim_work_v3l4/
 vivado/xsim_power_*/
 future_work/board/vivado_proj_lanes/
 vivado/proj/
@@ -35,3 +36,4 @@ vivado_results_*.zip
 
 # fresh demo key (scripts/demo_key.py): never commit it
 configs/demo_key.txt
+configs/session_key.txt

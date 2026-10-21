@@ -16,7 +16,8 @@
 // restart marker is what makes the parts independent, and it already exists for E5.
 //
 // Same AXI4-Lite register map as secure_jpeg_top.v (rtl/axil_regs.v), except
-//   VERSION = 0x5EC0_0380 + LANES (contract v3, bit 7 = mode 5 implemented) and the input stream
+//   VERSION = 0x5EC0_0380 + LANES (contract v3, bit 7 = mode 5 implemented; + 0x40 when built for YUYV
+//   input, PIXFMT = 1: four pixels per beat, see yuyv_4px.v) and the input stream
 //   is 64 bits wide: tdata[31:0] = left pixel {pad, B, G, R}, tdata[63:32] = right pixel. Width
 //   multiple of 16. Modes 0..5. The ARM adds a DRI segment (restart interval = width/16, or 1 in
 //   E5) to the headers (model/hw.py :: build_frame(..., version=3)). In E5 every MCU is a restart
@@ -27,7 +28,16 @@ module secure_jpeg_lanes_top #(
     parameter LANES    = 2,             // 1, 2 or 4
     parameter LOG_L    = 1,             // log2(LANES), 1 when LANES = 1
     parameter LOG_MAXW = 11,
-    parameter LOG_FIFO = 11             // per-lane output FIFO: 2^LOG_FIFO bytes
+    parameter LOG_FIFO = 11,            // per-lane output FIFO: 2^LOG_FIFO bytes
+    // input pixel format: 0 = RGB, two pixels per 64-bit beat (rgb2ycbcr_2px.v); 1 = camera-native YUYV
+    // (YCbCr 4:2:2), four pixels per beat (yuyv_4px.v, model/hw.py :: planes_yuyv). VERSION bit 6 = 1.
+    // With YUYV the lanes, not the input, set the rate, so 4 lanes keep two line-buffer sets.
+    parameter PIXFMT   = 0,
+    // converter line-buffer sets per lane (rgb2ycbcr_2px.v): 2 = ping-pong (default, full speed), 1 = half
+    // the block RAM. Measured (experiments/lanes_rtl_throughput.py --nbuf 1): with 4 lanes one set costs
+    // 2-5 % (0.613 vs 0.603 clocks/pixel at 320x240, 0.601 vs 0.569 at 640x480) and makes 4 lanes with
+    // 2048-pixel lines (1080p) fit the xc7z020; with 2 lanes it costs 22-27 %, so keep 2 there.
+    parameter NBUF     = 2
 ) (
     input  wire        clk,
     input  wire        rst,
@@ -76,7 +86,7 @@ module secure_jpeg_lanes_top #(
     wire         done = scan_done && tag_valid;
     assign irq_done = done;
 
-    axil_regs #(.VERSION(32'h5EC0_0380 + LANES)) u_regs (
+    axil_regs #(.VERSION(32'h5EC0_0380 + LANES + (PIXFMT == 1 ? 32'h40 : 32'h0))) u_regs (
         .clk(clk), .rst(rst),
         .s_axil_awaddr(s_axil_awaddr), .s_axil_awprot(s_axil_awprot),
         .s_axil_awvalid(s_axil_awvalid), .s_axil_awready(s_axil_awready),
@@ -120,7 +130,8 @@ module secure_jpeg_lanes_top #(
         .kseg_valid(kseg_valid), .kseg(kseg));
 
     // ---------------------------------------------------------------- dealer
-    // Counts pixel pairs in raster order; MCU row r goes to lane r mod LANES.
+    // Counts pixel pairs (RGB) or quads (YUYV) in raster order; MCU row r goes to lane r mod LANES.
+    localparam [11:0] PX_PER_BEAT = (PIXFMT == 1) ? 12'd4 : 12'd2;
     wire [7:0]  mcu_rows = height[11:4];
     reg  [11:0] dx;                     // x of the left pixel of the pair
     reg  [3:0]  dy;                     // line within the MCU row
@@ -140,12 +151,12 @@ module secure_jpeg_lanes_top #(
         if (rst || start) begin
             dx <= 12'd0; dy <= 4'd0; drow <= 8'd0;
         end else if (dtake) begin
-            if (dx == width - 12'd2) begin
+            if (dx == width - PX_PER_BEAT) begin
                 dx <= 12'd0;
                 dy <= dy + 4'd1;
                 if (dy == 4'd15) drow <= drow + 8'd1;
             end else
-                dx <= dx + 12'd2;
+                dx <= dx + PX_PER_BEAT;
         end
     end
 
@@ -157,7 +168,8 @@ module secure_jpeg_lanes_top #(
         for (g = 0; g < LANES; g = g + 1) begin : g_lane
             // MCU rows of lane g: ceil((rows - g) / LANES)
             wire [8:0] rows_g = ({1'b0, mcu_rows} + (LANES - 1 - g)) >> LOG_L;
-            encoder_lane #(.LANE(g), .LANES(LANES), .LOG_MAXW(LOG_MAXW), .LOG_FIFO(LOG_FIFO)) u_lane (
+            encoder_lane #(.LANE(g), .LANES(LANES), .LOG_MAXW(LOG_MAXW), .LOG_FIFO(LOG_FIFO), .NBUF(NBUF),
+                           .PIXFMT(PIXFMT)) u_lane (
                 .clk(clk), .rst(rst), .start(start), .width(width),
                 .rows(LANES == 1 ? mcu_rows : rows_g[7:0]), .mode(mode_l),
                 .frame_ctr(frame_ctr), .kseg(kseg), .kseg_valid(kseg_valid),

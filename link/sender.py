@@ -43,6 +43,7 @@ class Sender:
         self.bus = wire.Bus(cfg, "sender")
         self.vsock = wire.udp_socket()
         self.vaddr = (L["host"], L["video_in"])
+        self.padder = wire.SizePadder(L.get("pad", "none"))     # frame-size padding (link/wire.py)
         self.fsock = wire.udp_socket(L["fb_out"], config.bind_host(cfg), timeout=0.2)
         self.csock = wire.udp_socket(L["sender_control"], config.bind_host(cfg), timeout=0.2)
         self.lock = threading.Lock()
@@ -191,7 +192,8 @@ class Sender:
         t0 = time.perf_counter()
         out = self.encoder.encode(rgb, key, sid, ctr, mode)
         self.t_encode = time.perf_counter() - t0
-        wire.send_message(self.vsock, self.vaddr, wire.VIDEO, out.jpeg, ctr, stream=0,
+        jpeg = self.padder.pad(out.jpeg)          # link.pad (size side channel); "none" = unchanged
+        wire.send_message(self.vsock, self.vaddr, wire.VIDEO, jpeg, ctr, stream=0,
                           size=self.cfg["link"]["fragment"])
         self.enc_bits += out.enc_bits
         self.payload_bits += out.payload_bits

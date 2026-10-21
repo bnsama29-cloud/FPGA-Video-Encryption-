@@ -1,4 +1,4 @@
-# What is left for the hardware (as of 21 Oct 2026, after Vivado run 8)
+# What is left for the hardware (as of 21 Oct 2026, after Vivado run 9)
 
 All software and all RTL are done and tested: the golden model, the receiver, the board driver, the board
 sender, the bit-exact gate, the XSim vector and check tools, the dashboard, and **E5 in the lane encoder**
@@ -9,10 +9,13 @@ left needs the board, or Vivado time.
 |---|---|---|---|---|---|
 | H1 | E5 in the lane encoder | ✅ done (17–18 Oct, run 7: +2 % LUT, no BRAM/DSP, 318 mW SAIF) | the strongest level in hardware | — | `docs/INTERFACES.md` §8.6 |
 | H2 | **Board bring-up A1–A6** | ⏳ waiting for the board | every board number in the papers (red TODOs) | 1–2 days | **`docs/FPGA_HANDS_ON.md`** (step by step), `docs/BOARD_BRINGUP.md` (task list) |
-| H3 | 125 MHz: pipeline the colour converter | run 8: D3 stage improved v2 to −0.487 ns (2 lanes −0.914); worst path now the multiply-add. Product stage P added (RTL, bit-exact); needs run 9 | 1 lane 82, 2 lanes ~150 Mpixel/s | Vivado run | below |
+| H3 | 125 MHz: pipeline the colour converter | ✅ run 9: **125 MHz met** (v2 +0.060 ns, 2 lanes +0.213 ns) with stage P | 1 lane 82, 2 lanes ~150 Mpixel/s | — | below |
+| H10 | **150 / 166 MHz** (the commercial cores' clocks) | RTL done 21 Oct, bit-exact (bug #36): skid buffers, keystream ring, packer and zig-zag fixes, timing-driven flow; needs run 10 | 4 lanes ≈ 260 Mpixel/s (RGB) | Vivado run | below, `docs/BENCHMARK_PLAN.md` |
+| H11 | YUYV (camera-native) input, 4 pixels per beat | RTL + model + driver done 21 Oct (`PIXFMT = 1`, `rtl/yuyv_4px.v`, bit-exact, 2 and 4 lanes) | 4 lanes 0.48 clk/px (208 Mpx/s at 100 MHz), half the DDR bytes | run 10 (OOC) + `bd_lanes4yuyv` | `docs/INTERFACES.md` §8.7 |
+| H12 | 4 lanes with 1080p lines | `NBUF = 1` option done (half the line buffers, 2–5 % slower) | 1080p at 4 lanes on the xc7z020 | run 10 (OOC) + `bd_lanes4hd` | §8.7 |
 | H6 | Fabric cycle counters CYCLES / IN_WAIT / OUT_STALL (0x54..0x5C) | ✅ in the run-8 bitstreams (100 MHz met, system WNS +0.311 ns); read on the board by first_contact | fabric-only time on silicon (the paper's A2 TODO) | rebuild | `py vivado\run_vivado_day.py --steps bd bd_lanes parse` |
 | H7 | ARM (PS) baseline A3: our encoder in C on the Cortex-A9 | code done 21 Oct (`future_work/arm/`, bit-exact gate) | like-for-like PL vs PS speed-up | 1 h on the board | `docs/BOARD_BRINGUP.md` §6 |
-| H9 | 4-lane PYNQ-Z2 image | script ready (`--steps bd_lanes4`: LANES=4, lines ≤ 1024 px, `secure_jpeg_lanes4.bit`); needs a Vivado run, then first_contact on the board; DDR must feed ~700 MB/s | ~20 min Vivado + 30 min board | — |
+| H9 | 4-lane PYNQ-Z2 image | ✅ run 9: system meets 100 MHz (18,683 LUT, 58.5 BRAM, 92 DSP, WNS +0.461 ns); next: first_contact on the board (whether DDR feeds ~700 MB/s; the YUYV image needs half) | 30 min board | `docs/RUNBOOK.md` §3 |
 | H8 | Faster driver: pixels straight into the DMA buffer, cache ops on the frame's bytes only, E5 order + split in one C call, time breakdown | done 21 Oct | board fps (92 ms at VGA was the Python copy, not the fabric) | rerun first_contact | — |
 | H4 | Power with simulated switching activity (SAIF) | ✅ done (run 7: 211 mW encoder, 318/319 mW 2 lanes E5/E2) | replaces the vectorless estimate | — | `vivado/power_saif.tcl` |
 | H5 | Keep the bitstreams safe | open | the E5 pair exists only on tom's PC | 10 min | below |
@@ -35,17 +38,23 @@ the baseline and power tables are filled, and the scenario runs are committed. T
 `\TODO{A1--A4 ...}` in `paper/sections/access_08_hwresults.tex` and the limitation sentence of
 `paper/conference.tex` (the numbers go through `paper/data/board/` and `make_assets.py`, never by hand).
 
-## H3 — 125 MHz
+## H3 — 125 MHz (done) and H10 — 150 / 166 MHz
 
-Vivado run 6/7: at 125 MHz the colour converter fails by 0.875 ns (v2). **Done in RTL (21 Oct):** a D3
-stage in `rgb2ycbcr_block.v` / `rgb2ycbcr_2px.v` registers the chroma pair sums and the row-sum read, and
-all buffer writes happen one clock later (same order, same contents; every RTL test still bit-exact).
-Run 8 (21 Oct): v2 −0.875 → −0.487 ns, 2 lanes −0.914 ns; the worst path is now D1 → C, the nine
-constant multiplies and their sums in one clock (12 levels of carry chains). **Done in RTL after run 8:**
-stage P registers the products, C only adds (bit-exact). Left: run 9,
-`py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes bd_lanes4 power parse --periods 8.0`.
-If 125 MHz still fails, the zip's `timing.txt` has the paths; send it. Then the block
-design at 125 MHz: `block_design.tcl` takes the FCLK0 frequency as its first argument.
+Run 9 (21 Oct, commit 6798a4f): with stage P the single pipeline meets 125 MHz (+0.060 ns) and two lanes
+too (+0.213 ns). The new worst paths were handshakes (docs/TESTING.md bug #36): the bit packer's
+accumulator update (9 levels), a ready chain packer → Huffman → encryption stage → keystream pointer →
+128-bit block copy (fan-out 133), and in the lanes the zig-zag stage's RAM read → DC-predictor reset.
+**Done in RTL after run 9 (bit-exact, same clocks per pixel):** `rtl/skid_buf.v` at the encryption stage
+and at the bit packer's input and output, keystream slots used as a ring with a registered `ks_avail`,
+the packer shifting by its registered fill level, non-zero flags in the zig-zag stage. Vivado now runs a
+timing-driven flow (`SJPEG_IMPL=perf`: retiming, Explore / ExtraTimingOpt / AggressiveExplore
+directives; `SJPEG_IMPL=default` repeats the old flow).
+
+Run 10 (one command, overnight; RUNBOOK §3):
+`py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
+→ 1, 2 and 4 lanes at 100 / 150 / 166 MHz, 4 lanes with NBUF = 1, with 1080p lines and with YUYV input, the
+4-lane system at 142.9 MHz (falls back to 125, then 100), XSim of 1, 2 and 4 lanes, SAIF power incl. 4 lanes.
+Send the zip; its `summary.txt` now starts with the git commit and the SHA-256 of every bitstream.
 
 ## H5 — Keep the bitstreams safe
 

@@ -35,8 +35,21 @@ E5_CAP = 0x80                  # VERSION bit 7: the RTL implements mode 5 (docs/
 OUT_DIR = ROOT / "sim_out"
 
 
+YUYV_CAP = 0x40               # VERSION bit 6: built for camera-native YUYV input (PIXFMT = 1)
+
+
 def lanes_of(dut):
     return int(dut.LANES.value)
+
+
+def pixfmt(dut):
+    """'yuyv' when the DUT was built with PIXFMT = 1 (four YUYV pixels per beat), else 'rgb'."""
+    return "yuyv" if int(dut.PIXFMT.value) else "rgb"
+
+
+def to_input(dut, img):
+    """What the DMA sends for the RGB test image: itself, or the YUYV frame a camera would give."""
+    return J.rgb_to_yuyv(img) if pixfmt(dut) == "yuyv" else img
 
 
 class Encoder:
@@ -63,17 +76,22 @@ class Encoder:
             await self.wr(QT_DATA, J.reciprocal(q))
 
     async def encode(self, img, mode, frame_ctr):
-        """Returns (scan, tag, clocks from the CTRL write to irq_done)."""
-        h, w = img.shape[:2]
+        """Returns (scan, tag, clocks from the CTRL write to irq_done). img: RGB (H x W x 3) or a YUYV
+        frame (H x 2W bytes, for a DUT built with PIXFMT = 1)."""
+        h, w = img.shape[0], (img.shape[1] // 2 if img.ndim == 2 else img.shape[1])
         await self.wr(WIDTH, w)
         await self.wr(HEIGHT, h)
         await self.wr(FRAME_CTR, frame_ctr)
         await self.wr(FRAME_CTR_HI, frame_ctr >> 32)
-        px = img.astype(np.uint32)
-        words = (px[..., 0] | (px[..., 1] << 8) | (px[..., 2] << 16)).flatten()
-        # 64-bit beats: the left pixel in tdata[31:0] = the first 4 bytes, so the byte stream
-        # is the same as the 32-bit stream of contract v2
-        send = cocotb.start_soon(self.src.send(AxiStreamFrame(words.astype("<u4").tobytes())))
+        if img.ndim == 2:                                   # YUYV: the camera's byte stream as it is
+            data = np.ascontiguousarray(img, dtype=np.uint8).tobytes()
+        else:
+            px = img.astype(np.uint32)
+            words = (px[..., 0] | (px[..., 1] << 8) | (px[..., 2] << 16)).flatten()
+            # 64-bit beats: the left pixel in tdata[31:0] = the first 4 bytes, so the byte stream
+            # is the same as the 32-bit stream of contract v2
+            data = words.astype("<u4").tobytes()
+        send = cocotb.start_soon(self.src.send(AxiStreamFrame(data)))
         recv = cocotb.start_soon(self.sink.recv())
         timing = cocotb.start_soon(self._time_frame())
         await self.wr(CTRL, 1 | (mode << 1))
@@ -125,8 +143,9 @@ def first_diff(a, b):
 
 async def check_frame(dut, enc, img, quality, mode, ctr, key, sid, receiver, name):
     h, w = img.shape[:2]
-    scan, tag, clocks = await enc.encode(img, mode, ctr)
-    model = J.encode_frame_v3(img, quality, mode, key, ctr, sid, lanes=lanes_of(dut))
+    src, pf = to_input(dut, img), pixfmt(dut)
+    scan, tag, clocks = await enc.encode(src, mode, ctr)
+    model = J.encode_frame_v3(src, quality, mode, key, ctr, sid, lanes=lanes_of(dut), pixfmt=pf)
     if scan != model["scan"]:
         i = first_diff(scan, model["scan"])
         raise AssertionError(f"{name}: scan differs from model at byte {i} (hw {len(scan)} B, "
@@ -137,10 +156,10 @@ async def check_frame(dut, enc, img, quality, mode, ctr, key, sid, receiver, nam
     np.array(Image.open(io.BytesIO(jpg)).convert("RGB"))        # must decode in a normal viewer
     verdict, clear = receiver.process(jpg)
     assert verdict == "ok", f"{name}: receiver said {verdict}"
-    plain_v2 = J.encode_frame(img, quality, 0, key, ctr, sid)["scan"]
+    plain_v2 = J.encode_frame(src, quality, 0, key, ctr, sid, pixfmt=pf)["scan"]
     assert J.split_scan(clear)[1] == plain_v2, f"{name}: decryption not bit-exact"
     OUT_DIR.mkdir(exist_ok=True)
-    (OUT_DIR / f"v3_L{lanes_of(dut)}_{name}.jpg").write_bytes(jpg)
+    (OUT_DIR / f"v3_L{lanes_of(dut)}{'_yuyv' if pf == 'yuyv' else ''}_{name}.jpg").write_bytes(jpg)
     dut._log.info("L=%d %-18s %5d B %8d clk  %.3f clk/px", lanes_of(dut), name, len(scan),
                   clocks, clocks / (w * h))
     return jpg, clocks
@@ -150,7 +169,8 @@ async def check_frame(dut, enc, img, quality, mode, ctr, key, sid, receiver, nam
 async def registers(dut):
     enc = await init(dut)
     got = await enc.rd(VERSION)
-    assert got & ~E5_CAP == 0x5EC00300 + lanes_of(dut), f"VERSION 0x{got:08x}"
+    assert got & ~E5_CAP & ~YUYV_CAP == 0x5EC00300 + lanes_of(dut), f"VERSION 0x{got:08x}"
+    assert bool(got & YUYV_CAP) == (pixfmt(dut) == "yuyv"), f"VERSION 0x{got:08x}: YUYV bit wrong"
 
 
 @cocotb.test()
@@ -184,8 +204,9 @@ async def e5_one_segment_per_mcu(dut):
         enc.sink.set_pause_generator(itertools.cycle([rng.random() < 0.4 for _ in range(89)]))
     for ctr, (w, h, kind) in enumerate([(16, 16, "bars"), (64, 80, "scene"), (48, 48, "noise")], start=200):
         img = make_image(w, h, kind, seed=ctr)
-        scan, tag, _ = await enc.encode(img, 5, ctr)
-        model = J.encode_frame_v3(img, quality, 5, key, ctr, sid, lanes=lanes_of(dut))
+        src = to_input(dut, img)
+        scan, tag, _ = await enc.encode(src, 5, ctr)
+        model = J.encode_frame_v3(src, quality, 5, key, ctr, sid, lanes=lanes_of(dut), pixfmt=pixfmt(dut))
         if scan != model["scan"]:
             i = first_diff(scan, model["scan"])
             raise AssertionError(f"E5 {w}x{h}: scan differs at byte {i}: hw {scan[i:i+8].hex()} "
@@ -195,7 +216,7 @@ async def e5_one_segment_per_mcu(dut):
         sent = J.arm_shuffle(fabric, key, sid, ctr)
         verdict, clear = rx.process(sent)
         assert verdict == "ok", f"E5 {w}x{h}: receiver said {verdict}"
-        assert J.split_scan(clear)[1] == J.encode_frame(img, quality, 0, key, ctr, sid)["scan"]
+        assert J.split_scan(clear)[1] == J.encode_frame(src, quality, 0, key, ctr, sid, pixfmt=pixfmt(dut))["scan"]
 
 
 @cocotb.test()
@@ -241,11 +262,11 @@ async def throughput(dut):
     if mode == 5 and not (await enc.rd(VERSION)) & E5_CAP:
         dut._log.warning("E5 not implemented in this RTL: throughput not measured")
         return
-    img = make_image(w, h, "scene")
+    img = to_input(dut, make_image(w, h, "scene"))
     if os.getenv("THROUGHPUT_WARMUP", "1") == "1":
         await enc.encode(img, mode, 0)                   # warm-up (frames are independent)
     scan, tag, clocks = await enc.encode(img, mode, 1)
-    model = J.encode_frame_v3(img, quality, mode, key, 1, sid)
+    model = J.encode_frame_v3(img, quality, mode, key, 1, sid, pixfmt=pixfmt(dut))
     assert scan == model["scan"] and tag == model["tag"], "throughput frame not bit-exact"
     cpp = clocks / (w * h)
     # the hardware's own cycle counter (what the board reports) must equal the testbench's count
@@ -258,7 +279,11 @@ async def throughput(dut):
                latency_clocks=enc.latency, latency_lines=(enc.latency / (w / 2)) if enc.latency else None,
                measured_from="internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate")
     OUT_DIR.mkdir(exist_ok=True)
-    suffix = "" if mode == 2 else f"_E{mode}"
+    nbuf = int(os.getenv("THROUGHPUT_NBUF", "2"))
+    res["nbuf"] = nbuf
+    res["pixfmt"] = pixfmt(dut)
+    suffix = ("" if mode == 2 else f"_E{mode}") + ("" if nbuf == 2 else f"_B{nbuf}") + \
+        ("_yuyv" if pixfmt(dut) == "yuyv" else "")
     (OUT_DIR / f"lanes_throughput_L{lanes_of(dut)}_{w}x{h}{suffix}.json").write_text(json.dumps(res, indent=1))
     dut._log.info("L=%d %dx%d: %.0f clocks, %.3f clocks/pixel -> %.1f Mpx/s at 100 MHz",
                   lanes_of(dut), w, h, clocks, cpp, 100 / cpp)
@@ -269,3 +294,12 @@ def test_secure_jpeg_lanes_top(lanes):
     log_l = {1: 1, 2: 1, 4: 2}[lanes]
     run_sim("secure_jpeg_lanes_top", "test_lanes_top",
             parameters=dict(LANES=lanes, LOG_L=log_l, LOG_MAXW=10, LOG_FIFO=10), build_tag=f"_L{lanes}")
+
+
+@pytest.mark.parametrize("lanes", [2, 4])
+def test_secure_jpeg_lanes_top_yuyv(lanes):
+    """The same tests with camera-native YUYV input (PIXFMT = 1, rtl/yuyv_4px.v, four pixels per beat)."""
+    log_l = {2: 1, 4: 2}[lanes]
+    run_sim("secure_jpeg_lanes_top", "test_lanes_top",
+            parameters=dict(LANES=lanes, LOG_L=log_l, LOG_MAXW=10, LOG_FIFO=10, PIXFMT=1),
+            build_tag=f"_L{lanes}_yuyv")

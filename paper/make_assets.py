@@ -583,7 +583,7 @@ Mode & {' & '.join('R & N' for _ in tags)} \\
 
 
 # ---------------------------------------------------------------- contract v3: lanes in RTL
-LANES_RTL = DATA / "lanes_rtl"                  # experiments/lanes_rtl_throughput.py (Icarus, 16 Oct 2026)
+LANES_RTL = DATA / "lanes_rtl"                  # experiments/lanes_rtl_throughput.py (Icarus; rerun 21 Oct 2026)
 
 
 def lanes_rows(frame=(640, 480)):
@@ -605,6 +605,25 @@ def lanes_vivado(lanes):
             u = r["util"]
             return dict(lut=u["lut"][0], bram=u["bram"][0], dsp=u["dsp"][0], wns=r["timing"]["wns"])
     return None
+
+
+def lanes_variants():
+    """The two lane-encoder options of 21 Oct 2026 (experiments/lanes_rtl_throughput.py --pixfmt yuyv /
+    --nbuf 1, snapshots in paper/data/lanes_rtl_yuyv and lanes_rtl_nbuf1): camera-native YUYV input
+    (4 pixels per beat) and one line-buffer set per lane."""
+    for folder, tag in (("lanes_rtl_yuyv", "Yuyv"), ("lanes_rtl_nbuf1", "NbufOne")):
+        f = DATA / folder / "results.json"
+        if not f.exists():
+            continue
+        rows = {(r["lanes"], r["width"], r["height"]): r for r in J(f)["rows"]}
+        for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
+            r = rows.get((l, 640, 480))
+            if r:
+                macro(f"{tag}{name}Mpix", f"{r['mpx_per_s_at_100mhz']:.0f}")
+                macro(f"{tag}{name}Cpp", f"{r['clocks_per_pixel']:.3f}")
+                if tag == "Yuyv":       # 2 bytes per pixel from DDR (YUYV) instead of 4 (RGB words)
+                    macro(f"{tag}{name}InMBs", f"{2 * r['mpx_per_s_at_100mhz']:.0f}")
+    macro("BoundYuyvFourCpp", f"{max(1.5 / 4, 0.25):.3f}")
 
 
 def lanes_rtl():
@@ -689,6 +708,7 @@ def system_and_lanes(results):
             macro(f"{name}Bram", f"{r['util']['bram'][0]:g}")
             macro(f"{name}Dsp", f"{r['util']['dsp'][0]:g}")
             macro(f"{name}PowerW", f"{r['power'].get('total', 0):.2f}")
+            macro(f"{name}LutPct", f"{r['util']['lut'][2]:.0f}")
     for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
         v = lanes_vivado(l)
         if v:
@@ -698,9 +718,26 @@ def system_and_lanes(results):
             macro(f"{name}Wns", f"{v['wns']:+.3f}")
     r125 = res.get("secure_jpeg_top_8.0ns")
     if r125 and r125.get("critical"):
-        macro("TopWnsAtOneTwoFive", f"{r125['timing']['wns']:.3f}")
+        macro("TopWnsAtOneTwoFive", f"{r125['timing']['wns']:+.3f}")
         blk = r125["critical"][0][1]
         macro("TopLimitAtOneTwoFive", BLOCK_WORDS.get(blk, blk.replace("_", "\\_")))
+    l125 = res.get("secure_jpeg_lanes_top_8.0ns_lanes2_log_l1")
+    if l125 and l125["timing"].get("wns") is not None:
+        macro("LanesTwoWnsAtOneTwoFive", f"{l125['timing']['wns']:+.3f}")
+    # the fastest clock each design meets out of context, over every run in the snapshot (newest run first)
+    for key, name in (("secure_jpeg_top", "Top"), ("secure_jpeg_lanes_top_", "LanesTwo"), ("lanes4", "LanesFour")):
+        best = None
+        for x in results:
+            nm = x["name"]
+            mine = (nm == "secure_jpeg_top" or nm.startswith("secure_jpeg_top_") and "maxw" not in nm) if name == "Top" \
+                else ("lanes2" in nm if name == "LanesTwo" else "lanes4" in nm and nm.startswith("secure"))
+            if mine and x["timing"].get("wns") is not None and x["timing"]["wns"] >= 0 and x.get("period"):
+                mhz = 1000 / x["period"]
+                if best is None or mhz > best[0]:
+                    best = (mhz, x)
+        if best:
+            macro(f"{name}ClosedMhz", f"{best[0]:.0f}")
+            macro(f"{name}ClosedWns", f"{best[1]['timing']['wns']:+.3f}")
 
 
 # ---------------------------------------------------------------- comparison with published designs
@@ -717,6 +754,15 @@ def compare(r, cores):
     f = lambda v, nd=0: "--" if v is None else (f"{v:,.{nd}f}".replace(",", "{,}"))
     rows = [f"Ours: encoder & Zynq-7020 & {f(u['lut'][0])} & {f(u['bram'][0], 1)} & {f(u['dsp'][0])} & "
             f"{mhz:.0f} & {mpix:.0f} & sel.\\ AEAD \\\\"]
+    # the same encoder at the fastest clock it closes out of context (run 9: 125 MHz), same cycle count
+    vr = {x["name"]: x for x in J(DATA / "vivado" / "vivado_results.json")} if (DATA / "vivado" / "vivado_results.json").exists() else {}
+    fast = [x for n, x in vr.items() if n.startswith("secure_jpeg_top_") and "maxw" not in n
+            and x["timing"].get("wns") is not None and x["timing"]["wns"] >= 0 and x.get("period")]
+    if fast:
+        fx = min(fast, key=lambda x: x["period"])
+        fm = 1000 / fx["period"]
+        rows.append(f"Ours: encoder & Zynq-7020 & {f(fx['util']['lut'][0])} & {f(fx['util']['bram'][0], 1)} & "
+                    f"{f(fx['util']['dsp'][0])} & {fm:.0f} & {mpix * fm / mhz:.0f} & sel.\\ AEAD \\\\")
     if cores:
         rows.append(f"Ours: one Ascon & Zynq-7020 & {min(c[3] for c in cores)}--{max(c[3] for c in cores)} & "
                     f"0 & 0 & {mhz:.0f} & -- & AEAD core \\\\")
@@ -1825,6 +1871,7 @@ def main():
     restart_interval()
     size_channel()
     lanes_rtl()
+    lanes_variants()
     board()
     research_figures()
     protocol()

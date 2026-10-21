@@ -1,6 +1,6 @@
 // encoder_lane.v -- one complete encoder lane of contract v3 (secure_jpeg_lanes_top.v).
 //
-//   pixel pairs -> rgb2ycbcr_2px -> dct8x8 -> quantiser -> zigzag_rle (SEG_RESET=1)
+//   pixel pairs -> rgb2ycbcr_2px (or YUYV quads -> yuyv_4px, PIXFMT = 1) -> dct8x8 -> quantiser -> zigzag_rle (SEG_RESET=1)
 //     -> selective_enc (+ keystream_gen keyed by K_seg, restarted per segment)
 //     -> huffman_enc -> bit_packer -> byte_fifo -> {byte, segment-last} to the merger
 //
@@ -17,8 +17,8 @@
 // segment index is the raster MCU index row * cols + col. The encrypted fields are those of E4
 // (selective_enc treats mode 5 like mode 4). The ARM permutes the segments afterwards.
 //
-// Keystream restart (the subtle part). When the encryption stage hands on a segment's last
-// symbol, `pend` is set and the lane's keystream window is hidden (ks_avail forced to 0) until the
+// Keystream restart (the subtle part). When the encryption stage encrypts a segment's last
+// symbol (ks_last), `pend` is set and the lane's keystream window is hidden (ks_avail forced to 0) until the
 // generator has restarted with the next segment's nonce, so no bit of segment s can leak into
 // segment s + LANES. The restart waits for K_seg (kseg_valid) at the start of a frame.
 // Golden model: model/hw.py :: encode_frame_v3()  (the segments with s mod LANES == LANE)
@@ -27,7 +27,9 @@ module encoder_lane #(
     parameter LANE      = 0,
     parameter LANES     = 2,
     parameter LOG_MAXW  = 11,
-    parameter LOG_FIFO  = 11
+    parameter LOG_FIFO  = 11,
+    parameter NBUF      = 2,             // line-buffer sets of the converter (rgb2ycbcr_2px.v)
+    parameter PIXFMT    = 0              // 0: RGB pixel pairs (rgb2ycbcr_2px.v), 1: YUYV quads (yuyv_4px.v)
 ) (
     input  wire         clk,
     input  wire         rst,
@@ -57,11 +59,21 @@ module encoder_lane #(
     wire       c_valid, c_ready, c_blast, c_rlast;
     wire [7:0] c_data;
     wire [1:0] c_comp;
-    rgb2ycbcr_2px #(.LOG_MAXW(LOG_MAXW)) u_conv (
-        .clk(clk), .rst(rst), .start(start), .width(width), .rows(rows),
-        .s_valid(s_valid), .s_ready(s_ready), .s_data(s_data),
-        .m_valid(c_valid), .m_ready(c_ready), .m_data(c_data), .m_comp(c_comp),
-        .m_blast(c_blast), .m_flast(c_rlast));
+    generate
+        if (PIXFMT == 1) begin : g_yuyv
+            yuyv_4px #(.LOG_MAXW(LOG_MAXW), .NBUF(NBUF)) u_conv (
+                .clk(clk), .rst(rst), .start(start), .width(width), .rows(rows),
+                .s_valid(s_valid), .s_ready(s_ready), .s_data(s_data),
+                .m_valid(c_valid), .m_ready(c_ready), .m_data(c_data), .m_comp(c_comp),
+                .m_blast(c_blast), .m_flast(c_rlast));
+        end else begin : g_rgb
+            rgb2ycbcr_2px #(.LOG_MAXW(LOG_MAXW), .NBUF(NBUF)) u_conv (
+                .clk(clk), .rst(rst), .start(start), .width(width), .rows(rows),
+                .s_valid(s_valid), .s_ready(s_ready), .s_data(s_data),
+                .m_valid(c_valid), .m_ready(c_ready), .m_data(c_data), .m_comp(c_comp),
+                .m_blast(c_blast), .m_flast(c_rlast));
+        end
+    endgenerate
 
     // segment end at the converter output: the MCU row's last sample, or in E5 every MCU's last
     // sample (the 6th block of the MCU; the row end is always also an MCU end)
@@ -108,15 +120,24 @@ module encoder_lane #(
     reg  [15:0] row, rowbase;
     reg  [7:0]  col;
     reg         wait_k, pend;
-    wire        seg_end = r_valid && r_ready && r_slast;
+    // the segment ends when its last symbol takes its keystream bits (selective_enc ks_last), not
+    // when it enters the encryption stage: that stage buffers symbols (skid_buf), and a symbol
+    // still waiting there must be encrypted with its own segment's keystream
+    wire        ks_last;
+    wire        seg_end = ks_last;
     wire        row_end = seg_end && (!e5 || col == cols - 8'd1);
     wire [15:0] seg     = e5 ? rowbase + {8'd0, col} : row;
-    wire        ks_start = (wait_k || pend) && kseg_valid && !seg_end;
+    // ks_start is a register (150 MHz work): the restart decision depends on this clock's encryption
+    // handshake (seg_end), and the restart itself loads the Ascon state (320 bits) and clears the
+    // keystream slots; both in one clock was one of the long paths of run 9 (mode_l -> ... -> u_ks).
+    // The window stays hidden until the clock in which the restart happens (pend is cleared then).
+    reg         ks_start;
     always @(posedge clk) begin
         if (rst || start) begin
             row <= LANE; rowbase <= LANE * {8'd0, cols}; col <= 8'd0;
-            wait_k <= 1'b1; pend <= 1'b0;
+            wait_k <= 1'b1; pend <= 1'b0; ks_start <= 1'b0;
         end else begin
+            ks_start <= (wait_k || pend) && kseg_valid && !seg_end && !ks_start;
             if (ks_start) begin wait_k <= 1'b0; pend <= 1'b0; end
             if (seg_end) begin
                 pend <= 1'b1;
@@ -147,7 +168,8 @@ module encoder_lane #(
         .i_valid(r_valid), .i_ready(r_ready), .i_is_dc(r_is_dc), .i_run(r_run),
         .i_size(r_size), .i_amp(r_amp), .i_eob(r_eob), .i_comp(r_comp), .i_flast(r_slast),
         .o_valid(e_valid), .o_ready(e_ready), .o_is_dc(e_is_dc), .o_run(e_run),
-        .o_size(e_size), .o_amp(e_amp), .o_eob(e_eob_unused), .o_comp(e_comp), .o_flast(e_slast));
+        .o_size(e_size), .o_amp(e_amp), .o_eob(e_eob_unused), .o_comp(e_comp), .o_flast(e_slast),
+        .ks_last(ks_last));
 
     wire        h_valid, h_ready, h_slast;
     wire [26:0] h_bits;

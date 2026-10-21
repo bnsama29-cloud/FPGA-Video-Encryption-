@@ -389,3 +389,31 @@ def test_scenario_board_command_carries_the_demo_key():
                                  extra_sets=["keys.master=0f" * 1 + "e" * 30, "channel.loss=0.05"])
     assert "--set keys.master=0f" + "e" * 30 in cmd
     assert "channel.loss" not in cmd
+
+
+def test_driver_yuyv_bitstream():
+    """A bitstream built for camera-native YUYV input (PIXFMT = 1, VERSION bit 6): the driver sends the
+    camera's bytes as they are (2 per pixel), converts an RGB frame itself, and both give the model's bytes."""
+    from future_work.board.pynq_driver import MockBackend, SecureJpegIP, contract_of, has_yuyv
+    from model import hw
+    from model.testimage import make_image
+    assert contract_of(0x5EC003C4) == (3, 4) and has_yuyv(0x5EC003C4) and not has_yuyv(0x5EC00384)
+    ip = SecureJpegIP(MockBackend(contract=3, lanes=4, e5=True, yuyv=True))
+    assert ip.pixfmt == "yuyv" and ip.lanes == 4 and ip.e5
+    key, sid = bytes(range(16)), 0x1234_5678_9ABC
+    ip.setup_session(key, sid, 75)
+    img = make_image(48, 32, "scene")
+    yuyv = hw.rgb_to_yuyv(img)
+    for mode in (2, 5):
+        ref = hw.encode_frame_v3(yuyv, 75, mode, key, 7, sid, pixfmt="yuyv")
+        assert ip.encode(yuyv, mode, 7) == (ref["scan"], ref["tag"]), f"E{mode}: YUYV frame"
+        assert ip.encode(img, mode, 7) == (ref["scan"], ref["tag"]), f"E{mode}: RGB frame converted on the ARM"
+    buf = ip.pixel_buffer(48, 32)
+    assert buf.shape == (32, 96)
+    buf[...] = yuyv                                    # zero-copy: the camera writes into the DMA buffer
+    assert ip.encode(buf, 2, 8)[0] == hw.encode_frame_v3(yuyv, 75, 2, key, 8, sid, pixfmt="yuyv")["scan"]
+    rgb_ip = SecureJpegIP(MockBackend(contract=3, lanes=2, e5=True))
+    rgb_ip.setup_session(key, sid, 75)
+    import pytest
+    with pytest.raises(ValueError):
+        rgb_ip.encode(yuyv, 2, 1)                      # a YUYV frame needs a YUYV bitstream

@@ -11,7 +11,9 @@
 module sjpeg_lanes_bd_top #(
     parameter LANES = 2,
     parameter LOG_L = 1,
-    parameter LOG_MAXW = 11      // lines up to 2^LOG_MAXW pixels; the 4-lane image uses 10 (1024, enough for VGA)
+    parameter LOG_MAXW = 11,     // lines up to 2^LOG_MAXW pixels; the 4-lane image uses 10 (1024, enough for VGA)
+    parameter NBUF = 2,          // line-buffer sets per lane (1: half the BRAM, the 4-lane 1080p image)
+    parameter PIXFMT = 0         // 0 RGB (2 pixels per beat), 1 camera-native YUYV (4 pixels per beat)
 ) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 clk CLK" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axil:s_axis:m_axis, ASSOCIATED_RESET rst" *)
@@ -61,7 +63,8 @@ module sjpeg_lanes_bd_top #(
     (* X_INTERFACE_PARAMETER = "SENSITIVITY LEVEL_HIGH" *)
     output wire        irq_done
 );
-    secure_jpeg_lanes_top #(.LANES(LANES), .LOG_L(LOG_L), .LOG_MAXW(LOG_MAXW), .LOG_FIFO(11)) u_core (
+    secure_jpeg_lanes_top #(.LANES(LANES), .LOG_L(LOG_L), .LOG_MAXW(LOG_MAXW), .LOG_FIFO(11), .NBUF(NBUF),
+                           .PIXFMT(PIXFMT)) u_core (
         .clk(clk), .rst(rst),
         .s_axil_awaddr(s_axil_awaddr), .s_axil_awprot(s_axil_awprot), .s_axil_awvalid(s_axil_awvalid),
         .s_axil_awready(s_axil_awready), .s_axil_wdata(s_axil_wdata), .s_axil_wstrb(s_axil_wstrb),

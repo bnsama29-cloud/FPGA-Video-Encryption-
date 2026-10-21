@@ -253,15 +253,19 @@ lanes are added downstream.
 Speed
 1. Clock: 100 MHz vs. 150-166 MHz (CAST/logiJPGE). Current critical path is zig-zag/RLE,
    +0.09 ns slack at 100 MHz -- next clock sweep (run 4, 125/150 MHz) will name the new
-   limiting block.
+   limiting block. **21 Oct 2026: 125 MHz met (run 9); the next limits were stall chains, cut with
+   skid buffers (TESTING bug #36); run 10 measures 150/166 MHz.**
 2. Samples/clock: 1 vs. ~2 (logiJPGE) vs. up to 32 (CAST JPEG-EX-F/DX-F family).
-3. Input bus width: 32-bit / 1 px/clk caps cycles/px at 1.0 regardless of lane count.
+3. Input bus width: 32-bit / 1 px/clk caps cycles/px at 1.0 regardless of lane count. (Done: 64-bit,
+   2 px/clk for RGB; 21 Oct 2026 also camera-native YUYV, 4 px/clk: 4 lanes 0.48 clk/px.)
 4. Frame-start cost: first MCU row must fill before DCT starts (2-20% depending on frame size).
 5. Resolution headroom: 1080p60 needs 124 Mpx/s; today's 65 Mpx/s is ~31 fps at 1080p.
 
 Area / memory
 6. BRAM: 24.5 blocks vs. 16 (logiJPGE) vs. 2 (CAST) -- ours are full double MCU-row buffers
-   sized for 2048px lines.
+   sized for 2048px lines. (21 Oct 2026: NBUF = 1 option halves the line buffers of each lane at 2-5 %
+   throughput with 4 lanes; 4:2:0 needs 16 lines where logiJPGE's 4:2:2 needs 8. CAST's 2 BRAM need
+   block-order input from a 2-D DMA: open.)
 7. DSPs: 23, between CAST's 16 and logiJPGE's ~30 (each extra lane: ~+22).
 8. Two separate Ascon cores running -- GUIDE B7 (sharing one core) still open.
 
@@ -286,10 +290,13 @@ Evidence gaps vs. published crypto/hardware papers
     the model (1 and 2 cores), vs libjpeg-turbo ± whole-file Ascon / AES-GCM (`arm_baseline.py`); needs the board run.
 15. No side-channel resistance -- no masking against power analysis; physical attacks are
     explicitly out of scope, but recent Ascon hardware papers address this.
+    (Key management, 21 Oct 2026: the session key now comes from a post-quantum hybrid exchange,
+    ML-KEM-768 + X25519 authenticated by the pre-shared key, `link/kex.py`.)
 16. ~~E5 exists only in the Python model, not in RTL.~~ Done 17 Oct 2026: E5 is in the lane-encoder RTL
     (contract v3 mode 5), bit-exact in simulation; not yet on the board.
-17. Frame-size padding exists only in `experiments/size_leak.py`, not in `link/sender.py`
-    or hardware.
+17. ~~Frame-size padding exists only in `experiments/size_leak.py`, not in `link/sender.py`
+    or hardware.~~ Done 21 Oct 2026: `link.pad` (none | bucket | runmax | window), COM segments after SOI,
+    `tests/test_padding.py`; `size_leak.py` reports the shipped rule as `link.pad=runmax`.
 
 Security weak spots (to state honestly in the paper, not to hide)
 18. E1 is broken by a trained reconstruction network (learned_attack.py results).

@@ -11,6 +11,8 @@
 #   ... -tclargs 100 2 lanes4                            (the same with 4 lanes, lines up to 1024
 #                                                         pixels: secure_jpeg_lanes4.bit/.hwh,
 #                                                         reports in overlay/lanes4/)
+#   ... -tclargs 100 2 lanes4hd   (4 lanes, 1080p lines, NBUF = 1: secure_jpeg_lanes4hd.bit)
+#   ... -tclargs 100 2 lanes4yuyv (4 lanes, YUYV camera input: secure_jpeg_lanes4yuyv.bit)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
@@ -43,11 +45,12 @@ if {$design eq "lanes"} {
     set outname secure_jpeg_lanes
     set bdtop   sjpeg_lanes_bd_top
     set pxbits  64
-} elseif {$design eq "lanes4"} {
-    # 4 lanes: same wrapper, LANES = 4, lines up to 1024 pixels (the OOC run that met 100 MHz used the
-    # same LOG_MAXW = 10; 2048-pixel lines with 4 lanes would double the line-buffer BRAM)
-    set projdir [file join $root future_work board vivado_proj_lanes4]
-    set outname secure_jpeg_lanes4
+} elseif {$design in {lanes4 lanes4hd lanes4yuyv}} {
+    # 4 lanes, same wrapper. lanes4: lines up to 1024 pixels (VGA); lanes4hd: 2048-pixel lines (1080p) with
+    # one line-buffer set per lane (NBUF = 1, otherwise the BRAM would double); lanes4yuyv: camera-native
+    # YUYV input, four pixels per 64-bit beat (rtl/yuyv_4px.v), lines up to 1024 pixels
+    set projdir [file join $root future_work board vivado_proj_$design]
+    set outname [string map {lanes4 secure_jpeg_lanes4} $design]
     set bdtop   sjpeg_lanes_bd_top
     set pxbits  64
 } else {
@@ -100,6 +103,10 @@ set_property -dict [list \
 set sjpeg [create_bd_cell -type module -reference $bdtop sjpeg]
 if {$design eq "lanes4"} {
     set_property -dict [list CONFIG.LANES {4} CONFIG.LOG_L {2} CONFIG.LOG_MAXW {10}] $sjpeg
+} elseif {$design eq "lanes4hd"} {
+    set_property -dict [list CONFIG.LANES {4} CONFIG.LOG_L {2} CONFIG.LOG_MAXW {11} CONFIG.NBUF {1}] $sjpeg
+} elseif {$design eq "lanes4yuyv"} {
+    set_property -dict [list CONFIG.LANES {4} CONFIG.LOG_L {2} CONFIG.LOG_MAXW {10} CONFIG.PIXFMT {1}] $sjpeg
 }
 
 # ---- AXI DMA, simple (register) mode
@@ -171,6 +178,11 @@ set bd [get_files system.bd]
 add_files -norecurse [make_wrapper -files $bd -top]
 set_property top system_wrapper [current_fileset]
 update_compile_order -fileset sources_1
+# Implementation strategy (run 10): timing-driven unless SJPEG_IMPL=default (the flow of runs 1-9)
+if {![info exists ::env(SJPEG_IMPL)] || $::env(SJPEG_IMPL) ne "default"} {
+    if {[catch {set_property strategy Flow_PerfOptimized_high [get_runs synth_1]} err]} { puts "WARNING: $err" }
+    if {[catch {set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]} err]} { puts "WARNING: $err" }
+}
 launch_runs impl_1 -to_step write_bitstream -jobs $jobs
 wait_on_run impl_1
 

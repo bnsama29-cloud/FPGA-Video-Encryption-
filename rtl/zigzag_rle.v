@@ -51,6 +51,11 @@ module zigzag_rle #(
 
     reg signed [11:0] cb0 [0:63];
     reg signed [11:0] cb1 [0:63];
+    // non-zero flag of every stored coefficient, in flip-flops (150 MHz work): the scanner's
+    // decisions (zero run, EOB, segment end) read one bit here instead of a distributed-RAM read
+    // followed by a 12-bit compare (Vivado run 9: k -> RAM -> compare -> DC predictor reset was
+    // the slowest path of the 2-lane encoder at 125 MHz, 8 logic levels)
+    reg [63:0] nz0, nz1;
     reg [1:0]  full, bcomp0, bcomp1, bflast;
     reg        wsel, rsel;
     reg [5:0]  wptr;
@@ -71,6 +76,7 @@ module zigzag_rle #(
     wire [1:0]  comp  = rsel ? bcomp1 : bcomp0;
     wire        flast = bflast[rsel];
     wire signed [11:0] coef = rsel ? cb1[k] : cb0[k];
+    wire               cnz  = rsel ? nz1[k] : nz0[k];      // coef != 0
     wire signed [12:0] diff = coef - pred[comp];      // DC difference
 
     reg                s_valid, s_is_dc, s_eob, s_flast;
@@ -97,6 +103,7 @@ module zigzag_rle #(
     always @(posedge clk) begin
         if (wr) begin
             if (wsel) cb1[waddr] <= in_data[11:0]; else cb0[waddr] <= in_data[11:0];
+            if (wsel) nz1[waddr] <= (in_data[11:0] != 12'd0); else nz0[waddr] <= (in_data[11:0] != 12'd0);
         end
         if (rst || start) begin
             pred[0] <= 12'sd0; pred[1] <= 12'sd0; pred[2] <= 12'sd0;
@@ -132,7 +139,7 @@ module zigzag_rle #(
                     s_is_dc <= 1'b1; s_run <= 4'd0; s_val <= diff;
                     s_valid <= 1'b1;
                     k <= 6'd1; run <= 6'd0;
-                end else if (coef == 12'sd0) begin
+                end else if (!cnz) begin
                     if (k == 6'd63) begin                   // trailing zeros: EOB
                         s_eob <= 1'b1; s_run <= 4'd0; s_val <= 13'sd0;
                         s_flast <= flast; s_valid <= 1'b1;

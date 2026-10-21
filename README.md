@@ -28,24 +28,29 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 | Part | State |
 |---|---|
 | Golden model, RTL (single pipeline + 1/2/4 lanes, E0–E5), cocotb + XSim | done, every RTL test bit-exact with the model |
-| Vivado run 8 (counters + D3 stage) | 30/30 steps pass; 100 MHz met by every design and both PYNQ-Z2 systems; 125 MHz still fails (v2 −0.487 ns, 2 lanes −0.914 ns) |
-| 125 MHz fix (product stage P in both converters) | RTL done and bit-exact; needs Vivado run 9 |
+| Vivado run 9 (product stage P) | 30/30 steps; **125 MHz met** (single pipeline +0.060 ns, 2 lanes +0.213 ns); every PYNQ-Z2 system meets 100 MHz, **including 4 lanes** (18,683 LUT, WNS +0.461 ns) |
+| 150 / 166 MHz (the commercial cores' clocks) | RTL done, bit-exact: register slices on the stall chains, keystream ring, packer and zig-zag fixes, timing-driven flow; needs Vivado run 10 |
+| Camera-native YUYV input (4 pixels per beat) | RTL + model + driver done, bit-exact for 2 and 4 lanes: 4 lanes 208 Mpixel/s at 100 MHz in simulation, half the DDR bytes |
+| 4 lanes with 1080p lines | option done (one line-buffer set per lane: half the BRAM, 2–5 % slower) |
 | Board (PYNQ-Z2) | 2-lane E5 bitstream bit-exact with the model on silicon, E0–E5 (A1); first speed numbers (A2) |
-| ARM side (PS) | the same encoder in C, bit-exact, for the A3 baseline and a no-bitstream camera node |
-| Laptop receiver | decryption in C (`link/fastrx.py`), same results as the model, keeps up with E5 frames from the board |
-| Open | A2 fabric-only time (counters), A3, A4 power, A5/A6 attacks with the board, 4-lane board image, 125 MHz |
+| ARM side (PS) | the same encoder in C, bit-exact (A3 baseline, no-bitstream camera node); post-quantum session key (ML-KEM-768 + X25519) |
+| Link | decryption in C on the laptop; frame-size padding against the size side channel (`link.pad`) |
+| Open | Vivado run 10; on the board: 4-lane image, A2 fabric-only time, A3, A4 power, A5/A6 attacks |
+
+Where we beat the published designs and where we do not yet: **[docs/BENCHMARK_PLAN.md](docs/BENCHMARK_PLAN.md)**.
 
 How the work is split on the Zynq: the **programmable logic** does every per-pixel step (colour
 conversion, DCT, quantiser, entropy coding, Ascon encryption and tag); the **ARM processing system**
-does the per-frame and per-session work (headers, the E5 segment order, keys, network, defence policy).
-See [docs/RUNBOOK.md](docs/RUNBOOK.md) §1.
+does the per-frame and per-session work (headers, the E5 segment order, keys and the key exchange,
+network, defence policy). See [docs/RUNBOOK.md](docs/RUNBOOK.md) §1.
 
 ## Next steps
 
-1. **Vivado run 9** (Vivado PC, ~1.5 h): `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes bd_lanes4 power parse --periods 8.0`
-   → 125 MHz check with the product stage, new 2-lane image, and the first **4-lane** PYNQ-Z2 image.
-2. **Board, A1–A3** (~1 h): `first_contact` with `--zero-copy`, then `future_work.arm.arm_baseline`.
-3. **Board, A4–A6** (~3 h): power meter, then the attack suite with the board as sender.
+1. **Vivado run 10** (Vivado PC, overnight, ~5 h): `git pull`, then
+   `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
+   → 150 / 166 MHz for 1, 2 and 4 lanes, the YUYV and 1080p variants, the 4-lane system at 142.9 MHz. Send the zip.
+2. **Board, A1–A3** (~1.5 h): 4-lane smoke test, `first_contact` with 2 and 4 lanes (`--zero-copy`), `arm_baseline`, `pq_kex_cost`.
+3. **Board, A4–A6** (~3 h): power meter, then the attack suite with the board as sender (`--pq-kex`, `link.pad=runmax`).
 4. **Paper**: copy the results to `paper/data/`, `python paper/make_assets.py`, `make -C paper`, replace the red TODOs.
 
 Exact commands and order: [docs/RUNBOOK.md](docs/RUNBOOK.md) §3.
@@ -60,7 +65,8 @@ Exact commands and order: [docs/RUNBOOK.md](docs/RUNBOOK.md) §3.
 | run the Vivado flow (XSim, post-route numbers, PYNQ overlay) | [docs/VIVADO_ONE_DAY.md](docs/VIVADO_ONE_DAY.md) |
 | bring up the PYNQ-Z2: bit-exact on silicon, fps, power, live link with the dashboard | [docs/BOARD_BRINGUP.md](docs/BOARD_BRINGUP.md) |
 | demonstrate the dashboard and MJPEG streams on a LAN / VLC | [docs/DASHBOARD_LAN_DEMO.md](docs/DASHBOARD_LAN_DEMO.md) |
-| what is left for the FPGA (125 MHz, power from simulated activity, board power), with the test that says "done" | [docs/HW_TODO.md](docs/HW_TODO.md) |
+| what is left for the FPGA (150 MHz, YUYV and 1080p images, board power), with the test that says "done" | [docs/HW_TODO.md](docs/HW_TODO.md) |
+| every metric against the published designs, and what each idea from other fields became | [docs/BENCHMARK_PLAN.md](docs/BENCHMARK_PLAN.md) |
 | read or build the conference paper | [paper/README.md](paper/README.md) |
 | see every result table | [paper/data/paper_tables.md](paper/data/paper_tables.md) |
 | see the open-data, standard-metric and restart-interval results | [paper/data/extra/README.md](paper/data/extra/README.md) |

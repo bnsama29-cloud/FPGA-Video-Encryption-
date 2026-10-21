@@ -21,7 +21,13 @@
 // Golden model: model/hw.py :: rgb_to_ycbcr(), planes(), blocks_in_hw_order()  (rows of one lane)
 `default_nettype none
 module rgb2ycbcr_2px #(
-    parameter LOG_MAXW = 11
+    parameter LOG_MAXW = 11,
+    // line-buffer sets: 2 = ping-pong (the next MCU row is written while this one is read),
+    // 1 = one set, half the block RAM: the lane takes its next MCU row only after it has read the
+    // previous one out. With 4 lanes that costs almost nothing, because a lane receives only every
+    // 4th MCU row and reads one out (24 W clocks) in the time the other three lanes take theirs in
+    // (3 x 8 W clocks at two pixels per clock). experiments/lanes_rtl_throughput.py --nbuf 1 measures it.
+    parameter NBUF = 2
 ) (
     input  wire        clk,
     input  wire        rst,
@@ -86,10 +92,10 @@ module rgb2ycbcr_2px #(
     endfunction
 
     // ------------------------------------------------------------- line buffers
-    reg [7:0] ybuf_e [0:2*16*(MAXW/2)-1];    // {sel, row[3:0], x/2}, even x
-    reg [7:0] ybuf_o [0:2*16*(MAXW/2)-1];    // odd x
-    reg [7:0] cbbuf  [0:2*8*(MAXW/2)-1];     // {sel, row[2:0], x/2}
-    reg [7:0] crbuf  [0:2*8*(MAXW/2)-1];
+    reg [7:0] ybuf_e [0:NBUF*16*(MAXW/2)-1]; // {sel, row[3:0], x/2}, even x (sel = 0 when NBUF = 1)
+    reg [7:0] ybuf_o [0:NBUF*16*(MAXW/2)-1]; // odd x
+    reg [7:0] cbbuf  [0:NBUF*8*(MAXW/2)-1];  // {sel, row[2:0], x/2}
+    reg [7:0] crbuf  [0:NBUF*8*(MAXW/2)-1];
     reg [9:0] cbsum  [0:MAXW/2-1];           // even-line pair sums
     reg [9:0] crsum  [0:MAXW/2-1];
 
@@ -99,8 +105,9 @@ module rgb2ycbcr_2px #(
     reg [3:0]  wy;
     reg [7:0]  wrow;
     reg        wactive;
+    reg        wdone;                        // NBUF = 1: the set holds a whole MCU row not yet read out
 
-    assign s_ready = wactive && !full[wsel];
+    assign s_ready = wactive && ((NBUF == 2) ? !full[wsel] : !wdone);
     wire take = s_valid && s_ready;
     wire last_px_of_row = (wx == width - 12'd2) && (wy == 4'd15);
 
@@ -161,7 +168,7 @@ module rgb2ycbcr_2px #(
     always @(posedge clk) begin
         if (rst || start) begin
             full <= 2'b00; wsel <= 1'b0; rsel <= 1'b0;
-            wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start && (rows != 8'd0);
+            wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start && (rows != 8'd0); wdone <= 1'b0;
             rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
             d1_v <= 1'b0; p_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
@@ -174,7 +181,8 @@ module rgb2ycbcr_2px #(
                 end else
                     wx <= wx + 12'd2;
                 if (last_px_of_row) begin
-                    wsel <= ~wsel;
+                    if (NBUF == 2) wsel <= ~wsel;
+                    else           wdone <= 1'b1;
                     wrow <= wrow + 8'd1;
                     if (wrow == rows - 8'd1) wactive <= 1'b0;
                 end
@@ -193,10 +201,11 @@ module rgb2ycbcr_2px #(
                 rpos <= rpos + 6'd1;
                 if (last_s) rblk <= (rblk == 3'd5) ? 3'd0 : rblk + 3'd1;
                 if (last_b) rmcu <= last_m ? 8'd0 : rmcu + 8'd1;
-                if (last_m) rsel <= ~rsel;
+                if (last_m && NBUF == 2) rsel <= ~rsel;
             end
             if (d3_v && d3_last)  full[d3_sel] <= 1'b1;
             if (rd_go && last_m)  full[rsel] <= 1'b0;
+            if (rd_go && last_m)  wdone <= 1'b0;     // NBUF = 1: the set is free for the next MCU row
         end
     end
 endmodule

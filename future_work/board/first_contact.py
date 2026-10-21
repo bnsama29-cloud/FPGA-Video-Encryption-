@@ -51,7 +51,9 @@ def expected_jpeg(ip, rgb, quality, mode, ctr):
     """What the golden model says this bitstream must produce: contract v2 (secure_jpeg.bit) or
     contract v3 (secure_jpeg_lanes.bit, restart segments; the bytes do not depend on the lane count)."""
     if ip.contract == 3:
-        jpeg = hw.encode_frame_v3(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+        pf = getattr(ip, "pixfmt", "rgb")       # a YUYV bitstream codes the camera's YCbCr (hw.rgb_to_yuyv)
+        src = hw.rgb_to_yuyv(rgb) if pf == "yuyv" else rgb
+        jpeg = hw.encode_frame_v3(src, quality, mode, KEY, ctr, SID, pixfmt=pf)["jpeg"]
         return hw.arm_shuffle(jpeg, KEY, SID, ctr) if mode == hw.MODE_E5 else jpeg
     return hw.encode_frame(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
 
@@ -80,6 +82,8 @@ def timing(ip, sizes, n, source, zero_copy=False):
     rows = []
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
+        if getattr(ip, "pixfmt", "rgb") == "yuyv":     # time what a YUYV camera delivers (not the ARM converting)
+            imgs = [hw.rgb_to_yuyv(x) for x in imgs]
         for mode in range(ip.max_mode + 1):
             t_enc, t_full, parts = [], [], []
             for i, rgb in enumerate(imgs):
@@ -123,6 +127,8 @@ def main():
     ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
                     help="emulate the contract-v3 lane bitstream with this many lanes (implies --mock)")
     ap.add_argument("--mock-e5", action="store_true", help="with --mock-lanes: the emulated bitstream has E5")
+    ap.add_argument("--mock-yuyv", action="store_true",
+                    help="with --mock-lanes: the emulated bitstream takes YUYV input (PIXFMT = 1, VERSION bit 6)")
     ap.add_argument("--sizes", nargs="+", default=["320x240", "640x480"])
     ap.add_argument("--frames", type=int, default=10, help="frames per size and mode for the bit-exact check")
     ap.add_argument("--timing-frames", type=int, default=50)
@@ -140,7 +146,8 @@ def main():
     sizes = [tuple(int(v) for v in s.split("x")) for s in a.sizes]
     a.mock = a.mock or bool(a.mock_lanes)
     if a.mock:
-        backend = MockBackend(contract=3, lanes=a.mock_lanes, e5=a.mock_e5) if a.mock_lanes else MockBackend()
+        backend = (MockBackend(contract=3, lanes=a.mock_lanes, e5=a.mock_e5, yuyv=a.mock_yuyv) if a.mock_lanes
+                   else MockBackend())
     else:
         from future_work.board.pynq_driver import PynqBackend
         backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes),
@@ -163,7 +170,8 @@ def main():
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     res = dict(backend="mock" if a.mock else "pynq", bitfile=None if a.mock else a.bitfile, all_bit_exact=ok,
-               exactness=exact, speed=speed, source=a.source, quality=a.quality)
+               exactness=exact, speed=speed, source=a.source, quality=a.quality,
+               lanes=getattr(ip, "lanes", None), pixfmt=getattr(ip, "pixfmt", "rgb"), e5=getattr(ip, "e5", False))
     (out / "first_contact.json").write_text(json.dumps(res, indent=1))
     md = [f"Backend: {res['backend']}. Bit-exact with the golden model in every size and mode: "
           f"**{'yes' if ok else 'NO'}** ({a.frames} frames each).", ""]

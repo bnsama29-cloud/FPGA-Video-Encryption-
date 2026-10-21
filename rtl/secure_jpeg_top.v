@@ -168,7 +168,8 @@ module secure_jpeg_top #(
         .i_valid(r_valid), .i_ready(r_ready), .i_is_dc(r_is_dc), .i_run(r_run),
         .i_size(r_size), .i_amp(r_amp), .i_eob(r_eob), .i_comp(r_comp), .i_flast(r_flast),
         .o_valid(e_valid), .o_ready(e_ready), .o_is_dc(e_is_dc), .o_run(e_run),
-        .o_size(e_size), .o_amp(e_amp), .o_eob(e_eob_unused), .o_comp(e_comp), .o_flast(e_flast));
+        .o_size(e_size), .o_amp(e_amp), .o_eob(e_eob_unused), .o_comp(e_comp), .o_flast(e_flast),
+        .ks_last());
 
     // -------------------------------------------------- Huffman + bit packer
     wire        h_valid, h_ready, h_flast;

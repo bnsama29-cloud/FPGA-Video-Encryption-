@@ -36,19 +36,19 @@ from link.buslog import BusLogger           # noqa: E402
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
-def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=()):
+def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex=False):
     """The board_sender command whose ports match a scenario run on base_port (GUIDE.md A6). Settings that
     both ends must share (the pre-shared key, keys.*) are passed on, or every frame would fail its tag."""
     ports = [f"link.host={laptop}", "link.bind_host=0.0.0.0", f"link.video_in={base_port}",
              f"link.fb_out={base_port + 3}", f"link.sender_control={base_port + 5}",
              f"link.bus=[{base_port + 10}]", f"sender.policy={policy}"]
-    ports += [x for x in extra_sets if x.startswith("keys.")]
+    ports += [x for x in extra_sets if x.startswith(("keys.", "link.pad"))]
     return ("python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes.bit "
-            + " ".join(f"--set {x}" for x in ports))
+            + ("--pq-kex " if pq_kex else "") + " ".join(f"--set {x}" for x in ports))
 
 
 def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memory=None, quiet=False,
-        external_sender=None, wait_s=600, board_max_mode="E4"):
+        external_sender=None, wait_s=600, board_max_mode="E4", pq_kex=False):
     """external_sender = the board's IP: start only channel + receiver here, listen on the network,
     and let the PYNQ-Z2 (future_work/board/board_sender.py) be the sender. board_max_mode = the top level
     the bitstream offers: E4 for the run-6 bitstreams, E5 for a lane bitstream with VERSION bit 7."""
@@ -66,6 +66,23 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
         # VERSION bit 7 says the RTL has E5); 'mitigated' means reaching that level (bug #31)
         sets += ["link.bind_host='0.0.0.0'", f"link.sender_host='{external_sender}'",
                  f"defence.max_mode='{board_max_mode}'"]
+    if pq_kex:
+        # post-quantum session key first (link/kex.py); the pre-shared key then only authenticates it
+        kx = sets + (["link.bind_host='0.0.0.0'"] if external_sender else [])
+        kargs = [x for s in kx for x in ("--set", s)]
+        if external_sender:
+            print("\nStart the sender on the board now (same ports as this run):\n  "
+                  + board_command(base_port, policy, extra_sets=extra_sets, pq_kex=True)
+                  + "\nWaiting for the key exchange ...", flush=True)
+            tx = None
+        else:
+            tx = subprocess.Popen([sys.executable, "-m", "link.kex", "--role", "sender"] + kargs, cwd=ROOT)
+        if subprocess.call([sys.executable, "-m", "link.kex", "--role", "receiver", "--timeout", str(wait_s)]
+                           + kargs, cwd=ROOT) != 0:
+            raise RuntimeError("post-quantum key exchange failed")
+        if tx is not None:
+            tx.wait(timeout=30)
+        sets += ["keys.master_file='configs/session_key.txt'"]
     args = [x for s in sets for x in ("--set", s)]
     cfg = config.load(overrides=sets)
     log = BusLogger(base_port + 10, host="0.0.0.0" if external_sender else "127.0.0.1")
@@ -74,8 +91,10 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
     procs = [subprocess.Popen([sys.executable, "-m", f"link.{n}"] + args, cwd=ROOT, stdout=out_log)
              for n in nodes]
     if external_sender:
-        print("\nStart the sender on the board now (same ports as this run):\n  "
-              + board_command(base_port, policy, extra_sets=extra_sets) + "\nWaiting for the board's first report ...", flush=True)
+        if not pq_kex:
+            print("\nStart the sender on the board now (same ports as this run):\n  "
+                  + board_command(base_port, policy, extra_sets=extra_sets))
+        print("Waiting for the board's first report ...", flush=True)
         t_wait = time.time()
         while not log.take("window", "sender"):
             if time.time() - t_wait > wait_s:
@@ -223,10 +242,12 @@ def main():
                     help="the PYNQ-Z2 (board_sender.py) is the sender; start only channel + receiver here")
     ap.add_argument("--board-max-mode", default="E4", choices=["E4", "E5"],
                     help="with --external-sender: E5 when the board runs a lane bitstream with E5 (VERSION bit 7)")
+    ap.add_argument("--pq-kex", action="store_true",
+                    help="start with the post-quantum session key exchange (link/kex.py) between the two ends")
     a = ap.parse_args()
     out = a.out or ROOT / "sim_out" / "runs" / f"{Path(a.scenario).stem}_{a.policy}"
     s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory, external_sender=a.external_sender,
-          board_max_mode=a.board_max_mode)
+          board_max_mode=a.board_max_mode, pq_kex=a.pq_kex)
     print_summary(s)
     print(f"\nwritten {out}/")
 

@@ -48,18 +48,40 @@ read_xdc -mode out_of_context $xdc
 
 set gopt {}
 foreach g $gens { lappend gopt -generic $g }
-synth_design -top $top -part xc7z020clg400-1 -mode out_of_context -flatten_hierarchy rebuilt \
-             -include_dirs rtl/include {*}$gopt
+# Implementation strategy (run 10). "perf" (default): register retiming in synthesis and the
+# timing-driven directives of every implementation step, plus a post-route physical optimisation
+# when the slack is negative. "default" = the flow of runs 1-9 (SJPEG_IMPL=default to reproduce them).
+set impl [expr {[info exists ::env(SJPEG_IMPL)] ? $::env(SJPEG_IMPL) : "perf"}]
+set sargs [list -top $top -part xc7z020clg400-1 -mode out_of_context -flatten_hierarchy rebuilt \
+           -include_dirs rtl/include {*}$gopt]
+if {$impl eq "perf"} {
+    if {[catch {synth_design {*}$sargs -retiming} err]} {
+        puts "WARNING: synth_design -retiming not accepted ($err); synthesising without retiming"
+        synth_design {*}$sargs
+    }
+} else {
+    synth_design {*}$sargs
+}
 report_utilization -file $out/utilization_synth.txt
-opt_design
-place_design
-phys_opt_design
-route_design
+if {$impl eq "perf"} {
+    opt_design -directive Explore
+    place_design -directive ExtraTimingOpt
+    phys_opt_design -directive AggressiveExplore
+    route_design -directive AggressiveExplore
+    if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] < 0} {
+        phys_opt_design -directive AggressiveExplore
+    }
+} else {
+    opt_design
+    place_design
+    phys_opt_design
+    route_design
+}
 report_utilization    -file $out/utilization.txt
 report_utilization    -hierarchical -hierarchical_depth 3 -file $out/utilization_hier.txt
 report_timing_summary -max_paths 10 -file $out/timing.txt
 report_power          -file $out/power.txt
 write_checkpoint -force $out/routed.dcp
 set wns [get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]]
-puts "RESULT top=$top period=${period}ns $gen WNS=${wns}ns -> reports in $out/"
+puts "RESULT top=$top period=${period}ns $gen WNS=${wns}ns impl=$impl -> reports in $out/"
 puts "WNS >= 0 means the design meets ${period} ns. Estimated fmax = 1000 / (period - WNS) MHz."
