@@ -1,4 +1,4 @@
-# What is left for the hardware (as of 21 Oct 2026, after Vivado run 9)
+# What is left for the hardware (as of 21 Oct 2026, after Vivado run 10)
 
 All software and all RTL are done and tested: the golden model, the receiver, the board driver, the board
 sender, the bit-exact gate, the XSim vector and check tools, the dashboard, and **E5 in the lane encoder**
@@ -10,12 +10,12 @@ left needs the board, or Vivado time.
 | H1 | E5 in the lane encoder | ✅ done (17–18 Oct, run 7: +2 % LUT, no BRAM/DSP, 318 mW SAIF) | the strongest level in hardware | — | `docs/INTERFACES.md` §8.6 |
 | H2 | **Board bring-up A1–A6** | ⏳ waiting for the board | every board number in the papers (red TODOs) | 1–2 days | **`docs/FPGA_HANDS_ON.md`** (step by step), `docs/BOARD_BRINGUP.md` (task list) |
 | H3 | 125 MHz: pipeline the colour converter | ✅ run 9: **125 MHz met** (v2 +0.060 ns, 2 lanes +0.213 ns) with stage P | 1 lane 82, 2 lanes ~150 Mpixel/s | — | below |
-| H10 | **150 / 166 MHz** (the commercial cores' clocks) | RTL done 21 Oct, bit-exact (bug #36): skid buffers, keystream ring, packer and zig-zag fixes, timing-driven flow; needs run 10 | 4 lanes ≈ 260 Mpixel/s (RGB) | Vivado run | below, `docs/BENCHMARK_PLAN.md` |
-| H11 | YUYV (camera-native) input, 4 pixels per beat | RTL + model + driver done 21 Oct (`PIXFMT = 1`, `rtl/yuyv_4px.v`, bit-exact, 2 and 4 lanes) | 4 lanes 0.434 clk/px (230 Mpx/s at 100 MHz), half the DDR bytes | run 10 (OOC) + `bd_lanes4yuyv` | `docs/INTERFACES.md` §8.7 |
-| H12 | 4 lanes with 1080p lines | `NBUF = 1` option done (half the line buffers, under 2 % slower) | 1080p at 4 lanes on the xc7z020 | run 10 (OOC) + `bd_lanes4hd` | §8.7 |
+| H10 | **150 / 166 MHz** (the commercial cores' clocks) | run 10: single pipeline **150 MHz met** (+0.074 ns), 166.7 MHz -0.284 ns; 2 lanes 150 MHz -0.060 ns; 4-lane system **125 MHz met** (+0.433 ns), 142.9 MHz -0.008 ns. Fix for both limiting paths in RTL (bug #38), not yet routed. **Decision 21 Oct: stop chasing the clock, board first** | 4 lanes at 125 MHz = 227 Mpixel/s from the cycle count | optional run 11 (below) | below, `docs/BENCHMARK_PLAN.md` |
+| H11 | YUYV (camera-native) input, 4 pixels per beat | RTL + model + driver done; run 10 OOC: 4 lanes meet 100 MHz (+0.599 ns, 15,138 LUT) | 4 lanes 0.434 clk/px (230 Mpx/s at 100 MHz), half the DDR bytes | `bd_lanes4yuyv` (~40 min) | `docs/INTERFACES.md` §8.7 |
+| H12 | 4 lanes with 1080p lines | run 10 OOC: meets 100 MHz (+0.789 ns); NBUF = 1 at 1024 px: 32 BRAM instead of 56 | 1080p at 4 lanes on the xc7z020 | `bd_lanes4hd` (~40 min) | §8.7 |
 | H6 | Fabric cycle counters CYCLES / IN_WAIT / OUT_STALL (0x54..0x5C) | ✅ in the run-8 bitstreams (100 MHz met, system WNS +0.311 ns); read on the board by first_contact | fabric-only time on silicon (the paper's A2 TODO) | rebuild | `py vivado\run_vivado_day.py --steps bd bd_lanes parse` |
 | H7 | ARM (PS) baseline A3: our encoder in C on the Cortex-A9 | code done 21 Oct (`future_work/arm/`, bit-exact gate) | like-for-like PL vs PS speed-up | 1 h on the board | `docs/BOARD_BRINGUP.md` §6 |
-| H9 | 4-lane PYNQ-Z2 image | ✅ run 9: system meets 100 MHz (18,683 LUT, 58.5 BRAM, 92 DSP, WNS +0.461 ns); next: first_contact on the board (whether DDR feeds ~700 MB/s; the YUYV image needs half) | 30 min board | `docs/RUNBOOK.md` §3 |
+| H9 | 4-lane PYNQ-Z2 image | ✅ run 10: `secure_jpeg_lanes4.bit` built for **125 MHz** (+0.433 ns; 20,097 LUT, 58.5 BRAM, 92 DSP); runs at 100 MHz too (`first_contact --fclk 100`). Next: first_contact on the board (whether DDR feeds ~900 MB/s at 125 MHz; the YUYV image needs half) | 30 min board | `docs/RUNBOOK.md` §3 |
 | H8 | Faster driver: pixels straight into the DMA buffer, cache ops on the frame's bytes only, E5 order + split in one C call, time breakdown | done 21 Oct | board fps (92 ms at VGA was the Python copy, not the fabric) | rerun first_contact | — |
 | H4 | Power with simulated switching activity (SAIF) | ✅ done (run 7: 211 mW encoder, 318/319 mW 2 lanes E5/E2) | replaces the vectorless estimate | — | `vivado/power_saif.tcl` |
 | H5 | Keep the bitstreams safe | open | the E5 pair exists only on tom's PC | 10 min | below |
@@ -50,7 +50,15 @@ the packer shifting by its registered fill level, non-zero flags in the zig-zag 
 timing-driven flow (`SJPEG_IMPL=perf`: retiming, Explore / ExtraTimingOpt / AggressiveExplore
 directives; `SJPEG_IMPL=default` repeats the old flow).
 
-Run 10 (one command, overnight; RUNBOOK §3):
+**Run 10 done (21 Oct, commit dd13f55, `paper/data/vivado/README.md`):** single pipeline 150 MHz met (+0.074 ns),
+166.7 MHz -0.284 ns; 2 lanes 150 MHz -0.060 ns; 4 lanes 100 MHz in every variant; 4-lane system 125 MHz met,
+142.9 MHz -0.008 ns; Vivado crashed on 4 lanes at 150/166.7 MHz out of context (bug #38). The keystream loop
+(166.7 MHz and the 142.9 MHz system) and the 2-lane segment-count multiply are fixed in RTL after run 10
+(bug #38). **Decision: stop chasing the clock and do the board with the run-10 bitstreams.** Optional run 11,
+only once the board works (~1 h, overwrites `secure_jpeg_lanes4.bit`: keep a copy of the 125 MHz one):
+`py vivado\run_vivado_day.py --steps bd_lanes4 parse --fclk 142 --parallel 1`.
+
+Run 10 was (for the record):
 `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
 → 1, 2 and 4 lanes at 100 / 150 / 166 MHz, 4 lanes with NBUF = 1, with 1080p lines and with YUYV input, the
 4-lane system at 142.9 MHz (falls back to 125, then 100), XSim of 1, 2 and 4 lanes, SAIF power incl. 4 lanes.

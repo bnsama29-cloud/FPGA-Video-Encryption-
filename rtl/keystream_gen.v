@@ -55,17 +55,46 @@ module keystream_gen (
     // next state: consume, then a new block goes into the free slot (decided from registers only:
     // the current slot if nothing is held, else the other one; at most one slot is ever valid
     // when a block arrives, because at most two blocks are held or in flight)
-    wire [7:0] used = {1'b0, ptr[6:0]} + ((ks_take && v_cur) ? {3'd0, ks_n} : 8'd0);
-    wire       done = used[7];                       // the current slot is used up
+    //
+    // Both outcomes are computed in advance and ks_take only picks one (Vivado run 10, bug #38):
+    // ks_take is the consumer's late stall decision (it depends on ks_avail and on the downstream
+    // ready), and feeding it into the adder, the slot-done test and the ks_avail compare made a
+    // loop of 8-11 logic levels, the worst path of the single pipeline at 166 MHz (-0.284 ns) and
+    // the only failing path of the 4-lane PYNQ-Z2 system at 142 MHz (-0.008 ns). ks_n (the
+    // registered bit count of the symbol waiting in the consumer's skid buffer) does not depend on
+    // ks_take, so the "take" outcome can be prepared from registers; ks_take is now one 2:1 mux in
+    // front of the flip-flops. Same function, same clock for every bit: nothing visible changes.
     wire       wsel = v_cur ? ~cs : cs;              // slot that takes a new block
     wire       wr   = ct_valid;
-    wire [7:0] n_ptr = {cs ^ done, used[6:0]};
-    wire       n_v0 = (wr && !wsel) ? 1'b1 : ((done && !cs) ? 1'b0 : v0);
-    wire       n_v1 = (wr &&  wsel) ? 1'b1 : ((done &&  cs) ? 1'b0 : v1);
-    wire       n_vc = n_ptr[7] ? n_v1 : n_v0;
-    wire       n_vo = n_ptr[7] ? n_v0 : n_v1;
-    wire [7:0] left = 8'd128 - {1'b0, n_ptr[6:0]};   // bits left in the (next) current slot
-    wire [4:0] n_avail = !n_vc ? 5'd0 : ((n_vo || left >= 8'd16) ? 5'd16 : left[4:0]);
+
+    // {n_ptr[7:0], n_v0, n_v1, n_avail[4:0]} after consuming `used - ptr[6:0]` bits
+    function [14:0] next_state;
+        input [7:0] used;
+        input       cs, v0, v1, wr, wsel;
+        reg         done, n_v0, n_v1, n_vc, n_vo;
+        reg  [7:0]  n_ptr, left;
+        reg  [4:0]  n_avail;
+        begin
+            done    = used[7];                       // the current slot is used up
+            n_ptr   = {cs ^ done, used[6:0]};
+            n_v0    = (wr && !wsel) ? 1'b1 : ((done && !cs) ? 1'b0 : v0);
+            n_v1    = (wr &&  wsel) ? 1'b1 : ((done &&  cs) ? 1'b0 : v1);
+            n_vc    = n_ptr[7] ? n_v1 : n_v0;
+            n_vo    = n_ptr[7] ? n_v0 : n_v1;
+            left    = 8'd128 - {1'b0, n_ptr[6:0]};   // bits left in the (next) current slot
+            n_avail = !n_vc ? 5'd0 : ((n_vo || left >= 8'd16) ? 5'd16 : left[4:0]);
+            next_state = {n_ptr, n_v0, n_v1, n_avail};
+        end
+    endfunction
+
+    wire [7:0]  used_take = {1'b0, ptr[6:0]} + (v_cur ? {3'd0, ks_n} : 8'd0);
+    wire [14:0] st_take   = next_state(used_take, cs, v0, v1, wr, wsel);
+    wire [14:0] st_keep   = next_state({1'b0, ptr[6:0]}, cs, v0, v1, wr, wsel);
+    wire [14:0] st_next   = ks_take ? st_take : st_keep;
+    wire [7:0]  n_ptr     = st_next[14:7];
+    wire        n_v0      = st_next[6];
+    wire        n_v1      = st_next[5];
+    wire [4:0]  n_avail   = st_next[4:0];
 
     always @(posedge clk) begin
         if (wr && !wsel) slot0 <= ct_data;

@@ -22,9 +22,11 @@ async def pulse_start(dut, key, nonce, prefix=None):
     dut.start.value = 0
 
 
-async def take_bits(dut, nbits, rng):
+async def take_bits(dut, nbits, rng, junk_n=False):
     """Consume nbits through the window port in random chunk sizes.
-    Decisions are made at the falling edge, when all outputs are settled."""
+    Decisions are made at the falling edge, when all outputs are settled.
+    junk_n: drive a random ks_n (0..31) on clocks without ks_take (bug #38: the generator now prepares
+    the "take" outcome from ks_n on every clock, so ks_n must be ignored unless ks_take is set)."""
     got = []
     for _ in range(100_000):
         if len(got) >= nbits:
@@ -39,6 +41,8 @@ async def take_bits(dut, nbits, rng):
             got.extend((window >> i) & 1 for i in range(n))
         else:
             dut.ks_take.value = 0
+            if junk_n:
+                dut.ks_n.value = rng.randrange(32)
         await RisingEdge(dut.clk)
     dut.ks_take.value = 0
     await RisingEdge(dut.clk)
@@ -63,6 +67,25 @@ async def keystream_matches_model(dut):
         assert got == exp, f"frame {frame}: first mismatch at bit {next(i for i in range(nbits) if got[i] != exp[i])}"
         seen.add(tuple(got[:128]))
     assert len(seen) == 4, "different nonces must give different keystreams"
+
+
+@cocotb.test()
+async def keystream_ignores_n_without_take(dut):
+    """Regression for bug #38 (Vivado run 10): random ks_n on idle clocks must not move the window."""
+    rng = rng_for(dut)
+    dut.start.value = 0
+    dut.ks_take.value = 0
+    await start(dut)
+    key = bytes(rng.randrange(256) for _ in range(16))
+    for frame in range(3):
+        nonce = ascon.make_nonce(0x5EED, frame, 0)
+        await pulse_start(dut, key, nonce)
+        await RisingEdge(dut.clk)
+        nbits = 900
+        got = await take_bits(dut, nbits, rng, junk_n=True)
+        exp = ascon.keystream_bits(key, nonce, nbits)
+        assert got == exp, (f"frame {frame}: first mismatch at bit "
+                            f"{next(i for i in range(nbits) if got[i] != exp[i])} (ks_n driven while ks_take = 0)")
 
 
 @cocotb.test()
@@ -102,6 +125,10 @@ async def tag_matches_model(dut):
 
 def test_keystream_gen():
     run_sim("keystream_gen", "test_crypto_units", testcase="keystream_matches_model")
+
+
+def test_keystream_gen_idle_n():
+    run_sim("keystream_gen", "test_crypto_units", testcase="keystream_ignores_n_without_take")
 
 
 def test_tag_unit():
