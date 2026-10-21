@@ -17,6 +17,8 @@ defences:
                      (never shrinks; leaks only when a new maximum appears)
   pad-win (E2)       deployable: padded to the largest of the last 100 frames (10 s at 10 frames/s;
                      cheaper, leaks when the window maximum changes)
+  link.pad=runmax / window:100 (E2/E5)   the padding the link ships (link/wire.py :: SizePadder), the
+                     same two deployable rules as above with the 256-byte rounding of the implementation
   FF+PI (E2)         the bitrate controller of experiments/rate_control.py holding a constant budget
                      (median E2 size); its frames are then padded to 105 % of the budget. Frames that
                      still exceed it are counted (each one leaks). Checks the hypothesis that rate
@@ -121,6 +123,14 @@ def main():
     res["E2 pad-runmax"] = dict(**leak(run, motion), bytes_vs_E2=sum(run) / base)
     win = [max(sizes["E2"][max(0, t - 99):t + 1]) for t in range(len(frames))]
     res["E2 pad-win"] = dict(**leak(win, motion), bytes_vs_E2=sum(win) / base)
+    # what the link actually ships: link/wire.py :: SizePadder (link.pad), 256-byte rounding included
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from link.wire import SizePadder
+    for lv in ("E2", "E5"):
+        for pol in ("runmax", "window:100"):
+            pd = SizePadder(pol)
+            dep = [pd.target(s) for s in sizes[lv]]
+            res[f"{lv} link.pad={pol}"] = dict(**leak(dep, motion), bytes_vs_E2=sum(dep) / base)
     # FF+PI at a constant budget, then pad to 105 % of it
     import rate_control as RC
     budget = statistics.median(sizes["E2"])

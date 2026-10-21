@@ -5,7 +5,8 @@ scikit-image>=0.21
 scipy>=1.10             # HiGHS LP in experiments/sign_recovery.py
 opencv-python>=4.8
 matplotlib>=3.7
-cryptography>=42        # AES-GCM / ChaCha20 baselines in experiments/benchmark_crypto.py
+cryptography>=42        # AES-GCM / ChaCha20 baselines; X25519 and (>= 46) ML-KEM for link/kex.py
+kyber-py>=1.0           # pure-Python ML-KEM (FIPS 203), fallback when cryptography has no ML-KEM (link/keys.py)
 pytest>=7.0
 tomli>=2.0; python_version < "3.11"   # TOML reader on Python 3.10 (Ubuntu 22.04)
 # RTL testbenches (versions verified with Icarus Verilog 12.0)

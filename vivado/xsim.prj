@@ -2,6 +2,7 @@
 # Paths are relative to vivado/xsim_work/ (where run_xsim.sh / run_xsim.bat run xvlog).
 verilog work ../../rtl/ascon_round.v
 verilog work ../../rtl/ascon_aead128_core.v
+verilog work ../../rtl/skid_buf.v
 verilog work ../../rtl/keystream_gen.v
 verilog work ../../rtl/tag_unit.v
 verilog work ../../rtl/rgb2ycbcr_block.v
@@ -17,6 +18,7 @@ verilog work ../../rtl/axil_regs.v
 verilog work ../../rtl/secure_jpeg_top.v
 verilog work ../../rtl/kseg_unit.v
 verilog work ../../rtl/rgb2ycbcr_2px.v
+verilog work ../../rtl/yuyv_4px.v
 verilog work ../../rtl/byte_fifo.v
 verilog work ../../rtl/encoder_lane.v
 verilog work ../../rtl/segment_merger.v

@@ -71,10 +71,57 @@ def planes(rgb):
     return Y, cb, cr
 
 
-def blocks_in_hw_order(rgb):
+# ------------------------------------------- camera-native input: YUYV (YCbCr 4:2:2), contract v3 option
+# Cameras and image signal processors deliver YCbCr, usually 4:2:2 packed as YUYV (V4L2 YUYV, the
+# OV5640's DVP output, USB webcams); RGB is converted from it. Taking YUYV directly skips the colour
+# conversion, halves the bytes per pixel (2 instead of 4) and packs FOUR pixels into a 64-bit beat.
+# Frame layout: H x 2W bytes, per pair of pixels Y0 Cb Y1 Cr (pixel 2k: Y = f[i][4k], pixel 2k+1:
+# Y = f[i][4k+2], both share Cb = f[i][4k+1], Cr = f[i][4k+3]). 4:2:0 chroma = the vertical average of
+# two 4:2:2 lines, rounded half up: (a + b + 1) >> 1 (rtl/yuyv_4px.v).
+
+def rgb_to_yuyv(rgb):
+    """YUYV frame (numpy uint8, H x 2W) from RGB, as a camera would deliver it: the integer BT.601
+    conversion of rgb_to_ycbcr() per pixel, chroma of each horizontal pair averaged (a + b + 1) >> 1.
+    (How the camera makes YUYV is not part of the contract; this is only a reproducible test source.)"""
+    import numpy as np
+    a = np.asarray(rgb, dtype=np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    y = np.clip((77 * r + 150 * g + 29 * b + 128) >> 8, 0, 255)
+    cb = np.clip((-43 * r - 85 * g + 128 * b + 32896) >> 8, 0, 255)
+    cr = np.clip((128 * r - 107 * g - 21 * b + 32896) >> 8, 0, 255)
+    h, w = y.shape
+    out = np.zeros((h, 2 * w), dtype=np.uint8)
+    out[:, 0::4] = y[:, 0::2]
+    out[:, 2::4] = y[:, 1::2]
+    out[:, 1::4] = (cb[:, 0::2] + cb[:, 1::2] + 1) >> 1
+    out[:, 3::4] = (cr[:, 0::2] + cr[:, 1::2] + 1) >> 1
+    return out
+
+
+def planes_yuyv(yuyv):
+    """(Y, Cb, Cr) like planes() from a YUYV frame: Y as given, 4:2:0 chroma = (a + b + 1) >> 1 of
+    lines 2i and 2i+1 of the 4:2:2 chroma."""
+    f = [[int(v) for v in row] for row in yuyv]
+    h, w = len(f), len(f[0]) // 2
+    assert h % 16 == 0 and w % 16 == 0, "width and height must be multiples of 16"
+    Y = [[f[i][2 * j] for j in range(w)] for i in range(h)]
+    cb = [[(f[2 * i][4 * k + 1] + f[2 * i + 1][4 * k + 1] + 1) >> 1 for k in range(w // 2)] for i in range(h // 2)]
+    cr = [[(f[2 * i][4 * k + 3] + f[2 * i + 1][4 * k + 3] + 1) >> 1 for k in range(w // 2)] for i in range(h // 2)]
+    return Y, cb, cr
+
+
+def frame_dims(frame, pixfmt="rgb"):
+    """(width, height) of an RGB (H x W x 3) or YUYV (H x 2W) frame."""
+    return (len(frame[0]) // 2 if pixfmt == "yuyv" else len(frame[0])), len(frame)
+
+
+def blocks_in_hw_order(rgb, pixfmt="rgb"):
     """List of (comp, [64 samples row-major]) in the order the hardware emits
-    them: MCU rows top to bottom, MCUs left to right, Y0 Y1 Y2 Y3 Cb Cr."""
-    Y, cb, cr = planes(rgb)
+    them: MCU rows top to bottom, MCUs left to right, Y0 Y1 Y2 Y3 Cb Cr.
+    pixfmt "yuyv": `rgb` is a YUYV frame (planes_yuyv)."""
+    if pixfmt not in ("rgb", "yuyv"):
+        raise ValueError(f"pixfmt {pixfmt!r}: rgb or yuyv")
+    Y, cb, cr = planes_yuyv(rgb) if pixfmt == "yuyv" else planes(rgb)
     h, w = len(Y), len(Y[0])
     out = []
     for my in range(h // 16):
@@ -295,15 +342,16 @@ def build_frame(width, height, quality, mode, frame_ctr, session_id, scan, tag, 
 
 # ------------------------------------------------------------- full encoder
 def encode_frame(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0,
-                 session_id=0):
+                 session_id=0, pixfmt="rgb"):
     """Returns a dict with every intermediate stage (used as test vectors).
-    Modes 0..4 only: E5 (MCU shuffle) needs restart markers the RTL does not have yet."""
+    Modes 0..4 only: E5 (MCU shuffle) needs restart markers the RTL does not have yet.
+    pixfmt "yuyv": `rgb` is a YUYV frame (H x 2W bytes, see planes_yuyv)."""
     if not 0 <= mode <= 4:
         raise ValueError("the RTL view supports modes 0..4 (E5 is model-only for now)")
-    h, w = len(rgb), len(rgb[0])
+    w, h = frame_dims(rgb, pixfmt)
     luma, chroma = quality_tables(quality)
     recips = [[reciprocal(q) for q in luma], [reciprocal(q) for q in chroma]]
-    blocks = blocks_in_hw_order(rgb)
+    blocks = blocks_in_hw_order(rgb, pixfmt)
     coeffs, qcoeffs, syms = [], [], []
     pred = {0: 0, 1: 0, 2: 0}
     for comp, smp in blocks:
@@ -331,7 +379,8 @@ def segment_key(key, session_id, frame_ctr):
     return ascon.mac(key, ascon.make_nonce(session_id, frame_ctr, 0), b"lanes")
 
 
-def encode_frame_v3(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0, session_id=0, lanes=1):
+def encode_frame_v3(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0, session_id=0, lanes=1,
+                    pixfmt="rgb"):
     """Contract v3, stage by stage like rtl/secure_jpeg_lanes_top.v: segment s = MCU row s, coded by
     lane s mod `lanes` with fresh DC predictors and the keystream (K_seg, nonce(s, frame_ctr, 0));
     the merger joins the segments in order with RST0..7 between them. `lanes` changes only which
@@ -340,16 +389,17 @@ def encode_frame_v3(rgb, quality=75, mode=MODE_E2, key=bytes(16), frame_ctr=0, s
     Mode 5 (E5): the same fields as E4 are encrypted, but every MCU is its own segment s (raster MCU
     index; still coded by the lane of its MCU row), with fresh DC predictors and nonce(s, frame_ctr, 0).
     The returned jpeg is what the FABRIC + header code produce: segments in raster order, tag over that
-    order. The ARM then permutes the segments (arm_shuffle) before sending."""
+    order. The ARM then permutes the segments (arm_shuffle) before sending.
+    pixfmt "yuyv": `rgb` is a YUYV frame (H x 2W bytes; the lane encoder built with PIXFMT = 1)."""
     if not 0 <= mode <= 5:
         raise ValueError("contract v3 supports modes 0..5")
-    h, w = len(rgb), len(rgb[0])
+    w, h = frame_dims(rgb, pixfmt)
     per_row = w // 16
     per_seg = 1 if mode == MODE_E5 else per_row
     enc_mode = MODE_E4 if mode == MODE_E5 else mode
     luma, chroma = quality_tables(quality)
     recips = [[reciprocal(q) for q in luma], [reciprocal(q) for q in chroma]]
-    blocks = blocks_in_hw_order(rgb)
+    blocks = blocks_in_hw_order(rgb, pixfmt)
     kseg = segment_key(key, session_id, frame_ctr)
     seg_bytes, seg_lane, ks_total = [], [], 0
     for s in range((h // 16) * per_row // per_seg):

@@ -26,14 +26,19 @@ DEFAULTS = {
         "fb_out": 47003,         # channel -> sender  (feedback)
         "control": 47004,        # dashboard / experiments -> channel and sender (JSON)
         "sender_control": 47005,
+        "kex": 47006,            # post-quantum key exchange (link/kex.py), receiver listens
         "bus": [47010],          # telemetry + previews -> dashboard / experiment logger
         "fragment": 1400,        # UDP payload bytes per fragment (+24 B header < 1472 = Ethernet MTU)
+        "pad": "none",           # frame-size padding against the size side channel (link/wire.py
+                                 # SizePadder): none | bucket:1024 | runmax | window:100
     },
     "keys": {
         # Pre-shared 128-bit master key (hex). In a product this would come from a
         # key exchange or provisioning; here both ends read it from the config.
         "master": "000102030405060708090a0b0c0d0e0f",
         "session_base": 0,       # 0 = random 48-bit base chosen by the sender at start
+        "master_file": "",       # read the master key (hex) from this file instead, e.g. the session
+                                 # key of link/kex.py (configs/session_key.txt); keys.master is then unused
     },
     "sender": {
         "source": "synthetic",   # synthetic | <video file> | webcam:<index>
@@ -116,6 +121,13 @@ def load(path=None, overrides=()):
         cfg.setdefault(sec, {})[name] = _parse_value(value)
     if isinstance(cfg["link"]["bus"], int):
         cfg["link"]["bus"] = [cfg["link"]["bus"]]
+    mf = cfg["keys"].get("master_file")
+    if mf:
+        f = Path(mf) if Path(mf).is_absolute() else ROOT / mf
+        k = f.read_text().strip()
+        if len(bytes.fromhex(k)) != 16:
+            raise ValueError(f"{f}: expected 32 hex digits (a 128-bit key)")
+        cfg["keys"]["master"] = k
     return cfg
 
 

@@ -2,8 +2,9 @@
 //
 // Plays a command file generated from the golden model (vivado/run_vivado_day.py vectors):
 //   M <version>          which encoder to drive: 2 = secure_jpeg_top (default, 1 pixel per beat),
-//                        3 = secure_jpeg_lanes_top (contract v3, 2 lanes, 2 pixels per beat).
-//                        Both are instantiated; the other one is held in reset. Chosen in the
+//                        3 = secure_jpeg_lanes_top (contract v3, 2 lanes, 2 pixels per beat),
+//                        4 = the same with 4 lanes (same vectors: the scan does not depend on the
+//                        number of lanes). All three are instantiated; the others are held in reset. Chosen in the
 //                        vector file, not on the command line (Windows '=' problem, bug #19).
 //   W <addr> <data>      AXI4-Lite write (hex)
 //   R <addr> <expect>    AXI4-Lite read, compare (hex)
@@ -47,7 +48,8 @@ module tb_secure_jpeg_top;
     wire [3:0]  m_tkeep;
     wire        m_tvalid, m_tlast, irq_done;
     reg         m_tready = 0;
-    reg         v3 = 1'b0;                // 1: drive the contract-v3 lane encoder
+    reg         v3 = 1'b0;                // 1: drive a contract-v3 lane encoder
+    reg         l4 = 1'b0;                // with v3: the 4-lane one (dut4) instead of dut3
 
     // contract v2 encoder (1 pixel per beat)
     wire        awready2, wready2, bvalid2, arready2, rvalid2, s_tready2;
@@ -74,31 +76,49 @@ module tb_secure_jpeg_top;
     wire [3:0]  m_tkeep3;
     wire        m_tvalid3, m_tlast3, irq_done3;
     secure_jpeg_lanes_top #(.LANES(2), .LOG_L(1), .LOG_MAXW(10), .LOG_FIFO(10)) dut3 (
-        .clk(clk), .rst(rst || !v3),
-        .s_axil_awaddr(awaddr), .s_axil_awprot(3'd0), .s_axil_awvalid(awvalid && v3), .s_axil_awready(awready3),
-        .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid && v3), .s_axil_wready(wready3),
+        .clk(clk), .rst(rst || !v3 || l4),
+        .s_axil_awaddr(awaddr), .s_axil_awprot(3'd0), .s_axil_awvalid(awvalid && v3 && !l4), .s_axil_awready(awready3),
+        .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid && v3 && !l4), .s_axil_wready(wready3),
         .s_axil_bresp(bresp3), .s_axil_bvalid(bvalid3), .s_axil_bready(1'b1),
-        .s_axil_araddr(araddr), .s_axil_arprot(3'd0), .s_axil_arvalid(arvalid && v3), .s_axil_arready(arready3),
+        .s_axil_araddr(araddr), .s_axil_arprot(3'd0), .s_axil_arvalid(arvalid && v3 && !l4), .s_axil_arready(arready3),
         .s_axil_rdata(rdata3), .s_axil_rresp(rresp3), .s_axil_rvalid(rvalid3), .s_axil_rready(1'b1),
-        .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid && v3), .s_axis_tready(s_tready3),
+        .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid && v3 && !l4), .s_axis_tready(s_tready3),
         .s_axis_tlast(1'b0),
         .m_axis_tdata(m_tdata3), .m_axis_tkeep(m_tkeep3), .m_axis_tvalid(m_tvalid3),
-        .m_axis_tready(m_tready && v3), .m_axis_tlast(m_tlast3), .irq_done(irq_done3));
+        .m_axis_tready(m_tready && v3 && !l4), .m_axis_tlast(m_tlast3), .irq_done(irq_done3));
 
-    assign awready  = v3 ? awready3  : awready2;
-    assign wready   = v3 ? wready3   : wready2;
-    assign bvalid   = v3 ? bvalid3   : bvalid2;
-    assign bresp    = v3 ? bresp3    : bresp2;
-    assign arready  = v3 ? arready3  : arready2;
-    assign rvalid   = v3 ? rvalid3   : rvalid2;
-    assign rresp    = v3 ? rresp3    : rresp2;
-    assign rdata    = v3 ? rdata3    : rdata2;
-    assign s_tready = v3 ? s_tready3 : s_tready2;
-    assign m_tdata  = v3 ? m_tdata3  : m_tdata2;
-    assign m_tkeep  = v3 ? m_tkeep3  : m_tkeep2;
-    assign m_tvalid = v3 ? m_tvalid3 : m_tvalid2;
-    assign m_tlast  = v3 ? m_tlast3  : m_tlast2;
-    assign irq_done = v3 ? irq_done3 : irq_done2;
+    // contract v3 lane encoder with 4 lanes (M 4): the 4-lane PYNQ-Z2 image, 1024-pixel lines
+    wire        awready4, wready4, bvalid4, arready4, rvalid4, s_tready4;
+    wire [1:0]  bresp4, rresp4;
+    wire [31:0] rdata4, m_tdata4;
+    wire [3:0]  m_tkeep4;
+    wire        m_tvalid4, m_tlast4, irq_done4;
+    secure_jpeg_lanes_top #(.LANES(4), .LOG_L(2), .LOG_MAXW(10), .LOG_FIFO(10)) dut4 (
+        .clk(clk), .rst(rst || !(v3 && l4)),
+        .s_axil_awaddr(awaddr), .s_axil_awprot(3'd0), .s_axil_awvalid(awvalid && v3 && l4), .s_axil_awready(awready4),
+        .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid && v3 && l4), .s_axil_wready(wready4),
+        .s_axil_bresp(bresp4), .s_axil_bvalid(bvalid4), .s_axil_bready(1'b1),
+        .s_axil_araddr(araddr), .s_axil_arprot(3'd0), .s_axil_arvalid(arvalid && v3 && l4), .s_axil_arready(arready4),
+        .s_axil_rdata(rdata4), .s_axil_rresp(rresp4), .s_axil_rvalid(rvalid4), .s_axil_rready(1'b1),
+        .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid && v3 && l4), .s_axis_tready(s_tready4),
+        .s_axis_tlast(1'b0),
+        .m_axis_tdata(m_tdata4), .m_axis_tkeep(m_tkeep4), .m_axis_tvalid(m_tvalid4),
+        .m_axis_tready(m_tready && v3 && l4), .m_axis_tlast(m_tlast4), .irq_done(irq_done4));
+
+    assign awready  = v3 ? (l4 ? awready4 : awready3)  : awready2;
+    assign wready   = v3 ? (l4 ? wready4 : wready3)   : wready2;
+    assign bvalid   = v3 ? (l4 ? bvalid4 : bvalid3)   : bvalid2;
+    assign bresp    = v3 ? (l4 ? bresp4 : bresp3)    : bresp2;
+    assign arready  = v3 ? (l4 ? arready4 : arready3)  : arready2;
+    assign rvalid   = v3 ? (l4 ? rvalid4 : rvalid3)   : rvalid2;
+    assign rresp    = v3 ? (l4 ? rresp4 : rresp3)    : rresp2;
+    assign rdata    = v3 ? (l4 ? rdata4 : rdata3)    : rdata2;
+    assign s_tready = v3 ? (l4 ? s_tready4 : s_tready3) : s_tready2;
+    assign m_tdata  = v3 ? (l4 ? m_tdata4 : m_tdata3)  : m_tdata2;
+    assign m_tkeep  = v3 ? (l4 ? m_tkeep4 : m_tkeep3)  : m_tkeep2;
+    assign m_tvalid = v3 ? (l4 ? m_tvalid4 : m_tvalid3) : m_tvalid2;
+    assign m_tlast  = v3 ? (l4 ? m_tlast4 : m_tlast3)  : m_tlast2;
+    assign irq_done = v3 ? (l4 ? irq_done4 : irq_done3) : irq_done2;
 
     // ------------------------------------------------------------- memories
     reg [31:0] pix  [0:MAXPIX-1];
@@ -204,7 +224,8 @@ module tb_secure_jpeg_top;
             if (r != 1) op = "E";
             if (op == "M") begin
                 r = $fscanf(fd, "%d", n);
-                v3 = (n == 3);
+                v3 = (n == 3) || (n == 4);
+                l4 = (n == 4);
                 repeat (5) @(posedge clk);                    // the chosen DUT leaves reset
             end else if (op == "W") begin
                 r = $fscanf(fd, "%h %h", a1, a2);

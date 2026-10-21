@@ -29,7 +29,7 @@ Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAX
 |---|---|---|---|
 | 0x00 | CTRL | RW | `[0]` START (write 1, self-clearing), `[3:1]` MODE: 0 off, 1 E1, 2 E2, 3 E3, 4 E4 |
 | 0x04 | STATUS | RO | `[0]` DONE, `[1]` BUSY, `[2]` TAG_VALID |
-| 0x08 | VERSION | RO | 0x5EC00200 (contract v2, `secure_jpeg_top`); 0x5EC003LL (contract v3, `secure_jpeg_lanes_top`, LL = lanes, bit 7 set when mode 5 is in the RTL: 0x5EC00382 for 2 lanes) |
+| 0x08 | VERSION | RO | 0x5EC00200 (contract v2, `secure_jpeg_top`); 0x5EC003LL (contract v3, `secure_jpeg_lanes_top`: bits [5:0] = lanes, bit 7 set when mode 5 is in the RTL, bit 6 set when the bitstream takes YUYV input (§8.7): 0x5EC00382 for 2 lanes RGB, 0x5EC003C4 for 4 lanes YUYV) |
 | 0x10 | WIDTH | RW | pixels |
 | 0x14 | HEIGHT | RW | pixels |
 | 0x18 | FRAME_CTR | RW | frame counter bits [31:0]; the 63-bit counter must strictly increase |
@@ -162,3 +162,26 @@ split: **the fabric codes one segment per MCU, the ARM only reorders segments.**
 The contract-v2 E5 of the golden model (one keystream for the frame, shuffle before entropy coding)
 stays as the reference of the paper's earlier measurements; both are scored by the benchmark suite
 (`experiments/benchmark_suite.py`).
+
+### 8.7 Input pixel format and line-buffer options (21 Oct 2026; golden model and RTL done)
+
+Two synthesis parameters of `secure_jpeg_lanes_top` (and `future_work/board/sjpeg_lanes_bd_top.v`). Neither
+changes a byte of the output for the same YCbCr samples; the receiver needs no change.
+
+| Item | Definition |
+|---|---|
+| `PIXFMT = 0` (default) | RGB, 2 pixels per 64-bit beat (§8): `rgb2ycbcr_2px.v` converts with §6 |
+| `PIXFMT = 1` | camera-native YCbCr 4:2:2 (YUYV): the frame is H × 2W bytes, per pixel pair `Y0 Cb Y1 Cr`; a 64-bit beat carries 4 pixels, byte 0 first (`{Cr1, Y3, Cb1, Y2, Cr0, Y1, Cb0, Y0}`). `yuyv_4px.v` writes Y as given and 4:2:0 chroma = `(a + b + 1) >> 1` of lines 2i and 2i+1. Model: `model/hw.py :: planes_yuyv`, `blocks_in_hw_order(frame, pixfmt="yuyv")`, `encode_frame_v3(..., pixfmt="yuyv")`; `rgb_to_yuyv` makes a reproducible YUYV test frame from RGB (a real camera does its own conversion, which is not part of the contract). VERSION bit 6 = 1. The DMA moves 2 bytes per pixel instead of 4 |
+| `NBUF = 2` (default) | two line-buffer sets per lane (ping-pong) |
+| `NBUF = 1` | one set: half the converter BRAM; a lane takes its next MCU row only after reading the last one out. With 4 lanes and RGB input this costs 2–5 % of throughput and lets 4 lanes take 2048-pixel lines (1080p); with 2 lanes 22–27 % (`experiments/lanes_rtl_throughput.py --nbuf 1`) |
+| Driver | `pynq_driver.SecureJpegIP.pixfmt` from VERSION bit 6; `encode()` takes an RGB frame (H × W × 3) or, for a YUYV bitstream, the camera's YUYV frame (H × 2W) as it is; RGB given to a YUYV bitstream is converted on the ARM (`hw.rgb_to_yuyv`) |
+| Board images | `secure_jpeg_lanes4.bit` (4 lanes, RGB, 1024-pixel lines), `secure_jpeg_lanes4hd.bit` (NBUF = 1, 2048-pixel lines), `secure_jpeg_lanes4yuyv.bit` (PIXFMT = 1) — `run_vivado_day.py --steps bd_lanes4 / bd_lanes4hd / bd_lanes4yuyv` |
+
+## 9. Link options (system layer, 21 Oct 2026)
+
+Not part of the fabric contract; both ends must agree.
+
+| Item | Definition |
+|---|---|
+| `link.pad` | frame-size padding against the size side channel (`link/wire.py :: SizePadder`): `none` (default), `bucket:<B>`, `runmax` (pad to the largest frame so far, 256-byte steps), `window:<N>`. Padding = COM segments (`FF FE len 00..`) right after SOI; decoders skip them, the tag does not cover them, the receiver ignores them |
+| `keys.exchange` (`run_all --pq-kex`, `board_sender --pq-kex`, `python -m link.kex`) | hybrid ML-KEM-768 (FIPS 203) + X25519 at session start, authenticated with HMAC-SHA256 under a key derived from the pre-shared key; K_master = HKDF-SHA256(salt = PSK, ikm = ss_mlkem ‖ ss_x25519, info = "SV session" ‖ SHA256(M1 ‖ M2)), 16 bytes. Messages: M1 1268 B (receiver → sender), M2 1172 B, confirm 20 B; UDP port `link.kex` (47006). The result is written to `configs/session_key.txt` (git-ignored) and used through `keys.master_file`. `link/keys.py :: kex_init / kex_respond / kex_finish` |

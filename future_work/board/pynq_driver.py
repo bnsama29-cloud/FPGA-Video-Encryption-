@@ -40,6 +40,7 @@ FABRIC_HZ = 100e6                               # fabric clock of the overlay (F
 EXPECTED_VERSION = 0x5EC00200          # contract v2
 V3_VERSION_BASE = 0x5EC00300           # contract v3: 0x5EC003LL, LL = number of lanes
 E5_CAP = 0x80                          # v3 VERSION bit 7: the RTL implements mode 5 (INTERFACES.md §8.6)
+YUYV_CAP = 0x40                        # v3 VERSION bit 6: built for camera-native YUYV input (4 pixels/beat)
 
 
 def contract_of(version):
@@ -47,9 +48,23 @@ def contract_of(version):
     has_e5()."""
     if version == EXPECTED_VERSION:
         return 2, 1
-    if version & 0xFFFFFF00 == V3_VERSION_BASE and version & 0x7F in (1, 2, 4):
-        return 3, version & 0x7F
+    if version & 0xFFFFFF00 == V3_VERSION_BASE and version & 0x3F in (1, 2, 4):
+        return 3, version & 0x3F
     return None
+
+
+def has_yuyv(version):
+    return version & 0xFFFFFF00 == V3_VERSION_BASE and bool(version & YUYV_CAP)
+
+
+def is_yuyv_frame(frame):
+    """A YUYV frame is H x 2W uint8 (2-D); an RGB frame is H x W x 3."""
+    return getattr(frame, "ndim", 3) == 2
+
+
+def frame_size(frame):
+    """(width, height) of an RGB or YUYV frame."""
+    return (frame.shape[1] // 2, frame.shape[0]) if is_yuyv_frame(frame) else (frame.shape[1], frame.shape[0])
 
 
 def has_e5(version):
@@ -68,15 +83,38 @@ def load_pixels_into(words_u32, rgb):
     uint32 temporaries and two shifts per pixel). The pad byte is left as it is (the RTL ignores bits
     [31:24]). Returns the number of words written. Same words as pixels_to_words."""
     n = rgb.shape[0] * rgb.shape[1]
-    words_u32.view(np.uint8).reshape(-1, 4)[:n, :3] = rgb.reshape(n, 3)
+    dst = words_u32.view(np.uint8).reshape(-1, 4)[:n, :3]
+    if not np.shares_memory(dst, rgb):                 # a frame already in the buffer needs no copy
+        dst[...] = rgb.reshape(n, 3)
     return n
+
+
+def load_yuyv_into(words_u32, yuyv):
+    """A YUYV frame (H x 2W bytes) into the DMA buffer as it is: 2 bytes per pixel, so W*H/2 words."""
+    nbytes = yuyv.shape[0] * yuyv.shape[1]
+    dst = words_u32.view(np.uint8)[:nbytes]
+    if not np.shares_memory(dst, yuyv):
+        dst[...] = yuyv.reshape(-1)
+    return nbytes // 4
+
+
+def yuyv_view(words_u32, w, h):
+    """H x 2W uint8 view on the DMA buffer for a YUYV camera (zero-copy, as pixel_view for RGB)."""
+    return words_u32.view(np.uint8)[:2 * w * h].reshape(h, 2 * w)
+
+
+def pixel_view(words_u32, w, h):
+    """An H x W x 3 uint8 view on the DMA buffer: a camera or decoder that writes its frame here puts
+    the pixels where the DMA reads them, so the ARM copies nothing (load() then only flushes)."""
+    return words_u32.view(np.uint8)[:4 * w * h].reshape(h, w, 4)[..., :3]
 
 
 class MockBackend:
     """Register file + DMA emulated with the golden model (bit-exact with the RTL)."""
 
-    def __init__(self, contract=2, lanes=2, e5=False):
+    def __init__(self, contract=2, lanes=2, e5=False, yuyv=False):
         self.contract, self.lanes, self.e5 = contract, lanes, e5 and contract == 3
+        self.yuyv = yuyv and contract == 3
         self.regs = {}
         self.qt = [0] * 128
         self.qt_ptr = 0
@@ -104,7 +142,8 @@ class MockBackend:
 
     def read(self, addr):
         if addr == VERSION:
-            return EXPECTED_VERSION if self.contract == 2 else V3_VERSION_BASE + self.lanes + (E5_CAP if self.e5 else 0)
+            return EXPECTED_VERSION if self.contract == 2 else (V3_VERSION_BASE + self.lanes + (E5_CAP if self.e5 else 0)
+                                                                + (YUYV_CAP if self.yuyv else 0))
         if addr == STATUS:
             return 0b101 if self.done else 0
         if addr == OUT_BYTES:
@@ -116,9 +155,17 @@ class MockBackend:
             return 0
         return self.regs.get(addr, 0)
 
-    def load(self, rgb):
-        """Put one frame into the (emulated) DMA buffer; returns the number of pixel words."""
-        self._words = pixels_to_words(rgb)
+    def pixel_buffer(self, w, h):
+        if getattr(self, "_buf", None) is None or self._buf.size < w * h:
+            self._buf = np.zeros(w * h, np.uint32)
+        return yuyv_view(self._buf, w, h) if self.yuyv else pixel_view(self._buf, w, h)
+
+    def load(self, frame):
+        """Put one frame into the (emulated) DMA buffer; returns the number of 32-bit words."""
+        if is_yuyv_frame(frame):
+            self._words = np.frombuffer(np.ascontiguousarray(frame, dtype=np.uint8).tobytes(), "<u4").copy()
+        else:
+            self._words = pixels_to_words(frame)
         return len(self._words)
 
     def run(self, n, timeout_s=2.0):
@@ -129,27 +176,30 @@ class MockBackend:
         """Send the pixel words, receive the scan bytes (what the two DMA channels do)."""
         r = self.regs
         w, h = r.get(WIDTH, 0), r.get(HEIGHT, 0)
-        if w % 16 or h % 16 or w == 0 or h == 0 or len(words) != w * h:
-            raise ValueError(f"bad frame setup: {w}x{h}, {len(words)} pixels")
+        if w % 16 or h % 16 or w == 0 or h == 0 or len(words) != (w * h // 2 if self.yuyv else w * h):
+            raise ValueError(f"bad frame setup: {w}x{h}, {len(words)} words")
         key = b"".join(r.get(KEY0 + 4 * i, 0).to_bytes(4, "little") for i in range(4))
         sid = r.get(SESSION_ID, 0) | (r.get(SESSION_ID_HI, 0) << 32)
         ctr = r.get(FRAME_CTR, 0) | (r.get(FRAME_CTR_HI, 0) << 32)
         mode = (r.get(CTRL, 0) >> 1) & 7
         if mode > 4 and not self.e5:
             raise ValueError(f"mode {mode}: this bitstream has no E5 (VERSION bit 7 = 0)")
-        rgb = np.stack([(words >> s) & 0xFF for s in (0, 8, 16)], -1).reshape(h, w, 3).astype(np.uint8)
-        self.out, self.tag = _encode_with_reciprocals(rgb, self.qt[:64], self.qt[64:], mode, key, ctr, sid,
-                                                      self.contract)
+        if self.yuyv:
+            frame = np.frombuffer(np.asarray(words, "<u4").tobytes(), np.uint8).reshape(h, 2 * w)
+        else:
+            frame = np.stack([(words >> s) & 0xFF for s in (0, 8, 16)], -1).reshape(h, w, 3).astype(np.uint8)
+        self.out, self.tag = _encode_with_reciprocals(frame, self.qt[:64], self.qt[64:], mode, key, ctr, sid,
+                                                      self.contract, "yuyv" if self.yuyv else "rgb")
         self.done = True
         return self.out
 
 
-def _encode_with_reciprocals(rgb, luma_r, chroma_r, mode, key, ctr, sid, contract=2):
+def _encode_with_reciprocals(rgb, luma_r, chroma_r, mode, key, ctr, sid, contract=2, pixfmt="rgb"):
     """model/hw.py :: encode_frame (v2) / encode_frame_v3 (v3), but with the reciprocal tables
     actually loaded into QT_DATA."""
     from model import ascon
-    blocks = hw.blocks_in_hw_order(rgb)
-    h, w = rgb.shape[:2]
+    blocks = hw.blocks_in_hw_order(rgb, pixfmt)
+    w, h = hw.frame_dims(rgb, pixfmt)
 
     def symbols(blks):
         syms, pred = [], {0: 0, 1: 0, 2: 0}
@@ -179,7 +229,7 @@ class PynqBackend:
     UNTESTED until the bitstream exists: names of the IP and the DMA in the overlay
     may differ -- print(Overlay(...).ip_dict.keys()) and pass ip_name / dma_name."""
 
-    def __init__(self, bitfile, ip_name=None, dma_name=None, max_pixels=640 * 480, partial_cache=True):
+    def __init__(self, bitfile, ip_name=None, dma_name=None, max_pixels=1920 * 1088, partial_cache=True):
         from pynq import Overlay, allocate          # only available on the board
         self.ol = Overlay(bitfile)
         names = list(self.ol.ip_dict)
@@ -196,6 +246,7 @@ class PynqBackend:
         # a slice, fall back to the whole buffer; the bit-exact gate would catch a wrong cache operation.
         self.partial_cache = partial_cache
         self.n = 0
+        self.yuyv = has_yuyv(self.read(VERSION))
 
     def _flush(self, buf):
         if self.partial_cache:
@@ -215,9 +266,15 @@ class PynqBackend:
                 self.partial_cache = False
         self.outbuf.invalidate()
 
-    def load(self, rgb):
+    def pixel_buffer(self, w, h):
+        """Zero-copy input: fill this view (e.g. cv2 capture.read(image=...) or np.copyto) and pass it to
+        encode(); the ARM then only flushes the cache (see load_pixels_into). H x 2W bytes for a YUYV
+        bitstream (VERSION bit 6), else H x W x 3."""
+        return yuyv_view(self.inbuf, w, h) if self.yuyv else pixel_view(self.inbuf, w, h)
+
+    def load(self, frame):
         """Write the frame straight into the DMA buffer and flush those bytes from the cache."""
-        n = load_pixels_into(self.inbuf, rgb)
+        n = load_yuyv_into(self.inbuf, frame) if is_yuyv_frame(frame) else load_pixels_into(self.inbuf, frame)
         self._flush(self.inbuf[:n])
         self.n = n
         return n
@@ -271,8 +328,14 @@ class SecureJpegIP:
                                "(wrong bitstream, or the AXI-Lite address is wrong)")
         self.contract, self.lanes = known
         self.e5 = has_e5(version)
+        self.pixfmt = "yuyv" if has_yuyv(version) else "rgb"
         self.key = None
         self.last_timing = {}
+
+    def pixel_buffer(self, w, h):
+        """H x W x 3 view on the DMA input buffer (zero-copy path; None if the backend has none)."""
+        f = getattr(self.b, "pixel_buffer", None)
+        return f(w, h) if f else None
 
     @property
     def max_mode(self):
@@ -292,8 +355,15 @@ class SecureJpegIP:
 
     def encode(self, rgb, mode, frame_ctr, timeout_s=2.0):
         """Returns (scan bytes, 16-byte tag) as the fabric produced them. mode 0..4, and 5 when the
-        bitstream reports E5 (VERSION bit 7); for E5 the scan is in raster order (build_jpeg shuffles)."""
-        h, w = rgb.shape[:2]
+        bitstream reports E5 (VERSION bit 7); for E5 the scan is in raster order (build_jpeg shuffles).
+        rgb: an RGB frame (H x W x 3), or for a YUYV bitstream (VERSION bit 6) a YUYV frame (H x 2W bytes,
+        straight from the camera); an RGB frame given to a YUYV bitstream is converted on the ARM
+        (model/hw.py :: rgb_to_yuyv), which costs time: give the camera's YUYV when there is one."""
+        if self.pixfmt == "yuyv" and not is_yuyv_frame(rgb):
+            rgb = hw.rgb_to_yuyv(rgb)
+        elif self.pixfmt == "rgb" and is_yuyv_frame(rgb):
+            raise ValueError("a YUYV frame needs a bitstream built for YUYV (PIXFMT = 1, VERSION bit 6)")
+        w, h = frame_size(rgb)
         if w % 16 or h % 16:
             raise ValueError("width and height must be multiples of 16")
         if not 0 <= mode <= self.max_mode:

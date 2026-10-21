@@ -75,8 +75,14 @@ def main():
     ap.add_argument("--mock-e5", action="store_true", help="with --mock-lanes: the emulated bitstream has E5")
     ap.add_argument("--software", type=int, metavar="THREADS", default=0,
                     help="no bitstream: run the encoder on the ARM cores (future_work/arm/sw_encoder.py, same bytes)")
+    ap.add_argument("--pq-kex", action="store_true",
+                    help="first run the post-quantum key exchange with the laptop (link/kex.py, start the laptop "
+                         "with run_all --pq-kex) and encrypt with its session key")
     a = ap.parse_args()
     cfg = config.load(a.config, a.set)
+    if a.pq_kex:
+        from link import kex
+        cfg["keys"]["master"] = kex.run_sender(cfg).hex()
     make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes, a.mock_e5, a.software).run()
 
 

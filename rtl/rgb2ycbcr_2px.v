@@ -13,7 +13,7 @@
 // 1.5 samples per pixel, so a lane needs 1.5 clocks per pixel. With 1 pixel per clock in, the
 // input alone would cap the whole encoder at 1 clock per pixel however many lanes there are
 // (experiments/parallel_lanes.py, R2). Two pixels per clock lets two lanes reach 0.75 clocks/pixel.
-// Same pipeline as rgb2ycbcr_block.v (bug #20: D1 -> C multiply-add -> D2 clamp -> D3 buffer write),
+// Same pipeline as rgb2ycbcr_block.v (bug #20: D1 -> P products -> C sums -> D2 clamp -> D3 buffer write),
 // duplicated for the two pixels. The Y line buffer is split into an even-x and an odd-x bank so
 // both pixels are written in one clock; the chroma pair (x, x+1) arrives in the same beat, so the
 // horizontal sum needs no "previous pixel" register.
@@ -21,7 +21,13 @@
 // Golden model: model/hw.py :: rgb_to_ycbcr(), planes(), blocks_in_hw_order()  (rows of one lane)
 `default_nettype none
 module rgb2ycbcr_2px #(
-    parameter LOG_MAXW = 11
+    parameter LOG_MAXW = 11,
+    // line-buffer sets: 2 = ping-pong (the next MCU row is written while this one is read),
+    // 1 = one set, half the block RAM: the lane takes its next MCU row only after it has read the
+    // previous one out. With 4 lanes that costs almost nothing, because a lane receives only every
+    // 4th MCU row and reads one out (24 W clocks) in the time the other three lanes take theirs in
+    // (3 x 8 W clocks at two pixels per clock). experiments/lanes_rtl_throughput.py --nbuf 1 measures it.
+    parameter NBUF = 2
 ) (
     input  wire        clk,
     input  wire        rst,
@@ -44,7 +50,14 @@ module rgb2ycbcr_2px #(
     // ------------------------------------------------------------ write pipeline
     // D3 (21 Oct 2026, for 125 MHz): pair sums and row-sum reads registered, all buffer writes one clock
     // later (same order, same contents; a row sum is read one line after it is written).
-    reg              d1_v, c_v, d2_v, d3_v;
+    // P (21 Oct 2026, run 8: the multiply-add D1 -> C failed 125 MHz by 0.914 ns): products registered
+    // first, C only adds them. Same integers, one clock more latency.
+    reg              d1_v, p_v, c_v, d2_v, d3_v;
+    reg              p_sel, p_last;
+    reg [3:0]        p_y;
+    reg [LH-1:0]     p_x;
+    reg signed [18:0] p0 [0:8], p1 [0:8];
+    integer k;  // per pixel: 77r 150g 29b, -43r -85g 128b, 128r -107g -21b
     reg              d3_sel, d3_last;
     reg [3:0]        d3_y;
     reg [LH-1:0]     d3_x;
@@ -57,16 +70,17 @@ module rgb2ycbcr_2px #(
     reg signed [18:0] c_yt0, c_cbt0, c_crt0, c_yt1, c_cbt1, c_crt1;
     reg [7:0]        d2_y0, d2_cb0, d2_cr0, d2_y1, d2_cb1, d2_cr1;
 
-    function signed [18:0] yt;  input [23:0] p;
-        yt = 77 * p[7:0] + 150 * p[15:8] + 29 * p[23:16] + 128;
-    endfunction
-    function signed [18:0] cbt; input [23:0] p;
-        cbt = -43 * $signed({1'b0, p[7:0]}) - 85 * $signed({1'b0, p[15:8]})
-              + 128 * $signed({1'b0, p[23:16]}) + 32896;
-    endfunction
-    function signed [18:0] crt; input [23:0] p;
-        crt = 128 * $signed({1'b0, p[7:0]}) - 107 * $signed({1'b0, p[15:8]})
-              - 21 * $signed({1'b0, p[23:16]}) + 32896;
+    function signed [18:0] prod;             // product k of pixel p (the nine constant multiplies)
+        input [23:0] p; input [3:0] k;
+        reg signed [9:0] r, g, b;
+        begin
+            r = $signed({2'b0, p[7:0]}); g = $signed({2'b0, p[15:8]}); b = $signed({2'b0, p[23:16]});
+            case (k)
+                4'd0: prod = 77 * r;   4'd1: prod = 150 * g;  4'd2: prod = 29 * b;
+                4'd3: prod = -43 * r;  4'd4: prod = -85 * g;  4'd5: prod = 128 * b;
+                4'd6: prod = 128 * r;  4'd7: prod = -107 * g; default: prod = -21 * b;
+            endcase
+        end
     endfunction
     function [7:0] sat8;                     // (v >> 8) clamped to 0..255
         input signed [18:0] v;
@@ -78,10 +92,10 @@ module rgb2ycbcr_2px #(
     endfunction
 
     // ------------------------------------------------------------- line buffers
-    reg [7:0] ybuf_e [0:2*16*(MAXW/2)-1];    // {sel, row[3:0], x/2}, even x
-    reg [7:0] ybuf_o [0:2*16*(MAXW/2)-1];    // odd x
-    reg [7:0] cbbuf  [0:2*8*(MAXW/2)-1];     // {sel, row[2:0], x/2}
-    reg [7:0] crbuf  [0:2*8*(MAXW/2)-1];
+    reg [7:0] ybuf_e [0:NBUF*16*(MAXW/2)-1]; // {sel, row[3:0], x/2}, even x (sel = 0 when NBUF = 1)
+    reg [7:0] ybuf_o [0:NBUF*16*(MAXW/2)-1]; // odd x
+    reg [7:0] cbbuf  [0:NBUF*8*(MAXW/2)-1];  // {sel, row[2:0], x/2}
+    reg [7:0] crbuf  [0:NBUF*8*(MAXW/2)-1];
     reg [9:0] cbsum  [0:MAXW/2-1];           // even-line pair sums
     reg [9:0] crsum  [0:MAXW/2-1];
 
@@ -91,8 +105,9 @@ module rgb2ycbcr_2px #(
     reg [3:0]  wy;
     reg [7:0]  wrow;
     reg        wactive;
+    reg        wdone;                        // NBUF = 1: the set holds a whole MCU row not yet read out
 
-    assign s_ready = wactive && !full[wsel];
+    assign s_ready = wactive && ((NBUF == 2) ? !full[wsel] : !wdone);
     wire take = s_valid && s_ready;
     wire last_px_of_row = (wx == width - 12'd2) && (wy == 4'd15);
 
@@ -104,9 +119,17 @@ module rgb2ycbcr_2px #(
     always @(posedge clk) begin
         d1_rgb0 <= s_data[23:0]; d1_rgb1 <= s_data[55:32];
         d1_sel <= wsel; d1_y <= wy; d1_x <= wx[LOG_MAXW-1:1]; d1_last <= last_px_of_row;
-        c_yt0 <= yt(d1_rgb0); c_cbt0 <= cbt(d1_rgb0); c_crt0 <= crt(d1_rgb0);
-        c_yt1 <= yt(d1_rgb1); c_cbt1 <= cbt(d1_rgb1); c_crt1 <= crt(d1_rgb1);
-        c_sel <= d1_sel; c_y <= d1_y; c_x <= d1_x; c_last <= d1_last;
+        for (k = 0; k < 9; k = k + 1) begin
+            p0[k] <= prod(d1_rgb0, k); p1[k] <= prod(d1_rgb1, k);
+        end
+        p_sel <= d1_sel; p_y <= d1_y; p_x <= d1_x; p_last <= d1_last;
+        c_yt0  <= p0[0] + p0[1] + p0[2] + 19'sd128;
+        c_cbt0 <= p0[3] + p0[4] + p0[5] + 19'sd32896;
+        c_crt0 <= p0[6] + p0[7] + p0[8] + 19'sd32896;
+        c_yt1  <= p1[0] + p1[1] + p1[2] + 19'sd128;
+        c_cbt1 <= p1[3] + p1[4] + p1[5] + 19'sd32896;
+        c_crt1 <= p1[6] + p1[7] + p1[8] + 19'sd32896;
+        c_sel <= p_sel; c_y <= p_y; c_x <= p_x; c_last <= p_last;
         d2_y0 <= sat8(c_yt0); d2_cb0 <= sat8(c_cbt0); d2_cr0 <= sat8(c_crt0);
         d2_y1 <= sat8(c_yt1); d2_cb1 <= sat8(c_cbt1); d2_cr1 <= sat8(c_crt1);
         d2_sel <= c_sel; d2_y <= c_y; d2_x <= c_x; d2_last <= c_last;
@@ -145,12 +168,12 @@ module rgb2ycbcr_2px #(
     always @(posedge clk) begin
         if (rst || start) begin
             full <= 2'b00; wsel <= 1'b0; rsel <= 1'b0;
-            wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start && (rows != 8'd0);
+            wx <= 12'd0; wy <= 4'd0; wrow <= 8'd0; wactive <= start && (rows != 8'd0); wdone <= 1'b0;
             rmcu <= 8'd0; rblk <= 3'd0; rpos <= 6'd0;
             m_valid <= 1'b0;
-            d1_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
+            d1_v <= 1'b0; p_v <= 1'b0; c_v <= 1'b0; d2_v <= 1'b0; d3_v <= 1'b0;
         end else begin
-            d1_v <= take; c_v <= d1_v; d2_v <= c_v; d3_v <= d2_v;
+            d1_v <= take; p_v <= d1_v; c_v <= p_v; d2_v <= c_v; d3_v <= d2_v;
             if (take) begin
                 if (wx == width - 12'd2) begin
                     wx <= 12'd0;
@@ -158,7 +181,8 @@ module rgb2ycbcr_2px #(
                 end else
                     wx <= wx + 12'd2;
                 if (last_px_of_row) begin
-                    wsel <= ~wsel;
+                    if (NBUF == 2) wsel <= ~wsel;
+                    else           wdone <= 1'b1;
                     wrow <= wrow + 8'd1;
                     if (wrow == rows - 8'd1) wactive <= 1'b0;
                 end
@@ -177,10 +201,11 @@ module rgb2ycbcr_2px #(
                 rpos <= rpos + 6'd1;
                 if (last_s) rblk <= (rblk == 3'd5) ? 3'd0 : rblk + 3'd1;
                 if (last_b) rmcu <= last_m ? 8'd0 : rmcu + 8'd1;
-                if (last_m) rsel <= ~rsel;
+                if (last_m && NBUF == 2) rsel <= ~rsel;
             end
             if (d3_v && d3_last)  full[d3_sel] <= 1'b1;
             if (rd_go && last_m)  full[rsel] <= 1'b0;
+            if (rd_go && last_m)  wdone <= 1'b0;     // NBUF = 1: the set is free for the next MCU row
         end
     end
 endmodule

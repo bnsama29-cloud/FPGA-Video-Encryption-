@@ -1,0 +1,83 @@
+{
+ "v2_measured_clocks_per_pixel": {
+  "64x48": 1.9235026041666667,
+  "128x96": 1.6890462239583333,
+  "160x128": 1.638916015625,
+  "320x240": 1.5704817708333334,
+  "640x480": 1.5344563802083333
+ },
+ "rows": [
+  {
+   "lanes": 4,
+   "mode": 2,
+   "width": 320,
+   "height": 240,
+   "clocks": 47087.0,
+   "clocks_per_pixel": 0.6131119791666667,
+   "hw_cycles": 47087,
+   "in_wait": 0,
+   "out_stall": 0,
+   "mpx_per_s_at_100mhz": 163.1023424724446,
+   "scan_bytes": 12064,
+   "latency_clocks": 2796.0,
+   "latency_lines": 17.475,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "nbuf": 1,
+   "log_maxw": 10
+  },
+  {
+   "lanes": 2,
+   "mode": 2,
+   "width": 320,
+   "height": 240,
+   "clocks": 82217.0,
+   "clocks_per_pixel": 1.0705338541666667,
+   "hw_cycles": 82217,
+   "in_wait": 0,
+   "out_stall": 0,
+   "mpx_per_s_at_100mhz": 93.41133828770205,
+   "scan_bytes": 12064,
+   "latency_clocks": 2796.0,
+   "latency_lines": 17.475,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "nbuf": 1,
+   "log_maxw": 10
+  },
+  {
+   "lanes": 4,
+   "mode": 2,
+   "width": 640,
+   "height": 480,
+   "clocks": 184553.0,
+   "clocks_per_pixel": 0.6007584635416666,
+   "hw_cycles": 184553,
+   "in_wait": 0,
+   "out_stall": 0,
+   "mpx_per_s_at_100mhz": 166.4562483405851,
+   "scan_bytes": 43672,
+   "latency_clocks": 5407.0,
+   "latency_lines": 16.896875,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "nbuf": 1,
+   "log_maxw": 10
+  },
+  {
+   "lanes": 2,
+   "mode": 2,
+   "width": 640,
+   "height": 480,
+   "clocks": 318700.0,
+   "clocks_per_pixel": 1.0374348958333333,
+   "hw_cycles": 318700,
+   "in_wait": 0,
+   "out_stall": 0,
+   "mpx_per_s_at_100mhz": 96.39159083777848,
+   "scan_bytes": 43672,
+   "latency_clocks": 5407.0,
+   "latency_lines": 16.896875,
+   "measured_from": "internal start pulse to irq_done, no DMA stalls, Icarus cycle-accurate",
+   "nbuf": 1,
+   "log_maxw": 10
+  }
+ ]
+}

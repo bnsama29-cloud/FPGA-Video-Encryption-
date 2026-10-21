@@ -226,6 +226,21 @@ E5), which is why E5 in hardware (GUIDE.md B6) is the next security step.
 
 ---
 
+## 8b. The 4-lane, 1080p and YUYV images (run 9/10)
+
+| Image | Built by | What is different on the board |
+|---|---|---|
+| `secure_jpeg_lanes4.bit` | `--steps bd_lanes4` | 4 lanes, lines up to 1024 pixels: start with the smoke test of RUNBOOK §3 step 3 |
+| `secure_jpeg_lanes4hd.bit` | `--steps bd_lanes4hd` | 4 lanes, lines up to 2048 pixels (1080p), one line-buffer set per lane; `first_contact --sizes 1920x1088` (height a multiple of 16) |
+| `secure_jpeg_lanes4yuyv.bit` | `--steps bd_lanes4yuyv` | VERSION bit 6: the driver sends YUYV (2 bytes per pixel). `first_contact` converts its test images with `hw.rgb_to_yuyv` before timing, i.e. it times what a YUYV camera delivers. A USB webcam gives raw YUYV with OpenCV: `cap.set(cv2.CAP_PROP_CONVERT_RGB, 0)`, then `frame.reshape(h, 2 * w)`; write it straight into `ip.pixel_buffer(w, h)` for the zero-copy path |
+
+Every image is checked against the golden model by the same gate (`first_contact` Part 1); a YUYV
+image is compared with `hw.encode_frame_v3(..., pixfmt="yuyv")`. Rehearse on the laptop:
+`py -m future_work.board.first_contact --mock-lanes 4 --mock-e5 --mock-yuyv --sizes 64x48 --frames 2 --timing-frames 2`.
+
+With `--pq-kex` on both ends the session key comes from the post-quantum exchange (`link/kex.py`);
+`python3 experiments/pq_kex_cost.py --runs 20` on the board gives its cost on the A9 for the paper.
+
 ## 9. When something goes wrong
 
 | Symptom | Likely cause and fix |

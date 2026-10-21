@@ -85,6 +85,74 @@ class Reassembler:
             self.dropped += 1
 
 
+# ---------------------------------------------------------------- frame-size padding (side channel R7)
+# Encryption hides content, not length: an eavesdropper sees every frame's size, and motion in front of
+# the camera changes it (experiments/size_leak.py). link.pad pads each JPEG with COM (comment) segments
+# right after SOI. Every decoder skips COM segments, the receiver ignores them (the frame tag covers the
+# APP11 metadata and the scan, not the padding), so a padded frame decodes and verifies exactly as before.
+#   none          no padding (default; the same bytes as before)
+#   bucket:<B>    up to the next multiple of B bytes (coarse: leaks large changes)
+#   runmax        up to the largest frame so far in this session, rounded up to 256 bytes (sizes never
+#                 shrink; a size change only when a new maximum appears)
+#   window:<N>    up to the largest of the last N frames (cheaper; leaks when that maximum changes)
+COM_MAX = 65535 - 2               # payload bytes of one COM segment (length field counts itself)
+
+
+def pad_jpeg(jpeg, target):
+    """jpeg with COM segments after SOI so that len == target. target < len + 4 (except == len) is
+    impossible (a segment is at least 4 bytes) and raises ValueError."""
+    n = target - len(jpeg)
+    if n == 0:
+        return jpeg
+    if n < 4 or jpeg[:2] != b"\xff\xd8":
+        raise ValueError(f"cannot pad a {len(jpeg)}-byte JPEG to {target} bytes")
+    segs = []
+    while n > 0:
+        body = min(n - 4, COM_MAX - 2)
+        if 0 < n - (body + 4) < 4:            # leave at least 4 bytes for the last segment
+            body -= 4
+        segs.append(b"\xff\xfe" + (body + 2).to_bytes(2, "big") + bytes(body))
+        n -= body + 4
+    return jpeg[:2] + b"".join(segs) + jpeg[2:]
+
+
+class SizePadder:
+    """Chooses the padded size of each frame (link.pad); pad() returns the padded JPEG."""
+
+    def __init__(self, policy="none"):
+        self.policy = str(policy or "none").lower()
+        kind, _, arg = self.policy.partition(":")
+        if kind not in ("none", "bucket", "runmax", "window"):
+            raise ValueError(f"link.pad: unknown policy {policy!r} (none | bucket:<bytes> | runmax | window:<frames>)")
+        self.kind = kind
+        self.arg = int(arg) if arg else {"bucket": 1024, "window": 100}.get(kind, 0)
+        self.best = 0
+        self.recent = []
+        self.padded_bytes = 0
+
+    @staticmethod
+    def _fit(n, target, step):
+        while target != n and target - n < 4:       # a COM segment needs 4 bytes
+            target += step
+        return target
+
+    def target(self, n):
+        if self.kind == "none":
+            return n
+        if self.kind == "bucket":
+            return self._fit(n, -(-n // self.arg) * self.arg, self.arg)
+        if self.kind == "runmax":
+            self.best = self._fit(n, max(self.best, -(-n // 256) * 256), 256)
+            return self.best
+        self.recent = (self.recent + [n])[-self.arg:]
+        return self._fit(n, -(-max(self.recent) // 256) * 256, 256)
+
+    def pad(self, jpeg):
+        t = self.target(len(jpeg))
+        self.padded_bytes += t - len(jpeg)
+        return pad_jpeg(jpeg, t)
+
+
 def udp_socket(bind_port=None, host="127.0.0.1", timeout=None):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 << 20)

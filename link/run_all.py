@@ -4,6 +4,7 @@
     python -m link.run_all --set sender.policy=bandit --set sender.source=clip.mp4
     python -m link.run_all --set dashboard.bind_host=0.0.0.0  # trusted-LAN dashboard access
     python -m link.run_all --no-dashboard
+    python -m link.run_all --no-sender --pq-kex ...  # board as camera: post-quantum session key first
 
 Each node is a separate process talking UDP on localhost, exactly as they would
 on separate machines (sender on the PYNQ-Z2, receiver + dashboard on a laptop).
@@ -31,12 +32,24 @@ def main():
     ap.add_argument("--no-dashboard", action="store_true")
     ap.add_argument("--no-sender", action="store_true",
                     help="laptop side only (the sender runs on the PYNQ board)")
+    ap.add_argument("--pq-kex", action="store_true",
+                    help="first run the post-quantum key exchange (link/kex.py) with the sender and use its "
+                         "session key; keys.master is then only the pre-shared authentication key")
     a = ap.parse_args()
     # `kill <pid>` (SIGTERM) must stop the children too, exactly like Ctrl+C
     signal.signal(signal.SIGTERM, _stop)
     extra = (["--config", a.config] if a.config else []) + [x for s in a.set for x in ("--set", s)]
     procs = []
     try:
+        if a.pq_kex:
+            kex = [sys.executable, "-m", "link.kex", "--role", "receiver"] + extra
+            if not a.no_sender:          # all on this PC: the simulated sender runs its half now too
+                tx = subprocess.Popen([sys.executable, "-m", "link.kex", "--role", "sender"] + extra)
+            if subprocess.call(kex) != 0:
+                raise SystemExit("key exchange failed")
+            if not a.no_sender:
+                tx.wait(timeout=30)
+            extra += ["--set", "keys.master_file=configs/session_key.txt"]
         for node in NODES:
             if (node == "dashboard" and a.no_dashboard) or (node == "sender" and a.no_sender):
                 continue

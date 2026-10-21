@@ -43,32 +43,44 @@ Three configurations of the camera node, all producing the **same bytes**:
 | `future_work/board/first_contact.py` | board | A1 bit-exact gate + A2 timing with breakdown and fabric-only time |
 | `future_work/arm/arm_baseline.py` | board | A3: same encoder on the PS (1/2 cores) vs libjpeg-turbo ± Ascon / AES-GCM vs PL |
 | `future_work/baselines/energy_table.py` | laptop | A4: energy per frame from the meter readings |
-| `future_work/board/board_sender.py` | board | A5/A6: the board as camera into the laptop's receiver |
+| `future_work/board/board_sender.py` | board | A5/A6: the board as camera into the laptop's receiver (`--pq-kex`, `--set link.pad=runmax`) |
+| `python -m link.kex` | laptop + board | post-quantum session key (ML-KEM-768 + X25519) before the link starts |
+| `experiments/pq_kex_cost.py` | board / laptop | cost of that exchange on this CPU |
 | `scripts/demo_key.py` | laptop | fresh pre-shared key + exact commands (never commit `configs/demo_key.txt`) |
 | `paper/make_assets.py`, `make -C paper` | laptop | tables, figures, both PDFs (conference must stay 6 pages) |
 
 ## 3. End-to-end order (hardware in one or two days)
 
-**Day 1 — Vivado PC (morning)**
-1. `git pull`, then rebuild both overlays with the new counters and the D3 converter stage:
-   `py vivado\run_vivado_day.py --steps bd bd_lanes parse`
-2. In parallel, the 125 MHz check: `py vivado\run_vivado_day.py --steps ooc lanes --periods 8.0`.
-   If WNS < 0, keep the `timing_*.rpt` (worst 10 paths) and send it, not only the WNS.
-3. Copy `secure_jpeg_lanes.bit` + `.hwh` to the board and to the shared drive (H5).
+**Day 1 — Vivado PC (overnight)** — run 9 done 21 Oct: 125 MHz met (v2, 2 lanes), 4-lane system at 100 MHz
+1. `git pull` on branch `hw-polish-arm-baseline` (check `git log --oneline -1`), then run 10 (150 / 166 MHz,
+   4-lane variants, 4-lane system at 142.9 MHz; ~5 h with two runs in parallel, 16 GB RAM):
+   `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
+   (8 GB RAM: `--parallel 1`, ~8 h). Optional, ~1 h more: `--steps bd_lanes4hd bd_lanes4yuyv --fclk 142`
+   for the 1080p and the YUYV-camera board images.
+2. Send `vivado_results_<date>.zip` (its `summary.txt` starts with the git commit and the SHA-256 of every
+   bitstream); copy `future_work\board\overlay\secure_jpeg_lanes*.bit` + `.hwh` to the board and to the
+   shared drive (H5). Board results are only comparable with the Vivado numbers of the same commit.
 
 **Day 1 — board (afternoon)**
-4. A1 + A2: `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes.bit`
-   → `sim_out/board/first_contact.md` now has load / DMA / ARM / **fabric ms** columns.
+3. Smoke test the 4-lane image first (small frame, stops at the first difference):
+   `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes4.bit --sizes 64x48 --frames 2 --timing-frames 5 --out sim_out/board/lanes4_smoke`
+4. A1 + A2, 2 lanes and 4 lanes, same sizes:
+   `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes2_run9`
+   and the same with `secure_jpeg_lanes4.bit` and `--out sim_out/board/lanes4_run9`
+   → `first_contact.md` has load / DMA / ARM / **fabric ms** columns and IN_WAIT (DDR starvation).
    If it fails only with the new driver, rerun with `--full-cache-ops` and report it.
-5. A3: `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" sudo -E python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30`
-6. Copy both `.json/.md` into `paper/data/board/<date>_lanes/`.
+5. A3 (once per image): `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" sudo -E python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30 --pl-json sim_out/board/lanes4_run9/first_contact.json`
+   and `python3 experiments/pq_kex_cost.py --runs 20` (the post-quantum session key on the A9).
+6. Copy every `.json/.md` into `paper/data/board/<date>_lanes/`.
 
 **Day 2 — board + laptop**
-7. A4 power: meter inline; idle, `first_contact … --timing-frames 2000`, `arm_baseline … --frames 2000`;
+6. A4 power: meter inline; idle, `first_contact … --timing-frames 2000`, `arm_baseline … --frames 2000`;
    fill `future_work/baselines/power_template.csv`; `py -m future_work.baselines.energy_table …`.
-8. A5/A6: `py scripts\demo_key.py`, then `py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <BOARD IP> --board-max-mode E5`
+7. A5/A6: `py scripts\demo_key.py`, then `py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <BOARD IP> --board-max-mode E5`
    and the printed board command on the board; three runs each of `full_suite` and `benign`.
-9. Laptop: `python paper/make_assets.py && make -C paper`, check `pdfinfo paper/conference.pdf` = 6 pages,
+   With the new defences: add `--pq-kex` on both ends (post-quantum session key, `link/kex.py`) and
+   `--set link.pad=runmax` on the board (frame sizes no longer follow motion).
+8. Laptop: `python paper/make_assets.py && make -C paper`, check `pdfinfo paper/conference.pdf` = 6 pages,
    replace the red `\TODO{A2…A4}`, commit the data.
 
 ## 4. Rehearsal without a board (works today, tested)

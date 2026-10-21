@@ -2,10 +2,10 @@
 # Variables: SIM=icarus|verilator  WAVES=1  SEED=<n>  FULL=1  T=<pytest node id>
 PY      ?= python3
 PYTEST  ?= $(PY) -m pytest
-RTL_ALL  = ascon_round.v ascon_aead128_core.v keystream_gen.v tag_unit.v rgb2ycbcr_block.v \
+RTL_ALL  = skid_buf.v ascon_round.v ascon_aead128_core.v keystream_gen.v tag_unit.v rgb2ycbcr_block.v \
            dct_stage.v dct8x8.v quantiser.v zigzag_rle.v selective_enc.v huffman_enc.v \
            bit_packer.v scan_word_packer.v axil_regs.v secure_jpeg_top.v \
-           kseg_unit.v rgb2ycbcr_2px.v byte_fifo.v encoder_lane.v segment_merger.v secure_jpeg_lanes_top.v
+           kseg_unit.v rgb2ycbcr_2px.v yuyv_4px.v byte_fifo.v encoder_lane.v segment_merger.v secure_jpeg_lanes_top.v
 LINT_WAIVE = -Wno-UNUSEDSIGNAL -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC
 
 .PHONY: xsim-vectors xsim-icarus help setup tables vectors test test-model test-rtl test-ascon test-crypto test-front \
@@ -86,6 +86,9 @@ xsim-icarus: xsim-vectors
 	$(PY) vivado/run_vivado_day.py vectors --v3 --modes 2 5
 	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work_v3 | tee sim_build/xsim_icarus_v3.log | grep -E "^frame|RESULT|ERROR"
 	$(PY) vivado/run_vivado_day.py check --dir vivado/xsim_work_v3
+	$(PY) vivado/run_vivado_day.py vectors --v3 --lanes 4 --modes 2 5
+	vvp -n sim_build/tb_xsim.vvp +VEC_DIR=vivado/xsim_work_v3l4 | tee sim_build/xsim_icarus_v3l4.log | grep -E "^frame|RESULT|ERROR"
+	$(PY) vivado/run_vivado_day.py check --dir vivado/xsim_work_v3l4
 
 bundle:
 	$(PY) scripts/tools.py bundle $(T) $(if $(SEED),--seed $(SEED))

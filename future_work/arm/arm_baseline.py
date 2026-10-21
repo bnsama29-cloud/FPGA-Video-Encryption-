@@ -90,7 +90,8 @@ def pl_rows(path):
         return {}
     out = {}
     for r in d.get("speed", []):
-        out.setdefault(r["size"], {})[r["mode"]] = r
+        if not r.get("zero_copy"):
+            out.setdefault(r["size"], {})[r["mode"]] = r
     return out
 
 

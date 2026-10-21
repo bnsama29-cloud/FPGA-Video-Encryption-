@@ -29,10 +29,13 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
   ooc    out-of-context synthesis + place + route of secure_jpeg_top at 100 MHz
          (--blocks: also the Ascon core, keystream, tag, DCT, quantiser, Huffman on their own;
           --fmax: re-run the top at the period the first run's slack suggests, to confirm fmax)
-  lanes  out-of-context runs of secure_jpeg_lanes_top (contract v3): 2 lanes at 100 MHz and at every
-         --periods clock, 4 lanes (1024-pixel lines) at 100 MHz
+  lanes  out-of-context runs of secure_jpeg_lanes_top (contract v3): 2 lanes (2048-pixel lines) and 4 lanes
+         (1024-pixel lines) at 100 MHz and at every --periods clock, + 4 lanes with 2048-pixel lines (1080p)
   bd     PYNQ-Z2 block design + bitstream -> future_work/board/overlay/secure_jpeg.bit/.hwh
   bd_lanes  the same for the lane encoder -> overlay/secure_jpeg_lanes.bit/.hwh (reports in overlay/lanes/)
+  bd_lanes4 the same with 4 lanes, lines up to 1024 px -> overlay/secure_jpeg_lanes4.bit/.hwh (overlay/lanes4/)
+  bd_lanes4hd   4 lanes, 2048-px lines (1080p), one line-buffer set -> overlay/secure_jpeg_lanes4hd.bit
+  bd_lanes4yuyv 4 lanes, camera-native YUYV input (4 px per beat) -> overlay/secure_jpeg_lanes4yuyv.bit
   power  post-route power with SIMULATED switching activity (needs ooc and/or lanes first): XSim
          encodes --power-size scene frames in each mode and records activity.saif, then Vivado
          re-reports the routed design's power with it -> power_saif_<v2|v3>_E<m>.txt next to power.txt
@@ -161,10 +164,13 @@ def vectors_main(argv=None):
     ap.add_argument("--ctr", type=lambda s: int(s, 0), default=(1 << 32) + 100)
     ap.add_argument("--v3", action="store_true",
                     help="vectors for secure_jpeg_lanes_top (contract v3, 2 lanes, 2 pixels per beat)")
-    ap.add_argument("--out", default=None, help="default vivado/xsim_work (v2) or vivado/xsim_work_v3")
+    ap.add_argument("--lanes", type=int, default=2, choices=[2, 4],
+                    help="with --v3: drive the 2-lane (dut3) or the 4-lane (dut4) encoder of the testbench")
+    ap.add_argument("--out", default=None,
+                    help="default vivado/xsim_work (v2), vivado/xsim_work_v3 (2 lanes) or xsim_work_v3l4")
     a = ap.parse_args(argv)
     if a.out is None:
-        a.out = str(ROOT / "vivado" / ("xsim_work_v3" if a.v3 else "xsim_work"))
+        a.out = str(ROOT / "vivado" / (("xsim_work_v3l4" if a.lanes == 4 else "xsim_work_v3") if a.v3 else "xsim_work"))
     key = bytes.fromhex(a.key)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -175,8 +181,8 @@ def vectors_main(argv=None):
 
     # session setup + register sanity checks
     if a.v3:
-        cmds.append("M 3")
-    r32(VERSION, 0x5EC00382 if a.v3 else 0x5EC00200)   # v3: 2 lanes, bit 7 = mode 5 in the RTL (HW_TODO H1)
+        cmds.append("M 4" if a.lanes == 4 else "M 3")
+    r32(VERSION, (0x5EC00380 + a.lanes) if a.v3 else 0x5EC00200)   # v3: 0x80 = mode 5 in the RTL, + lanes
     for i in range(4):
         w32(KEY0 + 4 * i, int.from_bytes(key[4 * i:4 * i + 4], "little"))
         r32(KEY0 + 4 * i, 0)                                   # keys are write-only
@@ -406,8 +412,8 @@ def parse_hier(text, depth=2):
 
 def _name(folder):
     """Design name from the folder: vivado_<design> (OOC runs), overlay, overlay/lanes -> overlay_lanes."""
-    if folder.name == "lanes" and folder.parent.name == "overlay":
-        return "overlay_lanes"
+    if folder.name in ("lanes", "lanes4", "lanes4hd", "lanes4yuyv") and folder.parent.name == "overlay":
+        return f"overlay_{folder.name}"
     return folder.name.replace("vivado_", "")
 
 
@@ -487,7 +493,10 @@ def parse_main(argv=None):
         sys.exit(PARSE_DOC)
     folders = [Path(a) for a in argv] or sorted((ROOT / "sim_build").glob("vivado_*")) + \
         [p for p in [ROOT / "future_work" / "board" / "overlay",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes"] if (p / "timing.txt").exists()]
+                     ROOT / "future_work" / "board" / "overlay" / "lanes",
+                     ROOT / "future_work" / "board" / "overlay" / "lanes4",
+                     ROOT / "future_work" / "board" / "overlay" / "lanes4hd",
+                     ROOT / "future_work" / "board" / "overlay" / "lanes4yuyv"] if (p / "timing.txt").exists()]
     folders = [f for f in folders if f.is_dir() and f.name != "vivado_logs"]   # logs are not a design
     if not folders:
         sys.exit("no report folders: run vivado/vivado_ooc.tcl (or vivado/run_vivado_day.py) first")
@@ -540,25 +549,44 @@ def vivado(name, script, args="", check=None, dry=False):
                check, dry)
 
 
+def vivado_many(a, jobs):
+    """Run several OOC jobs [(name, script, args)], --parallel at a time (each Vivado needs ~3-4 GB RAM).
+    Returns {name: log text}."""
+    if a.parallel <= 1 or a.dry_run or len(jobs) < 2:
+        return {n: vivado(n, sc, ar, r"RESULT top=", a.dry_run) for n, sc, ar in jobs}
+    from concurrent.futures import ThreadPoolExecutor
+    print(f"\n=== {len(jobs)} out-of-context runs, {a.parallel} at a time: {', '.join(j[0] for j in jobs)}",
+          flush=True)
+    with ThreadPoolExecutor(max_workers=a.parallel) as ex:
+        futs = {n: ex.submit(vivado, n, sc, ar, r"RESULT top=") for n, sc, ar in jobs}
+        return {n: f.result() for n, f in futs.items()}
+
+
 def step_xsim(a):
     run("xsim_vectors", f"{sys.executable} vivado/run_vivado_day.py vectors", dry=a.dry_run)
     sim = "vivado\\run_xsim.bat" if WIN else "bash vivado/run_xsim.sh"
     run("xsim_run", sim, check=r"XSIM RESULT: PASS", dry=a.dry_run)
     run("xsim_check", f"{sys.executable} vivado/run_vivado_day.py check", dry=a.dry_run)
-    if "lanes" in a.steps or "bd_lanes" in a.steps:      # the contract-v3 lane encoder in XSim too
+    if any(s in a.steps for s in ("lanes", "bd_lanes", "bd_lanes4", "bd_lanes4hd", "bd_lanes4yuyv")):
+        # the contract-v3 lane encoder in XSim too
         run("xsim_vectors_v3", f"{sys.executable} vivado/run_vivado_day.py vectors --v3", dry=a.dry_run)
         run("xsim_run_v3", f"{sim} batch xsim_work_v3", check=r"XSIM RESULT: PASS", dry=a.dry_run)
         run("xsim_check_v3", f"{sys.executable} vivado/run_vivado_day.py check --dir vivado/xsim_work_v3",
             dry=a.dry_run)
+    if "lanes" in a.steps or "bd_lanes4" in a.steps:    # and the 4-lane encoder (dut4) on the same frames
+        run("xsim_vectors_v3l4", f"{sys.executable} vivado/run_vivado_day.py vectors --v3 --lanes 4", dry=a.dry_run)
+        run("xsim_run_v3l4", f"{sim} batch xsim_work_v3l4", check=r"XSIM RESULT: PASS", dry=a.dry_run)
+        run("xsim_check_v3l4", f"{sys.executable} vivado/run_vivado_day.py check --dir vivado/xsim_work_v3l4",
+            dry=a.dry_run)
 
 
 def step_ooc(a):
-    out = vivado("ooc_secure_jpeg_top", "vivado/vivado_ooc.tcl", "secure_jpeg_top 10.0", r"RESULT top=", a.dry_run)
-    for per in a.periods:               # clock sweep (research R5): which block limits 125 / 150 MHz?
-        vivado(f"ooc_period_{per}ns", "vivado/vivado_ooc.tcl", f"secure_jpeg_top {per}", r"RESULT top=", a.dry_run)
+    jobs = [("ooc_secure_jpeg_top", "vivado/vivado_ooc.tcl", "secure_jpeg_top 10.0")]
+    for per in a.periods:               # clock sweep (research R5): which block limits 125 / 150 / 166 MHz?
+        jobs.append((f"ooc_period_{per}ns", "vivado/vivado_ooc.tcl", f"secure_jpeg_top {per}"))
     for w in a.maxw:                    # memory sweep (GUIDE B19): line buffers for 2^w-pixel lines
-        vivado(f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW {w}",
-               r"RESULT top=", a.dry_run)
+        jobs.append((f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW {w}"))
+    out = vivado_many(a, jobs).get("ooc_secure_jpeg_top")
     if a.blocks:
         for b in BLOCKS:
             vivado(f"ooc_{b}", "vivado/vivado_ooc.tcl", f"{b} 10.0", r"RESULT top=", a.dry_run)
@@ -574,19 +602,28 @@ def step_ooc(a):
 
 
 def step_lanes(a):
-    """Contract-v3 lane encoder: area and timing (OOC). 2 lanes with 2048-pixel lines (720p), at
-    100 MHz and every --periods clock; 4 lanes with 1024-pixel lines at 100 MHz."""
+    """Contract-v3 lane encoder: area and timing (OOC). 2 lanes with 2048-pixel lines (720p) and 4 lanes
+    with 1024-pixel lines (640x480, the PYNQ-Z2 image), each at 100 MHz and at every --periods clock."""
     two = "secure_jpeg_lanes_top {} LANES 2 LOG_L 1"
-    vivado("ooc_lanes2", "vivado/vivado_ooc.tcl", two.format("10.0"), r"RESULT top=", a.dry_run)
-    for per in a.periods:
-        vivado(f"ooc_lanes2_{per}ns", "vivado/vivado_ooc.tcl", two.format(per), r"RESULT top=", a.dry_run)
-    vivado("ooc_lanes4", "vivado/vivado_ooc.tcl", "secure_jpeg_lanes_top 10.0 LANES 4 LOG_L 2 LOG_MAXW 10",
-           r"RESULT top=", a.dry_run)
+    four = "secure_jpeg_lanes_top {} LANES 4 LOG_L 2 LOG_MAXW 10"
+    jobs = [("ooc_lanes2", "vivado/vivado_ooc.tcl", two.format("10.0"))]
+    jobs += [(f"ooc_lanes2_{per}ns", "vivado/vivado_ooc.tcl", two.format(per)) for per in a.periods]
+    jobs += [("ooc_lanes4", "vivado/vivado_ooc.tcl", four.format("10.0"))]
+    # run 10: does the 4-lane encoder close 125 / 150 / 166 MHz too?
+    jobs += [(f"ooc_lanes4_{per}ns", "vivado/vivado_ooc.tcl", four.format(per)) for per in a.periods]
+    # and 4 lanes with 2048-pixel lines (1080p): one line-buffer set per lane (NBUF = 1) makes it fit;
+    # 4 lanes with YUYV input (PIXFMT = 1, four pixels per beat, no colour conversion)
+    jobs += [("ooc_lanes4_hd", "vivado/vivado_ooc.tcl", "secure_jpeg_lanes_top 10.0 LANES 4 LOG_L 2 LOG_MAXW 11 NBUF 1"),
+             ("ooc_lanes4_nbuf1", "vivado/vivado_ooc.tcl", "secure_jpeg_lanes_top 10.0 LANES 4 LOG_L 2 LOG_MAXW 10 NBUF 1"),
+             ("ooc_lanes4_yuyv", "vivado/vivado_ooc.tcl", "secure_jpeg_lanes_top 10.0 LANES 4 LOG_L 2 LOG_MAXW 10 PIXFMT 1")]
+    vivado_many(a, jobs)
 
 
 POWER_RUNS = [   # (tag, contract flag, modes, OOC report folder, testbench instance)
     ("v2", "", (0, 2, 4), "vivado_secure_jpeg_top", "tb_secure_jpeg_top/dut"),
     ("v3", "--v3", (2, 5), "vivado_secure_jpeg_lanes_top_lanes2_log_l1", "tb_secure_jpeg_top/dut3"),
+    ("v3l4", "--v3 --lanes 4", (2, 5), "vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
+     "tb_secure_jpeg_top/dut4"),
 ]
 
 
@@ -623,7 +660,9 @@ def step_power(a):
                    f"{dcp.relative_to(ROOT).as_posix()} {saif} {inst} {rpt}", r"RESULT power_saif", a.dry_run)
 
 
-FALLBACK_MHZ = (90, 80)          # overlay clocks to try when the requested one misses timing (run 3: -0.24 ns)
+# overlay clocks to try when the requested one misses timing (run 3: -0.24 ns). The PS makes FCLK0 by
+# dividing its 1 GHz IO PLL, so 166 / 142 / 125 MHz are exact (divide by 6 / 7 / 8).
+FALLBACK_MHZ = (166, 142, 125, 100, 90, 80)
 
 
 def overlay_wns(out):
@@ -633,9 +672,11 @@ def overlay_wns(out):
 
 def step_bd(a, design="v2"):
     overlay = ROOT / "future_work" / "board" / "overlay"
-    rpt = overlay / "lanes" if design == "lanes" else overlay
-    base = "block_design_lanes" if design == "lanes" else "block_design"
+    rpt = overlay if design == "v2" else overlay / design
+    base = "block_design" if design == "v2" else f"block_design_{design}"
     clocks = [a.fclk] + ([] if a.no_fallback else [f for f in FALLBACK_MHZ if f < a.fclk])
+    if a.fclk > 100 and not a.no_fallback:
+        clocks = [f for f in clocks if f >= 100]        # a fast try falls back to 100 MHz, not below
     for i, f in enumerate(clocks):
         name = base if i == 0 else f"{base}_{f}MHz"
         out = vivado(name, "future_work/board/block_design.tcl", f"{f} {a.jobs} {design}", r"RESULT overlay",
@@ -679,13 +720,21 @@ def step_collect(a):
         errs = [l for l in txt.splitlines() if "ERROR" in l][:5]
         if keep or errs:
             lines += ["", f"--- {log.name}"] + keep + errs
+    info = run_info()
+    lines = [f"git commit {info['commit']}{' (with uncommitted changes)' if info['dirty'] else ''}, "
+             f"branch {info['branch']}, implementation strategy {info['impl']}"] + \
+            [f"bitstream {b['file']}  sha256 {b['sha256']}  {b['bytes']} bytes" for b in info["bitstreams"]] + \
+            [""] + lines
+    (ROOT / "sim_out" / "vivado").mkdir(parents=True, exist_ok=True)
+    (ROOT / "sim_out" / "vivado" / "run_info.json").write_text(json.dumps(info, indent=1))
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("summary.txt", "\n".join(lines) + "\n")
         for f in sorted((ROOT / "sim_out" / "vivado").glob("*")) if (ROOT / "sim_out" / "vivado").exists() else []:
             z.write(f, f"sim_out/vivado/{f.name}")
         reports = ("timing*.txt", "utilization*.txt", "power.txt", "power_saif_*.txt")
         ov = ROOT / "future_work" / "board" / "overlay"
-        for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov, ov / "lanes"]:
+        for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov] + [ov / x for x in
+                                                                        ("lanes", "lanes4", "lanes4hd", "lanes4yuyv")]:
             for pat in reports:
                 for f in sorted(d.glob(pat)) if d.is_dir() else []:
                     z.write(f, f"{d.name}/{f.name}")
@@ -695,6 +744,27 @@ def step_collect(a):
                            "\n".join(Path(log).read_text(errors="replace").splitlines()[-300:]))
     RESULTS.append(("collect", "PASS", 0.0, str(zpath)))
     print(f"\n=== collect\nSend this file: {zpath}")
+
+
+def run_info():
+    """Which RTL a run implemented and which bitstreams it left: the git commit (and whether the
+    working tree had uncommitted changes) and the SHA-256 of every overlay .bit/.hwh. Board results
+    are only comparable with the Vivado numbers of the same commit and the same bitstream."""
+    import hashlib
+
+    def git(*args):
+        try:
+            return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=30).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            return ""
+    ov = ROOT / "future_work" / "board" / "overlay"
+    bits = []
+    for f in sorted(ov.glob("secure_jpeg*.bit")) + sorted(ov.glob("secure_jpeg*.hwh")) if ov.exists() else []:
+        bits.append(dict(file=f.name, bytes=f.stat().st_size, sha256=hashlib.sha256(f.read_bytes()).hexdigest(),
+                         modified=time.strftime("%Y-%m-%d %H:%M", time.localtime(f.stat().st_mtime))))
+    return dict(commit=git("rev-parse", "HEAD") or "unknown", branch=git("rev-parse", "--abbrev-ref", "HEAD"),
+                dirty=bool(git("status", "--porcelain", "--untracked-files=no", "rtl", "vivado", "future_work/board")),
+                impl=os.environ.get("SJPEG_IMPL", "perf"), date=time.strftime("%Y-%m-%d %H:%M"), bitstreams=bits)
 
 
 def check_python():
@@ -720,7 +790,8 @@ def check_python():
 def day_main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
-                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "power", "parse"])
+                    choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "bd_lanes4", "bd_lanes4hd", "bd_lanes4yuyv",
+                             "power", "parse"])
     ap.add_argument("--power-size", default="320x240",
                     help="WxH of the scene frame whose switching activity the power step records")
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
@@ -731,6 +802,8 @@ def day_main(argv=None):
     ap.add_argument("--maxw", type=int, nargs="*", default=[],
                     help="also run the encoder with LOG_MAXW = these values (memory sweep, e.g. 9 10)")
     ap.add_argument("--jobs", type=int, default=2, help="parallel runs in the block design (each ~2 GB RAM)")
+    ap.add_argument("--parallel", type=int, default=1,
+                    help="out-of-context runs at the same time (each ~3-4 GB RAM; 2 on a 16 GB PC)")
     ap.add_argument("--no-fallback", action="store_true",
                     help="do not retry the overlay at 90/80 MHz when it misses timing at --fclk")
     ap.add_argument("--dry-run", action="store_true")
@@ -743,6 +816,8 @@ def day_main(argv=None):
     for s in a.steps:
         if s == "bd_lanes":
             step_bd(a, "lanes")
+        elif s in ("bd_lanes4", "bd_lanes4hd", "bd_lanes4yuyv"):
+            step_bd(a, s[3:])
         else:
             globals()[f"step_{s}"](a)
     step_collect(a)

@@ -51,7 +51,9 @@ def expected_jpeg(ip, rgb, quality, mode, ctr):
     """What the golden model says this bitstream must produce: contract v2 (secure_jpeg.bit) or
     contract v3 (secure_jpeg_lanes.bit, restart segments; the bytes do not depend on the lane count)."""
     if ip.contract == 3:
-        jpeg = hw.encode_frame_v3(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
+        pf = getattr(ip, "pixfmt", "rgb")       # a YUYV bitstream codes the camera's YCbCr (hw.rgb_to_yuyv)
+        src = hw.rgb_to_yuyv(rgb) if pf == "yuyv" else rgb
+        jpeg = hw.encode_frame_v3(src, quality, mode, KEY, ctr, SID, pixfmt=pf)["jpeg"]
         return hw.arm_shuffle(jpeg, KEY, SID, ctr) if mode == hw.MODE_E5 else jpeg
     return hw.encode_frame(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
 
@@ -76,13 +78,19 @@ def check(ip, sizes, n, source, quality):
     return ok_all, rows
 
 
-def timing(ip, sizes, n, source):
+def timing(ip, sizes, n, source, zero_copy=False):
     rows = []
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
+        if getattr(ip, "pixfmt", "rgb") == "yuyv":     # time what a YUYV camera delivers (not the ARM converting)
+            imgs = [hw.rgb_to_yuyv(x) for x in imgs]
         for mode in range(ip.max_mode + 1):
             t_enc, t_full, parts = [], [], []
             for i, rgb in enumerate(imgs):
+                if zero_copy:                      # the frame is already in the DMA buffer (as a camera
+                    buf = ip.pixel_buffer(w, h)    # writing there would leave it): not timed
+                    np.copyto(buf, rgb)
+                    rgb = buf
                 t0 = time.perf_counter()
                 scan, tag = ip.encode(rgb, mode, 50_000 + i)
                 t1 = time.perf_counter()
@@ -96,7 +104,7 @@ def timing(ip, sizes, n, source):
             def med(k, nd=2):
                 v = [p[k] for p in parts if p.get(k) is not None]
                 return round(statistics.median(v), nd) if v else None
-            row = dict(size=f"{w}x{h}", mode=mode, frames=n, encode_ms=round(1000 * me, 2),
+            row = dict(size=f"{w}x{h}", mode=mode, frames=n, zero_copy=zero_copy, encode_ms=round(1000 * me, 2),
                        encode_fps=round(1 / me, 1), full_ms=round(1000 * mf, 2), full_fps=round(1 / mf, 1),
                        load_ms=med("load_ms"), dma_ms=med("dma_ms"), arm_ms=med("arm_ms"),
                        fabric_ms=med("fabric_ms", 3), cycles=med("cycles", 0), in_wait=med("in_wait", 0),
@@ -119,6 +127,8 @@ def main():
     ap.add_argument("--mock-lanes", type=int, choices=[1, 2, 4],
                     help="emulate the contract-v3 lane bitstream with this many lanes (implies --mock)")
     ap.add_argument("--mock-e5", action="store_true", help="with --mock-lanes: the emulated bitstream has E5")
+    ap.add_argument("--mock-yuyv", action="store_true",
+                    help="with --mock-lanes: the emulated bitstream takes YUYV input (PIXFMT = 1, VERSION bit 6)")
     ap.add_argument("--sizes", nargs="+", default=["320x240", "640x480"])
     ap.add_argument("--frames", type=int, default=10, help="frames per size and mode for the bit-exact check")
     ap.add_argument("--timing-frames", type=int, default=50)
@@ -127,13 +137,17 @@ def main():
     ap.add_argument("--ip-name")
     ap.add_argument("--dma-name")
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--zero-copy", action="store_true",
+                    help="Part 2 with each frame already in the DMA buffer (ip.pixel_buffer): what a camera "
+                         "writing straight into that buffer would give; reported in its own column")
     ap.add_argument("--full-cache-ops", action="store_true",
                     help="flush/invalidate the whole DMA buffers instead of only the frame's bytes")
     a = ap.parse_args()
     sizes = [tuple(int(v) for v in s.split("x")) for s in a.sizes]
     a.mock = a.mock or bool(a.mock_lanes)
     if a.mock:
-        backend = MockBackend(contract=3, lanes=a.mock_lanes, e5=a.mock_e5) if a.mock_lanes else MockBackend()
+        backend = (MockBackend(contract=3, lanes=a.mock_lanes, e5=a.mock_e5, yuyv=a.mock_yuyv) if a.mock_lanes
+                   else MockBackend())
     else:
         from future_work.board.pynq_driver import PynqBackend
         backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes),
@@ -148,19 +162,23 @@ def main():
     if ok:
         print("Part 2: speed", flush=True)
         speed = timing(ip, sizes, a.timing_frames, a.source)
+        if a.zero_copy:
+            print("Part 2b: speed with the frame already in the DMA buffer (zero copy)", flush=True)
+            speed += timing(ip, sizes, a.timing_frames, a.source, zero_copy=True)
     else:
         print("Part 1 FAILED: speed not measured (a fast wrong encoder is worthless). See the docstring.")
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     res = dict(backend="mock" if a.mock else "pynq", bitfile=None if a.mock else a.bitfile, all_bit_exact=ok,
-               exactness=exact, speed=speed, source=a.source, quality=a.quality)
+               exactness=exact, speed=speed, source=a.source, quality=a.quality,
+               lanes=getattr(ip, "lanes", None), pixfmt=getattr(ip, "pixfmt", "rgb"), e5=getattr(ip, "e5", False))
     (out / "first_contact.json").write_text(json.dumps(res, indent=1))
     md = [f"Backend: {res['backend']}. Bit-exact with the golden model in every size and mode: "
           f"**{'yes' if ok else 'NO'}** ({a.frames} frames each).", ""]
     if speed:
-        md += ["| Size | Mode | Encode only (ms) | fps | Incl. headers on ARM (ms) | fps | load (ms) | DMA (ms) "
-               "| ARM after (ms) | fabric (ms) | fabric fps |", "|---|---|---|---|---|---|---|---|---|---|---|"]
-        md += [f"| {r['size']} | E{r['mode']} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} "
+        md += ["| Size | Mode | Zero copy | Encode only (ms) | fps | Incl. headers on ARM (ms) | fps | load (ms) | DMA (ms) "
+               "| ARM after (ms) | fabric (ms) | fabric fps |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        md += [f"| {r['size']} | E{r['mode']} | {'yes' if r.get('zero_copy') else 'no'} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} "
                f"| {r['load_ms']} | {r['dma_ms']} | {r['arm_ms']} | {r['fabric_ms'] if r['fabric_ms'] else '-'} "
                f"| {r.get('fabric_fps', '-')} |" for r in speed]
         md += ["", "fabric = CYCLES register (START to DONE, 100 MHz clocks): the encoder alone, without the ARM; "
