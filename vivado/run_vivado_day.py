@@ -538,7 +538,8 @@ def run(name, cmd, check=None, dry=False):
     if not ok:
         errs = [line for line in out.splitlines() if "ERROR" in line][:3]
         print("first errors:\n  " + "\n  ".join(errs) if errs else
-              "first lines of the log:\n  " + "\n  ".join(out.splitlines()[:8]))
+              "no ERROR line: the tool stopped without a message (crash or out of memory); last lines:\n  "
+              + "\n  ".join(out.splitlines()[-8:]))
     return out
 
 
@@ -551,15 +552,31 @@ def vivado(name, script, args="", check=None, dry=False):
 
 def vivado_many(a, jobs):
     """Run several OOC jobs [(name, script, args)], --parallel at a time (each Vivado needs ~3-4 GB RAM).
-    Returns {name: log text}."""
+    --only keeps the jobs whose name contains one of the given words. A job that ends without its RESULT
+    line is run once more on its own (run 10: a Vivado process died silently while another one was
+    routing). Returns {name: log text}."""
+    if a.only:
+        jobs = [j for j in jobs if any(w in j[0] for w in a.only)]
+    if not jobs:
+        return {}
     if a.parallel <= 1 or a.dry_run or len(jobs) < 2:
-        return {n: vivado(n, sc, ar, r"RESULT top=", a.dry_run) for n, sc, ar in jobs}
-    from concurrent.futures import ThreadPoolExecutor
-    print(f"\n=== {len(jobs)} out-of-context runs, {a.parallel} at a time: {', '.join(j[0] for j in jobs)}",
-          flush=True)
-    with ThreadPoolExecutor(max_workers=a.parallel) as ex:
-        futs = {n: ex.submit(vivado, n, sc, ar, r"RESULT top=") for n, sc, ar in jobs}
-        return {n: f.result() for n, f in futs.items()}
+        outs = {n: vivado(n, sc, ar, r"RESULT top=", a.dry_run) for n, sc, ar in jobs}
+    else:
+        from concurrent.futures import ThreadPoolExecutor
+        print(f"\n=== {len(jobs)} out-of-context runs, {a.parallel} at a time: {', '.join(j[0] for j in jobs)}",
+              flush=True)
+        with ThreadPoolExecutor(max_workers=a.parallel) as ex:
+            futs = {n: ex.submit(vivado, n, sc, ar, r"RESULT top=") for n, sc, ar in jobs}
+            outs = {n: f.result() for n, f in futs.items()}
+    if not a.dry_run:
+        for n, sc, ar in jobs:
+            if "RESULT top=" not in (outs.get(n) or ""):
+                print(f"\n{n} gave no result: running it again on its own", flush=True)
+                for k, r in enumerate(RESULTS):              # the retry decides this job's status
+                    if r[0] == n and r[1] == "FAIL":
+                        RESULTS[k] = (n, "RETRY", r[2], r[3])
+                outs[n] = vivado(n, sc, ar, r"RESULT top=")
+    return outs
 
 
 def step_xsim(a):
@@ -633,6 +650,9 @@ def step_power(a):
     reads the SAIF into the routed checkpoint and reports power."""
     sim = "vivado\\run_xsim.bat" if WIN else "bash vivado/run_xsim.sh"
     for tag, flag, modes, folder, inst in POWER_RUNS:
+        if a.only and not any(w == tag or w in f"power_{tag}" for w in a.only) and \
+                not any(w.startswith("ooc") for w in a.only):
+            continue
         dcp = ROOT / "sim_build" / folder / "routed.dcp"
         if not dcp.exists() and not a.dry_run:
             print(f"\n=== power_{tag}: skipped, no {dcp.relative_to(ROOT)} (run --steps "
@@ -802,6 +822,9 @@ def day_main(argv=None):
     ap.add_argument("--maxw", type=int, nargs="*", default=[],
                     help="also run the encoder with LOG_MAXW = these values (memory sweep, e.g. 9 10)")
     ap.add_argument("--jobs", type=int, default=2, help="parallel runs in the block design (each ~2 GB RAM)")
+    ap.add_argument("--only", nargs="+", default=[],
+                    help="only the out-of-context runs / power runs whose name contains one of these words, "
+                         "e.g. --only ooc_secure_jpeg_top (repeat one failed job) or --only v2 (power)")
     ap.add_argument("--parallel", type=int, default=1,
                     help="out-of-context runs at the same time (each ~3-4 GB RAM; 2 on a 16 GB PC)")
     ap.add_argument("--no-fallback", action="store_true",
