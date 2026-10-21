@@ -51,10 +51,13 @@ foreach g $gens { lappend gopt -generic $g }
 # Implementation strategy (run 10). "perf" (default): register retiming in synthesis and the
 # timing-driven directives of every implementation step, plus a post-route physical optimisation
 # when the slack is negative. "default" = the flow of runs 1-9 (SJPEG_IMPL=default to reproduce them).
+# "safe" = "perf" without the AggressiveExplore physical optimisation: in run 10 Vivado 2026.1 crashed
+# (EXCEPTION_ACCESS_VIOLATION) inside phys_opt_design on the 4-lane encoder at 150 and 166 MHz, twice
+# each (TESTING bug #38). run_vivado_day.py retries a job that crashed with SJPEG_IMPL=safe.
 set impl [expr {[info exists ::env(SJPEG_IMPL)] ? $::env(SJPEG_IMPL) : "perf"}]
 set sargs [list -top $top -part xc7z020clg400-1 -mode out_of_context -flatten_hierarchy rebuilt \
            -include_dirs rtl/include {*}$gopt]
-if {$impl eq "perf"} {
+if {$impl eq "perf" || $impl eq "safe"} {
     if {[catch {synth_design {*}$sargs -retiming} err]} {
         puts "WARNING: synth_design -retiming not accepted ($err); synthesising without retiming"
         synth_design {*}$sargs
@@ -71,6 +74,11 @@ if {$impl eq "perf"} {
     if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] < 0} {
         phys_opt_design -directive AggressiveExplore
     }
+} elseif {$impl eq "safe"} {
+    opt_design -directive Explore
+    place_design -directive ExtraTimingOpt
+    phys_opt_design -directive Explore
+    route_design -directive AggressiveExplore
 } else {
     opt_design
     place_design

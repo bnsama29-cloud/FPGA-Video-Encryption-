@@ -11,8 +11,8 @@ Ours: `paper/data/vivado/` (post-route), `paper/data/lanes_rtl/` (cycle-accurate
 
 | Metric | Best published (source) | Ours today | Status | What closes it |
 |---|---|---|---|---|
-| Clock (MHz) | 150 logiJPGE (Zynq-7020), 166 CAST (Artix-7), 200 Ascon core alone | **125 met** (v2 +0.060 ns, 2 lanes +0.213 ns, run 9); 100 for 4 lanes and every PYNQ-Z2 system | behind | run 10: skid buffers + keystream ring + packer + zig-zag flag (bug #36), timing-driven flow; targets 150 and 166 MHz |
-| Throughput (Mpixel/s) | 150 logiJPGE at 150 MHz, no cipher | 4 lanes: 181.6 (RGB) at 100 MHz; **230 with YUYV input** (640×480, 4 px/beat) | **ahead** (RTL simulation) | 4 lanes × 150 MHz ≈ 260 (RGB) / 310+ (YUYV); board measurement A2 |
+| Clock (MHz) | 150 logiJPGE (Zynq-7020), 166 CAST (Artix-7), 200 Ascon core alone | **150 met** by the single pipeline (+0.074 ns, run 10); 2 lanes 125 (150: -0.060 ns); **4-lane PYNQ-Z2 system 125 met** (+0.433 ns; 142.9: -0.008 ns) | parity with logiJPGE for one lane; behind CAST | the keystream-loop and segment-count fixes (bug #38) are in the RTL, not routed; decision 21 Oct: board first, clock later |
+| Throughput (Mpixel/s) | 150 logiJPGE at 150 MHz, no cipher | 4 lanes: 181.6 (RGB) at 100 MHz; **227 at the 4-lane system's 125 MHz**; 230 with YUYV input at 100 MHz | **ahead** (RTL cycles × post-route clock) | board measurement A2 |
 | 1080p frames/s | — | 87.6 (4 lanes, 100 MHz, RGB) | ahead | 4 lanes 1080p image (`bd_lanes4hd`, NBUF = 1) |
 | LUT | 3,069–3,240 (commercial, no cipher) | 4,752 (v2, with 2 Ascon cores + tag + registers) | behind on raw LUT | fair metric: JPEG datapath alone (fewer LUTs than both, Table "compare"); crypto adds ~45 % — no published secure encoder is smaller AND authenticated |
 | Mpixel/s per kLUT | 46.3 logiJPGE | 13.7 (v2), 11.3 (4 lanes) at 100 MHz | behind | ×1.5 at 150 MHz; YUYV drops the colour converter (−300…1,000 LUT per lane); one Ascon core shared by the lanes (−~2,700 LUT for 4) is the remaining big item (docs/RESEARCH.md, item 8) |
@@ -24,7 +24,7 @@ Ours: `paper/data/vivado/` (post-route), `paper/data/lanes_rtl/` (cycle-accurate
 | Verification | not described | golden model referee, 1,089 KATs, every block bit-exact, XSim of 1/2/4 lanes | ahead | — |
 | Silicon | Kishore: FPGA board | bit-exact E0–E5 on the PYNQ-Z2 | parity | A2–A6 |
 
-So: clock is the one headline number we still lose, LUT/BRAM efficiency against cipher-free cores is
+So (after run 10): the clock is at parity with logiJPGE for one lane and behind CAST; throughput, the number the clock was for, is ahead because of the lanes; LUT/BRAM efficiency against cipher-free cores is
 the one we cannot fully win (and say so), and everything else is ahead or first.
 
 ## 2. What changed in the RTL for this plan (all bit-exact, `make test`)
@@ -61,7 +61,7 @@ the one we cannot fully win (and say so), and everything else is ahead or first.
 
 ## 4. Next measurements (in order)
 
-1. Vivado run 10 (RUNBOOK §3): 150 / 166 MHz for 1, 2, 4 lanes; 4 lanes NBUF = 1, 1080p, YUYV; 4-lane system at 142 MHz.
+1. ~~Vivado run 10~~ done 21 Oct (`paper/data/vivado/README.md`). Optional run 11 after the board: 4-lane system at 142.9 MHz with the bug-#38 fix.
 2. Board A1–A3 with the 4-lane image (and the YUYV one with a USB camera in YUYV mode).
 3. Board A4 power; A5/A6 attacks with `--pq-kex` and `link.pad=runmax`.
 4. Only then the remaining area item: one Ascon core shared by the lanes (docs/RESEARCH.md, item 8).

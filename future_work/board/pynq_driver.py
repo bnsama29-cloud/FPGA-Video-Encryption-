@@ -36,7 +36,8 @@ WIDTH, HEIGHT, FRAME_CTR, SESSION_ID = 0x10, 0x14, 0x18, 0x1C
 KEY0, OUT_BYTES, TAG0, QT_ADDR, QT_DATA = 0x20, 0x30, 0x34, 0x44, 0x48
 SESSION_ID_HI, FRAME_CTR_HI = 0x4C, 0x50
 CYCLES, IN_WAIT, OUT_STALL = 0x54, 0x58, 0x5C   # performance counters (bitstreams from 21 Oct 2026; older read 0)
-FABRIC_HZ = 100e6                               # fabric clock of the overlay (FCLK_CLK0)
+FABRIC_HZ = 100e6                               # default fabric clock (FCLK_CLK0); PynqBackend reads the
+                                                # real one (run 10: the 4-lane overlay is built for 125 MHz)
 EXPECTED_VERSION = 0x5EC00200          # contract v2
 V3_VERSION_BASE = 0x5EC00300           # contract v3: 0x5EC003LL, LL = number of lanes
 E5_CAP = 0x80                          # v3 VERSION bit 7: the RTL implements mode 5 (INTERFACES.md §8.6)
@@ -229,9 +230,25 @@ class PynqBackend:
     UNTESTED until the bitstream exists: names of the IP and the DMA in the overlay
     may differ -- print(Overlay(...).ip_dict.keys()) and pass ip_name / dma_name."""
 
-    def __init__(self, bitfile, ip_name=None, dma_name=None, max_pixels=1920 * 1088, partial_cache=True):
+    def __init__(self, bitfile, ip_name=None, dma_name=None, max_pixels=1920 * 1088, partial_cache=True,
+                 fclk_mhz=None):
         from pynq import Overlay, allocate          # only available on the board
         self.ol = Overlay(bitfile)
+        # Fabric clock: PYNQ sets FCLK0 from the .hwh when it loads the bitstream (100 MHz for the v2 and
+        # 2-lane overlays, 125 MHz for the run-10 4-lane overlay). fclk_mhz lowers it, e.g. 100 for a first
+        # bring-up of the 4-lane overlay: a design that meets timing at 125 MHz also works at 100 MHz.
+        # Never set it above the clock in the .hwh: timing was only checked up to that clock.
+        self.fabric_hz = FABRIC_HZ
+        try:
+            from pynq import Clocks
+            if fclk_mhz:
+                built = Clocks.fclk0_mhz
+                if fclk_mhz > built + 0.5:
+                    raise ValueError(f"fclk {fclk_mhz} MHz is above the {built:.1f} MHz this bitstream was built for")
+                Clocks.fclk0_mhz = fclk_mhz
+            self.fabric_hz = Clocks.fclk0_mhz * 1e6
+        except ImportError:
+            pass
         names = list(self.ol.ip_dict)
         ip_name = ip_name or next(n for n in names if "sjpeg" in n or "secure_jpeg" in n)
         dma_name = dma_name or next(n for n in names if "dma" in n)
@@ -391,7 +408,7 @@ class SecureJpegIP:
         # copy out; fabric = START..DONE in the fabric's own clock (None if the bitstream has no counter or
         # this is the mock); in_wait / out_stall = fabric clocks lost waiting for pixels / for the DMA.
         self.last_timing = dict(load_ms=1e3 * (t1 - t0), dma_ms=1e3 * (t2 - t1),
-                                fabric_ms=1e3 * cyc / FABRIC_HZ if cyc else None, cycles=cyc or None,
+                                fabric_ms=1e3 * cyc / getattr(self.b, 'fabric_hz', FABRIC_HZ) if cyc else None, cycles=cyc or None,
                                 in_wait=self.b.read(IN_WAIT) if cyc else None,
                                 out_stall=self.b.read(OUT_STALL) if cyc else None)
         return scan, tag

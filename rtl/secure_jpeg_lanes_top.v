@@ -181,10 +181,17 @@ module secure_jpeg_lanes_top #(
     endgenerate
 
     // ---------------------------------------------------------------- merger
-    // segments per frame: MCU rows, or every MCU in E5 (registered: width, height and mode_l are
-    // stable long before the merger compares against it)
+    // segments per frame: MCU rows, or every MCU in E5. Two register stages (operands, then the
+    // product): width, height and mode_l are stable long before the merger first compares against
+    // it, at the end of the first segment, thousands of clocks after START. Run 10: with one stage
+    // the 8x8 multiply from the register file was the worst path of 2 lanes at 150 MHz (-0.060 ns).
+    reg  [7:0]  segs_rows, segs_cols;
+    reg         segs_e5;
     reg  [15:0] segs;
-    always @(posedge clk) segs <= (mode_l == 3'd5) ? mcu_rows * width[11:4] : {8'd0, mcu_rows};
+    always @(posedge clk) begin
+        segs_rows <= mcu_rows; segs_cols <= width[11:4]; segs_e5 <= (mode_l == 3'd5);
+        segs      <= segs_e5 ? segs_rows * segs_cols : {8'd0, segs_rows};
+    end
 
     wire       b_valid, b_ready, b_last;
     wire [7:0] b_data;

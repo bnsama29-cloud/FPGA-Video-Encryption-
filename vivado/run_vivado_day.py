@@ -571,11 +571,21 @@ def vivado_many(a, jobs):
     if not a.dry_run:
         for n, sc, ar in jobs:
             if "RESULT top=" not in (outs.get(n) or ""):
-                print(f"\n{n} gave no result: running it again on its own", flush=True)
+                # run 10 (bug #38): the same settings crashed again in phys_opt_design, so the retry
+                # uses the "safe" flow (no AggressiveExplore physical optimisation)
+                print(f"\n{n} gave no result: running it again on its own (SJPEG_IMPL=safe)", flush=True)
                 for k, r in enumerate(RESULTS):              # the retry decides this job's status
                     if r[0] == n and r[1] == "FAIL":
                         RESULTS[k] = (n, "RETRY", r[2], r[3])
-                outs[n] = vivado(n, sc, ar, r"RESULT top=")
+                before = os.environ.get("SJPEG_IMPL")
+                os.environ["SJPEG_IMPL"] = "safe"
+                try:
+                    outs[n] = vivado(n, sc, ar, r"RESULT top=")
+                finally:
+                    if before is None:
+                        os.environ.pop("SJPEG_IMPL", None)
+                    else:
+                        os.environ["SJPEG_IMPL"] = before
     return outs
 
 

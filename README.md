@@ -28,14 +28,14 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 | Part | State |
 |---|---|
 | Golden model, RTL (single pipeline + 1/2/4 lanes, E0–E5), cocotb + XSim | done, every RTL test bit-exact with the model |
-| Vivado run 9 (product stage P) | 30/30 steps; **125 MHz met** (single pipeline +0.060 ns, 2 lanes +0.213 ns); every PYNQ-Z2 system meets 100 MHz, **including 4 lanes** (18,683 LUT, WNS +0.461 ns) |
-| 150 / 166 MHz (the commercial cores' clocks) | RTL done, bit-exact: register slices on the stall chains, keystream ring, packer and zig-zag fixes, timing-driven flow; needs Vivado run 10 |
+| Vivado run 10 (21 Oct, commit dd13f55) | single pipeline **150 MHz met** (+0.074 ns); 2 lanes 125 MHz (150: -0.060 ns); 4 lanes 100 MHz in every variant (YUYV, one line buffer, 1080p lines); **4-lane PYNQ-Z2 system built for 125 MHz** (+0.433 ns, 20,097 LUT) = 227 Mpixel/s from the cycle count |
+| Clock beyond that | 166.7 MHz -0.284 ns (one lane), 142.9 MHz -0.008 ns (4-lane system): the keystream loop, fixed in RTL (bug #38), not routed; decision: board first |
 | Camera-native YUYV input (4 pixels per beat) | RTL + model + driver done, bit-exact for 2 and 4 lanes: 4 lanes 230 Mpixel/s at 100 MHz in simulation, half the DDR bytes |
 | 4 lanes with 1080p lines | option done (one line-buffer set per lane: half the BRAM, under 2 % slower) |
 | Board (PYNQ-Z2) | 2-lane E5 bitstream bit-exact with the model on silicon, E0–E5 (A1); first speed numbers (A2) |
 | ARM side (PS) | the same encoder in C, bit-exact (A3 baseline, no-bitstream camera node); post-quantum session key (ML-KEM-768 + X25519) |
 | Link | decryption in C on the laptop; frame-size padding against the size side channel (`link.pad`) |
-| Open | Vivado run 10; on the board: 4-lane image, A2 fabric-only time, A3, A4 power, A5/A6 attacks |
+| Open | on the board: 4-lane image, A2 fabric-only time, A3, A4 power, A5/A6 attacks |
 
 Where we beat the published designs and where we do not yet: **[docs/BENCHMARK_PLAN.md](docs/BENCHMARK_PLAN.md)**.
 
@@ -46,9 +46,7 @@ network, defence policy). See [docs/RUNBOOK.md](docs/RUNBOOK.md) §1.
 
 ## Next steps
 
-1. **Vivado run 10** (Vivado PC, overnight, ~5 h): `git pull`, then
-   `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
-   → 150 / 166 MHz for 1, 2 and 4 lanes, the YUYV and 1080p variants, the 4-lane system at 142.9 MHz. Send the zip.
+1. **Board images** (done, run 10): copy `future_work\board\overlay\secure_jpeg*.bit` + `.hwh` to the board (the 4-lane one runs at 125 MHz, or `--fclk 100`).
 2. **Board, A1–A3** (~1.5 h): 4-lane smoke test, `first_contact` with 2 and 4 lanes (`--zero-copy`), `arm_baseline`, `pq_kex_cost`.
 3. **Board, A4–A6** (~3 h): power meter, then the attack suite with the board as sender (`--pq-kex`, `link.pad=runmax`).
 4. **Paper**: copy the results to `paper/data/`, `python paper/make_assets.py`, `make -C paper`, replace the red TODOs.

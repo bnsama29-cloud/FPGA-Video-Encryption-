@@ -136,6 +136,8 @@ def main():
     ap.add_argument("--quality", type=int, default=75)
     ap.add_argument("--ip-name")
     ap.add_argument("--dma-name")
+    ap.add_argument("--fclk", type=float, metavar="MHZ",
+                    help="run the fabric slower than the bitstream's clock (e.g. 100 for the 125 MHz 4-lane overlay)")
     ap.add_argument("--out", default=str(OUT))
     ap.add_argument("--zero-copy", action="store_true",
                     help="Part 2 with each frame already in the DMA buffer (ip.pixel_buffer): what a camera "
@@ -151,7 +153,8 @@ def main():
     else:
         from future_work.board.pynq_driver import PynqBackend
         backend = PynqBackend(a.bitfile, a.ip_name, a.dma_name, max_pixels=max(w * h for w, h in sizes),
-                              partial_cache=not a.full_cache_ops)
+                              partial_cache=not a.full_cache_ops, fclk_mhz=a.fclk)
+        print(f"fabric clock: {backend.fabric_hz / 1e6:.1f} MHz")
     ip = SecureJpegIP(backend)                      # checks the VERSION register
     ip.setup_session(KEY, SID, a.quality)
     print(f"IP found ({'mock' if a.mock else a.bitfile}), VERSION ok: contract v{ip.contract}"
@@ -181,7 +184,7 @@ def main():
         md += [f"| {r['size']} | E{r['mode']} | {'yes' if r.get('zero_copy') else 'no'} | {r['encode_ms']} | {r['encode_fps']} | {r['full_ms']} | {r['full_fps']} "
                f"| {r['load_ms']} | {r['dma_ms']} | {r['arm_ms']} | {r['fabric_ms'] if r['fabric_ms'] else '-'} "
                f"| {r.get('fabric_fps', '-')} |" for r in speed]
-        md += ["", "fabric = CYCLES register (START to DONE, 100 MHz clocks): the encoder alone, without the ARM; "
+        md += ["", f"fabric = CYCLES register (START to DONE, {getattr(backend, 'fabric_hz', 100e6) / 1e6:.0f} MHz clocks): the encoder alone, without the ARM; "
                "'-' = bitstream built before the counters (21 Oct 2026)."]
         if a.mock:
             md += ["", "MOCK backend: these times are the Python emulation, NOT the FPGA. Do not report them."]

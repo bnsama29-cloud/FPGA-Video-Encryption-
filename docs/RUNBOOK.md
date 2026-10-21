@@ -51,7 +51,7 @@ Three configurations of the camera node, all producing the **same bytes**:
 
 ## 3. End-to-end order (hardware in one or two days)
 
-**Day 1 — Vivado PC (overnight)** — run 9 done 21 Oct: 125 MHz met (v2, 2 lanes), 4-lane system at 100 MHz
+**Day 1 — Vivado PC (overnight)** — run 10 done 21 Oct: the board images are ready (`secure_jpeg.bit` v2 at 100 MHz, `secure_jpeg_lanes.bit` 2 lanes at 100 MHz, `secure_jpeg_lanes4.bit` 4 lanes at **125 MHz**); go to step 2. Step 1 is kept for the record and for a later run 11
 1. `git pull` on branch `hw-polish-arm-baseline` (check `git log --oneline -1`), then run 10 (150 / 166 MHz,
    4-lane variants, 4-lane system at 142.9 MHz; ~5 h with two runs in parallel, 16 GB RAM):
    `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`
@@ -63,14 +63,16 @@ Three configurations of the camera node, all producing the **same bytes**:
    shared drive (H5). Board results are only comparable with the Vivado numbers of the same commit.
 
 **Day 1 — board (afternoon)**
-3. Smoke test the 4-lane image first (small frame, stops at the first difference):
+3. Smoke test the 4-lane image first (small frame, stops at the first difference), at 100 MHz, then at its own 125 MHz:
+   `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes4.bit --fclk 100 --sizes 64x48 --frames 2 --timing-frames 5 --out sim_out/board/lanes4_smoke100`
    `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes4.bit --sizes 64x48 --frames 2 --timing-frames 5 --out sim_out/board/lanes4_smoke`
+   (the first line prints `fabric clock: 100.0 MHz`, the second `125.0 MHz`; `--fclk` can only lower the clock)
 4. A1 + A2, 2 lanes and 4 lanes, same sizes:
    `sudo -E python3 -m future_work.board.first_contact --bitfile …/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes2_run9`
-   and the same with `secure_jpeg_lanes4.bit` and `--out sim_out/board/lanes4_run9`
+   and the same with `secure_jpeg_lanes4.bit` and `--out sim_out/board/lanes4_run10` (125 MHz; add `--fclk 100 --out sim_out/board/lanes4_run10_100` for the same image at 100 MHz)
    → `first_contact.md` has load / DMA / ARM / **fabric ms** columns and IN_WAIT (DDR starvation).
    If it fails only with the new driver, rerun with `--full-cache-ops` and report it.
-5. A3 (once per image): `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" sudo -E python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30 --pl-json sim_out/board/lanes4_run9/first_contact.json`
+5. A3 (once per image): `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" sudo -E python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30 --pl-json sim_out/board/lanes4_run10/first_contact.json`
    and `python3 experiments/pq_kex_cost.py --runs 20` (the post-quantum session key on the A9).
 6. Copy every `.json/.md` into `paper/data/board/<date>_lanes/`.
 

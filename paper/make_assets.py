@@ -650,6 +650,15 @@ def lanes_rtl():
         macro("RtlFourLanesHdFps", f"{100e6 / (vga[4]['clocks_per_pixel'] * 1920 * 1080):.0f}")
         # pixel bandwidth the DMA must read from DDR: 4 bytes per pixel (32-bit {pad, B, G, R} words)
         macro("RtlFourLanesInMBs", f"{4 * vga[4]['mpx_per_s_at_100mhz']:.0f}")
+        # the same cycle count at the clock the complete 4-lane PYNQ-Z2 system was built for (run 10:
+        # 125 MHz post-route); RTL clocks x post-route clock, the board measurement (A2) is pending
+        vj = DATA / "vivado" / "vivado_results.json"
+        sysl4 = next((x for x in J(vj) if x["name"] == "overlay_lanes4"), None) if vj.exists() else None
+        if sysl4 and sysl4.get("period") and sysl4["timing"].get("met"):
+            mhz = 1000 / sysl4["period"]
+            macro("SysFourLanesMpix", f"{vga[4]['mpx_per_s_at_100mhz'] * mhz / 100:.0f}")
+            macro("SysFourLanesFps", f"{mhz * 1e6 / (vga[4]['clocks_per_pixel'] * 640 * 480):.0f}")
+            macro("SysFourLanesHdFps", f"{mhz * 1e6 / (vga[4]['clocks_per_pixel'] * 1920 * 1080):.0f}")
     # R2 event-model projection of the same configurations (no frame overlap), to compare model and RTL
     plj = RES / "parallel_lanes" / "synthetic.json"
     proj = {}
@@ -709,6 +718,15 @@ def system_and_lanes(results):
             macro(f"{name}Dsp", f"{r['util']['dsp'][0]:g}")
             macro(f"{name}PowerW", f"{r['power'].get('total', 0):.2f}")
             macro(f"{name}LutPct", f"{r['util']['lut'][2]:.0f}")
+            if r.get("period"):
+                macro(f"{name}Mhz", f"{1000 / r['period']:.0f}")
+    # run 10: the 4-lane system was tried at 142.9 MHz first and missed by a few ps; the clock it was
+    # built for is the first one that met (block_design.tcl fallback). Each attempt's report is kept.
+    for a in (res.get("overlay_lanes4") or {}).get("attempts", []):
+        if a.get("run") == 10 and a.get("wns") is not None:
+            word = {125: "OneTwoFive", 142: "OneFourTwo"}.get(a["fclk_mhz"])
+            if word:
+                macro(f"OverlayLanesFourWnsAt{word}", f"{a['wns']:+.3f}")
     for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
         v = lanes_vivado(l)
         if v:
@@ -724,6 +742,15 @@ def system_and_lanes(results):
     l125 = res.get("secure_jpeg_lanes_top_8.0ns_lanes2_log_l1")
     if l125 and l125["timing"].get("wns") is not None:
         macro("LanesTwoWnsAtOneTwoFive", f"{l125['timing']['wns']:+.3f}")
+    # run 10: 150 and 166.7 MHz out of context, and Vivado's single-run fmax estimate at 166.7 MHz
+    for key, name in (("secure_jpeg_top_6.667ns", "TopWnsAtOneFifty"), ("secure_jpeg_top_6.0ns", "TopWnsAtOneSixSix"),
+                      ("secure_jpeg_lanes_top_6.667ns_lanes2_log_l1", "LanesTwoWnsAtOneFifty"),
+                      ("secure_jpeg_lanes_top_6.0ns_lanes2_log_l1", "LanesTwoWnsAtOneSixSix")):
+        x = res.get(key)
+        if x and x["timing"].get("wns") is not None:
+            macro(name, f"{x['timing']['wns']:+.3f}")
+            if x.get("fmax_mhz"):
+                macro(name.replace("WnsAt", "FmaxAt"), f"{x['fmax_mhz']:.0f}")
     # the fastest clock each design meets out of context, over every run in the snapshot (newest run first)
     for key, name in (("secure_jpeg_top", "Top"), ("secure_jpeg_lanes_top_", "LanesTwo"), ("lanes4", "LanesFour")):
         best = None
@@ -773,10 +800,18 @@ def compare(r, cores):
         row = (f"Ours: {lr['lanes']} lanes (v3) & Zynq-7020 & {f(v.get('lut'))} & {f(v.get('bram'), 1)} & "
                f"{f(v.get('dsp'))} & 100 & {lr['mpx_per_s_at_100mhz']:.0f} & sel.\\ AEAD \\\\")
         rows.append(row if lr["lanes"] == 4 else "\\ifextended " + row + " \\fi")   # 6-page limit
+        sysl4 = vr.get("overlay_lanes4")
+        if lr["lanes"] == 4 and sysl4 and sysl4.get("period") and sysl4["timing"].get("met"):
+            # run 10: the complete PYNQ-Z2 system (PS + DMA + 4 lanes), post-route at the clock it was built for
+            sm, su = 1000 / sysl4["period"], sysl4["util"]
+            rows.append(f"Ours: 4 lanes, system & Zynq-7020 & {f(su['lut'][0])} & {f(su['bram'][0], 1)} & "
+                        f"{f(su['dsp'][0])} & {sm:.0f} & {lr['mpx_per_s_at_100mhz'] * sm / 100:.0f} & sel.\\ AEAD \\\\")
     if lr_all:
         pending = not all(lanes_vivado(x["lanes"]) for x in lr_all)
         lanes_note = (" Lanes (v3): throughput in RTL simulation at 100\\,MHz" +
-                      ("; area pending (--)" if pending else ", area post-route") + ".")
+                      ("; area pending (--)" if pending else ", area post-route") +
+                      ("; system: the complete PYNQ-Z2 design (processing system, DMA, 4 lanes), the same "
+                       "cycle count at its post-route clock (board measurement pending)" if "overlay_lanes4" in vr else "") + ".")
     for x in J(rel)["rows"]:
         row = (f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
                f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'], 1 if (x['mpix_s'] or 100) < 100 else 0)} & {x['crypto']} \\\\")
