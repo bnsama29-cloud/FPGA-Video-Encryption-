@@ -2,9 +2,9 @@
 
 | Design | Mode | Frame | LUT | BRAM | DSP | MHz | Mpx/s | fps 1080p | Mpx/s per kLUT | Gbit/s in | Power (W) | nJ/pixel |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| ours, contract v2 (1 pipeline) | E2 | 640x480 | 5,037 | 24.5 | 23 | 100 | 65.2 | 31.4 | 12.94 | 1.56 | 0.210 SAIF (Medium) | 3.22 |
-| ours, 2 lanes | E2 | 640x480 | 10,069 | 50.0 | 46 | 100 | 122.3 | 59.0 | 12.15 | 2.94 | 0.319 SAIF (Medium) | 2.61 |
-| ours, 4 lanes | E2 | 640x480 | 16,893 | 52.0 | 92 | 100 | 175.7 | 84.7 | 10.40 | 4.22 | 0.555 vectorless (Medium) | 3.16 |
+| ours, contract v2 (1 pipeline) | E2 | 640x480 | 4,752 | 25.5 | 23 | 100 | 65.2 | 31.4 | 13.71 | 1.56 | 0.205 SAIF (Medium) | 3.15 |
+| ours, 2 lanes | E2 | 640x480 | 9,394 | 52.0 | 46 | 100 | 126.1 | 60.8 | 13.42 | 3.03 | 0.322 SAIF (Medium) | 2.55 |
+| ours, 4 lanes | E2 | 640x480 | 16,098 | 56.0 | 92 | 100 | 181.6 | 87.6 | 11.28 | 4.36 | 0.549 vectorless (Medium) | 3.02 |
 
 Published (copied from each source, paper/data/related/compare.json; different devices and functions):
 

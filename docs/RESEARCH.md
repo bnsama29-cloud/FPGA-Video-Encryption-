@@ -257,13 +257,13 @@ Speed
    skid buffers (TESTING bug #36); run 10 measures 150/166 MHz.**
 2. Samples/clock: 1 vs. ~2 (logiJPGE) vs. up to 32 (CAST JPEG-EX-F/DX-F family).
 3. Input bus width: 32-bit / 1 px/clk caps cycles/px at 1.0 regardless of lane count. (Done: 64-bit,
-   2 px/clk for RGB; 21 Oct 2026 also camera-native YUYV, 4 px/clk: 4 lanes 0.48 clk/px.)
+   2 px/clk for RGB; 21 Oct 2026 also camera-native YUYV, 4 px/clk: 4 lanes 0.434 clk/px.)
 4. Frame-start cost: first MCU row must fill before DCT starts (2-20% depending on frame size).
 5. Resolution headroom: 1080p60 needs 124 Mpx/s; today's 65 Mpx/s is ~31 fps at 1080p.
 
 Area / memory
 6. BRAM: 24.5 blocks vs. 16 (logiJPGE) vs. 2 (CAST) -- ours are full double MCU-row buffers
-   sized for 2048px lines. (21 Oct 2026: NBUF = 1 option halves the line buffers of each lane at 2-5 %
+   sized for 2048px lines. (21 Oct 2026: NBUF = 1 option halves the line buffers of each lane at under 2 %
    throughput with 4 lanes; 4:2:0 needs 16 lines where logiJPGE's 4:2:2 needs 8. CAST's 2 BRAM need
    block-order input from a 2-D DMA: open.)
 7. DSPs: 23, between CAST's 16 and logiJPGE's ~30 (each extra lane: ~+22).

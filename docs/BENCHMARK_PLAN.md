@@ -12,11 +12,11 @@ Ours: `paper/data/vivado/` (post-route), `paper/data/lanes_rtl/` (cycle-accurate
 | Metric | Best published (source) | Ours today | Status | What closes it |
 |---|---|---|---|---|
 | Clock (MHz) | 150 logiJPGE (Zynq-7020), 166 CAST (Artix-7), 200 Ascon core alone | **125 met** (v2 +0.060 ns, 2 lanes +0.213 ns, run 9); 100 for 4 lanes and every PYNQ-Z2 system | behind | run 10: skid buffers + keystream ring + packer + zig-zag flag (bug #36), timing-driven flow; targets 150 and 166 MHz |
-| Throughput (Mpixel/s) | 150 logiJPGE at 150 MHz, no cipher | 4 lanes: 175.7 (RGB) at 100 MHz; **208 with YUYV input** (320×240, 4 px/beat) | **ahead** (RTL simulation) | 4 lanes × 150 MHz ≈ 260 (RGB) / 310+ (YUYV); board measurement A2 |
-| 1080p frames/s | — | 84.7 (4 lanes, 100 MHz, RGB) | ahead | 4 lanes 1080p image (`bd_lanes4hd`, NBUF = 1) |
+| Throughput (Mpixel/s) | 150 logiJPGE at 150 MHz, no cipher | 4 lanes: 181.6 (RGB) at 100 MHz; **230 with YUYV input** (640×480, 4 px/beat) | **ahead** (RTL simulation) | 4 lanes × 150 MHz ≈ 260 (RGB) / 310+ (YUYV); board measurement A2 |
+| 1080p frames/s | — | 87.6 (4 lanes, 100 MHz, RGB) | ahead | 4 lanes 1080p image (`bd_lanes4hd`, NBUF = 1) |
 | LUT | 3,069–3,240 (commercial, no cipher) | 4,752 (v2, with 2 Ascon cores + tag + registers) | behind on raw LUT | fair metric: JPEG datapath alone (fewer LUTs than both, Table "compare"); crypto adds ~45 % — no published secure encoder is smaller AND authenticated |
-| Mpixel/s per kLUT | 46.3 logiJPGE | 12.9 (v2), 10.4 (4 lanes) at 100 MHz | behind | ×1.5 at 150 MHz; YUYV drops the colour converter (−300…1,000 LUT per lane); one Ascon core shared by the lanes (−~2,700 LUT for 4) is the remaining big item (docs/RESEARCH.md, item 8) |
-| BRAM36 | 16 logiJPGE (4:2:2, 2048 px), 2 CAST (block-order input) | 25.5 (v2, 4:2:0, 2048 px), 56 (4 lanes, 1024 px) | behind | NBUF = 1 halves the 4-lane line buffers (2–5 % throughput); 4:2:0 needs 16 lines where 4:2:2 needs 8, so per line we are already at parity; block-order input (CAST) would need a 2-D DMA — future work |
+| Mpixel/s per kLUT | 46.3 logiJPGE | 13.7 (v2), 11.3 (4 lanes) at 100 MHz | behind | ×1.5 at 150 MHz; YUYV drops the colour converter (−300…1,000 LUT per lane); one Ascon core shared by the lanes (−~2,700 LUT for 4) is the remaining big item (docs/RESEARCH.md, item 8) |
+| BRAM36 | 16 logiJPGE (4:2:2, 2048 px), 2 CAST (block-order input) | 25.5 (v2, 4:2:0, 2048 px), 56 (4 lanes, 1024 px) | behind | NBUF = 1 halves the 4-lane line buffers (under 2 % throughput); 4:2:0 needs 16 lines where 4:2:2 needs 8, so per line we are already at parity; block-order input (CAST) would need a 2-D DMA — future work |
 | Power / energy | not published for the commercial cores | 0.206 W SAIF (v2), 0.32 W (2 lanes); 2.6–3.2 nJ/pixel | first to report | A4 board measurement; nJ/pixel falls with the clock (static power is shared) |
 | Security | scrambling or TEA, no authentication (Kishore, Bağbaba) | Ascon-AEAD128 per frame, format compliant, E5 removes outlines, replay window, adaptive defence | **ahead** | — |
 | Side channels | not evaluated | size channel measured (R7), **padding shipped** (`link.pad`) | ahead | — |
@@ -36,8 +36,8 @@ the one we cannot fully win (and say so), and everything else is ahead or first.
 | Keystream slots as a ring, registered `ks_avail` | clock (removes the 128-bit fan-out-133 copy) | run 10 |
 | Bit packer shifts by its registered fill level | clock | run 10 |
 | Zig-zag non-zero flags in flip-flops | clock | run 10 |
-| `NBUF = 1` option | BRAM, 1080p with 4 lanes | `--nbuf 1`: 0.613 / 0.601 clk/px vs 0.603 / 0.569 |
-| `PIXFMT = 1` (YUYV input, `rtl/yuyv_4px.v`) | throughput, DDR bytes (2 instead of 4 per pixel), LUT (no multipliers), ARM load | 0.480 clk/px for 4 lanes at 320×240 = 208 Mpx/s at 100 MHz |
+| `NBUF = 1` option | BRAM, 1080p with 4 lanes | `--nbuf 1`: 0.604 / 0.559 clk/px vs 0.603 / 0.551 (2 KB lane FIFOs) |
+| `PIXFMT = 1` (YUYV input, `rtl/yuyv_4px.v`) | throughput, DDR bytes (2 instead of 4 per pixel), LUT (no multipliers), ARM load | 0.434 clk/px for 4 lanes at 640×480 = 230 Mpx/s at 100 MHz |
 | Timing-driven Vivado flow (`SJPEG_IMPL=perf`) | clock | run 10 (the old flow stays: `SJPEG_IMPL=default`) |
 
 ## 3. The ideas from other fields: what each one became
