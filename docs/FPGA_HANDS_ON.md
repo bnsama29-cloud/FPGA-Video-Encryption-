@@ -1,5 +1,7 @@
 # FPGA hands-on: from the box to measured numbers on the PYNQ-Z2
 
+> **Current procedure (22 Oct 2026): `docs/BOARD_DAY.html`** (open it in a browser): the 4-lane image first, `--fclk`, zero-copy, the post-quantum session key, padding, VERSION codes and expected fabric times. This file is the older detailed version (2-lane, run 7) and stays for reference.
+
 This is the step-by-step manual for the day the board is on the table. It assumes nothing: what to
 plug where, what each light means, which command runs **on which machine**, and what the screen must
 show when it worked. `docs/BOARD_BRINGUP.md` is the short version of the same plan with the paper's

@@ -1,0 +1,586 @@
+<title>PYNQ-Z2 Board Day</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a bench procedure. Sticky header with the two IPs that fill every command; one column of
+   numbered phases (a real sequence), each with its machine, its time, its commands and its pass check. */
+:root {
+  --bg: #f6f4f6;          /* paper with a faint magenta bias (the PYNQ-Z2 board is magenta) */
+  --panel: #ffffff;
+  --ink: #1d1a22;
+  --muted: #5e5866;
+  --rule: #ddd6df;
+  --accent: #a3215e;      /* PCB magenta */
+  --accent-soft: #f3dce7;
+  --code-bg: #1f1b26;
+  --code-ink: #ece6f0;
+  --code-dim: #a99fb3;
+  --laptop: #0f6e74; --laptop-soft: #d8eeef;
+  --board: #a3215e;  --board-soft: #f3dce7;
+  --vivado: #8a5a00; --vivado-soft: #f6ead2;
+  --ok: #1d7a43; --ok-soft: #dcf0e3;
+  --warn: #9a5b00; --warn-soft: #f8ecd6;
+  --bad: #b3261e; --bad-soft: #f8dedc;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141118; --panel: #1c1822; --ink: #ece6f0; --muted: #a99fb3; --rule: #332c3b;
+    --accent: #e36a9f; --accent-soft: #3a1f2d;
+    --code-bg: #0d0b10; --code-ink: #ece6f0; --code-dim: #8d8299;
+    --laptop: #5cc3c9; --laptop-soft: #133436; --board: #e36a9f; --board-soft: #3a1f2d;
+    --vivado: #e2b25a; --vivado-soft: #33280f;
+    --ok: #6fd39a; --ok-soft: #13301f; --warn: #e8b35c; --warn-soft: #33270f; --bad: #f08a83; --bad-soft: #3a1a18;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141118; --panel: #1c1822; --ink: #ece6f0; --muted: #a99fb3; --rule: #332c3b;
+  --accent: #e36a9f; --accent-soft: #3a1f2d;
+  --code-bg: #0d0b10; --code-ink: #ece6f0; --code-dim: #8d8299;
+  --laptop: #5cc3c9; --laptop-soft: #133436; --board: #e36a9f; --board-soft: #3a1f2d;
+  --vivado: #e2b25a; --vivado-soft: #33280f;
+  --ok: #6fd39a; --ok-soft: #13301f; --warn: #e8b35c; --warn-soft: #33270f; --bad: #f08a83; --bad-soft: #3a1a18;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
+.wrap { max-width: 920px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); font-stretch: 112%; text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-weight: 800; font-size: clamp(30px, 6vw, 46px); letter-spacing: -0.01em; }
+h2 { font-weight: 800; font-size: 24px; }
+h3 { font-weight: 600; font-size: 17px; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--f-mono); font-size: 0.92em; }
+p code, li code, td code { background: var(--accent-soft); color: var(--ink); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.eyebrow { font: 600 12px/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+
+/* header */
+header.top { padding-block: 40px 20px; display: grid; gap: 14px; }
+.lede { font-size: 17px; color: var(--muted); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+.facts div { background: var(--panel); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font: 800 22px/1.1 var(--f-display); font-stretch: 112%; font-variant-numeric: tabular-nums; }
+.facts span { font-size: 12.5px; color: var(--muted); }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--panel); border-bottom: 1px solid var(--rule); margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); }
+.bar .in { max-width: 920px; margin: 0 auto; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.bar label { display: flex; gap: 8px; align-items: center; font: 600 12px var(--f-mono); color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.bar input { font: 14px var(--f-mono); width: 150px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.bar input:focus-visible, button:focus-visible, .check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.progress { margin-left: auto; display: flex; align-items: center; gap: 10px; font: 600 12px var(--f-mono); color: var(--muted); }
+.meter { width: 120px; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+/* contents */
+nav.toc { margin-block: 24px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px 20px; font-size: 14px; }
+nav.toc a { color: var(--ink); text-decoration: none; display: flex; gap: 10px; padding: 4px 0; border-bottom: 1px dashed var(--rule); }
+nav.toc a span { font: 600 12px/1.9 var(--f-mono); color: var(--accent); min-width: 2.2em; }
+nav.toc a em { margin-left: auto; font-style: normal; color: var(--muted); font: 12px/1.9 var(--f-mono); }
+
+/* phases */
+section.phase { margin-top: 44px; display: grid; gap: 14px; scroll-margin-top: 70px; }
+.ph-head { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; border-top: 3px solid var(--ink); padding-top: 12px; }
+.ph-num { font: 800 34px/1 var(--f-display); font-stretch: 112%; color: var(--accent); font-variant-numeric: tabular-nums; grid-row: span 2; }
+.ph-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { font: 600 11.5px/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; }
+.chip.laptop { background: var(--laptop-soft); color: var(--laptop); }
+.chip.board { background: var(--board-soft); color: var(--board); }
+.chip.vivado { background: var(--vivado-soft); color: var(--vivado); }
+.chip.time { background: transparent; color: var(--muted); border: 1px solid var(--rule); }
+.chip.task { background: var(--ink); color: var(--bg); }
+
+.step { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+.step > div { min-width: 0; display: grid; gap: 8px; }
+.check { margin-top: 3px; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+.step.done > div > p:first-child, .step.done > div > h3 { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--rule); }
+
+/* command blocks */
+.cmd { position: relative; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; min-width: 0; }
+.cmd .who { position: absolute; top: 0; left: 12px; transform: translateY(-50%); font: 600 10.5px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; }
+.cmd .who.laptop { background: var(--laptop); color: var(--code-bg); }
+.cmd .who.board { background: var(--board); color: var(--code-bg); }
+.cmd .who.vivado { background: var(--vivado); color: var(--code-bg); }
+.cmd pre { margin: 0; padding: 18px 14px 14px; overflow-x: auto; font: 13px/1.55 var(--f-mono); white-space: pre; }
+.cmd pre .c { color: var(--code-dim); }
+.cmd pre .v { color: #ffb3d1; }
+.cmd button { position: absolute; top: 6px; right: 6px; font: 600 11px var(--f-mono); padding: 5px 9px; border-radius: 5px; border: 1px solid #4a4155; background: #2b2533; color: var(--code-ink); cursor: pointer; }
+.cmd button:hover { background: #3a3245; }
+
+/* callouts */
+.expect, .note, .stop { border-radius: 8px; padding: 10px 14px; display: grid; gap: 6px; font-size: 14px; }
+.expect { background: var(--ok-soft); }
+.expect > b { color: var(--ok); }
+.note { background: var(--warn-soft); }
+.note > b { color: var(--warn); }
+.stop { background: var(--bad-soft); }
+.stop > b { color: var(--bad); }
+.expect b, .note b, .stop b { font: 600 11.5px/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; }
+.expect ul, .note ul, .stop ul, .step ul { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 11.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--f-mono); white-space: nowrap; }
+
+/* board drawing */
+.board-fig { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px; overflow-x: auto; }
+.board-fig svg { display: block; width: 100%; min-width: 520px; height: auto; }
+
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+@media (max-width: 560px) {
+  .progress { margin-left: 0; }
+  .bar input { width: 130px; }
+  .ph-num { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Secure JPEG encoder · Ascon-AEAD128 · PYNQ-Z2 (xc7z020)</div>
+  <h1>Board day, from the box to the paper's numbers</h1>
+  <p class="lede">Every step of the hardware part in order: what runs on which machine, the exact command, and what the screen must show before you move on. Type the two IP addresses once in the bar below and every command fills itself in. Tick each step as you go; the ticks stay in this browser only.</p>
+  <div class="facts">
+    <div><b>~3.5 h</b><span>Vivado, before the board (phase 0)</span></div>
+    <div><b>~2 h</b><span>first board session: A1, A2, A3</span></div>
+    <div><b>~3 h</b><span>second session: power, live link, attacks</span></div>
+    <div><b>8</b><span>result folders that go back into the paper</span></div>
+  </div>
+</header>
+</div>
+
+<div class="bar" role="region" aria-label="Addresses used in the commands">
+  <div class="in">
+    <label for="ip-board">Board IP <input id="ip-board" value="192.168.2.99" spellcheck="false" autocomplete="off"></label>
+    <label for="ip-laptop">Laptop IP <input id="ip-laptop" value="192.168.2.1" spellcheck="false" autocomplete="off"></label>
+    <div class="progress"><span id="prog-text">0 / 0 steps</span><div class="meter"><i id="prog-bar"></i></div></div>
+  </div>
+</div>
+
+<main class="wrap">
+<nav class="toc" aria-label="Phases">
+  <a href="#p0"><span>0</span>Before the board: last Vivado run<em>3.5 h</em></a>
+  <a href="#p1"><span>1</span>Rehearse on the laptop<em>10 min</em></a>
+  <a href="#p2"><span>2</span>Kit, jumpers, SD card<em>25 min</em></a>
+  <a href="#p3"><span>3</span>Power on and network<em>15 min</em></a>
+  <a href="#p4"><span>4</span>Copy the project, prepare Python<em>15 min</em></a>
+  <a href="#p5"><span>5</span>Smoke test the 4-lane image<em>10 min</em></a>
+  <a href="#p6"><span>6</span>A1 + A2: bit-exact and speed<em>40 min</em></a>
+  <a href="#p7"><span>7</span>Optional images: 1080p, YUYV<em>20 min</em></a>
+  <a href="#p8"><span>8</span>A3: ARM baseline, PQ key cost<em>40 min</em></a>
+  <a href="#p9"><span>9</span>A4: power and energy<em>60 min</em></a>
+  <a href="#p10"><span>10</span>A5: live link, board as camera<em>30 min</em></a>
+  <a href="#p11"><span>11</span>A6: scripted attacks on hardware<em>90 min</em></a>
+  <a href="#p12"><span>12</span>Bring the results back<em>10 min</em></a>
+  <a href="#trouble"><span>?</span>When something goes wrong<em>table</em></a>
+</nav>
+
+<!-- ============================================================ 0 -->
+<section class="phase" id="p0">
+  <div class="ph-head"><div class="ph-num">0</div><h2>Before the board: build the board images from the final RTL</h2>
+    <div class="ph-meta"><span class="chip vivado">Vivado PC</span><span class="chip time">≈ 3.5 h, unattended</span></div></div>
+  <p>Run 11 measured the final RTL (commit <code>d34604f</code>) out of context: one, two and four lanes meet 150 MHz. The board images on your PC are still from runs 8, 9 and 10, i.e. older commits. Build all five from this commit so the board numbers and the paper's Vivado numbers describe the same design. After this the RTL is frozen.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s0a" aria-label="done"></span><div>
+    <p>Back up the current images, then pull.</p>
+    <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
+git checkout hw-polish-arm-baseline
+git pull
+git log --oneline -1
+xcopy /e /i /y future_work\board\overlay E:\backup_overlay_run10</pre></div>
+    <div class="expect"><b>Expect</b><ul><li><code>git log</code> shows <code>269284e</code> or newer.</li><li><code>xcopy</code> ends with "N File(s) copied". Paste this block one line at a time; pasting all at once fed the next lines into xcopy's questions last time (<code>/y</code> now answers them).</li></ul></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s0b" aria-label="done"></span><div>
+    <p>Build the five images. One line; the first part makes the single-pipeline and 2-lane images at 100 MHz, the second makes the 4-lane, 1080p and YUYV images (142.9 MHz first, falling back to 125 and then 100 MHz by itself) and packs the zip.</p>
+    <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>py vivado\run_vivado_day.py --steps bd bd_lanes --fclk 100 --parallel 1 --jobs 2 &amp; py vivado\run_vivado_day.py --steps bd_lanes4 bd_lanes4hd bd_lanes4yuyv parse --fclk 142 --parallel 1 --jobs 2</pre></div>
+    <div class="expect"><b>Expect</b><ul>
+      <li>Each image ends with <code>overlay meets timing at … MHz</code>. A 142 MHz miss followed by a 125 MHz pass is a normal result, not a failure.</li>
+      <li><code>future_work\board\overlay\</code> then holds five pairs: <code>secure_jpeg</code>, <code>secure_jpeg_lanes</code>, <code>secure_jpeg_lanes4</code>, <code>secure_jpeg_lanes4hd</code>, <code>secure_jpeg_lanes4yuyv</code>, each <code>.bit</code> + <code>.hwh</code>.</li>
+      <li><code>vivado_results_&lt;date&gt;.zip</code>: send it to Claude; its <code>summary.txt</code> starts with the commit and the SHA-256 of every bitstream.</li></ul></div>
+    <div class="note"><b>Keep the PC awake</b><p>Plug it in, set sleep to "never", and do not click inside the window (a selection pauses the run until you press Esc). If you must stop: Ctrl+C, then end <code>vivado.exe</code> in Task Manager; ask Claude for the resume line.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s0c" aria-label="done"></span><div>
+    <p>Put the overlay folder in two safe places: the team drive and a USB stick. The board day must not depend on one PC.</p>
+  </div></div>
+</section>
+
+<!-- ============================================================ 1 -->
+<section class="phase" id="p1">
+  <div class="ph-head"><div class="ph-num">1</div><h2>Rehearse on the laptop (no board)</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip time">10 min</span></div></div>
+  <p>The same scripts run against an emulation of each bitstream. If a rehearsal fails, fix it here, where it costs nothing.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s1a" aria-label="done"></span><div>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
+git pull
+py -m future_work.board.first_contact --mock --mock-lanes 4 --mock-e5 --sizes 64x48 --frames 1 --timing-frames 2 --out sim_out\board\rehearsal4
+py -m future_work.board.first_contact --mock --mock-lanes 4 --mock-e5 --mock-yuyv --sizes 64x48 --frames 1 --timing-frames 2 --out sim_out\board\rehearsal_yuyv
+py experiments\pq_kex_cost.py --runs 5</pre></div>
+    <div class="expect"><b>Expect</b><ul><li><code>VERSION ok: contract v3, 4 lanes, E5 in hardware</code>, six lines <code>64x48 E0 … E5: bit-exact</code>, and "Bit-exact … **yes**".</li><li>The mock's milliseconds are Python, never a result.</li></ul></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="phase" id="p2">
+  <div class="ph-head"><div class="ph-num">2</div><h2>Kit, jumpers and the SD card</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip time">25 min</span></div></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Item</th><th>Why</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>PYNQ-Z2</td><td>the hardware</td><td>hold it by the edges; touch something metal first</td></tr>
+      <tr><td>micro-SD, 16 GB or more</td><td>PYNQ Linux</td><td>class 10; it gets erased</td></tr>
+      <tr><td>micro-USB data cable</td><td>power and serial console</td><td>into the port marked <b>PROG / UART</b></td></tr>
+      <tr><td>Ethernet cable</td><td>board ↔ laptop or router</td><td>CAT5e or 6</td></tr>
+      <tr><td>Inline USB power meter</td><td>A4 energy per frame</td><td>between the USB supply and the board's cable</td></tr>
+      <tr><td>Laptop with the repo</td><td>receiver, dashboard, attacker</td><td><code>E:\FPGA-Video-Encryption-</code>, on the latest commit</td></tr>
+      <tr><td>Overlay folder on a USB stick</td><td>the bitstreams</td><td>every <code>.bit</code> with its <code>.hwh</code>, same base name</td></tr>
+      <tr><td>Router (optional), USB webcam (optional)</td><td>internet for <code>pip</code>, LAN demo; live camera</td><td>a webcam that can give raw YUYV suits the YUYV image</td></tr>
+    </tbody></table></div>
+
+  <div class="board-fig" aria-label="Where the jumpers, ports and LEDs are">
+    <svg viewBox="0 0 640 230" role="img" aria-labelledby="bf-t">
+      <title id="bf-t">PYNQ-Z2 seen from above: jumpers, ports and LEDs used today</title>
+      <rect x="20" y="20" width="600" height="190" rx="12" fill="var(--board-soft)" stroke="var(--board)" stroke-width="2"/>
+      <rect x="40" y="38" width="90" height="34" rx="4" fill="var(--panel)" stroke="var(--ink)"/>
+      <text x="85" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)">PROG/UART</text>
+      <rect x="40" y="90" width="90" height="34" rx="4" fill="var(--panel)" stroke="var(--ink)"/>
+      <text x="85" y="112" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)">Ethernet</text>
+      <rect x="40" y="142" width="90" height="34" rx="4" fill="var(--panel)" stroke="var(--muted)" stroke-dasharray="4 3"/>
+      <text x="85" y="164" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--muted)">12 V jack</text>
+      <rect x="170" y="38" width="120" height="34" rx="4" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+      <text x="230" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)">Power jp → USB</text>
+      <rect x="310" y="38" width="120" height="34" rx="4" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+      <text x="370" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)">Boot jp → SD</text>
+      <rect x="450" y="38" width="150" height="34" rx="4" fill="var(--panel)" stroke="var(--ink)"/>
+      <text x="525" y="60" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)">Power switch</text>
+      <rect x="230" y="96" width="200" height="90" rx="6" fill="var(--panel)" stroke="var(--ink)"/>
+      <text x="330" y="136" text-anchor="middle" font-family="Archivo, sans-serif" font-size="16" font-weight="700" fill="var(--ink)">Zynq xc7z020</text>
+      <text x="330" y="158" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">PS: 2× Cortex-A9 · PL: our encoder</text>
+      <circle cx="475" cy="110" r="7" fill="var(--bad)"/><text x="490" y="114" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">red: power</text>
+      <circle cx="475" cy="134" r="7" fill="var(--ok)"/><text x="490" y="138" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">DONE: PL configured</text>
+      <circle cx="475" cy="158" r="7" fill="var(--laptop)"/><text x="490" y="162" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">4 green + 2 blue: boot</text>
+      <text x="330" y="202" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">micro-SD slot on the underside</text>
+    </svg>
+  </div>
+
+  <div class="step"><span class="check"><input type="checkbox" id="s2a" aria-label="done"></span><div>
+    <p><b>Write the SD card.</b> Download the PYNQ-Z2 image (v3.0.x) from <a href="https://www.pynq.io/boards.html" target="_blank" rel="noopener">pynq.io → Boards → PYNQ-Z2</a>, write it with balenaEtcher (or Raspberry Pi Imager → "Use custom"), eject safely, and insert it into the slot under the board, contacts facing the board.</p>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s2b" aria-label="done"></span><div>
+    <p><b>Set two jumpers before power-on:</b> Boot → <b>SD</b>, Power → <b>USB</b>. USB power is also what the inline meter measures in phase 9. Use REG only with a 12 V adapter whose polarity you have checked against the TUL manual.</p>
+  </div></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="phase" id="p3">
+  <div class="ph-head"><div class="ph-num">3</div><h2>Power on and put the board on the network</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip time">15 min</span></div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s3a" aria-label="done"></span><div>
+    <p>Micro-USB into <b>PROG / UART</b>, Ethernet in, power switch on.</p>
+    <div class="tbl"><table><thead><tr><th>You see</th><th>It means</th></tr></thead><tbody>
+      <tr><td>red LED at once</td><td>power</td></tr>
+      <tr><td>DONE LED after a few seconds</td><td>the Zynq runs</td></tr>
+      <tr><td>~1 min: 4 green + 2 blue flash together</td><td>Linux is booting</td></tr>
+      <tr><td>blue LEDs go off and on, green stay on</td><td><b>ready</b></td></tr>
+      <tr><td>only the red LED after 2 min</td><td>SD card or Boot jumper: see the table at the end</td></tr>
+    </tbody></table></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s3b" aria-label="done"></span><div>
+    <p><b>Network.</b> Either option works; the router is better because the board then has internet for one <code>pip install</code> in phase 4.</p>
+    <ul>
+      <li><b>Router:</b> board by cable, laptop by cable or Wi-Fi. Read the board's address from the router's client list (name <code>pynq</code>).</li>
+      <li><b>Direct cable:</b> the board falls back to <code>192.168.2.99</code>. Give the laptop's Ethernet adapter the fixed address <code>192.168.2.1</code>, mask <code>255.255.255.0</code>, no gateway (Settings → Network → Ethernet → IP assignment: Manual). Undo it afterwards.</li>
+      <li>Type both addresses into the bar at the top of this page.</li>
+    </ul>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>ping <span data-v="board">BOARD</span>
+ssh xilinx@<span data-v="board">BOARD</span> "uname -a"</pre></div>
+    <div class="expect"><b>Expect</b><p><code>ping</code> answers; <code>ssh</code> asks for the password <code>xilinx</code> and prints a Linux line with <code>armv7l</code>.</p></div>
+    <div class="note"><b>No IP?</b><p>Serial console: Device Manager → Ports → note COMx; PuTTY → Serial, COMx, 115200 baud → Enter → log in <code>xilinx</code>/<code>xilinx</code> → <code>ip -4 addr show eth0</code>.</p></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="phase" id="p4">
+  <div class="ph-head"><div class="ph-num">4</div><h2>Copy the project and prepare Python on the board</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip time">15 min</span></div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s4a" aria-label="done"></span><div>
+    <p>Copy the code and every bitstream. The overlay folder from phase 0 must be in <code>future_work\board\overlay\</code> on the laptop first (copy it from the USB stick if the laptop is not the Vivado PC).</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
+dir future_work\board\overlay\*.bit
+ssh xilinx@<span data-v="board">BOARD</span> "mkdir -p /home/xilinx/fpga"
+scp -r model link future_work configs experiments scripts requirements.txt xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/</pre></div>
+    <div class="expect"><b>Expect</b><p><code>dir</code> lists the five <code>.bit</code> files from phase 0 (at least <code>secure_jpeg_lanes4.bit</code> and <code>secure_jpeg_lanes.bit</code>). No <code>scp</code>? Open <code>\\<span data-v="board">BOARD</span>\xilinx</code> in Explorer (xilinx/xilinx) and drag the folders.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s4b" aria-label="done"></span><div>
+    <p>Log in, become root and load PYNQ's Python. Every later board command runs in this shell.</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>ssh xilinx@<span data-v="board">BOARD</span></pre></div>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>sudo -i
+source /etc/profile.d/pynq_venv.sh
+cd /home/xilinx/fpga
+python3 -c "import pynq, numpy, cv2; print('ok', pynq.__version__)"
+python3 -c "import cryptography; print('cryptography', cryptography.__version__)"
+pip3 install kyber-py           <span class="c"># needs internet (router); pure Python ML-KEM for the post-quantum key</span></pre></div>
+    <div class="expect"><b>Expect</b><ul><li><code>ok 3.x</code> and a cryptography version.</li><li><code>cv2</code> missing: <code>apt install python3-opencv</code>. Never <code>pip install opencv-python</code> on the board (it compiles for hours).</li><li>No internet: skip <code>kyber-py</code> today; phases 5–9 do not need it.</li></ul></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="phase" id="p5">
+  <div class="ph-head"><div class="ph-num">5</div><h2>Smoke test: the 4-lane image on a tiny frame</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A1 start</span><span class="chip time">10 min</span></div></div>
+  <p>Ten seconds per command. The first run lowers the fabric clock to 100 MHz on purpose: a first contact should not also test the clock margin. It stops at the first wrong byte.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s5a" aria-label="done"></span><div>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --fclk 100 --sizes 64x48 --frames 2 --timing-frames 5 --out sim_out/board/lanes4_smoke100</pre></div>
+    <div class="expect"><b>Expect, in this order</b><ul>
+      <li><code>fabric clock: 100.0 MHz</code></li>
+      <li><code>IP found (…secure_jpeg_lanes4.bit), VERSION ok: contract v3, 4 lanes, E5 in hardware</code> (VERSION <code>0x5EC00384</code>)</li>
+      <li>six lines <code>64x48 E0 … E5: bit-exact</code>, then a timing table and <code>Bit-exact … **yes**</code></li></ul></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s5b" aria-label="done"></span><div>
+    <p>The same at the clock the image was built for (no <code>--fclk</code>).</p>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 64x48 --frames 2 --timing-frames 5 --out sim_out/board/lanes4_smoke</pre></div>
+    <div class="expect"><b>Expect</b><p><code>fabric clock:</code> the clock from phase 0 (142.9, 125 or 100 MHz), then the same bit-exact lines.</p></div>
+    <div class="stop"><b>If it fails</b><ul><li>Fails at its own clock but passed at 100 MHz: keep <code>--fclk 100</code> for every 4-lane command today and tell Claude; the clock is the only difference.</li><li>Fails at 100 MHz too: run the 2-lane image the same way (<code>secure_jpeg_lanes.bit</code>, VERSION <code>0x5EC00382</code>). Then go to the table at the end with the first error line.</li></ul></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="phase" id="p6">
+  <div class="ph-head"><div class="ph-num">6</div><h2>A1 + A2: bit-exact on silicon, and the real speed</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A1 · A2</span><span class="chip time">40 min</span></div></div>
+  <p>For each image: 10 frames per size and protection level are encoded on the FPGA and compared byte for byte (scan and tag) with the golden model; then 50 timed frames per size and level. <code>--zero-copy</code> lets the ARM write pixels straight into the DMA buffer.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s6a" aria-label="done"></span><div>
+    <h3>4 lanes (the headline)</h3>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4_final
+python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --fclk 100 --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4_final_100</pre></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s6b" aria-label="done"></span><div>
+    <h3>2 lanes and the single pipeline (for the lanes figure)</h3>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes2_final
+python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/v2_final</pre></div>
+    <div class="note"><b>Single pipeline</b><p>VERSION <code>0x5EC00200</code>: contract v2, levels E0–E4 only (no E5). That is expected.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s6c" aria-label="done"></span><div>
+    <h3>Check the fabric column against the simulation</h3>
+    <p>Each <code>first_contact.md</code> has columns load / DMA / ARM / <b>fabric (ms)</b>. Fabric time is START to DONE counted by the FPGA itself. It should be close to the RTL cycle count:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Image</th><th>Cycles per pixel (RTL)</th><th>640×480 at 100 MHz</th><th>640×480 at 125 MHz</th><th>320×240 at 100 MHz</th></tr></thead>
+      <tbody>
+        <tr><td>4 lanes</td><td class="num">0.551</td><td class="num">1.69 ms</td><td class="num">1.35 ms</td><td class="num">0.46 ms</td></tr>
+        <tr><td>2 lanes</td><td class="num">0.793</td><td class="num">2.44 ms</td><td class="num">—</td><td class="num">0.64 ms</td></tr>
+        <tr><td>single pipeline</td><td class="num">1.519</td><td class="num">4.67 ms</td><td class="num">—</td><td class="num">1.18 ms</td></tr>
+      </tbody></table></div>
+    <div class="expect"><b>How to read it</b><ul>
+      <li>Fabric within ~10 % of the table: the encoder runs as simulated. This is the number the paper's A2 TODO waits for.</li>
+      <li>Fabric much larger and <code>in_wait</code> large: DDR does not deliver pixels fast enough (4 lanes need ~900 MB/s at 125 MHz). Report it; the YUYV image in phase 7 halves that traffic.</li>
+      <li>"Encode only" much larger than fabric: that is the ARM and Python around it, not the encoder. Report both columns.</li></ul></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="phase" id="p7">
+  <div class="ph-head"><div class="ph-num">7</div><h2>Optional images: 1080p lines and YUYV input</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip time">20 min</span></div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s7a" aria-label="done"></span><div>
+    <p><b>1080p.</b> 4 lanes with 2048-pixel lines and one line-buffer set per lane. Height must be a multiple of 16, hence 1088.</p>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4hd.bit --sizes 1920x1088 --frames 3 --timing-frames 20 --zero-copy --out sim_out/board/lanes4hd_final</pre></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s7b" aria-label="done"></span><div>
+    <p><b>YUYV.</b> VERSION bit 6 set (<code>0x5EC003C4</code>): the driver converts its test frames to YUYV before timing, so it times what a YUYV camera would deliver (2 bytes per pixel instead of 4).</p>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4yuyv.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4yuyv_final</pre></div>
+    <div class="expect"><b>Expect</b><p>Bit-exact <b>yes</b>, and a fabric time near 0.434 cycles per pixel (1.33 ms at 640×480 and 100 MHz).</p></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section class="phase" id="p8">
+  <div class="ph-head"><div class="ph-num">8</div><h2>A3: the same encoder on the ARM, and the post-quantum key's cost</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A3</span><span class="chip time">40 min</span></div></div>
+  <p>The fair comparison is the same function on the same chip's processor. The C encoder is first checked bit-exact against the model, then timed on 1 and 2 Cortex-A9 cores next to libjpeg-turbo, libjpeg-turbo + Ascon, and libjpeg-turbo + AES-GCM; the fabric's numbers from phase 6 go next to them.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s8a" aria-label="done"></span><div>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30 --pl-json sim_out/board/lanes4_final/first_contact.json --out sim_out/board/arm_final
+python3 experiments/pq_kex_cost.py --runs 20</pre></div>
+    <div class="expect"><b>Expect</b><ul><li><code>sim_out/board/arm_final/arm_baseline.md</code> with a bit-exact line first, then the timing table.</li><li><code>sim_out/pq_kex/&lt;machine&gt;.md</code>: milliseconds for each side of the ML-KEM-768 + X25519 exchange on the A9. It runs once per session, so seconds would still be fine.</li></ul></div>
+  </div></div>
+  <div class="note"><b>First session ends here</b><p>Phases 5–8 are the minimum the paper needs (A1–A3). Copy the results now (phase 12) even if you continue, then <code>sudo shutdown -h now</code> before switching off.</p></div>
+</section>
+
+<!-- ============================================================ 9 -->
+<section class="phase" id="p9">
+  <div class="ph-head"><div class="ph-num">9</div><h2>A4: power and energy per frame</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip task">A4</span><span class="chip time">60 min</span></div></div>
+  <p>Wiring: USB supply → meter → micro-USB cable → PROG/UART. Each reading is the meter's average over 30 s while one workload runs in a loop. Photograph the meter for every reading.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s9a" aria-label="done"></span><div>
+    <p><b>Idle.</b> Board booted, nothing running, 30 s average → the idle watts.</p>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s9b" aria-label="done"></span><div>
+    <p><b>Loaded.</b> Start each workload, wait 10 s, read the 30 s average, note the fps it prints.</p>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre><span class="c"># FPGA, 4 lanes, E2 and E5 (one at a time)</span>
+python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 640x480 --frames 1 --timing-frames 2000 --zero-copy --out sim_out/board/power_lanes4
+<span class="c"># ARM, our encoder and the baselines</span>
+CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --sizes 640x480 --frames 2000 --out sim_out/board/power_arm</pre></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s9c" aria-label="done"></span><div>
+    <p>Fill <code>future_work\baselines\power_template.csv</code> (one row per workload: method, mode, width, height, fps, power_w, idle_power_w), delete the example row, then:</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py -m future_work.baselines.energy_table future_work\baselines\power_template.csv</pre></div>
+    <div class="expect"><b>Expect</b><p>Energy per frame (total and above idle) for each row and the ratio to software.</p></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section class="phase" id="p10">
+  <div class="ph-head"><div class="ph-num">10</div><h2>A5: the live link, with the board as the camera</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A5</span><span class="chip time">30 min</span></div></div>
+  <p>The board encodes and encrypts, the laptop receives, verifies and shows the dashboard. Both ends first agree on a session key (ML-KEM-768 + X25519, authenticated by the pre-shared key), and the board pads frame sizes so they do not reveal motion.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s10a" aria-label="done"></span><div>
+    <p><b>Make a fresh pre-shared key</b> on the laptop. It prints the key and both commands. The public key in <code>configs/default.toml</code> is never for a demo, and the key never goes through the dashboard, a web page or a chat: type it by hand on the board.</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py scripts\demo_key.py</pre></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s10b" aria-label="done"></span><div>
+    <p><b>Laptop first, then the board.</b> Replace <code>&lt;KEY&gt;</code> with the printed key.</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py -m link.run_all --no-sender --pq-kex --set keys.master=&lt;KEY&gt; --set link.bind_host=0.0.0.0 --set link.sender_host=<span data-v="board">BOARD</span> --set dashboard.bind_host=0.0.0.0</pre></div>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --pq-kex --set keys.master=&lt;KEY&gt; --set link.host=<span data-v="laptop">LAPTOP</span> --set link.bind_host=0.0.0.0 --set link.pad=runmax --set sender.source=synthetic</pre></div>
+    <div class="expect"><b>Check</b><ul>
+      <li>Both sides print <code>kex: session key established … (ML-KEM-768 + X25519)</code>.</li>
+      <li><code>http://localhost:8000</code> on the laptop: "Sender started … board encoder", the receiver view playing, <b>verified</b> rising, <b>rejected 0</b>.</li>
+      <li>A second device opens <code>http://<span data-v="laptop">LAPTOP</span>:8000</code>; VLC → Open Network Stream → <code>http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</code> shows the scrambled wire stream.</li>
+      <li>Press <b>bit flip</b> on the dashboard: one frame rejected, the policy jumps to E5, then back to E2. Film this with a phone.</li></ul></div>
+    <div class="note"><b>Webcam</b><p><code>--set sender.source=webcam:0</code> with a USB camera on the board. Windows firewall: allow Python on private networks when asked.</p></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 11 -->
+<section class="phase" id="p11">
+  <div class="ph-head"><div class="ph-num">11</div><h2>A6: the scripted attack suite on hardware</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A6</span><span class="chip time">90 min</span></div></div>
+  <p>The same 11 attacks the simulation ran, now with the board as sender. Three repetitions of the attack suite and three of the benign run give the "on hardware" row of the paper.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s11a" aria-label="done"></span><div>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <span data-v="board">BOARD</span> --board-max-mode E5 --pq-kex --set keys.master=&lt;KEY&gt; --out sim_out\runs\board_full_suite_rep1</pre></div>
+    <p>It prints the exact board command for its ports (with <code>--pq-kex</code> and your key). Start that on the board, add <code>--set link.pad=runmax</code>, and wait: the laptop runs the attacks 25 s apart.</p>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s11b" aria-label="done"></span><div>
+    <p>Repeat with <code>_rep2</code>, <code>_rep3</code>, then three times with <code>experiments\scenarios\benign.json</code> and <code>--out sim_out\runs\board_benign_rep1</code> … <code>rep3</code>.</p>
+    <div class="expect"><b>Expect</b><p>Each run folder ends with a summary: attacks detected, frames rejected, time to E5 and back. The simulation's figure is 11 of 11 detected.</p></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section class="phase" id="p12">
+  <div class="ph-head"><div class="ph-num">12</div><h2>Bring the results back</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip time">10 min</span></div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s12a" aria-label="done"></span><div>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
+scp -r xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/sim_out/board sim_out\
+scp -r xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/sim_out/pq_kex sim_out\
+powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,future_work\baselines\power_template.csv board_results.zip</pre></div>
+    <p>Send <code>board_results.zip</code>, the meter photos and the phone video to Claude. Claude puts them in <code>paper/data/board/</code>, fills the red <code>\TODO{A2…A6}</code> in both papers, checks that the conference paper is still 6 pages, and opens the pull request.</p>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s12b" aria-label="done"></span><div>
+    <p>Shut the board down cleanly before the switch: wait until the LEDs stop.</p>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>sudo shutdown -h now</pre></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ trouble -->
+<section class="phase" id="trouble">
+  <div class="ph-head"><div class="ph-num">?</div><h2>When something goes wrong</h2>
+    <div class="ph-meta"><span class="chip time">look up the first error line</span></div></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Symptom</th><th>Likely cause and fix</th></tr></thead>
+    <tbody>
+      <tr><td>only the red LED</td><td>SD card not written, or Boot jumper not on SD. Rewrite with Etcher, check the jumper.</td></tr>
+      <tr><td><code>ping</code> fails</td><td>Wrong IP, laptop not in 192.168.2.x (direct cable), or the router isolates Wi-Fi clients. Read the IP on the serial console; try the direct cable.</td></tr>
+      <tr><td><code>ModuleNotFoundError: pynq</code></td><td>Missing <code>sudo -i</code> and <code>source /etc/profile.d/pynq_venv.sh</code>.</td></tr>
+      <tr><td><code>RuntimeError: No Devices Found</code></td><td>Root without a login shell. Use <code>sudo -i</code>, not <code>sudo bash -c</code>.</td></tr>
+      <tr><td><code>Overlay(...)</code> fails, <code>.hwh</code> not found</td><td>The <code>.bit</code> and <code>.hwh</code> are not side by side with the same base name.</td></tr>
+      <tr><td><code>fclk … is above the … MHz this bitstream was built for</code></td><td><code>--fclk</code> only lowers the clock. Drop it, or give a lower value.</td></tr>
+      <tr><td><code>VERSION register reads 0x…</code></td><td>Wrong file or the IP has another name: <code>python3 -c "from pynq import Overlay; print(Overlay('future_work/board/overlay/secure_jpeg_lanes4.bit').ip_dict.keys())"</code>, then pass <code>--ip-name</code> / <code>--dma-name</code>. Known values: <code>0x5EC00200</code> single pipeline, <code>0x5EC00382</code> 2 lanes + E5, <code>0x5EC00384</code> 4 lanes + E5, <code>0x5EC003C4</code> 4 lanes YUYV + E5.</td></tr>
+      <tr><td><code>TimeoutError: DMA … not finished</code> or <code>STATUS.DONE never set</code></td><td>Try <code>--sizes 64x48</code> first. Old image (before 20 Oct): rebuild. Otherwise send Claude the first error and the command.</td></tr>
+      <tr><td>Mismatch at a small byte offset</td><td>Header or registers (quantisation tables, session id, frame counter). Send the line to Claude.</td></tr>
+      <tr><td>Mismatch deep in the scan</td><td>Pixel order or a datapath fault. Rerun with <code>--fclk 100</code>; if that passes, it is the clock.</td></tr>
+      <tr><td>Passes, but fabric time far above the table</td><td>DDR starvation (<code>in_wait</code> large). Not a bug: report it; compare with the YUYV image.</td></tr>
+      <tr><td>Fails only with the new driver</td><td>Add <code>--full-cache-ops</code> and report it.</td></tr>
+      <tr><td>Dashboard empty, or every frame rejected (tag)</td><td>Firewall, wrong IPs, laptop started after the board, or different keys on the two ends. Same <code>keys.master</code> on both; laptop first.</td></tr>
+      <tr><td><code>kex: no answer from the receiver</code></td><td>The laptop's <code>run_all --pq-kex</code> is not running or UDP 47006 is blocked. Allow it: <code>netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010</code></td></tr>
+    </tbody></table></div>
+</section>
+
+<footer>
+  <p>Built from the repository's <code>docs/FPGA_HANDS_ON.md</code>, <code>docs/RUNBOOK.md</code> §3 and the board scripts as of commit 269284e (22 Oct 2026). Expected times are the RTL cycle counts of <code>paper/data/lanes_rtl</code>.</p>
+  <p>Ticks and the two IPs are saved in this browser only.</p>
+</footer>
+</main>
+
+<script>
+(function () {
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  // IP substitution
+  var inputs = { board: document.getElementById("ip-board"), laptop: document.getElementById("ip-laptop") };
+  Object.keys(inputs).forEach(function (k) {
+    var saved = store.get("bd-ip-" + k);
+    if (saved) inputs[k].value = saved;
+    inputs[k].addEventListener("input", function () { store.set("bd-ip-" + k, inputs[k].value.trim()); fill(); });
+  });
+  function fill() {
+    document.querySelectorAll("[data-v]").forEach(function (el) {
+      var v = inputs[el.getAttribute("data-v")].value.trim();
+      el.textContent = v || (el.getAttribute("data-v") === "board" ? "<BOARD>" : "<LAPTOP>");
+    });
+  }
+  fill();
+  // copy buttons
+  document.querySelectorAll(".cmd").forEach(function (box) {
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = "Copy";
+    b.addEventListener("click", function () {
+      var pre = box.querySelector("pre");
+      var text = Array.prototype.map.call(pre.childNodes, function (n) {
+        return (n.nodeType === 1 && n.classList.contains("c")) ? "" : n.textContent;
+      }).join("").replace(/[ \t]+$/gm, "");
+      function done() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1400); }
+      function fallback() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        b.textContent = "Selected: Ctrl+C"; setTimeout(function () { b.textContent = "Copy"; }, 2200);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+      else fallback();
+    });
+    box.appendChild(b);
+  });
+  // step ticks
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".check input"));
+  function progress() {
+    var n = boxes.filter(function (c) { return c.checked; }).length;
+    document.getElementById("prog-text").textContent = n + " / " + boxes.length + " steps";
+    document.getElementById("prog-bar").style.width = (100 * n / boxes.length) + "%";
+  }
+  boxes.forEach(function (c) {
+    c.checked = store.get("bd-" + c.id) === "1";
+    c.closest(".step").classList.toggle("done", c.checked);
+    c.addEventListener("change", function () {
+      store.set("bd-" + c.id, c.checked ? "1" : "0");
+      c.closest(".step").classList.toggle("done", c.checked);
+      progress();
+    });
+  });
+  progress();
+})();
+</script>
