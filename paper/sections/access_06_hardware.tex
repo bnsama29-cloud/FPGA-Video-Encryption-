@@ -18,7 +18,7 @@ Fig.~\ref{fig:pl} shows the encoder. All stages are joined by valid/ready handsh
 
 \textit{Encryption.} \texttt{selective\_enc} implements~\eqref{eq:selenc} (Section~\ref{sec:circuit}). \texttt{huffman\_enc} maps each symbol to a right-aligned chunk of up to 27 bits (code followed by the field) from the Annex~K tables, and \texttt{bit\_packer} assembles bytes, inserts the 0x00 after every 0xFF, and at the end of a segment pads with 1-bits and marks the last byte.
 
-\textit{Merger, tag and output.} \texttt{segment\_merger} copies segment $s$ byte by byte from its lane's FIFO until the byte marked last, then writes 0xFF, 0xD0 $+ (s \bmod 8)$ unless $s$ is the last segment, and moves to the next lane. \texttt{tag\_unit} absorbs the prefix and every merged byte into an Ascon core; \texttt{scan\_word\_packer} packs bytes into 32-bit little-endian words with TKEEP and TLAST and counts them for the OUT\_BYTES register.
+\textit{Merger, tag and output.} \texttt{segment\_merger} copies segment $h$ byte by byte from its lane's FIFO until the byte marked last, then writes 0xFF, 0xD0 $+ (h \bmod 8)$ unless $h$ is the last segment, and moves to the next lane. \texttt{tag\_unit} absorbs the prefix and every merged byte into an Ascon core; \texttt{scan\_word\_packer} packs bytes into 32-bit little-endian words with TKEEP and TLAST and counts them for the OUT\_BYTES register.
 
 \subsection{Circuit of the encryption stage}\label{sec:circuit}
 \begin{figure}[t]
@@ -56,7 +56,7 @@ The first block costs an initialization ($p^{12}$, 12 cycles) and one data block
 \textit{Tag unit.} \texttt{tag\_unit} latches the 26-byte prefix at frame start, absorbs it, then gathers scan bytes into 128-bit blocks. A block of 16 bytes arrives in at least 16 cycles at one byte per clock, while absorbing it takes nine, so the tag unit never slows the merger; the final partial block, the empty message and the $p^{12}$ finalization add a fixed number of cycles after the last byte.
 
 \subsection{Parallel lanes}\label{sec:lanes}
-One pipeline consumes one sample per clock; with 1.5 samples per pixel it needs at least 1.5 cycles per pixel. Restart segments are independent (DC predictors reset, byte alignment, own keystream~\eqref{eq:zs}), so $L$ copies of the pipeline can code segments simultaneously: the dealer sends MCU row $r$ to lane $r \bmod L$ and the merger reads segment $s$ from lane $s \bmod L$ (in E5, segment $s$ belongs to MCU row $\lfloor s/c \rfloor$ with $c = W/16$ MCUs per row, so it comes from lane $\lfloor s/c \rfloor \bmod L$, tracked with row and column counters instead of a divider). The 64-bit input bus brings two pixels per clock. The cost per pixel is therefore bounded below by
+One pipeline consumes one sample per clock; with 1.5 samples per pixel it needs at least 1.5 cycles per pixel. Restart segments are independent (DC predictors reset, byte alignment, own keystream~\eqref{eq:zs}), so $L$ copies of the pipeline can code segments simultaneously: the dealer sends MCU row $r$ to lane $r \bmod L$ and the merger reads segment $h$ from lane $h \bmod L$ (in E5, segment $h$ belongs to MCU row $\lfloor h/c \rfloor$ with $c = W/16$ MCUs per row, so it comes from lane $\lfloor h/c \rfloor \bmod L$, tracked with row and column counters instead of a divider). The 64-bit input bus brings two pixels per clock. The cost per pixel is therefore bounded below by
 \begin{equation}
 c_L \ge \max\Bigl(\frac{1.5}{L}, \frac{1}{2}\Bigr), \qquad \Theta_L = \frac{f_{\mathrm{clk}}}{c_L},
 \label{eq:lanes}
