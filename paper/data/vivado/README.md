@@ -71,3 +71,22 @@ same report dates as before) and `..._6.0ns_lanes4_...` (synthesis only: Vivado 
   150 MHz path is the segment-count multiply. Both are changed in the RTL after this run (bug #38,
   bit-exact); their post-route effect is not measured yet.
 
+## Run 11 (22 Oct 2026)
+
+`vivado_results_20261022_1602.zip`, **RTL of commit d34604f** (run 10 + the bug-#38 fixes: keystream next state
+prepared from registers, two register stages for the segment count). Out of context only (the board images were
+not rebuilt in this run: `overlay`, `lanes`, `lanes4` in the zip are the run-8/9/10 copies and are not taken).
+Run in two parts: `--steps xsim ooc lanes ... --periods 6.667 6.0`, stopped after the 4-lane 100 MHz job, then
+`--steps lanes power --only ooc_lanes4_6 ooc_lanes4_hd ooc_lanes4_nbuf1 ooc_lanes4_yuyv`. Tables of this run alone:
+`vivado_tables_run11.md`; it replaces every out-of-context entry of run 10.
+
+* Single pipeline: 100 MHz +1.524, **150 MHz +0.270**, 166.7 MHz **-0.015 ns** (fmax estimate 166.3 MHz).
+* 2 lanes: 100 MHz +1.056, **150 MHz +0.003**, 166.7 MHz **-0.019 ns**.
+* 4 lanes: 100 MHz +1.020, **150 MHz +0.011 ns** (17,887 LUT, 54 BRAM), 166.7 MHz -0.182 ns. The 166.7 MHz job
+  crashed in `phys_opt_design` again with the perf flow and finished with `SJPEG_IMPL=safe` on the retry
+  (its `impl` in the RESULT line); the 150 MHz job finished with the perf flow.
+* 4-lane variants at 100 MHz: NBUF = 1 +0.414 (32 BRAM), 1080p lines +1.011, YUYV +0.985 ns (15,172 LUT).
+* At 166.7 MHz the near-critical paths are spread (BRAM read -> DCT row buffer, Huffman length -> packer skid,
+  lane FIFO full flag, converter chroma sum); none dominates.
+* The 4-lane PYNQ-Z2 system in the snapshot is still the run-10 build (commit dd13f55, 125 MHz).
+

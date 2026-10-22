@@ -29,7 +29,7 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
 |---|---|
 | Golden model, RTL (single pipeline + 1/2/4 lanes, E0–E5), cocotb + XSim | done, every RTL test bit-exact with the model |
 | Vivado run 10 (21 Oct, commit dd13f55) | single pipeline **150 MHz met** (+0.074 ns); 2 lanes 125 MHz (150: -0.060 ns); 4 lanes 100 MHz in every variant (YUYV, one line buffer, 1080p lines); **4-lane PYNQ-Z2 system built for 125 MHz** (+0.433 ns, 20,097 LUT) = 227 Mpixel/s from the cycle count |
-| Clock beyond that | 166.7 MHz -0.284 ns (one lane), 142.9 MHz -0.008 ns (4-lane system): the keystream loop, fixed in RTL (bug #38), not routed; decision: board first |
+| Vivado run 11 (22 Oct, commit d34604f) | **1, 2 and 4 lanes meet 150 MHz** out of context (4 lanes: 272 Mpixel/s from the cycle count); 166.7 MHz missed by 15 / 19 / 182 ps; board images of this commit still to build (~3.5 h) |
 | Camera-native YUYV input (4 pixels per beat) | RTL + model + driver done, bit-exact for 2 and 4 lanes: 4 lanes 230 Mpixel/s at 100 MHz in simulation, half the DDR bytes |
 | 4 lanes with 1080p lines | option done (one line-buffer set per lane: half the BRAM, under 2 % slower) |
 | Board (PYNQ-Z2) | 2-lane E5 bitstream bit-exact with the model on silicon, E0–E5 (A1); first speed numbers (A2) |

@@ -1617,14 +1617,14 @@
   "name": "secure_jpeg_lanes_top_6.0ns_lanes2_log_l1",
   "util": {
    "lut": [
-    10404.0,
+    10440.0,
     53200.0,
-    19.56
+    19.62
    ],
    "ff": [
-    6824.0,
+    6761.0,
     106400.0,
-    6.41
+    6.35
    ],
    "bram": [
     51.0,
@@ -1638,14 +1638,14 @@
    ]
   },
   "timing": {
-   "wns": -0.467,
-   "tns": -12.142,
-   "whs": 0.065,
+   "wns": -0.019,
+   "tns": -0.021,
+   "whs": 0.039,
    "met": false
   },
   "power": {
-   "total": 0.617,
-   "dynamic": 0.503,
+   "total": 0.613,
+   "dynamic": 0.499,
    "static": 0.114,
    "confidence": "Medium",
    "internal": "Medium",
@@ -1657,8 +1657,8 @@
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    10404,
-    6824,
+    10440,
+    6761,
     51.0,
     46
    ],
@@ -1666,8 +1666,8 @@
     1,
     "(secure_jpeg_lanes_top)",
     "(top)",
-    4,
-    41,
+    89,
+    58,
     0.0,
     0
    ],
@@ -1675,8 +1675,8 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    3419,
-    2142,
+    3427,
+    2129,
     25.5,
     23
    ],
@@ -1684,8 +1684,8 @@
     2,
     "u_rle",
     "zigzag_rle_10",
-    425,
-    238,
+    424,
+    240,
     0.0,
     0
    ],
@@ -1693,7 +1693,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_2",
-    308,
+    309,
     451,
     25.0,
     0
@@ -1702,8 +1702,8 @@
     2,
     "u_dct",
     "dct8x8_3",
-    805,
-    113,
+    803,
+    86,
     0.0,
     22
    ],
@@ -1711,8 +1711,8 @@
     2,
     "u_enc",
     "selective_enc_4",
-    163,
-    140,
+    161,
+    135,
     0.0,
     0
    ],
@@ -1720,8 +1720,8 @@
     2,
     "u_huff",
     "huffman_enc_6",
-    331,
-    36,
+    330,
+    38,
     0.0,
     0
    ],
@@ -1729,8 +1729,8 @@
     2,
     "u_ks",
     "keystream_gen_7",
-    927,
-    859,
+    935,
+    862,
     0.0,
     0
    ],
@@ -1738,8 +1738,8 @@
     2,
     "u_pack",
     "bit_packer_8",
-    305,
-    184,
+    311,
+    182,
     0.0,
     0
    ],
@@ -1748,7 +1748,7 @@
     "u_quant",
     "quantiser_9",
     90,
-    36,
+    53,
     0.0,
     1
    ],
@@ -1756,8 +1756,8 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    4196,
-    2257,
+    4225,
+    2205,
     25.5,
     23
    ],
@@ -1766,7 +1766,7 @@
     "(g_lane[1].u_lane)",
     "encoder_lane__parameterized0",
     50,
-    47,
+    46,
     0.0,
     0
    ],
@@ -1774,8 +1774,8 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px",
-    1095,
-    535,
+    1101,
+    536,
     25.0,
     0
    ],
@@ -1784,7 +1784,7 @@
     "u_dct",
     "dct8x8",
     808,
-    144,
+    78,
     0.0,
     22
    ],
@@ -1792,8 +1792,8 @@
     2,
     "u_enc",
     "selective_enc",
-    163,
-    126,
+    161,
+    132,
     0.0,
     0
    ],
@@ -1801,8 +1801,8 @@
     2,
     "u_huff",
     "huffman_enc",
-    327,
-    36,
+    329,
+    37,
     0.0,
     0
    ],
@@ -1810,8 +1810,8 @@
     2,
     "u_ks",
     "keystream_gen",
-    919,
-    857,
+    932,
+    863,
     0.0,
     0
    ],
@@ -1819,7 +1819,7 @@
     2,
     "u_pack",
     "bit_packer",
-    297,
+    308,
     182,
     0.0,
     0
@@ -1837,7 +1837,547 @@
     2,
     "u_rle",
     "zigzag_rle",
-    426,
+    424,
+    241,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_kseg",
+    "kseg_unit",
+    790,
+    591,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_kseg)",
+    "kseg_unit",
+    4,
+    133,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    786,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_merge",
+    "segment_merger",
+    58,
+    38,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    481,
+    453,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1347,
+    1192,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    361,
+    606,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    986,
+    586,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    24,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    -0.019,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    -0.002,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.006,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.006,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.006,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.014,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.018,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.023,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.024,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.024,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ]
+  ],
+  "period": 6.0,
+  "missing": [],
+  "fmax_mhz": 166.1,
+  "run": 11
+ },
+ {
+  "folder": "vivado_secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10",
+  "name": "secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10",
+  "util": {
+   "lut": [
+    18141.0,
+    53200.0,
+    34.1
+   ],
+   "ff": [
+    10917.0,
+    106400.0,
+    10.26
+   ],
+   "bram": [
+    54.0,
+    140.0,
+    38.57
+   ],
+   "dsp": [
+    92.0,
+    220.0,
+    41.82
+   ]
+  },
+  "timing": {
+   "wns": -0.182,
+   "tns": -0.981,
+   "whs": 0.083,
+   "met": false
+  },
+  "power": {
+   "total": 0.943,
+   "dynamic": 0.822,
+   "static": 0.121,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "secure_jpeg_lanes_top",
+    "(top)",
+    18141,
+    10917,
+    54.0,
+    92
+   ],
+   [
+    1,
+    "(secure_jpeg_lanes_top)",
+    "(top)",
+    87,
+    59,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[0].u_lane",
+    "encoder_lane",
+    3423,
+    2094,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_40",
+    425,
+    241,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_32",
+    310,
+    446,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_33",
+    805,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_34",
+    161,
+    129,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_36",
+    330,
+    35,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_37",
+    932,
+    859,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_38",
+    306,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser_39",
+    90,
+    53,
+    0.0,
+    1
+   ],
+   [
+    1,
+    "g_lane[1].u_lane",
+    "encoder_lane__parameterized0",
+    3423,
+    2127,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "(g_lane[1].u_lane)",
+    "encoder_lane__parameterized0",
+    106,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_17",
+    316,
+    445,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_18",
+    725,
+    109,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_19",
+    162,
+    136,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_21",
+    330,
+    36,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_22",
+    943,
+    860,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_23",
+    300,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser_24",
+    91,
+    36,
+    0.0,
+    1
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_25",
+    425,
+    241,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[2].u_lane",
+    "encoder_lane__parameterized1",
+    3413,
+    2074,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_10",
+    427,
+    239,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_2",
+    304,
+    445,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_3",
+    804,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_4",
+    161,
+    129,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_6",
+    326,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_7",
+    933,
+    859,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_8",
+    298,
+    183,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser_9",
+    90,
+    36,
+    0.0,
+    1
+   ],
+   [
+    1,
+    "g_lane[3].u_lane",
+    "encoder_lane__parameterized2",
+    4994,
+    2192,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "(g_lane[3].u_lane)",
+    "encoder_lane__parameterized2",
+    107,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px",
+    1897,
+    552,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8",
+    723,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc",
+    160,
+    133,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc",
+    327,
+    39,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen",
+    943,
+    859,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer",
+    299,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser",
+    91,
+    36,
+    0.0,
+    1
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle",
+    422,
     240,
     0.0,
     0
@@ -1873,8 +2413,8 @@
     1,
     "u_merge",
     "segment_merger",
-    56,
-    38,
+    74,
+    39,
     0.0,
     0
    ],
@@ -1882,8 +2422,8 @@
     1,
     "u_regs",
     "axil_regs",
-    576,
-    462,
+    569,
+    453,
     0.0,
     0
    ],
@@ -1891,8 +2431,8 @@
     1,
     "u_tag",
     "tag_unit",
-    1339,
-    1198,
+    1347,
+    1193,
     0.0,
     0
    ],
@@ -1900,8 +2440,8 @@
     2,
     "(u_tag)",
     "tag_unit",
-    360,
-    612,
+    363,
+    607,
     0.0,
     0
    ],
@@ -1909,7 +2449,7 @@
     2,
     "u_core",
     "ascon_aead128_core",
-    979,
+    984,
     586,
     0.0,
     0
@@ -1926,74 +2466,74 @@
   ],
   "critical": [
    [
-    -0.467,
+    -0.182,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    -0.101,
     "g_lane[0].u_lane",
     "g_lane[0].u_lane"
    ],
    [
-    -0.443,
+    -0.086,
     "g_lane[1].u_lane",
     "g_lane[1].u_lane"
    ],
    [
-    -0.443,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
+    -0.063,
+    "g_lane[2].u_lane",
+    "g_lane[2].u_lane"
    ],
    [
-    -0.425,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.425,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.339,
+    -0.043,
     "u_regs",
-    "segs_reg[15]_inv"
+    "g_lane[2].u_lane"
    ],
    [
-    -0.328,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    -0.324,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    -0.313,
+    -0.043,
     "u_regs",
-    "segs_reg[12]"
+    "g_lane[2].u_lane"
    ],
    [
-    -0.307,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    -0.043,
+    "u_regs",
+    "g_lane[2].u_lane"
+   ],
+   [
+    -0.043,
+    "u_regs",
+    "g_lane[2].u_lane"
+   ],
+   [
+    -0.042,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    -0.041,
+    "u_regs",
+    "g_lane[2].u_lane"
    ]
   ],
   "period": 6.0,
   "missing": [],
-  "fmax_mhz": 154.6,
-  "run": 10
+  "fmax_mhz": 161.8,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_lanes_top_6.667ns_lanes2_log_l1",
   "name": "secure_jpeg_lanes_top_6.667ns_lanes2_log_l1",
   "util": {
    "lut": [
-    10294.0,
+    10301.0,
     53200.0,
-    19.35
+    19.36
    ],
    "ff": [
-    6650.0,
+    6670.0,
     106400.0,
-    6.25
+    6.27
    ],
    "bram": [
     51.0,
@@ -2007,14 +2547,14 @@
    ]
   },
   "timing": {
-   "wns": -0.06,
-   "tns": -0.119,
-   "whs": 0.061,
-   "met": false
+   "wns": 0.003,
+   "tns": 0.0,
+   "whs": 0.1,
+   "met": true
   },
   "power": {
    "total": 0.562,
-   "dynamic": 0.45,
+   "dynamic": 0.449,
    "static": 0.113,
    "confidence": "Medium",
    "internal": "Medium",
@@ -2026,8 +2566,8 @@
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    10294,
-    6650,
+    10301,
+    6670,
     51.0,
     46
    ],
@@ -2035,8 +2575,8 @@
     1,
     "(secure_jpeg_lanes_top)",
     "(top)",
-    4,
-    41,
+    78,
+    58,
     0.0,
     0
    ],
@@ -2044,8 +2584,8 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    3359,
-    2078,
+    3367,
+    2081,
     25.5,
     23
    ],
@@ -2053,7 +2593,7 @@
     2,
     "u_rle",
     "zigzag_rle_10",
-    423,
+    421,
     239,
     0.0,
     0
@@ -2062,7 +2602,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_2",
-    304,
+    307,
     451,
     25.0,
     0
@@ -2071,7 +2611,7 @@
     2,
     "u_dct",
     "dct8x8_3",
-    801,
+    804,
     68,
     0.0,
     22
@@ -2080,8 +2620,8 @@
     2,
     "u_enc",
     "selective_enc_4",
-    155,
-    127,
+    148,
+    129,
     0.0,
     0
    ],
@@ -2089,8 +2629,8 @@
     2,
     "u_huff",
     "huffman_enc_6",
-    321,
-    35,
+    320,
+    36,
     0.0,
     0
    ],
@@ -2098,8 +2638,8 @@
     2,
     "u_ks",
     "keystream_gen_7",
-    922,
-    857,
+    931,
+    858,
     0.0,
     0
    ],
@@ -2107,7 +2647,7 @@
     2,
     "u_pack",
     "bit_packer_8",
-    279,
+    282,
     182,
     0.0,
     0
@@ -2125,8 +2665,8 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    4154,
-    2161,
+    4171,
+    2163,
     25.5,
     23
    ],
@@ -2134,8 +2674,8 @@
     2,
     "(g_lane[1].u_lane)",
     "encoder_lane__parameterized0",
-    50,
-    47,
+    52,
+    46,
     0.0,
     0
    ],
@@ -2143,7 +2683,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px",
-    1090,
+    1091,
     535,
     25.0,
     0
@@ -2152,7 +2692,7 @@
     2,
     "u_dct",
     "dct8x8",
-    803,
+    805,
     69,
     0.0,
     22
@@ -2161,8 +2701,8 @@
     2,
     "u_enc",
     "selective_enc",
-    155,
-    122,
+    154,
+    127,
     0.0,
     0
    ],
@@ -2170,8 +2710,8 @@
     2,
     "u_huff",
     "huffman_enc",
-    320,
-    35,
+    324,
+    34,
     0.0,
     0
    ],
@@ -2179,8 +2719,8 @@
     2,
     "u_ks",
     "keystream_gen",
-    922,
-    860,
+    931,
+    857,
     0.0,
     0
    ],
@@ -2207,7 +2747,7 @@
     "u_rle",
     "zigzag_rle",
     423,
-    238,
+    240,
     0.0,
     0
    ],
@@ -2242,7 +2782,7 @@
     1,
     "u_merge",
     "segment_merger",
-    56,
+    57,
     38,
     0.0,
     0
@@ -2251,375 +2791,7 @@
     1,
     "u_regs",
     "axil_regs",
-    570,
-    455,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_tag",
-    "tag_unit",
-    1338,
-    1191,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_tag)",
-    "tag_unit",
-    361,
-    605,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core",
-    977,
-    586,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_words",
-    "scan_word_packer",
-    24,
-    95,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    -0.06,
-    "u_regs",
-    "segs_reg[15]_inv"
-   ],
-   [
-    -0.059,
-    "u_regs",
-    "segs_reg[13]"
-   ],
-   [
-    0.016,
-    "u_regs",
-    "segs_reg[12]"
-   ],
-   [
-    0.049,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.056,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ],
-   [
-    0.063,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.063,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.063,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.063,
-    "u_regs",
-    "segs_reg[11]"
-   ],
-   [
-    0.079,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
-   ]
-  ],
-  "period": 6.667,
-  "missing": [],
-  "fmax_mhz": 148.7,
-  "run": 10
- },
- {
-  "folder": "vivado_secure_jpeg_lanes_top_lanes2_log_l1",
-  "name": "secure_jpeg_lanes_top_lanes2_log_l1",
-  "util": {
-   "lut": [
-    10086.0,
-    53200.0,
-    18.96
-   ],
-   "ff": [
-    6633.0,
-    106400.0,
-    6.23
-   ],
-   "bram": [
-    52.0,
-    140.0,
-    37.14
-   ],
-   "dsp": [
-    46.0,
-    220.0,
-    20.91
-   ]
-  },
-  "timing": {
-   "wns": 0.803,
-   "tns": 0.0,
-   "whs": 0.08,
-   "met": true
-  },
-  "power": {
-   "total": 0.413,
-   "dynamic": 0.302,
-   "static": 0.11,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {
-   "v3_E2": {
-    "total": 0.353,
-    "dynamic": 0.244,
-    "static": 0.109,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   },
-   "v3_E5": {
-    "total": 0.353,
-    "dynamic": 0.243,
-    "static": 0.109,
-    "confidence": "Medium",
-    "internal": "Medium",
-    "internal_detail": "User specified less than 25% of internal nodes"
-   }
-  },
-  "hier": [
-   [
-    0,
-    "secure_jpeg_lanes_top",
-    "(top)",
-    10086,
-    6633,
-    52.0,
-    46
-   ],
-   [
-    1,
-    "(secure_jpeg_lanes_top)",
-    "(top)",
-    4,
-    41,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[0].u_lane",
-    "encoder_lane",
-    3265,
-    2069,
-    26.0,
-    23
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle_10",
-    421,
-    238,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_rgb.u_conv",
-    "rgb2ycbcr_2px_2",
-    301,
-    451,
-    25.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8_3",
-    802,
-    68,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc_4",
-    147,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc_6",
-    315,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen_7",
-    915,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer_8",
-    276,
-    182,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[1].u_lane",
-    "encoder_lane__parameterized0",
-    4059,
-    2155,
-    26.0,
-    23
-   ],
-   [
-    2,
-    "(g_lane[1].u_lane)",
-    "encoder_lane__parameterized0",
-    51,
-    47,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_rgb.u_conv",
-    "rgb2ycbcr_2px",
-    1084,
-    535,
-    25.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8",
-    804,
-    69,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc",
-    149,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc",
-    314,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen",
-    914,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer",
-    276,
-    182,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle",
-    421,
-    238,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_kseg",
-    "kseg_unit",
-    790,
-    591,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_kseg)",
-    "kseg_unit",
-    4,
-    133,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core_0",
-    786,
-    458,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_merge",
-    "segment_merger",
-    56,
-    38,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_regs",
-    "axil_regs",
-    553,
+    477,
     453,
     0.0,
     0
@@ -2663,74 +2835,982 @@
   ],
   "critical": [
    [
-    0.803,
+    0.003,
     "g_lane[1].u_lane",
     "g_lane[1].u_lane"
    ],
    [
-    1.155,
+    0.006,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.055,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.096,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.099,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.099,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.102,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.102,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    0.108,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.123,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ]
+  ],
+  "period": 6.667,
+  "missing": [],
+  "fmax_mhz": 150.1,
+  "run": 11
+ },
+ {
+  "folder": "vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10",
+  "name": "secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10",
+  "util": {
+   "lut": [
+    17887.0,
+    53200.0,
+    33.62
+   ],
+   "ff": [
+    10803.0,
+    106400.0,
+    10.15
+   ],
+   "bram": [
+    54.0,
+    140.0,
+    38.57
+   ],
+   "dsp": [
+    92.0,
+    220.0,
+    41.82
+   ]
+  },
+  "timing": {
+   "wns": 0.011,
+   "tns": 0.0,
+   "whs": 0.062,
+   "met": true
+  },
+  "power": {
+   "total": 0.855,
+   "dynamic": 0.736,
+   "static": 0.119,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "secure_jpeg_lanes_top",
+    "(top)",
+    17887,
+    10803,
+    54.0,
+    92
+   ],
+   [
+    1,
+    "(secure_jpeg_lanes_top)",
+    "(top)",
+    77,
+    59,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[0].u_lane",
+    "encoder_lane",
+    3357,
+    2067,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_40",
+    420,
+    239,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_32",
+    299,
+    446,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_33",
+    804,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_34",
+    148,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_36",
+    320,
+    36,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_37",
+    931,
+    859,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_38",
+    282,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser_39",
+    90,
+    36,
+    0.0,
+    1
+   ],
+   [
+    1,
+    "g_lane[1].u_lane",
+    "encoder_lane__parameterized0",
+    3367,
+    2062,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "(g_lane[1].u_lane)",
+    "encoder_lane__parameterized0",
+    106,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_17",
+    305,
+    445,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_18",
+    724,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_19",
+    152,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_21",
+    322,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_22",
+    939,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_23",
+    282,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser_24",
+    91,
+    36,
+    0.0,
+    1
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_25",
+    421,
+    238,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[2].u_lane",
+    "encoder_lane__parameterized1",
+    3367,
+    2090,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_10",
+    424,
+    240,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_2",
+    297,
+    445,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_3",
+    803,
+    86,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_4",
+    150,
+    128,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_6",
+    324,
+    35,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_7",
+    932,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_8",
+    280,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser_9",
+    90,
+    36,
+    0.0,
+    1
+   ],
+   [
+    1,
+    "g_lane[3].u_lane",
+    "encoder_lane__parameterized2",
+    4934,
+    2156,
+    13.5,
+    23
+   ],
+   [
+    2,
+    "(g_lane[3].u_lane)",
+    "encoder_lane__parameterized2",
+    106,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px",
+    1875,
+    529,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8",
+    720,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc",
+    151,
+    125,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc",
+    319,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen",
+    940,
+    860,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer",
+    287,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_quant",
+    "quantiser",
+    91,
+    36,
+    0.0,
+    1
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle",
+    420,
+    239,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_kseg",
+    "kseg_unit",
+    790,
+    591,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_kseg)",
+    "kseg_unit",
+    4,
+    133,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    786,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_merge",
+    "segment_merger",
+    70,
+    39,
+    0.0,
+    0
+   ],
+   [
+    1,
     "u_regs",
-    "u_kseg"
+    "axil_regs",
+    565,
+    453,
+    0.0,
+    0
    ],
    [
-    1.178,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    1.178,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    1.199,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    1.199,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    1.199,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    1.259,
+    1,
     "u_tag",
+    "tag_unit",
+    1343,
+    1191,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    363,
+    605,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    980,
+    586,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    24,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.011,
+    "g_lane[2].u_lane",
+    "g_lane[2].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ],
+   [
+    0.019,
+    "g_lane[3].u_lane",
+    "g_lane[3].u_lane"
+   ]
+  ],
+  "period": 6.667,
+  "missing": [],
+  "fmax_mhz": 150.2,
+  "run": 11
+ },
+ {
+  "folder": "vivado_secure_jpeg_lanes_top_lanes2_log_l1",
+  "name": "secure_jpeg_lanes_top_lanes2_log_l1",
+  "util": {
+   "lut": [
+    10099.0,
+    53200.0,
+    18.98
+   ],
+   "ff": [
+    6648.0,
+    106400.0,
+    6.25
+   ],
+   "bram": [
+    52.0,
+    140.0,
+    37.14
+   ],
+   "dsp": [
+    46.0,
+    220.0,
+    20.91
+   ]
+  },
+  "timing": {
+   "wns": 1.056,
+   "tns": 0.0,
+   "whs": 0.081,
+   "met": true
+  },
+  "power": {
+   "total": 0.41,
+   "dynamic": 0.3,
+   "static": 0.11,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {
+   "v3_E2": {
+    "total": 0.345,
+    "dynamic": 0.235,
+    "static": 0.109,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "v3_E5": {
+    "total": 0.344,
+    "dynamic": 0.235,
+    "static": 0.109,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   }
+  },
+  "hier": [
+   [
+    0,
+    "secure_jpeg_lanes_top",
+    "(top)",
+    10099,
+    6648,
+    52.0,
+    46
+   ],
+   [
+    1,
+    "(secure_jpeg_lanes_top)",
+    "(top)",
+    75,
+    58,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[0].u_lane",
+    "encoder_lane",
+    3272,
+    2068,
+    26.0,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_10",
+    421,
+    238,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px_2",
+    301,
+    451,
+    25.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_3",
+    799,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_4",
+    143,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_6",
+    314,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_7",
+    928,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_8",
+    278,
+    182,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[1].u_lane",
+    "encoder_lane__parameterized0",
+    4074,
+    2154,
+    26.0,
+    23
+   ],
+   [
+    2,
+    "(g_lane[1].u_lane)",
+    "encoder_lane__parameterized0",
+    51,
+    46,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px",
+    1087,
+    535,
+    25.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8",
+    803,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc",
+    144,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc",
+    314,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen",
+    929,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer",
+    277,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle",
+    422,
+    238,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_kseg",
+    "kseg_unit",
+    790,
+    591,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_kseg)",
+    "kseg_unit",
+    4,
+    133,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    786,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_merge",
+    "segment_merger",
+    57,
+    38,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    475,
+    453,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1336,
+    1191,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    359,
+    605,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    977,
+    586,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    24,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    1.056,
+    "g_lane[1].u_lane",
     "g_lane[1].u_lane"
    ],
    [
-    1.318,
-    "u_regs",
-    "u_kseg"
+    1.059,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
    ],
    [
-    1.318,
-    "u_regs",
-    "u_kseg"
+    1.135,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.231,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.238,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.264,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.285,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.291,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.302,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.312,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 108.7,
-  "run": 10
+  "fmax_mhz": 111.8,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
   "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10",
   "util": {
    "lut": [
-    17478.0,
+    17515.0,
     53200.0,
-    32.85
+    32.92
    ],
    "ff": [
-    10746.0,
+    10759.0,
     106400.0,
-    10.1
+    10.11
    ],
    "bram": [
     56.0,
@@ -2744,9 +3824,9 @@
    ]
   },
   "timing": {
-   "wns": 0.833,
+   "wns": 1.02,
    "tns": 0.0,
-   "whs": 0.027,
+   "whs": 0.041,
    "met": true
   },
   "power": {
@@ -2759,16 +3839,16 @@
   },
   "power_saif": {
    "v3l4_E2": {
-    "total": 0.503,
-    "dynamic": 0.391,
+    "total": 0.492,
+    "dynamic": 0.38,
     "static": 0.112,
     "confidence": "Medium",
     "internal": "Medium",
     "internal_detail": "User specified less than 25% of internal nodes"
    },
    "v3l4_E5": {
-    "total": 0.504,
-    "dynamic": 0.392,
+    "total": 0.493,
+    "dynamic": 0.381,
     "static": 0.112,
     "confidence": "Medium",
     "internal": "Medium",
@@ -2780,8 +3860,8 @@
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    17478,
-    10746,
+    17515,
+    10759,
     56.0,
     92
    ],
@@ -2789,8 +3869,8 @@
     1,
     "(secure_jpeg_lanes_top)",
     "(top)",
-    4,
-    42,
+    75,
+    59,
     0.0,
     0
    ],
@@ -2798,8 +3878,8 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    3261,
-    2062,
+    3272,
+    2061,
     14.0,
     23
    ],
@@ -2834,7 +3914,7 @@
     2,
     "u_enc",
     "selective_enc_34",
-    148,
+    143,
     120,
     0.0,
     0
@@ -2852,7 +3932,7 @@
     2,
     "u_ks",
     "keystream_gen_37",
-    914,
+    928,
     857,
     0.0,
     0
@@ -2861,7 +3941,7 @@
     2,
     "u_pack",
     "bit_packer_38",
-    276,
+    278,
     182,
     0.0,
     0
@@ -2870,8 +3950,8 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    3261,
-    2063,
+    3272,
+    2062,
     14.0,
     23
    ],
@@ -2879,8 +3959,8 @@
     2,
     "(g_lane[1].u_lane)",
     "encoder_lane__parameterized0",
-    105,
-    46,
+    106,
+    45,
     0.0,
     0
    ],
@@ -2888,7 +3968,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_17",
-    300,
+    301,
     445,
     13.0,
     0
@@ -2897,7 +3977,7 @@
     2,
     "u_dct",
     "dct8x8_18",
-    722,
+    721,
     68,
     0.0,
     22
@@ -2906,7 +3986,7 @@
     2,
     "u_enc",
     "selective_enc_19",
-    147,
+    143,
     120,
     0.0,
     0
@@ -2924,7 +4004,7 @@
     2,
     "u_ks",
     "keystream_gen_22",
-    924,
+    939,
     857,
     0.0,
     0
@@ -2951,8 +4031,8 @@
     1,
     "g_lane[2].u_lane",
     "encoder_lane__parameterized1",
-    3266,
-    2062,
+    3277,
+    2061,
     14.0,
     23
    ],
@@ -2969,7 +4049,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_2",
-    295,
+    296,
     445,
     13.0,
     0
@@ -2978,7 +4058,7 @@
     2,
     "u_dct",
     "dct8x8_3",
-    800,
+    803,
     68,
     0.0,
     22
@@ -2987,7 +4067,7 @@
     2,
     "u_enc",
     "selective_enc_4",
-    149,
+    144,
     120,
     0.0,
     0
@@ -2996,78 +4076,6 @@
     2,
     "u_huff",
     "huffman_enc_6",
-    315,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen_7",
-    914,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer_8",
-    278,
-    182,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[3].u_lane",
-    "encoder_lane__parameterized2",
-    4828,
-    2148,
-    14.0,
-    23
-   ],
-   [
-    2,
-    "(g_lane[3].u_lane)",
-    "encoder_lane__parameterized2",
-    107,
-    46,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_rgb.u_conv",
-    "rgb2ycbcr_2px",
-    1863,
-    529,
-    13.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8",
-    722,
-    69,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc",
-    148,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc",
     314,
     34,
     0.0,
@@ -3076,8 +4084,80 @@
    [
     2,
     "u_ks",
+    "keystream_gen_7",
+    929,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_8",
+    276,
+    182,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[3].u_lane",
+    "encoder_lane__parameterized2",
+    4842,
+    2147,
+    14.0,
+    23
+   ],
+   [
+    2,
+    "(g_lane[3].u_lane)",
+    "encoder_lane__parameterized2",
+    106,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_rgb.u_conv",
+    "rgb2ycbcr_2px",
+    1867,
+    529,
+    13.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8",
+    721,
+    69,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc",
+    143,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc",
+    315,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
     "keystream_gen",
-    923,
+    939,
     857,
     0.0,
     0
@@ -3131,7 +4211,7 @@
     1,
     "u_merge",
     "segment_merger",
-    68,
+    69,
     39,
     0.0,
     0
@@ -3140,7 +4220,7 @@
     1,
     "u_regs",
     "axil_regs",
-    639,
+    560,
     453,
     0.0,
     0
@@ -3149,7 +4229,7 @@
     1,
     "u_tag",
     "tag_unit",
-    1338,
+    1339,
     1191,
     0.0,
     0
@@ -3158,7 +4238,7 @@
     2,
     "(u_tag)",
     "tag_unit",
-    361,
+    362,
     605,
     0.0,
     0
@@ -3184,74 +4264,74 @@
   ],
   "critical": [
    [
-    0.833,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.02,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.833,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.02,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.833,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.02,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.864,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.043,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.864,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.05,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.864,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.161,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.864,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.163,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.868,
-    "(top)",
-    "g_lane[3].u_lane"
+    1.163,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.873,
-    "g_lane[3].u_lane",
-    "g_lane[3].u_lane"
+    1.163,
+    "u_regs",
+    "u_kseg"
    ],
    [
-    0.873,
-    "g_lane[3].u_lane",
-    "g_lane[3].u_lane"
+    1.163,
+    "u_regs",
+    "u_kseg"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 109.1,
-  "run": 10
+  "fmax_mhz": 111.4,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1",
   "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1",
   "util": {
    "lut": [
-    17455.0,
+    17492.0,
     53200.0,
-    32.81
+    32.88
    ],
    "ff": [
-    10710.0,
+    10723.0,
     106400.0,
-    10.07
+    10.08
    ],
    "bram": [
     32.0,
@@ -3265,14 +4345,14 @@
    ]
   },
   "timing": {
-   "wns": 0.808,
+   "wns": 0.414,
    "tns": 0.0,
    "whs": 0.05,
    "met": true
   },
   "power": {
-   "total": 0.577,
-   "dynamic": 0.465,
+   "total": 0.578,
+   "dynamic": 0.466,
    "static": 0.112,
    "confidence": "Medium",
    "internal": "Medium",
@@ -3284,8 +4364,8 @@
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    17455,
-    10710,
+    17492,
+    10723,
     32.0,
     92
    ],
@@ -3293,8 +4373,8 @@
     1,
     "(secure_jpeg_lanes_top)",
     "(top)",
-    4,
-    42,
+    75,
+    59,
     0.0,
     0
    ],
@@ -3302,8 +4382,8 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    3254,
-    2053,
+    3259,
+    2052,
     8.0,
     23
    ],
@@ -3320,7 +4400,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_32",
-    287,
+    286,
     436,
     7.0,
     0
@@ -3329,7 +4409,7 @@
     2,
     "u_dct",
     "dct8x8_33",
-    806,
+    804,
     69,
     0.0,
     22
@@ -3338,7 +4418,7 @@
     2,
     "u_enc",
     "selective_enc_34",
-    148,
+    143,
     120,
     0.0,
     0
@@ -3347,7 +4427,7 @@
     2,
     "u_huff",
     "huffman_enc_36",
-    315,
+    314,
     34,
     0.0,
     0
@@ -3356,7 +4436,7 @@
     2,
     "u_ks",
     "keystream_gen_37",
-    914,
+    928,
     857,
     0.0,
     0
@@ -3365,7 +4445,7 @@
     2,
     "u_pack",
     "bit_packer_38",
-    277,
+    278,
     182,
     0.0,
     0
@@ -3374,8 +4454,8 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    3258,
-    2054,
+    3268,
+    2053,
     8.0,
     23
    ],
@@ -3384,7 +4464,7 @@
     "(g_lane[1].u_lane)",
     "encoder_lane__parameterized0",
     106,
-    46,
+    45,
     0.0,
     0
    ],
@@ -3401,7 +4481,7 @@
     2,
     "u_dct",
     "dct8x8_18",
-    725,
+    726,
     68,
     0.0,
     22
@@ -3410,7 +4490,7 @@
     2,
     "u_enc",
     "selective_enc_19",
-    148,
+    142,
     120,
     0.0,
     0
@@ -3419,7 +4499,7 @@
     2,
     "u_huff",
     "huffman_enc_21",
-    314,
+    315,
     34,
     0.0,
     0
@@ -3428,7 +4508,7 @@
     2,
     "u_ks",
     "keystream_gen_22",
-    924,
+    938,
     857,
     0.0,
     0
@@ -3455,8 +4535,8 @@
     1,
     "g_lane[2].u_lane",
     "encoder_lane__parameterized1",
-    3266,
-    2054,
+    3278,
+    2053,
     8.0,
     23
    ],
@@ -3464,7 +4544,7 @@
     2,
     "u_rle",
     "zigzag_rle_10",
-    420,
+    421,
     238,
     0.0,
     0
@@ -3473,7 +4553,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_2",
-    293,
+    292,
     436,
     7.0,
     0
@@ -3482,7 +4562,7 @@
     2,
     "u_dct",
     "dct8x8_3",
-    807,
+    809,
     69,
     0.0,
     22
@@ -3491,7 +4571,7 @@
     2,
     "u_enc",
     "selective_enc_4",
-    149,
+    144,
     120,
     0.0,
     0
@@ -3500,7 +4580,7 @@
     2,
     "u_huff",
     "huffman_enc_6",
-    314,
+    315,
     34,
     0.0,
     0
@@ -3509,7 +4589,7 @@
     2,
     "u_ks",
     "keystream_gen_7",
-    915,
+    928,
     857,
     0.0,
     0
@@ -3518,7 +4598,7 @@
     2,
     "u_pack",
     "bit_packer_8",
-    276,
+    277,
     182,
     0.0,
     0
@@ -3527,8 +4607,8 @@
     1,
     "g_lane[3].u_lane",
     "encoder_lane__parameterized2",
-    4816,
-    2138,
+    4828,
+    2137,
     8.0,
     23
    ],
@@ -3536,8 +4616,8 @@
     2,
     "(g_lane[3].u_lane)",
     "encoder_lane__parameterized2",
-    106,
-    46,
+    107,
+    45,
     0.0,
     0
    ],
@@ -3545,7 +4625,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px",
-    1851,
+    1857,
     520,
     7.0,
     0
@@ -3554,7 +4634,7 @@
     2,
     "u_dct",
     "dct8x8",
-    724,
+    721,
     68,
     0.0,
     22
@@ -3563,7 +4643,7 @@
     2,
     "u_enc",
     "selective_enc",
-    148,
+    142,
     120,
     0.0,
     0
@@ -3572,7 +4652,7 @@
     2,
     "u_huff",
     "huffman_enc",
-    314,
+    315,
     34,
     0.0,
     0
@@ -3581,7 +4661,7 @@
     2,
     "u_ks",
     "keystream_gen",
-    923,
+    938,
     857,
     0.0,
     0
@@ -3599,7 +4679,7 @@
     2,
     "u_rle",
     "zigzag_rle",
-    420,
+    419,
     238,
     0.0,
     0
@@ -3635,7 +4715,7 @@
     1,
     "u_merge",
     "segment_merger",
-    68,
+    69,
     39,
     0.0,
     0
@@ -3644,7 +4724,7 @@
     1,
     "u_regs",
     "axil_regs",
-    642,
+    565,
     453,
     0.0,
     0
@@ -3653,7 +4733,7 @@
     1,
     "u_tag",
     "tag_unit",
-    1338,
+    1339,
     1191,
     0.0,
     0
@@ -3663,510 +4743,6 @@
     "(u_tag)",
     "tag_unit",
     361,
-    605,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core",
-    977,
-    586,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_words",
-    "scan_word_packer",
-    24,
-    95,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    0.808,
-    "u_regs",
-    "segs_reg[15]_inv"
-   ],
-   [
-    0.812,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.812,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.953,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.953,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.953,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.953,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.953,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.965,
-    "u_regs",
-    "u_kseg"
-   ],
-   [
-    0.965,
-    "u_regs",
-    "u_kseg"
-   ]
-  ],
-  "period": 10.0,
-  "missing": [],
-  "fmax_mhz": 108.8,
-  "run": 10
- },
- {
-  "folder": "vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1",
-  "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1",
-  "util": {
-   "lut": [
-    15138.0,
-    53200.0,
-    28.45
-   ],
-   "ff": [
-    9377.0,
-    106400.0,
-    8.81
-   ],
-   "bram": [
-    60.0,
-    140.0,
-    42.86
-   ],
-   "dsp": [
-    92.0,
-    220.0,
-    41.82
-   ]
-  },
-  "timing": {
-   "wns": 0.599,
-   "tns": 0.0,
-   "whs": 0.051,
-   "met": true
-  },
-  "power": {
-   "total": 0.569,
-   "dynamic": 0.455,
-   "static": 0.114,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {},
-  "hier": [
-   [
-    0,
-    "secure_jpeg_lanes_top",
-    "(top)",
-    15138,
-    9377,
-    60.0,
-    92
-   ],
-   [
-    1,
-    "(secure_jpeg_lanes_top)",
-    "(top)",
-    4,
-    37,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[0].u_lane",
-    "encoder_lane",
-    3062,
-    1709,
-    15.0,
-    23
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle_40",
-    420,
-    238,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_yuyv.u_conv",
-    "yuyv_4px_32",
-    99,
-    93,
-    14.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8_33",
-    804,
-    68,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc_34",
-    147,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc_36",
-    314,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen_37",
-    914,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer_38",
-    278,
-    182,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[1].u_lane",
-    "encoder_lane__parameterized0",
-    3067,
-    1711,
-    15.0,
-    23
-   ],
-   [
-    2,
-    "(g_lane[1].u_lane)",
-    "encoder_lane__parameterized0",
-    107,
-    46,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_yuyv.u_conv",
-    "yuyv_4px_17",
-    104,
-    93,
-    14.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8_18",
-    722,
-    68,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc_19",
-    147,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc_21",
-    314,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen_22",
-    924,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer_23",
-    279,
-    182,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle_25",
-    420,
-    238,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[2].u_lane",
-    "encoder_lane__parameterized1",
-    3073,
-    1712,
-    15.0,
-    23
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle_10",
-    421,
-    238,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_yuyv.u_conv",
-    "yuyv_4px_2",
-    99,
-    93,
-    14.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8_3",
-    806,
-    70,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc_4",
-    148,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc_6",
-    314,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen_7",
-    915,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer_8",
-    276,
-    182,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "g_lane[3].u_lane",
-    "encoder_lane__parameterized2",
-    3079,
-    1839,
-    15.0,
-    23
-   ],
-   [
-    2,
-    "(g_lane[3].u_lane)",
-    "encoder_lane__parameterized2",
-    105,
-    46,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "g_yuyv.u_conv",
-    "yuyv_4px",
-    111,
-    221,
-    14.0,
-    0
-   ],
-   [
-    2,
-    "u_dct",
-    "dct8x8",
-    724,
-    68,
-    0.0,
-    22
-   ],
-   [
-    2,
-    "u_enc",
-    "selective_enc",
-    148,
-    120,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_huff",
-    "huffman_enc",
-    314,
-    34,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_ks",
-    "keystream_gen",
-    925,
-    857,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_pack",
-    "bit_packer",
-    280,
-    182,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_rle",
-    "zigzag_rle",
-    421,
-    238,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_kseg",
-    "kseg_unit",
-    790,
-    591,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_kseg)",
-    "kseg_unit",
-    4,
-    133,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "u_core",
-    "ascon_aead128_core_0",
-    786,
-    458,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_merge",
-    "segment_merger",
-    68,
-    39,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_regs",
-    "axil_regs",
-    634,
-    453,
-    0.0,
-    0
-   ],
-   [
-    1,
-    "u_tag",
-    "tag_unit",
-    1342,
-    1191,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "(u_tag)",
-    "tag_unit",
-    364,
     605,
     0.0,
     0
@@ -4192,74 +4768,578 @@
   ],
   "critical": [
    [
-    0.599,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    0.414,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.599,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    0.434,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.686,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    0.739,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.686,
-    "g_lane[0].u_lane",
-    "g_lane[0].u_lane"
+    0.759,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.711,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
+    0.813,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.711,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
+    0.853,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.711,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
+    0.862,
+    "u_tag",
+    "u_tag"
    ],
    [
-    0.73,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
+    0.978,
+    "u_tag",
+    "u_tag"
    ],
    [
-    1.049,
-    "g_lane[3].u_lane",
-    "g_lane[3].u_lane"
+    0.994,
+    "u_tag",
+    "u_tag"
    ],
    [
-    1.122,
-    "g_lane[3].u_lane",
-    "g_lane[3].u_lane"
+    1.003,
+    "u_tag",
+    "u_tag"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 106.4,
-  "run": 10
+  "fmax_mhz": 104.3,
+  "run": 11
+ },
+ {
+  "folder": "vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1",
+  "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1",
+  "util": {
+   "lut": [
+    15172.0,
+    53200.0,
+    28.52
+   ],
+   "ff": [
+    9390.0,
+    106400.0,
+    8.83
+   ],
+   "bram": [
+    60.0,
+    140.0,
+    42.86
+   ],
+   "dsp": [
+    92.0,
+    220.0,
+    41.82
+   ]
+  },
+  "timing": {
+   "wns": 0.985,
+   "tns": 0.0,
+   "whs": 0.053,
+   "met": true
+  },
+  "power": {
+   "total": 0.57,
+   "dynamic": 0.456,
+   "static": 0.114,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "secure_jpeg_lanes_top",
+    "(top)",
+    15172,
+    9390,
+    60.0,
+    92
+   ],
+   [
+    1,
+    "(secure_jpeg_lanes_top)",
+    "(top)",
+    75,
+    54,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[0].u_lane",
+    "encoder_lane",
+    3071,
+    1708,
+    15.0,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_40",
+    422,
+    238,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_yuyv.u_conv",
+    "yuyv_4px_32",
+    100,
+    93,
+    14.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_33",
+    801,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_34",
+    143,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_36",
+    314,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_37",
+    928,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_38",
+    277,
+    182,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[1].u_lane",
+    "encoder_lane__parameterized0",
+    3083,
+    1710,
+    15.0,
+    23
+   ],
+   [
+    2,
+    "(g_lane[1].u_lane)",
+    "encoder_lane__parameterized0",
+    107,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_yuyv.u_conv",
+    "yuyv_4px_17",
+    104,
+    93,
+    14.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_18",
+    724,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_19",
+    143,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_21",
+    315,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_22",
+    939,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_23",
+    280,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_25",
+    420,
+    238,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[2].u_lane",
+    "encoder_lane__parameterized1",
+    3081,
+    1711,
+    15.0,
+    23
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle_10",
+    421,
+    238,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_yuyv.u_conv",
+    "yuyv_4px_2",
+    100,
+    93,
+    14.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8_3",
+    804,
+    70,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc_4",
+    144,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc_6",
+    314,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen_7",
+    928,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer_8",
+    277,
+    182,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "g_lane[3].u_lane",
+    "encoder_lane__parameterized2",
+    3084,
+    1838,
+    15.0,
+    23
+   ],
+   [
+    2,
+    "(g_lane[3].u_lane)",
+    "encoder_lane__parameterized2",
+    105,
+    45,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "g_yuyv.u_conv",
+    "yuyv_4px",
+    111,
+    221,
+    14.0,
+    0
+   ],
+   [
+    2,
+    "u_dct",
+    "dct8x8",
+    723,
+    68,
+    0.0,
+    22
+   ],
+   [
+    2,
+    "u_enc",
+    "selective_enc",
+    143,
+    120,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_huff",
+    "huffman_enc",
+    314,
+    34,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_ks",
+    "keystream_gen",
+    938,
+    857,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_pack",
+    "bit_packer",
+    280,
+    182,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_rle",
+    "zigzag_rle",
+    421,
+    238,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_kseg",
+    "kseg_unit",
+    790,
+    591,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_kseg)",
+    "kseg_unit",
+    4,
+    133,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core_0",
+    786,
+    458,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_merge",
+    "segment_merger",
+    69,
+    39,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_regs",
+    "axil_regs",
+    556,
+    453,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_tag",
+    "tag_unit",
+    1341,
+    1191,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "(u_tag)",
+    "tag_unit",
+    363,
+    605,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "u_core",
+    "ascon_aead128_core",
+    978,
+    586,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "u_words",
+    "scan_word_packer",
+    24,
+    95,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.985,
+    "(top)",
+    "g_lane[0].u_lane"
+   ],
+   [
+    0.985,
+    "(top)",
+    "g_lane[0].u_lane"
+   ],
+   [
+    1.067,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.074,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.086,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.094,
+    "(top)",
+    "g_lane[0].u_lane"
+   ],
+   [
+    1.094,
+    "(top)",
+    "g_lane[0].u_lane"
+   ],
+   [
+    1.103,
+    "g_lane[1].u_lane",
+    "g_lane[1].u_lane"
+   ],
+   [
+    1.104,
+    "(top)",
+    "g_lane[0].u_lane"
+   ],
+   [
+    1.114,
+    "(top)",
+    "g_lane[0].u_lane"
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 110.9,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1",
   "name": "secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1",
   "util": {
    "lut": [
-    17481.0,
+    17511.0,
     53200.0,
-    32.86
+    32.92
    ],
    "ff": [
-    10742.0,
+    10755.0,
     106400.0,
-    10.1
+    10.11
    ],
    "bram": [
     56.0,
@@ -4273,14 +5353,14 @@
    ]
   },
   "timing": {
-   "wns": 0.789,
+   "wns": 1.011,
    "tns": 0.0,
-   "whs": 0.07,
+   "whs": 0.038,
    "met": true
   },
   "power": {
-   "total": 0.606,
-   "dynamic": 0.492,
+   "total": 0.607,
+   "dynamic": 0.493,
    "static": 0.114,
    "confidence": "Medium",
    "internal": "Medium",
@@ -4292,8 +5372,8 @@
     0,
     "secure_jpeg_lanes_top",
     "(top)",
-    17481,
-    10742,
+    17511,
+    10755,
     56.0,
     92
    ],
@@ -4301,8 +5381,8 @@
     1,
     "(secure_jpeg_lanes_top)",
     "(top)",
-    4,
-    42,
+    75,
+    59,
     0.0,
     0
    ],
@@ -4310,8 +5390,8 @@
     1,
     "g_lane[0].u_lane",
     "encoder_lane",
-    3260,
-    2061,
+    3267,
+    2060,
     14.0,
     23
    ],
@@ -4337,7 +5417,7 @@
     2,
     "u_dct",
     "dct8x8_33",
-    807,
+    806,
     69,
     0.0,
     22
@@ -4346,7 +5426,7 @@
     2,
     "u_enc",
     "selective_enc_34",
-    148,
+    143,
     120,
     0.0,
     0
@@ -4355,7 +5435,7 @@
     2,
     "u_huff",
     "huffman_enc_36",
-    314,
+    315,
     34,
     0.0,
     0
@@ -4364,7 +5444,7 @@
     2,
     "u_ks",
     "keystream_gen_37",
-    914,
+    929,
     857,
     0.0,
     0
@@ -4373,7 +5453,7 @@
     2,
     "u_pack",
     "bit_packer_38",
-    277,
+    276,
     182,
     0.0,
     0
@@ -4382,8 +5462,8 @@
     1,
     "g_lane[1].u_lane",
     "encoder_lane__parameterized0",
-    3264,
-    2062,
+    3270,
+    2061,
     14.0,
     23
    ],
@@ -4391,8 +5471,8 @@
     2,
     "(g_lane[1].u_lane)",
     "encoder_lane__parameterized0",
-    105,
-    46,
+    106,
+    45,
     0.0,
     0
    ],
@@ -4409,7 +5489,7 @@
     2,
     "u_dct",
     "dct8x8_18",
-    725,
+    724,
     68,
     0.0,
     22
@@ -4418,7 +5498,7 @@
     2,
     "u_enc",
     "selective_enc_19",
-    148,
+    143,
     120,
     0.0,
     0
@@ -4436,7 +5516,7 @@
     2,
     "u_ks",
     "keystream_gen_22",
-    924,
+    937,
     857,
     0.0,
     0
@@ -4445,7 +5525,7 @@
     2,
     "u_pack",
     "bit_packer_23",
-    281,
+    280,
     182,
     0.0,
     0
@@ -4463,8 +5543,8 @@
     1,
     "g_lane[2].u_lane",
     "encoder_lane__parameterized1",
-    3272,
-    2061,
+    3281,
+    2060,
     14.0,
     23
    ],
@@ -4472,7 +5552,7 @@
     2,
     "u_rle",
     "zigzag_rle_10",
-    421,
+    420,
     238,
     0.0,
     0
@@ -4481,7 +5561,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px_2",
-    299,
+    300,
     444,
     13.0,
     0
@@ -4490,7 +5570,7 @@
     2,
     "u_dct",
     "dct8x8_3",
-    805,
+    806,
     68,
     0.0,
     22
@@ -4499,7 +5579,7 @@
     2,
     "u_enc",
     "selective_enc_4",
-    149,
+    143,
     120,
     0.0,
     0
@@ -4508,7 +5588,7 @@
     2,
     "u_huff",
     "huffman_enc_6",
-    315,
+    314,
     34,
     0.0,
     0
@@ -4517,7 +5597,7 @@
     2,
     "u_ks",
     "keystream_gen_7",
-    915,
+    929,
     857,
     0.0,
     0
@@ -4526,7 +5606,7 @@
     2,
     "u_pack",
     "bit_packer_8",
-    277,
+    276,
     182,
     0.0,
     0
@@ -4535,8 +5615,8 @@
     1,
     "g_lane[3].u_lane",
     "encoder_lane__parameterized2",
-    4819,
-    2147,
+    4837,
+    2146,
     14.0,
     23
    ],
@@ -4544,8 +5624,8 @@
     2,
     "(g_lane[3].u_lane)",
     "encoder_lane__parameterized2",
-    106,
-    46,
+    105,
+    45,
     0.0,
     0
    ],
@@ -4553,7 +5633,7 @@
     2,
     "g_rgb.u_conv",
     "rgb2ycbcr_2px",
-    1854,
+    1861,
     528,
     13.0,
     0
@@ -4571,7 +5651,7 @@
     2,
     "u_enc",
     "selective_enc",
-    148,
+    143,
     120,
     0.0,
     0
@@ -4580,7 +5660,7 @@
     2,
     "u_huff",
     "huffman_enc",
-    314,
+    315,
     34,
     0.0,
     0
@@ -4589,7 +5669,7 @@
     2,
     "u_ks",
     "keystream_gen",
-    924,
+    938,
     857,
     0.0,
     0
@@ -4643,7 +5723,7 @@
     1,
     "u_merge",
     "segment_merger",
-    68,
+    69,
     39,
     0.0,
     0
@@ -4652,7 +5732,7 @@
     1,
     "u_regs",
     "axil_regs",
-    644,
+    566,
     453,
     0.0,
     0
@@ -4696,69 +5776,69 @@
   ],
   "critical": [
    [
-    0.789,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.789,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.794,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    0.921,
-    "g_lane[1].u_lane",
-    "g_lane[1].u_lane"
-   ],
-   [
-    1.037,
+    1.011,
     "u_regs",
-    "u_kseg"
+    "u_tag"
    ],
    [
-    1.037,
+    1.156,
     "u_regs",
-    "u_kseg"
+    "u_tag"
    ],
    [
-    1.037,
+    1.156,
     "u_regs",
-    "u_kseg"
+    "u_tag"
    ],
    [
-    1.037,
+    1.156,
     "u_regs",
-    "u_kseg"
+    "u_tag"
    ],
    [
-    1.062,
-    "g_lane[3].u_lane",
-    "g_lane[3].u_lane"
-   ],
-   [
-    1.08,
+    1.156,
     "u_regs",
-    "u_kseg"
+    "u_tag"
+   ],
+   [
+    1.156,
+    "u_regs",
+    "u_tag"
+   ],
+   [
+    1.197,
+    "u_tag",
+    "g_lane[2].u_lane"
+   ],
+   [
+    1.3,
+    "u_tag",
+    "u_tag"
+   ],
+   [
+    1.32,
+    "u_tag",
+    "u_tag"
+   ],
+   [
+    1.323,
+    "g_lane[0].u_lane",
+    "g_lane[0].u_lane"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 108.6,
-  "run": 10
+  "fmax_mhz": 111.2,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_top",
   "name": "secure_jpeg_top",
   "util": {
    "lut": [
-    5028.0,
+    5043.0,
     53200.0,
-    9.45
+    9.48
    ],
    "ff": [
     3506.0,
@@ -4777,14 +5857,14 @@
    ]
   },
   "timing": {
-   "wns": 1.376,
+   "wns": 1.524,
    "tns": 0.0,
-   "whs": 0.063,
+   "whs": 0.072,
    "met": true
   },
   "power": {
-   "total": 0.25,
-   "dynamic": 0.144,
+   "total": 0.249,
+   "dynamic": 0.143,
    "static": 0.106,
    "confidence": "Medium",
    "internal": "Medium",
@@ -4792,15 +5872,15 @@
   },
   "power_saif": {
    "v2_E0": {
-    "total": 0.231,
-    "dynamic": 0.125,
+    "total": 0.229,
+    "dynamic": 0.123,
     "static": 0.106,
     "confidence": "Medium",
     "internal": "Medium",
     "internal_detail": "User specified less than 25% of internal nodes"
    },
    "v2_E2": {
-    "total": 0.231,
+    "total": 0.23,
     "dynamic": 0.125,
     "static": 0.106,
     "confidence": "Medium",
@@ -4808,8 +5888,8 @@
     "internal_detail": "User specified less than 25% of internal nodes"
    },
    "v2_E4": {
-    "total": 0.231,
-    "dynamic": 0.126,
+    "total": 0.23,
+    "dynamic": 0.125,
     "static": 0.106,
     "confidence": "Medium",
     "internal": "Medium",
@@ -4821,7 +5901,7 @@
     0,
     "secure_jpeg_top",
     "(top)",
-    5028,
+    5043,
     3506,
     25.5,
     23
@@ -4839,7 +5919,7 @@
     1,
     "u_conv",
     "rgb2ycbcr_block",
-    408,
+    409,
     346,
     25.0,
     0
@@ -4848,7 +5928,7 @@
     1,
     "u_dct",
     "dct8x8",
-    806,
+    808,
     69,
     0.0,
     22
@@ -4857,7 +5937,7 @@
     2,
     "u_cols",
     "dct_stage__parameterized0",
-    506,
+    507,
     36,
     0.0,
     11
@@ -4866,7 +5946,7 @@
     2,
     "u_rows",
     "dct_stage",
-    300,
+    301,
     33,
     0.0,
     11
@@ -4875,7 +5955,7 @@
     1,
     "u_enc",
     "selective_enc",
-    151,
+    147,
     120,
     0.0,
     0
@@ -4893,7 +5973,7 @@
     2,
     "u_in",
     "skid_buf",
-    68,
+    64,
     96,
     0.0,
     0
@@ -4911,7 +5991,7 @@
     1,
     "u_ks",
     "keystream_gen",
-    861,
+    874,
     857,
     0.0,
     0
@@ -4920,7 +6000,7 @@
     2,
     "(u_ks)",
     "keystream_gen",
-    128,
+    131,
     272,
     0.0,
     0
@@ -4929,7 +6009,7 @@
     2,
     "u_core",
     "ascon_aead128_core_0",
-    733,
+    743,
     585,
     0.0,
     0
@@ -4965,7 +6045,7 @@
     1,
     "u_regs",
     "axil_regs",
-    392,
+    393,
     452,
     0.0,
     0
@@ -5018,74 +6098,74 @@
   ],
   "critical": [
    [
-    1.376,
-    "u_enc",
-    "u_ks"
-   ],
-   [
-    1.471,
-    "u_enc",
-    "u_ks"
-   ],
-   [
-    1.528,
-    "u_enc",
-    "u_ks"
-   ],
-   [
-    1.553,
-    "u_enc",
-    "u_ks"
-   ],
-   [
-    1.819,
+    1.524,
     "u_regs",
     "u_ks"
    ],
    [
-    1.921,
+    1.524,
     "u_regs",
     "u_ks"
    ],
    [
-    1.921,
+    1.606,
     "u_regs",
     "u_ks"
    ],
    [
-    1.921,
+    1.606,
     "u_regs",
     "u_ks"
    ],
    [
-    1.996,
-    "u_enc",
-    "u_huff"
+    1.606,
+    "u_regs",
+    "u_ks"
    ],
    [
-    2.001,
+    1.622,
+    "u_regs",
+    "u_ks"
+   ],
+   [
+    1.622,
+    "u_regs",
+    "u_ks"
+   ],
+   [
+    1.622,
+    "u_regs",
+    "u_ks"
+   ],
+   [
+    1.622,
+    "u_regs",
+    "u_ks"
+   ],
+   [
+    1.647,
     "u_regs",
     "u_ks"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 116.0,
-  "run": 10
+  "fmax_mhz": 118.0,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_top_6.0ns",
   "name": "secure_jpeg_top_6.0ns",
   "util": {
    "lut": [
-    5217.0,
+    5181.0,
     53200.0,
-    9.81
+    9.74
    ],
    "ff": [
-    3613.0,
+    3548.0,
     106400.0,
-    3.4
+    3.33
    ],
    "bram": [
     25.0,
@@ -5099,14 +6179,14 @@
    ]
   },
   "timing": {
-   "wns": -0.284,
-   "tns": -1.477,
-   "whs": 0.027,
+   "wns": -0.015,
+   "tns": -0.015,
+   "whs": 0.04,
    "met": false
   },
   "power": {
-   "total": 0.352,
-   "dynamic": 0.244,
+   "total": 0.345,
+   "dynamic": 0.237,
    "static": 0.108,
    "confidence": "Medium",
    "internal": "Medium",
@@ -5118,8 +6198,8 @@
     0,
     "secure_jpeg_top",
     "(top)",
-    5217,
-    3613,
+    5181,
+    3548,
     25.0,
     23
    ],
@@ -5136,7 +6216,7 @@
     1,
     "u_conv",
     "rgb2ycbcr_block",
-    416,
+    413,
     352,
     25.0,
     0
@@ -5145,8 +6225,8 @@
     1,
     "u_dct",
     "dct8x8",
-    809,
-    130,
+    808,
+    69,
     0.0,
     22
    ],
@@ -5154,8 +6234,8 @@
     2,
     "u_cols",
     "dct_stage__parameterized0",
-    508,
-    68,
+    506,
+    36,
     0.0,
     11
    ],
@@ -5163,8 +6243,8 @@
     2,
     "u_rows",
     "dct_stage",
-    301,
-    62,
+    302,
+    33,
     0.0,
     11
    ],
@@ -5172,8 +6252,8 @@
     1,
     "u_enc",
     "selective_enc",
-    169,
-    136,
+    162,
+    134,
     0.0,
     0
    ],
@@ -5181,8 +6261,8 @@
     2,
     "(u_enc)",
     "selective_enc",
-    99,
-    40,
+    98,
+    38,
     0.0,
     0
    ],
@@ -5190,7 +6270,7 @@
     2,
     "u_in",
     "skid_buf",
-    70,
+    64,
     96,
     0.0,
     0
@@ -5199,7 +6279,7 @@
     1,
     "u_huff",
     "huffman_enc",
-    328,
+    327,
     36,
     0.0,
     0
@@ -5208,7 +6288,7 @@
     1,
     "u_ks",
     "keystream_gen",
-    869,
+    880,
     859,
     0.0,
     0
@@ -5217,7 +6297,7 @@
     2,
     "(u_ks)",
     "keystream_gen",
-    135,
+    136,
     274,
     0.0,
     0
@@ -5226,7 +6306,7 @@
     2,
     "u_core",
     "ascon_aead128_core_0",
-    734,
+    744,
     585,
     0.0,
     0
@@ -5235,8 +6315,8 @@
     1,
     "u_pack",
     "bit_packer",
-    313,
-    184,
+    303,
+    182,
     0.0,
     0
    ],
@@ -5245,7 +6325,7 @@
     "(u_pack)",
     "bit_packer",
     17,
-    86,
+    84,
     0.0,
     0
    ],
@@ -5253,7 +6333,7 @@
     2,
     "u_in",
     "skid_buf__parameterized0",
-    257,
+    247,
     78,
     0.0,
     0
@@ -5271,7 +6351,7 @@
     1,
     "u_regs",
     "axil_regs",
-    408,
+    405,
     452,
     0.0,
     0
@@ -5289,7 +6369,7 @@
     1,
     "u_tag",
     "tag_unit",
-    1381,
+    1360,
     1072,
     0.0,
     0
@@ -5298,7 +6378,7 @@
     2,
     "(u_tag)",
     "tag_unit",
-    391,
+    387,
     614,
     0.0,
     0
@@ -5307,7 +6387,7 @@
     2,
     "u_core",
     "ascon_aead128_core",
-    990,
+    973,
     458,
     0.0,
     0
@@ -5324,69 +6404,69 @@
   ],
   "critical": [
    [
-    -0.284,
-    "u_ks",
-    "u_ks"
-   ],
-   [
-    -0.284,
-    "u_ks",
-    "u_ks"
-   ],
-   [
-    -0.266,
-    "u_ks",
-    "u_ks"
-   ],
-   [
-    -0.266,
-    "u_ks",
-    "u_ks"
-   ],
-   [
-    -0.063,
+    -0.015,
     "u_conv",
     "u_dct"
    ],
    [
-    -0.04,
-    "u_regs",
-    "u_conv"
-   ],
-   [
-    -0.04,
-    "u_regs",
-    "u_conv"
-   ],
-   [
-    -0.04,
-    "u_regs",
-    "u_conv"
-   ],
-   [
-    -0.04,
-    "u_regs",
-    "u_conv"
-   ],
-   [
-    -0.038,
+    0.041,
     "u_conv",
     "u_dct"
+   ],
+   [
+    0.053,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.053,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.056,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.071,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.081,
+    "u_enc",
+    "u_huff"
+   ],
+   [
+    0.084,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.09,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.091,
+    "u_enc",
+    "u_huff"
    ]
   ],
   "period": 6.0,
   "missing": [],
-  "fmax_mhz": 159.1,
-  "run": 10
+  "fmax_mhz": 166.3,
+  "run": 11
  },
  {
   "folder": "vivado_secure_jpeg_top_6.667ns",
   "name": "secure_jpeg_top_6.667ns",
   "util": {
    "lut": [
-    5124.0,
+    5126.0,
     53200.0,
-    9.63
+    9.64
    ],
    "ff": [
     3512.0,
@@ -5405,14 +6485,14 @@
    ]
   },
   "timing": {
-   "wns": 0.074,
+   "wns": 0.27,
    "tns": 0.0,
    "whs": 0.04,
    "met": true
   },
   "power": {
-   "total": 0.322,
-   "dynamic": 0.215,
+   "total": 0.318,
+   "dynamic": 0.211,
    "static": 0.107,
    "confidence": "Medium",
    "internal": "Medium",
@@ -5424,7 +6504,7 @@
     0,
     "secure_jpeg_top",
     "(top)",
-    5124,
+    5126,
     3512,
     25.0,
     23
@@ -5442,7 +6522,7 @@
     1,
     "u_conv",
     "rgb2ycbcr_block",
-    412,
+    411,
     352,
     25.0,
     0
@@ -5451,7 +6531,7 @@
     1,
     "u_dct",
     "dct8x8",
-    807,
+    805,
     69,
     0.0,
     22
@@ -5460,7 +6540,7 @@
     2,
     "u_cols",
     "dct_stage__parameterized0",
-    506,
+    505,
     36,
     0.0,
     11
@@ -5469,7 +6549,7 @@
     2,
     "u_rows",
     "dct_stage",
-    301,
+    300,
     33,
     0.0,
     11
@@ -5478,7 +6558,7 @@
     1,
     "u_enc",
     "selective_enc",
-    156,
+    150,
     120,
     0.0,
     0
@@ -5487,7 +6567,7 @@
     2,
     "(u_enc)",
     "selective_enc",
-    88,
+    86,
     24,
     0.0,
     0
@@ -5496,7 +6576,7 @@
     2,
     "u_in",
     "skid_buf",
-    68,
+    64,
     96,
     0.0,
     0
@@ -5505,7 +6585,7 @@
     1,
     "u_huff",
     "huffman_enc",
-    324,
+    325,
     34,
     0.0,
     0
@@ -5514,7 +6594,7 @@
     1,
     "u_ks",
     "keystream_gen",
-    867,
+    877,
     857,
     0.0,
     0
@@ -5523,7 +6603,7 @@
     2,
     "(u_ks)",
     "keystream_gen",
-    132,
+    134,
     272,
     0.0,
     0
@@ -5532,7 +6612,7 @@
     2,
     "u_core",
     "ascon_aead128_core_0",
-    735,
+    743,
     585,
     0.0,
     0
@@ -5541,7 +6621,7 @@
     1,
     "u_pack",
     "bit_packer",
-    287,
+    286,
     182,
     0.0,
     0
@@ -5577,7 +6657,7 @@
     1,
     "u_regs",
     "axil_regs",
-    394,
+    393,
     452,
     0.0,
     0
@@ -5595,7 +6675,7 @@
     1,
     "u_tag",
     "tag_unit",
-    1358,
+    1359,
     1072,
     0.0,
     0
@@ -5604,7 +6684,7 @@
     2,
     "(u_tag)",
     "tag_unit",
-    388,
+    389,
     614,
     0.0,
     0
@@ -5630,59 +6710,59 @@
   ],
   "critical": [
    [
-    0.074,
-    "(top)",
-    "u_regs"
+    0.27,
+    "u_enc",
+    "u_huff"
    ],
    [
-    0.074,
-    "(top)",
-    "u_regs"
+    0.277,
+    "u_enc",
+    "u_huff"
    ],
    [
-    0.074,
-    "(top)",
-    "u_regs"
+    0.283,
+    "u_enc",
+    "u_huff"
    ],
    [
-    0.074,
-    "(top)",
-    "u_regs"
+    0.3,
+    "u_pack",
+    "u_pack"
    ],
    [
-    0.074,
-    "(top)",
-    "u_regs"
-   ],
-   [
-    0.074,
-    "(top)",
-    "u_regs"
-   ],
-   [
-    0.074,
-    "(top)",
-    "u_regs"
-   ],
-   [
-    0.074,
-    "(top)",
-    "u_regs"
-   ],
-   [
-    0.132,
+    0.309,
     "u_conv",
     "u_dct"
    ],
    [
-    0.132,
+    0.313,
     "u_conv",
     "u_dct"
+   ],
+   [
+    0.324,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.326,
+    "u_enc",
+    "u_huff"
+   ],
+   [
+    0.33,
+    "u_conv",
+    "u_dct"
+   ],
+   [
+    0.338,
+    "u_enc",
+    "u_huff"
    ]
   ],
   "period": 6.667,
   "missing": [],
-  "fmax_mhz": 151.7,
-  "run": 10
+  "fmax_mhz": 156.3,
+  "run": 11
  }
 ]
