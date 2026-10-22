@@ -32,7 +32,7 @@
 \node[font=\tiny\bfseries, anchor=south west] at (laneL.north west) {encoder\_lane $L{-}1$ \ (lanes $1 \ldots L{-}1$; $L = 1, 2, 4$)};
 \draw[arr] (deal.east |- laneL) -- (laneL);
 % ---- merger, tag, word packer
-\node[pl, font=\tiny, minimum height=24mm, minimum width=13mm, align=center] (mrg) at (16.0,-0.75) {segment\\\_merger\\[2pt]seg.\ $s$ from\\lane $s \bmod L$\\(E5: $\lfloor s/c\rfloor$\\$\bmod L$)\\[2pt]+ RST$_{s \bmod 8}$};
+\node[pl, font=\tiny, minimum height=24mm, minimum width=13mm, align=center] (mrg) at (16.0,-0.75) {segment\\\_merger\\[2pt]seg.\ $h$ from\\lane $h \bmod L$\\(E5: $\lfloor h/c\rfloor$\\$\bmod L$)\\[2pt]+ RST$_{h \bmod 8}$};
 \draw[arr] (ff0.east) -- (ff0.east -| mrg.west);
 \draw[arr] (laneL.east) -- (laneL.east -| mrg.west);
 \node[cry, font=\tiny, minimum width=18mm, minimum height=9mm] (tag) at (18.15,0.35) {tag\_unit\\Ascon MAC over\\prefix $\|$ scan};

@@ -41,7 +41,7 @@ with $\beta$ a 48-bit random base drawn at every boot ($\beta \ne 0$), $e$ the 1
 Within one boot, no key is used twice with the same nonce, provided the sender never writes the same frame counter twice in an epoch.
 \end{proposition}
 \begin{IEEEproof}
-Under a video key $K_e$ the nonces used are $N(\sigma, t, 0)$ for the segment key, $N(\sigma, t, 1)$ for the tag, $N(0, 0, 0)$ for the permutation key and $N(0, c, 1)$ for derivations; $\sigma \ne 0$ because $\beta \ne 0$, $b$ separates the first two, and $t$ is fresh per frame. Under a segment key $\Kseg$, which is a pseudorandom function of $(K_e, \sigma, t)$ and therefore distinct for every frame, the nonces $N(s, t, 0)$ differ in the segment index $s$. Under $K_\pi$ the nonces $N(\sigma, t, 0)$ differ in $t$. A rekey changes both $K_e$ and $e$, hence $\sigma$.
+Under a video key $K_e$ the nonces used are $N(\sigma, t, 0)$ for the segment key, $N(\sigma, t, 1)$ for the tag, $N(0, 0, 0)$ for the permutation key and $N(0, c, 1)$ for derivations; $\sigma \ne 0$ because $\beta \ne 0$, $b$ separates the first two, and $t$ is fresh per frame. Under a segment key $\Kseg$, which is a pseudorandom function of $(K_e, \sigma, t)$ and therefore distinct for every frame, the nonces $N(h, t, 0)$ differ in the segment index $h$. Under $K_\pi$ the nonces $N(\sigma, t, 0)$ differ in $t$. A rekey changes both $K_e$ and $e$, hence $\sigma$.
 \end{IEEEproof}
 Across boots, two runs that start from the same epoch use the same key and are separated only by $\beta$. For $B$ boots under one master key the probability that any two share $\beta$ is at most
 \begin{equation}
@@ -92,10 +92,10 @@ Let $m = 2^s - 1$. For $v > 0$, $\amp(v) = v < 2^s$, so $\amp(v) \xor m = m - v 
 Two consequences matter. The scan has exactly the length of the unencrypted one, so encryption needs no buffer and adds no bandwidth; and the sign term is an exact negation, not a bit flip of the field's top bit, which would change the magnitude (an earlier version of our model did that, see Section~\ref{sec:verification}). The lemma also shows what cannot be hidden: the run lengths and size categories, i.e.\ which coefficients are non-zero and roughly how large, stay public at every level E0--E4.
 
 \subsection{Segment keystreams and the frame tag}\label{sec:tag}
-Every frame is coded as restart segments (one per MCU row, or one per MCU in E5). Each segment $s$ of frame $t$ has its own keystream under a per-frame segment key:
+Every frame is coded as restart segments (one per MCU row, or one per MCU in E5). Each segment $h$ of frame $t$ has its own keystream under a per-frame segment key:
 \begin{align}
 \Kseg &= \MAC_{K_e}\bigl(N(\sigma, t, 0), \text{``lanes''}\bigr), \label{eq:kseg}\\
-Z_s &= \Enc_{\Kseg}\bigl(N(s, t, 0), 0^{\ell}\bigr), \label{eq:zs}
+Z_h &= \Enc_{\Kseg}\bigl(N(h, t, 0), 0^{\ell}\bigr), \label{eq:zs}
 \end{align}
 taken least significant bit first. Seeking to a segment therefore costs one initialization and nothing else, which is what lets lanes encrypt independently (Section~\ref{sec:lanes}). The tag authenticates a 26-byte prefix and every byte of the scan, including restart markers:
 \begin{equation}
@@ -118,7 +118,7 @@ Lemma~\ref{lem:format} shows that field encryption cannot hide where the non-zer
 \end{figure}
 
 \begin{enumerate}
-\item the fabric codes every MCU $s = r \cdot (W/16) + c$ as its own restart segment, encrypted like E4 with keystream $Z_s$ of~\eqref{eq:zs}, and authenticates the segments in raster order with~\eqref{eq:tag} (level byte 5);
+\item the fabric codes every MCU $h = r \cdot (W/16) + c$ as its own restart segment, encrypted like E4 with keystream $Z_h$ of~\eqref{eq:zs}, and authenticates the segments in raster order with~\eqref{eq:tag} (level byte 5);
 \item the ARM splits the scan at the restart markers and sends segment $\pi_t(p)$ at position $p$, renumbering the markers RST$_{p \bmod 8}$ in output order; headers, APP11 and tag are unchanged, and DRI = 1;
 \item the receiver splits the received scan, restores raster order with $\pi_t^{-1}$, verifies $T_t$ and only then decrypts.
 \end{enumerate}

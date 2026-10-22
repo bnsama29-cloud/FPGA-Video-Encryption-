@@ -19,7 +19,7 @@
 \maketitle
 
 \begin{abstract}
-We present a JPEG/MJPEG encoder for a Zynq-7020 FPGA SoC that encrypts the sign and amplitude bits of DCT coefficients while they are entropy-coded, with a keystream from the NIST lightweight standard Ascon-AEAD128. Code lengths do not change, so every protection level is a valid JPEG, and a 128-bit tag over the frame metadata and scan rejects modified, replayed and forged frames. The strongest level hides block positions with a keyed per-frame shuffle of restart segments that needs no frame buffer: the fabric codes and authenticates the segments and the ARM core only reorders them. The design is bit-exact with a golden model in simulation and on a PYNQ-Z2 board in all six levels, adds no cycles for encryption, closes timing at \TopMhz\,MHz and reaches \RtlFourLanesMpix\,Mpixel/s with four lanes. On \BenchSources{} sources, four re-implemented published schemes leak \BenchPubMin--\BenchPubMax{} edge correlation under the same attacks, while our shuffle level stays at or below \BenchEfiveMax{}, also against jigsaw solvers and a trained U-Net. An authenticated feedback loop mitigates all \NumAttacks{} modelled network attacks in \TtmMean\,s on average with no false alarms.
+We present a JPEG/MJPEG encoder for a Zynq-7020 FPGA SoC that encrypts the sign and amplitude bits of DCT coefficients while they are entropy-coded, with a keystream from the NIST standard Ascon-AEAD128. Code lengths do not change, so every protection level is a valid JPEG, and a 128-bit tag over the frame metadata and scan rejects modified, replayed and forged frames. The strongest level hides block positions with a keyed per-frame shuffle of restart segments that needs no frame buffer: the fabric codes and authenticates the segments and the ARM core only reorders them. The design is bit-exact with a golden model in simulation and on a PYNQ-Z2 board in all six levels, adds no cycles for encryption, closes timing at \TopMhz\,MHz and, with four lanes, reaches \RtlFourLanesMpix\,Mpixel/s in RTL simulation. On \BenchSources{} sources, four re-implemented published schemes leak \BenchPubMin--\BenchPubMax{} edge correlation under the same attacks, while our shuffle level stays at or below \BenchEfiveMax{}, even against jigsaw solvers and a trained U-Net. An authenticated feedback loop mitigates all \NumAttacks{} modelled network attacks in \TtmMean\,s on average with no false alarms.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -80,10 +80,10 @@ where $\alpha = 1$ if amplitudes are selected. Since $\amp(v) \xor (2^s - 1) = \
 \textit{Keys, nonces and tag.} The video key follows a one-way ratchet, $K_{e+1} = \KDF(K_e, \text{ratchet}, e{+}1)$, with $\KDF$ the Ascon tag under a reserved nonce; a separate key $\Kfb$ protects feedback. The 128-bit nonce is $N(\sigma, t, b) = \sigma \cat t \cat b$: a 64-bit session identifier $\sigma$ (48 random bits per boot and a 16-bit epoch), a 63-bit frame counter $t$ and a purpose bit $b$. Each frame derives a segment key and authenticates its scan:
 \begin{align}
 \Kseg &= \MAC_{K_e}\bigl(N(\sigma, t, 0), \text{``lanes''}\bigr),\\
-Z_s &= \Enc_{\Kseg}\bigl(N(s, t, 0), 0^\ell\bigr),\\
+Z_h &= \Enc_{\Kseg}\bigl(N(h, t, 0), 0^\ell\bigr),\\
 T_t &= \MAC_{K_e}\bigl(N(\sigma, t, 1), P_t \cat \text{scan}_t\bigr),
 \end{align}
-where $Z_s$ is the keystream of restart segment $s$ and $P_t$ is a 26-byte prefix (version, level, $\sigma$, $t$, width, height). Binding the level stops downgrades; $(K, N)$ never repeats because $t$ increases, a rekey changes $K_e$ and $\sigma$, and two boots share $\sigma$ with probability $2^{-48}$ per pair.
+where $Z_h$ is the keystream of restart segment $h$ and $P_t$ is a 26-byte prefix (version, level, $\sigma$, $t$, width, height). Binding the level stops downgrades; $(K, N)$ never repeats because $t$ increases, a rekey changes $K_e$ and $\sigma$, and two boots share $\sigma$ with probability $2^{-48}$ per pair.
 
 \begin{figure}[t]
 \centering

@@ -9,11 +9,11 @@
     \node[seg, fill=#3] at (\i*0.68, #1) {$\l$};
     \ifnum\i<5 \node[rst] at (\i*0.68+0.34, #1) {};\fi
   }}
-\segrow{0}{s_0,s_1,s_2,s_3,s_4,s_5}{plfill}
+\segrow{0}{h_0,h_1,h_2,h_3,h_4,h_5}{plfill}
 \node[st] at (4.15,0.0) {fabric: one restart segment per MCU, raster order;\\keystream $(K_{\mathrm{seg}}, N_{s,t})$ per segment; $T$ over this order};
-\segrow{-1.15}{s_3,s_0,s_5,s_1,s_4,s_2}{cryfill}
+\segrow{-1.15}{h_3,h_0,h_5,h_1,h_4,h_2}{cryfill}
 \node[st] at (4.15,-1.15) {ARM: send segment $\pi_t(p)$ at position $p$,\\RST renumbered; header and $T$ unchanged};
-\segrow{-2.3}{s_0,s_1,s_2,s_3,s_4,s_5}{rxfill}
+\segrow{-2.3}{h_0,h_1,h_2,h_3,h_4,h_5}{rxfill}
 \node[st] at (4.15,-2.3) {receiver: $\pi_t^{-1}$, then verify $T$,\\then decrypt each segment};
 \draw[arr] (-0.45,-0.35) -- node[lbl, left, align=right]{Fisher--Yates\\$\pi_t$} (-0.45,-0.8);
 \draw[arr] (-0.45,-1.5) -- node[lbl, left]{$\pi_t^{-1}$} (-0.45,-1.95);

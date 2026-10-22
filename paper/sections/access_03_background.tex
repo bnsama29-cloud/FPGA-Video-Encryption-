@@ -18,7 +18,7 @@ $t$, $\sigma$, $e$ & frame counter (63 bits), session identifier (64 bits), key 
 $N(\sigma, t, b)$ & 128-bit nonce, $b \in \{0,1\}$ selects keystream or tag \\
 $K_{\mathrm{m}}, K_e, \Kfb$ & master key, video key of epoch $e$, feedback key \\
 $\Kseg, K_\pi$ & per-frame segment key, E5 permutation key \\
-$Z_s$ & keystream of restart segment $s$ \\
+$Z_h$ & keystream of restart segment $h$ \\
 $T_t$, $P_t$ & tag of frame $t$, its 26-byte authenticated prefix \\
 $\pi_t$ & E5 permutation of the $M$ segments of frame $t$ \\
 $L$, $c_L$, $\Theta_L$ & number of lanes, cycles per pixel, throughput \\
@@ -97,4 +97,4 @@ Let $I$ be the original luma and $\hat I$ a picture an attacker reconstructs. \e
 \rho_E = \frac{\operatorname{cov}\bigl(|\nabla I|, |\nabla \hat I|\bigr)}{\sigma_{|\nabla I|}\,\sigma_{|\nabla \hat I|}},
 \label{eq:edge}
 \end{equation}
-computed over all pixels; $\rho_E = 0$ means no outline, and it is insensitive to brightness and contrast, which a learned attacker recovers from global statistics. We also report SSIM~\cite{ssim}. For comparability with image-encryption papers we compute, between two pictures $C_1$, $C_2$ of $N$ pixels, $\mathrm{NPCR} = \frac{100}{N} \sum_{i} [C_1(i) \ne C_2(i)]$ and $\mathrm{UACI} = \frac{100}{N} \sum_{i} |C_1(i) - C_2(i)| / 255$, the histogram entropy $-\sum_k p_k \log_2 p_k$ and the correlation of adjacent pixels. These metrics were designed for ciphers that turn the whole image into noise; a format-compliant scheme keeps the stream decodable by design, so we read them together with~\eqref{eq:edge}.
+computed over all pixels; $\rho_E = 0$ means no outline, and it is insensitive to brightness and contrast, which a learned attacker recovers from global statistics. We also report SSIM~\cite{ssim}. For comparability with image-encryption papers we compute, between two pictures $C_1$, $C_2$ of $N_{\mathrm{px}}$ pixels, $\mathrm{NPCR} = \frac{100}{N_{\mathrm{px}}} \sum_{i} [C_1(i) \ne C_2(i)]$ and $\mathrm{UACI} = \frac{100}{N_{\mathrm{px}}} \sum_{i} |C_1(i) - C_2(i)| / 255$, the histogram entropy $-\sum_k p_k \log_2 p_k$ and the correlation of adjacent pixels. These metrics were designed for ciphers that turn the whole image into noise; a format-compliant scheme keeps the stream decodable by design, so we read them together with~\eqref{eq:edge}.
