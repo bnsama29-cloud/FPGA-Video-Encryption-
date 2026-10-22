@@ -100,22 +100,26 @@ class Sender:
                 cmd = json.loads(data)
             except (OSError, ValueError):
                 continue
-            c = cmd.get("cmd")
-            with self.lock:
-                if c == "mode":
-                    self.manual_mode = cmd.get("mode") if cmd.get("mode") in MODES else None
-                elif c == "policy":
-                    self.policy = make_policy(cmd["policy"], self.cfg, self.cfg["sender"]["mode"],
-                                              config.policy_seed(self.cfg))
-                elif c == "rekey":
-                    self._rekey("operator request")
-                elif c == "fps":
-                    self.fps = max(0.2, float(cmd["fps"]))
-                elif c == "pause":
-                    self.paused = bool(cmd.get("on", True))
-                elif c in self.extra_control:
-                    self.extra_control[c](cmd)
-            self.bus.event("control", cmd=cmd)
+            self.handle_control(cmd)
+
+    def handle_control(self, cmd):
+        """One control command, from the control port or from inside this node (board buttons)."""
+        c = cmd.get("cmd")
+        with self.lock:
+            if c == "mode":
+                self.manual_mode = cmd.get("mode") if cmd.get("mode") in MODES else None
+            elif c == "policy":
+                self.policy = make_policy(cmd["policy"], self.cfg, self.cfg["sender"]["mode"],
+                                          config.policy_seed(self.cfg))
+            elif c == "rekey":
+                self._rekey("operator request")
+            elif c == "fps":
+                self.fps = max(0.2, float(cmd["fps"]))
+            elif c == "pause":
+                self.paused = bool(cmd.get("on", True))
+            elif c in self.extra_control:
+                self.extra_control[c](cmd)
+        self.bus.event("control", cmd=cmd)
 
     def _rekey(self, reason):
         self.ratchet.forward()            # one-way: the old key is overwritten

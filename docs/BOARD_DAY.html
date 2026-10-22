@@ -155,12 +155,12 @@ html { scroll-behavior: smooth; }
 <header class="top">
   <div class="eyebrow">Secure JPEG encoder · Ascon-AEAD128 · PYNQ-Z2 (xc7z020)</div>
   <h1>Board day, from the box to the paper's numbers</h1>
-  <p class="lede">Every step of the hardware part in order: what runs on which machine, the exact command, and what the screen must show before you move on. Type the two IP addresses once in the bar below and every command fills itself in. Tick each step as you go; the ticks stay in this browser only.</p>
+  <p class="lede">Every step of the hardware part in order: what runs on which machine, the exact command, and what the screen must show before you move on. Type the IP addresses once in the bar below and every command fills itself in (the attacker laptop is only needed for the two-laptop runs). Tick each step as you go; the ticks stay in this browser only.</p>
   <div class="facts">
-    <div><b>~3.5 h</b><span>Vivado, before the board (phase 0)</span></div>
+    <div><b>35 min</b><span>Vivado, before the board: the tamper image only (phase 0)</span></div>
     <div><b>~2 h</b><span>first board session: A1, A2, A3</span></div>
-    <div><b>~3 h</b><span>second session: power, live link, attacks</span></div>
-    <div><b>8</b><span>result folders that go back into the paper</span></div>
+    <div><b>~3.5 h</b><span>second session: power, live link, attacks, tamper</span></div>
+    <div><b>5 + 1</b><span>board images from run 12, plus the tamper image</span></div>
   </div>
 </header>
 </div>
@@ -169,14 +169,15 @@ html { scroll-behavior: smooth; }
   <div class="in">
     <label for="ip-board">Board IP <input id="ip-board" value="192.168.2.99" spellcheck="false" autocomplete="off"></label>
     <label for="ip-laptop">Laptop IP <input id="ip-laptop" value="192.168.2.1" spellcheck="false" autocomplete="off"></label>
+    <label for="ip-attacker">Attacker IP <input id="ip-attacker" value="192.168.2.2" spellcheck="false" autocomplete="off"></label>
     <div class="progress"><span id="prog-text">0 / 0 steps</span><div class="meter"><i id="prog-bar"></i></div></div>
   </div>
 </div>
 
 <main class="wrap">
 <nav class="toc" aria-label="Phases">
-  <a href="#p0"><span>0</span>Before the board: last Vivado run<em>3.5 h</em></a>
-  <a href="#p1"><span>1</span>Rehearse on the laptop<em>10 min</em></a>
+  <a href="#p0"><span>0</span>Before the board: check images, build tamper<em>45 min</em></a>
+  <a href="#p1"><span>1</span>Rehearse on the laptop<em>20 min</em></a>
   <a href="#p2"><span>2</span>Kit, jumpers, SD card<em>25 min</em></a>
   <a href="#p3"><span>3</span>Power on and network<em>15 min</em></a>
   <a href="#p4"><span>4</span>Copy the project, prepare Python<em>15 min</em></a>
@@ -187,32 +188,42 @@ html { scroll-behavior: smooth; }
   <a href="#p9"><span>9</span>A4: power and energy<em>60 min</em></a>
   <a href="#p10"><span>10</span>A5: live link, board as camera<em>30 min</em></a>
   <a href="#p11"><span>11</span>A6: scripted attacks on hardware<em>90 min</em></a>
-  <a href="#p12"><span>12</span>Bring the results back<em>10 min</em></a>
+  <a href="#p12"><span>12</span>Tamper inside the board<em>30 min</em></a>
+  <a href="#p13"><span>13</span>Bring the results back<em>10 min</em></a>
   <a href="#trouble"><span>?</span>When something goes wrong<em>table</em></a>
 </nav>
 
 <!-- ============================================================ 0 -->
 <section class="phase" id="p0">
-  <div class="ph-head"><div class="ph-num">0</div><h2>Before the board: build the board images from the final RTL</h2>
-    <div class="ph-meta"><span class="chip vivado">Vivado PC</span><span class="chip time">≈ 3.5 h, unattended</span></div></div>
-  <p>Run 11 measured the final RTL (commit <code>d34604f</code>) out of context: one, two and four lanes meet 150 MHz. The board images on your PC are still from runs 8, 9 and 10, i.e. older commits. Build all five from this commit so the board numbers and the paper's Vivado numbers describe the same design. After this the RTL is frozen.</p>
+  <div class="ph-head"><div class="ph-num">0</div><h2>Before the board: check the run-12 images, build the tamper image</h2>
+    <div class="ph-meta"><span class="chip vivado">Vivado PC</span><span class="chip time">≈ 45 min, 35 of them unattended</span></div></div>
+  <p>Run 12 (22 Oct, <code>vivado_results_20261022_2123.zip</code>, commit <code>03d5144</code>, RTL of <code>d34604f</code>) built all five board images from the final RTL; the paper's Vivado tables come from the same run. The RTL is frozen. These are the clocks to expect on the board:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Image</th><th>VERSION</th><th>Clock</th><th>WNS</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>secure_jpeg</code></td><td class="num">0x5EC00200</td><td class="num">100 MHz</td><td class="num">+1.309 ns</td><td>single pipeline, E0–E4</td></tr>
+      <tr><td><code>secure_jpeg_lanes</code></td><td class="num">0x5EC00382</td><td class="num">100 MHz</td><td class="num">+1.082 ns</td><td>2 lanes + E5</td></tr>
+      <tr><td><code>secure_jpeg_lanes4</code></td><td class="num">0x5EC00384</td><td class="num">125 MHz</td><td class="num">+0.141 ns</td><td>the headline; 142.9 MHz missed by 0.228 ns</td></tr>
+      <tr><td><code>secure_jpeg_lanes4hd</code></td><td class="num">0x5EC00384</td><td class="num">125 MHz</td><td class="num">+0.032 ns</td><td>1080p lines; <b>thin margin</b>, see phase 7</td></tr>
+      <tr><td><code>secure_jpeg_lanes4yuyv</code></td><td class="num">0x5EC003C4</td><td class="num">125 MHz</td><td class="num">+0.197 ns</td><td>YUYV input; 142.9 MHz missed by 0.237 ns</td></tr>
+      <tr><td><code>secure_jpeg_lanes_tamper</code></td><td class="num">0x5EC00382</td><td class="num">100 MHz</td><td class="num">—</td><td>test equipment, built in step 0b</td></tr>
+    </tbody></table></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0a" aria-label="done"></span><div>
-    <p>Back up the current images, then pull.</p>
+    <p>Pull, then check that the images on this PC are the run-12 ones (the hash must match <code>summary.txt</code> of the run-12 zip).</p>
     <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
 git checkout hw-polish-arm-baseline
 git pull
 git log --oneline -1
-xcopy /e /i /y future_work\board\overlay E:\backup_overlay_run10</pre></div>
-    <div class="expect"><b>Expect</b><ul><li><code>git log</code> shows <code>269284e</code> or newer.</li><li><code>xcopy</code> ends with "N File(s) copied". Paste this block one line at a time; pasting all at once fed the next lines into xcopy's questions last time (<code>/y</code> now answers them).</li></ul></div>
+certutil -hashfile future_work\board\overlay\secure_jpeg_lanes4.bit SHA256</pre></div>
+    <div class="expect"><b>Expect</b><ul><li><code>git log</code> shows <code>d4e4392</code> or newer.</li><li>The hash starts <code>7f1260af5daf72b0</code>. Any other value: these are not the run-12 images; take the overlay folder from the run-12 PC or the team drive.</li></ul></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0b" aria-label="done"></span><div>
-    <p>Build the five images. One line; the first part makes the single-pipeline and 2-lane images at 100 MHz, the second makes the 4-lane, 1080p and YUYV images (142.9 MHz first, falling back to 125 and then 100 MHz by itself) and packs the zip.</p>
-    <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>py vivado\run_vivado_day.py --steps bd bd_lanes --fclk 100 --parallel 1 --jobs 2 &amp; py vivado\run_vivado_day.py --steps bd_lanes4 bd_lanes4hd bd_lanes4yuyv parse --fclk 142 --parallel 1 --jobs 2</pre></div>
+    <p><b>Build the tamper image</b> for phase 12: the 2-lane image with the tamper injector (<code>future_work/board/axis_tamper.v</code>) between the encoder and the receive DMA, and BTN1–BTN3 readable by the ARM (<code>axil_buttons.v</code>) to change the protection level. Same encoder, same bytes; only the extra blocks and their pins (<code>tamper_pynq_z2.xdc</code>) are new.</p>
+    <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>py vivado\run_vivado_day.py --steps bd_tamper parse --fclk 100 --jobs 2</pre></div>
     <div class="expect"><b>Expect</b><ul>
-      <li>Each image ends with <code>overlay meets timing at … MHz</code>. A 142 MHz miss followed by a 125 MHz pass is a normal result, not a failure.</li>
-      <li><code>future_work\board\overlay\</code> then holds five pairs: <code>secure_jpeg</code>, <code>secure_jpeg_lanes</code>, <code>secure_jpeg_lanes4</code>, <code>secure_jpeg_lanes4hd</code>, <code>secure_jpeg_lanes4yuyv</code>, each <code>.bit</code> + <code>.hwh</code>.</li>
-      <li><code>vivado_results_&lt;date&gt;.zip</code>: send it to Claude; its <code>summary.txt</code> starts with the commit and the SHA-256 of every bitstream.</li></ul></div>
-    <div class="note"><b>Keep the PC awake</b><p>Plug it in, set sleep to "never", and do not click inside the window (a selection pauses the run until you press Esc). If you must stop: Ctrl+C, then end <code>vivado.exe</code> in Task Manager; ask Claude for the resume line.</p></div>
+      <li>It ends with <code>overlay meets timing at 100 MHz (WNS +…)</code>.</li>
+      <li><code>future_work\board\overlay\</code> now also holds <code>secure_jpeg_lanes_tamper.bit</code> + <code>.hwh</code> (reports in <code>overlay\lanestamper\</code>). Send the new <code>vivado_results_&lt;date&gt;.zip</code> to Claude.</li></ul></div>
+    <div class="note"><b>Keep the PC awake</b><p>Plug it in, set sleep to "never", and do not click inside the window (a selection pauses the run until you press Esc). If you must stop: Ctrl+C, then end <code>vivado.exe</code> in Task Manager. If the build fails, phases 2–11 do not need this image; only phase 12 does.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0c" aria-label="done"></span><div>
     <p>Put the overlay folder in two safe places: the team drive and a USB stick. The board day must not depend on one PC.</p>
@@ -232,6 +243,12 @@ py -m future_work.board.first_contact --mock --mock-lanes 4 --mock-e5 --mock-yuy
 py experiments\pq_kex_cost.py --runs 5</pre></div>
     <div class="expect"><b>Expect</b><ul><li><code>VERSION ok: contract v3, 4 lanes, E5 in hardware</code>, six lines <code>64x48 E0 … E5: bit-exact</code>, and "Bit-exact … **yes**".</li><li>The mock's milliseconds are Python, never a result.</li></ul></div>
   </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s1b" aria-label="done"></span><div>
+    <p><b>Rehearse the tamper run (phase 12)</b> with an emulated injector. Two windows: the first prints a board command; run it in the second with <code>--mock-lanes 2 --mock-e5 --mock-tamper</code> in place of <code>--bitfile …</code>, and with <code>py</code> in place of <code>sudo -E python3</code>.</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd, window 1</span><pre>py -m pytest tests\test_hw_tamper.py tests\test_two_laptop.py -q
+py experiments\hw_tamper.py --external-sender 127.0.0.1 --trigger udp:127.0.0.1 --out sim_out\runs\hw_tamper_rehearsal</pre></div>
+    <div class="expect"><b>Expect</b><p>The tests pass. After ~4 minutes <code>hw_tamper.md</code> shows 25 shots, 25 detected, 0 missed, 1 frame rejected per shot, 0 unexplained rejections. Add <code>--mock-buttons</code> to the second window to rehearse BTN1–BTN3 too: <code>py -c "import socket,json; socket.socket(2,2).sendto(json.dumps({'cmd':'button','n':1}).encode(),('127.0.0.1',47205))"</code> presses BTN1 (47205 = the sender control port of this run).</p></div>
+  </div></div>
 </section>
 
 <!-- ============================================================ 2 -->
@@ -249,6 +266,8 @@ py experiments\pq_kex_cost.py --runs 5</pre></div>
       <tr><td>Laptop with the repo</td><td>receiver, dashboard, attacker</td><td><code>E:\FPGA-Video-Encryption-</code>, on the latest commit</td></tr>
       <tr><td>Overlay folder on a USB stick</td><td>the bitstreams</td><td>every <code>.bit</code> with its <code>.hwh</code>, same base name</td></tr>
       <tr><td>Router (optional), USB webcam (optional)</td><td>internet for <code>pip</code>, LAN demo; live camera</td><td>a webcam that can give raw YUYV suits the YUYV image</td></tr>
+      <tr><td>Second laptop (optional)</td><td>the attacker on its own machine (phases 11, 12)</td><td>same commit; all three machines on one router</td></tr>
+      <tr><td>Raspberry Pi Pico, 1 kΩ resistor, 2 jumper wires (optional)</td><td>times each tamper shot on the receiver's clock (phase 12)</td><td><code>future_work/board/pico_tamper/main.py</code> on it; without it, press BTN0 by hand</td></tr>
     </tbody></table></div>
 
   <div class="board-fig" aria-label="Where the jumpers, ports and LEDs are">
@@ -323,7 +342,7 @@ ssh xilinx@<span data-v="board">BOARD</span> "uname -a"</pre></div>
 dir future_work\board\overlay\*.bit
 ssh xilinx@<span data-v="board">BOARD</span> "mkdir -p /home/xilinx/fpga"
 scp -r model link future_work configs experiments scripts requirements.txt xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/</pre></div>
-    <div class="expect"><b>Expect</b><p><code>dir</code> lists the five <code>.bit</code> files from phase 0 (at least <code>secure_jpeg_lanes4.bit</code> and <code>secure_jpeg_lanes.bit</code>). No <code>scp</code>? Open <code>\\<span data-v="board">BOARD</span>\xilinx</code> in Explorer (xilinx/xilinx) and drag the folders.</p></div>
+    <div class="expect"><b>Expect</b><p><code>dir</code> lists the five run-12 <code>.bit</code> files and <code>secure_jpeg_lanes_tamper.bit</code> from phase 0 (at least <code>secure_jpeg_lanes4.bit</code> and <code>secure_jpeg_lanes.bit</code>). No <code>scp</code>? Open <code>\\<span data-v="board">BOARD</span>\xilinx</code> in Explorer (xilinx/xilinx) and drag the folders.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s4b" aria-label="done"></span><div>
     <p>Log in, become root and load PYNQ's Python. Every later board command runs in this shell.</p>
@@ -353,7 +372,7 @@ pip3 install kyber-py           <span class="c"># needs internet (router); pure 
   <div class="step"><span class="check"><input type="checkbox" id="s5b" aria-label="done"></span><div>
     <p>The same at the clock the image was built for (no <code>--fclk</code>).</p>
     <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 64x48 --frames 2 --timing-frames 5 --out sim_out/board/lanes4_smoke</pre></div>
-    <div class="expect"><b>Expect</b><p><code>fabric clock:</code> the clock from phase 0 (142.9, 125 or 100 MHz), then the same bit-exact lines.</p></div>
+    <div class="expect"><b>Expect</b><p><code>fabric clock: 125.0 MHz</code> (run 12), then the same bit-exact lines.</p></div>
     <div class="stop"><b>If it fails</b><ul><li>Fails at its own clock but passed at 100 MHz: keep <code>--fclk 100</code> for every 4-lane command today and tell Claude; the clock is the only difference.</li><li>Fails at 100 MHz too: run the 2-lane image the same way (<code>secure_jpeg_lanes.bit</code>, VERSION <code>0x5EC00382</code>). Then go to the table at the end with the first error line.</li></ul></div>
   </div></div>
 </section>
@@ -381,8 +400,8 @@ python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/s
       <thead><tr><th>Image</th><th>Cycles per pixel (RTL)</th><th>640×480 at 100 MHz</th><th>640×480 at 125 MHz</th><th>320×240 at 100 MHz</th></tr></thead>
       <tbody>
         <tr><td>4 lanes</td><td class="num">0.551</td><td class="num">1.69 ms</td><td class="num">1.35 ms</td><td class="num">0.46 ms</td></tr>
-        <tr><td>2 lanes</td><td class="num">0.793</td><td class="num">2.44 ms</td><td class="num">—</td><td class="num">0.64 ms</td></tr>
-        <tr><td>single pipeline</td><td class="num">1.519</td><td class="num">4.67 ms</td><td class="num">—</td><td class="num">1.18 ms</td></tr>
+        <tr><td>2 lanes</td><td class="num">0.793</td><td class="num">2.44 ms</td><td class="num">— (built for 100)</td><td class="num">0.64 ms</td></tr>
+        <tr><td>single pipeline</td><td class="num">1.519</td><td class="num">4.67 ms</td><td class="num">— (built for 100)</td><td class="num">1.18 ms</td></tr>
       </tbody></table></div>
     <div class="expect"><b>How to read it</b><ul>
       <li>Fabric within ~10 % of the table: the encoder runs as simulated. This is the number the paper's A2 TODO waits for.</li>
@@ -398,11 +417,12 @@ python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/s
   <div class="step"><span class="check"><input type="checkbox" id="s7a" aria-label="done"></span><div>
     <p><b>1080p.</b> 4 lanes with 2048-pixel lines and one line-buffer set per lane. Height must be a multiple of 16, hence 1088.</p>
     <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4hd.bit --sizes 1920x1088 --frames 3 --timing-frames 20 --zero-copy --out sim_out/board/lanes4hd_final</pre></div>
+    <div class="note"><b>Thin margin</b><p>This image meets 125 MHz by only 0.032 ns. If it reports a mismatch deep in the scan, run the same line with <code>--fclk 100 --out sim_out/board/lanes4hd_final_100</code>. Passing at 100 MHz means the clock was the cause, not a logic fault; report both runs.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s7b" aria-label="done"></span><div>
     <p><b>YUYV.</b> VERSION bit 6 set (<code>0x5EC003C4</code>): the driver converts its test frames to YUYV before timing, so it times what a YUYV camera would deliver (2 bytes per pixel instead of 4).</p>
     <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4yuyv.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4yuyv_final</pre></div>
-    <div class="expect"><b>Expect</b><p>Bit-exact <b>yes</b>, and a fabric time near 0.434 cycles per pixel (1.33 ms at 640×480 and 100 MHz).</p></div>
+    <div class="expect"><b>Expect</b><p>Bit-exact <b>yes</b>, <code>fabric clock: 125.0 MHz</code>, and a fabric time near 0.434 cycles per pixel (1.07 ms at 640×480 and 125 MHz; 1.33 ms with <code>--fclk 100</code>).</p></div>
   </div></div>
 </section>
 
@@ -416,7 +436,7 @@ python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/s
 python3 experiments/pq_kex_cost.py --runs 20</pre></div>
     <div class="expect"><b>Expect</b><ul><li><code>sim_out/board/arm_final/arm_baseline.md</code> with a bit-exact line first, then the timing table.</li><li><code>sim_out/pq_kex/&lt;machine&gt;.md</code>: milliseconds for each side of the ML-KEM-768 + X25519 exchange on the A9. It runs once per session, so seconds would still be fine.</li></ul></div>
   </div></div>
-  <div class="note"><b>First session ends here</b><p>Phases 5–8 are the minimum the paper needs (A1–A3). Copy the results now (phase 12) even if you continue, then <code>sudo shutdown -h now</code> before switching off.</p></div>
+  <div class="note"><b>First session ends here</b><p>Phases 5–8 are the minimum the paper needs (A1–A3). Copy the results now (phase 13) even if you continue, then <code>sudo shutdown -h now</code> before switching off.</p></div>
 </section>
 
 <!-- ============================================================ 9 -->
@@ -475,21 +495,77 @@ CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --si
   <div class="step"><span class="check"><input type="checkbox" id="s11b" aria-label="done"></span><div>
     <p>Repeat with <code>_rep2</code>, <code>_rep3</code>, then three times with <code>experiments\scenarios\benign.json</code> and <code>--out sim_out\runs\board_benign_rep1</code> … <code>rep3</code>.</p>
     <div class="expect"><b>Expect</b><p>Each run folder ends with a summary: attacks detected, frames rejected, time to E5 and back. The simulation's figure is 11 of 11 detected.</p></div>
+    <div class="note"><b>Windows firewall</b><p>Scenario runs use UDP ports 47200–47210 and 47006, not the 47000–47010 of phase 10. Open both ranges once (cmd as administrator; on every Windows laptop that takes part): <code>netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010,47200-47215</code></p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s11c" aria-label="done"></span><div>
+    <h3>Optional: the attacker on its own laptop</h3>
+    <p>The same suite with the network and attacker (<code>link/channel.py</code>) on a second laptop between the board and the receiver, so the attack really crosses machines. This laptop stays the receiver and still starts every attack over the attacker node's control port. Run it on the receiver laptop:</p>
+    <div class="cmd"><span class="who laptop">Receiver laptop · cmd</span><pre>py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <span data-v="board">BOARD</span> --attacker <span data-v="attacker">ATTACKER</span> --board-max-mode E5 --pq-kex --set keys.master=&lt;KEY&gt; --out sim_out\runs\board2_full_suite_rep1</pre></div>
+    <p>It prints two commands in this order. Start the first on the attacker laptop (<code>py -m link.channel …</code>, and <code>py -m link.dashboard</code> in a second window for the attacker's screen), then the second on the board with <code>--set link.pad=runmax</code> added.</p>
+    <div class="expect"><b>Expect</b><ul>
+      <li>Board and receiver print <code>kex: session key established</code>: the key exchange went through the attacker laptop, which relays it but cannot read it.</li>
+      <li>The attacker's dashboard shows the scrambled wire and its best picture without the key. The receiver's summary matches the one-laptop run.</li>
+      <li>One run is enough for the demo. Three reps (<code>board2_…_rep2</code>, <code>rep3</code>) only if the paper reports it as its own row.</li></ul></div>
+    <div class="note"><b>Key exchange under attack</b><p>Add <code>--kex-tamper 20</code> to the receiver's line: for 20 s the attacker corrupts every relayed key-exchange message. Every message must fail its HMAC, and the session key may only be agreed once the 20 s are over. Film the two terminals.</p></div>
   </div></div>
 </section>
 
 <!-- ============================================================ 12 -->
 <section class="phase" id="p12">
-  <div class="ph-head"><div class="ph-num">12</div><h2>Bring the results back</h2>
-    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip time">10 min</span></div></div>
+  <div class="ph-head"><div class="ph-num">12</div><h2>Tamper inside the board: bits flipped after the tag</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A6 · hardware</span><span class="chip time">30 min</span></div></div>
+  <p>Phase 11 changes frames on the network. Here the change happens inside the camera: the tamper image flips one bit of one frame's scan between the encoder and the DMA, i.e. <b>after</b> the Ascon tag is computed. It stands for a fault or an implant anywhere on the path DMA → DDR → ARM → network card. It never touches a marker byte, so the frame still decodes as JPEG and only the tag can reveal the change. The claim to check: <b>every shot costs exactly one rejected frame, and no other frame is rejected.</b></p>
+  <div class="tbl"><table>
+    <thead><tr><th>Control on the board</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>SW1 (up)</td><td>enable. While SW1 is down, every bit passes unchanged.</td></tr>
+      <tr><td>SW0 (up)</td><td>continuous: one bit flipped in every frame (for the live demo, not for the measurement)</td></tr>
+      <tr><td>BTN0, or a pulse on PMOD A pin 1</td><td>one shot: one bit of the next frame</td></tr>
+      <tr><td>LED0 / LED1 / LED2 / LED3</td><td>enabled / shot pending / continuous / toggles per tampered frame</td></tr>
+      <tr><td>BTN1 / BTN2 / BTN3</td><td>protection level one down / one up (to E5) / back to automatic. Read by the ARM; the level changes at the next defence window (1 s) and shows on the dashboard.</td></tr>
+    </tbody></table></div>
   <div class="step"><span class="check"><input type="checkbox" id="s12a" aria-label="done"></span><div>
+    <p><b>Wire the Pico</b> (optional, gives millisecond timing). 3.3 V only; connect no power pin. Pico on the receiver laptop's USB.</p>
+    <ul>
+      <li>Pico GP15 (pin 20) → 1 kΩ → PMOD A pin 1 (JA1)</li>
+      <li>Pico GND (pin 18) → PMOD A pin 5 (GND)</li>
+      <li>Find its COM port in Device Manager → Ports. Install pyserial once: <code>py -m pip install pyserial</code></li>
+    </ul>
+    <div class="stop"><b>Never</b><p>drive PMOD A from a 5 V board (Arduino Uno) without a level shifter. The FPGA pins are 3.3 V.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s12b" aria-label="done"></span><div>
+    <p><b>Set SW1 up, SW0 down.</b> Then start the run on the receiver laptop. Replace <code>COM5</code> with the Pico's port, or use <code>--trigger manual</code> and press BTN0 when the script says so (timing then only good to ~1 s).</p>
+    <div class="cmd"><span class="who laptop">Receiver laptop · cmd</span><pre>py experiments\hw_tamper.py --external-sender <span data-v="board">BOARD</span> --trigger serial:COM5 --set keys.master=&lt;KEY&gt; --out sim_out\runs\hw_tamper_rep1</pre></div>
+    <p>It prints the board command (bitstream <code>secure_jpeg_lanes_tamper.bit</code>); start that on the board. Two laptops: add <code>--attacker <span data-v="attacker">ATTACKER</span></code> and start the printed attacker command first. The network attacker stays idle in this run.</p>
+    <div class="expect"><b>Expect</b><ul>
+      <li>The board prints <code>sender: session …, encoder=…</code> and the script starts its clock at the board's first report. LED0 is on and LED3 toggles once per shot.</li>
+      <li>After ~4 minutes <code>hw_tamper.md</code> shows 25 shots, 25 detected, 0 missed, 1 frame rejected per shot, 0 unexplained rejections, and a detection latency in milliseconds.</li>
+      <li>Repeat as <code>hw_tamper_rep2</code> and <code>rep3</code>.</li></ul></div>
+    <div class="note"><b>For the video</b><p>After the measured runs, flip SW0 up: every frame is rejected and the dashboard's policy goes to E5. Flip it down again: frames are accepted again. Then press BTN0 a few times.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s12c" aria-label="done"></span><div>
+    <p><b>Protection level from the board's buttons</b> (demo, any run with the tamper image; SW1 down so nothing is tampered). The board prints <code>buttons: BTN1 level down, BTN2 level up (max E5), BTN3 automatic policy</code> at the start.</p>
+    <ul>
+      <li>Press BTN1 twice: the board prints <code>buttons: BTN1 -&gt; manual E0</code>. Within 1 s the dashboard's level reads E0 and the attacker tile shows the picture in clear: E0 encrypts nothing.</li>
+      <li>Press BTN2 step by step to E5: the attacker tile turns to noise, then to shuffled blocks. Every frame is still <b>verified</b> at the receiver, because the level travels in the authenticated header.</li>
+      <li>Press BTN3: back to the automatic policy (E2 at rest; E5 under attack).</li>
+    </ul>
+    <div class="note"><b>Manual means manual</b><p>While a button level is set, the policy does not raise the level on an attack (the same as the dashboard's manual mode). Press BTN3 before phase 11 and before the measured tamper runs.</p></div>
+  </div></div>
+</section>
+
+<!-- ============================================================ 13 -->
+<section class="phase" id="p13">
+  <div class="ph-head"><div class="ph-num">13</div><h2>Bring the results back</h2>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip time">10 min</span></div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s13a" aria-label="done"></span><div>
     <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
 scp -r xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/sim_out/board sim_out\
 scp -r xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/sim_out/pq_kex sim_out\
 powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,future_work\baselines\power_template.csv board_results.zip</pre></div>
-    <p>Send <code>board_results.zip</code>, the meter photos and the phone video to Claude. Claude puts them in <code>paper/data/board/</code>, fills the red <code>\TODO{A2…A6}</code> in both papers, checks that the conference paper is still 6 pages, and opens the pull request.</p>
+    <p>Send <code>board_results.zip</code>, the meter photos and the phone videos to Claude. <code>sim_out\runs</code> holds the A6, two-laptop and tamper runs. Claude puts the results in <code>paper/data/board/</code>, fills the red <code>\TODO{A2…A6}</code> in both papers, checks that the conference paper is still 6 pages, and opens the pull request.</p>
   </div></div>
-  <div class="step"><span class="check"><input type="checkbox" id="s12b" aria-label="done"></span><div>
+  <div class="step"><span class="check"><input type="checkbox" id="s13b" aria-label="done"></span><div>
     <p>Shut the board down cleanly before the switch: wait until the LEDs stop.</p>
     <div class="cmd"><span class="who board">Board · ssh</span><pre>sudo shutdown -h now</pre></div>
   </div></div>
@@ -511,17 +587,22 @@ powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,fut
       <tr><td><code>VERSION register reads 0x…</code></td><td>Wrong file or the IP has another name: <code>python3 -c "from pynq import Overlay; print(Overlay('future_work/board/overlay/secure_jpeg_lanes4.bit').ip_dict.keys())"</code>, then pass <code>--ip-name</code> / <code>--dma-name</code>. Known values: <code>0x5EC00200</code> single pipeline, <code>0x5EC00382</code> 2 lanes + E5, <code>0x5EC00384</code> 4 lanes + E5, <code>0x5EC003C4</code> 4 lanes YUYV + E5.</td></tr>
       <tr><td><code>TimeoutError: DMA … not finished</code> or <code>STATUS.DONE never set</code></td><td>Try <code>--sizes 64x48</code> first. Old image (before 20 Oct): rebuild. Otherwise send Claude the first error and the command.</td></tr>
       <tr><td>Mismatch at a small byte offset</td><td>Header or registers (quantisation tables, session id, frame counter). Send the line to Claude.</td></tr>
-      <tr><td>Mismatch deep in the scan</td><td>Pixel order or a datapath fault. Rerun with <code>--fclk 100</code>; if that passes, it is the clock.</td></tr>
+      <tr><td>Mismatch deep in the scan</td><td>Pixel order or a datapath fault. Rerun with <code>--fclk 100</code>; if that passes, it is the clock (most likely on <code>secure_jpeg_lanes4hd</code>, +0.032 ns at 125 MHz).</td></tr>
       <tr><td>Passes, but fabric time far above the table</td><td>DDR starvation (<code>in_wait</code> large). Not a bug: report it; compare with the YUYV image.</td></tr>
       <tr><td>Fails only with the new driver</td><td>Add <code>--full-cache-ops</code> and report it.</td></tr>
       <tr><td>Dashboard empty, or every frame rejected (tag)</td><td>Firewall, wrong IPs, laptop started after the board, or different keys on the two ends. Same <code>keys.master</code> on both; laptop first.</td></tr>
-      <tr><td><code>kex: no answer from the receiver</code></td><td>The laptop's <code>run_all --pq-kex</code> is not running or UDP 47006 is blocked. Allow it: <code>netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010</code></td></tr>
+      <tr><td><code>kex: no answer from the receiver</code></td><td>The laptop's <code>run_all --pq-kex</code> (or <code>scenario.py --pq-kex</code>) is not running, or UDP is blocked. Allow it: <code>netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010,47200-47215</code></td></tr>
+      <tr><td>Scenario or tamper run waits forever for the board's first report</td><td>Ports 47200–47215 are blocked (the rule above), or the board command was not the printed one. Two laptops: start the attacker command before the board.</td></tr>
+      <tr><td>Two laptops: the receiver sees nothing, the attacker's dashboard shows the wire</td><td>The attacker laptop forwards to the wrong address. Copy its command exactly as the receiver's script printed it. Do not type it by hand.</td></tr>
+      <tr><td>Tamper run: shots missed, LED3 does not toggle</td><td>SW1 is down, or the Pico is not wired to JA1 / GND. Press BTN0: if LED3 toggles, the board side is fine and the problem is the Pico. Check the COM port and that <code>main.py</code> is on the Pico (the script warns when it does not answer <code>PICO-TAMPER</code>).</td></tr>
+      <tr><td>Tamper run: rejections that no shot explains</td><td>SW0 is up (continuous mode), or network loss. Put SW0 down and repeat; if it stays, send <code>hw_tamper.md</code> to Claude.</td></tr>
+      <tr><td><code>Overlay(...)</code> fails for <code>secure_jpeg_lanes_tamper.bit</code></td><td>The tamper image was not built or not copied with its <code>.hwh</code> (phase 0b). Phases 2–11 do not need it.</td></tr>
     </tbody></table></div>
 </section>
 
 <footer>
-  <p>Built from the repository's <code>docs/FPGA_HANDS_ON.md</code>, <code>docs/RUNBOOK.md</code> §3 and the board scripts as of commit 269284e (22 Oct 2026). Expected times are the RTL cycle counts of <code>paper/data/lanes_rtl</code>.</p>
-  <p>Ticks and the two IPs are saved in this browser only.</p>
+  <p>Built from the repository's <code>docs/FPGA_HANDS_ON.md</code>, <code>docs/RUNBOOK.md</code> §3, <code>docs/INTERFACES.md</code> §9–10 and the board scripts as of commit d4e4392 (Vivado run 12, 22 Oct 2026). Expected times are the RTL cycle counts of <code>paper/data/lanes_rtl</code>; clocks and slack are from <code>paper/data/vivado/vivado_tables.md</code>.</p>
+  <p>Ticks and the IPs are saved in this browser only.</p>
 </footer>
 </main>
 
@@ -532,7 +613,8 @@ powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,fut
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   };
   // IP substitution
-  var inputs = { board: document.getElementById("ip-board"), laptop: document.getElementById("ip-laptop") };
+  var inputs = { board: document.getElementById("ip-board"), laptop: document.getElementById("ip-laptop"),
+                 attacker: document.getElementById("ip-attacker") };
   Object.keys(inputs).forEach(function (k) {
     var saved = store.get("bd-ip-" + k);
     if (saved) inputs[k].value = saved;
@@ -541,7 +623,7 @@ powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,fut
   function fill() {
     document.querySelectorAll("[data-v]").forEach(function (el) {
       var v = inputs[el.getAttribute("data-v")].value.trim();
-      el.textContent = v || (el.getAttribute("data-v") === "board" ? "<BOARD>" : "<LAPTOP>");
+      el.textContent = v || "<" + el.getAttribute("data-v").toUpperCase() + ">";
     });
   }
   fill();

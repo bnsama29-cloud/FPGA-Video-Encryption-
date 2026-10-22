@@ -53,13 +53,16 @@ def run_receiver(cfg, timeout=120.0, keyfile=KEYFILE, log=print):
         while time.monotonic() < t_end:
             try:
                 d, addr = s.recvfrom(4096)
-            except socket.timeout:
+            except (socket.timeout, ConnectionResetError):   # Windows: ICMP from a sender that already closed
                 if done:
                     return done[2]
                 continue
             if d[:4] == b"SVK0" and done is None:
-                state, m1 = keys.kex_init(psk)
-                peer = addr
+                # a repeated SVK0 (the sender resends every 0.5 s, kex_init can take longer) gets the same
+                # M1 again; a fresh one would orphan the M2 that answers the first (bug #39)
+                if state is None or addr != peer:
+                    state, m1 = keys.kex_init(psk)
+                    peer = addr
                 s.sendto(m1, addr)
             elif d[:4] == keys.KEX_MAGIC2 and state is not None and addr == peer:
                 if done and d == done[0]:

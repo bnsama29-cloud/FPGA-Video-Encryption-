@@ -81,3 +81,26 @@ def test_over_udp(tmp_path):
     assert (tmp_path / "rx.txt").read_text().strip() == got["rx"].hex() == (tmp_path / "tx.txt").read_text().strip()
     c2 = config.load(None, [f"keys.master_file={tmp_path / 'rx.txt'}"])
     assert c2["keys"]["master"] == got["rx"].hex()
+
+
+def test_over_udp_slow_first_keygen(tmp_path, monkeypatch):
+    """Bug #39: the receiver's first kex_init took longer than the sender's 0.5 s resend (0.87 s cold on
+    Windows, longer on the A9), so two SVK0 queued, the receiver re-initialised for the second one and
+    rejected the M2 that answered the first M1 forever. A repeated SVK0 must get the same M1 again."""
+    real, calls = keys.kex_init, []
+
+    def slow_init(psk):
+        calls.append(1)
+        if len(calls) == 1:
+            import time
+            time.sleep(1.2)
+        return real(psk)
+    monkeypatch.setattr(keys, "kex_init", slow_init)
+    cfg = config.load(None, [f"keys.master={PSK.hex()}", "link.host=127.0.0.1", "link.kex=47097"])
+    got = {}
+    rx = threading.Thread(target=lambda: got.update(rx=kex.run_receiver(cfg, 10, tmp_path / "rx.txt", log=lambda *_: None)))
+    rx.start()
+    got["tx"] = kex.run_sender(cfg, 10, tmp_path / "tx.txt", log=lambda *_: None)
+    rx.join(10)
+    assert got.get("rx") == got["tx"], f"keys differ: receiver {got.get('rx')}, sender {got['tx']}"
+    assert len(calls) == 1, f"the receiver started {len(calls)} exchanges for one sender"

@@ -130,8 +130,8 @@ def main():
                   f"{r['mhz']} | {f(r['mpix_s'])} | {f(r['mpix_s_per_klut'], 2)} | {r['crypto']} |")
     md += ["", "Throughput: RTL simulation, no DMA stalls. Power: as labelled (vectorless = estimate). "
                "E5 rows use the area of the Vivado run named above; a run older than the E5 RTL has no E5 logic in it."]
-    (out / "hw_efficiency.md").write_text("\n".join(md) + "\n")
-    print("\n".join(md))
+    (out / "hw_efficiency.md").write_text("\n".join(md) + "\n", encoding="utf-8")   # names with non-Latin-1 letters
+    print("\n".join(md).encode("ascii", "replace").decode())    # a Windows console is cp1252
 
 
 if __name__ == "__main__":
