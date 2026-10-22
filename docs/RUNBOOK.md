@@ -111,7 +111,8 @@ images; the paper's Vivado tables are from the same run, and the RTL is frozen.
 11. Tamper inside the board (SW1 up, SW0 down; Pico on JA1/GND, or `--trigger manual` and BTN0):
     `py experiments\hw_tamper.py --external-sender <BOARD IP> --trigger serial:COM5 --set keys.master=<KEY> --out sim_out\runs\hw_tamper_rep1`
     and the printed board command (`secure_jpeg_lanes_tamper.bit`); three reps. Pass: every shot = exactly one
-    rejected frame, 0 missed, 0 unexplained rejections (`hw_tamper.md`).
+    rejected frame, 0 missed, 0 unexplained rejections (`hw_tamper.md`). With this image BTN1 / BTN2 / BTN3
+    set the protection level one down / one up / automatic (`INTERFACES.md` §10); press BTN3 before measuring.
 12. Laptop: `python paper/make_assets.py && make -C paper`, check `pdfinfo paper/conference.pdf` = 6 pages,
     replace the red `\TODO{A2…A6}`, commit the data.
 

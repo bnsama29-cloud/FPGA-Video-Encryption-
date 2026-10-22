@@ -36,7 +36,8 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
   bd_lanes4 the same with 4 lanes, lines up to 1024 px -> overlay/secure_jpeg_lanes4.bit/.hwh (overlay/lanes4/)
   bd_lanes4hd   4 lanes, 2048-px lines (1080p), one line-buffer set -> overlay/secure_jpeg_lanes4hd.bit
   bd_lanes4yuyv 4 lanes, camera-native YUYV input (4 px per beat) -> overlay/secure_jpeg_lanes4yuyv.bit
-  bd_tamper the 2-lane image + hardware tamper injector (board-day attack demo, buttons/switches/PMOD)
+  bd_tamper the 2-lane image + hardware tamper injector (board-day attack demo, BTN0/switches/PMOD)
+            + BTN1..BTN3 for the protection level (future_work/board/axil_buttons.v)
             -> overlay/secure_jpeg_lanes_tamper.bit/.hwh (reports in overlay/lanestamper/); run it at --fclk 100
   power  post-route power with SIMULATED switching activity (needs ooc and/or lanes first): XSim
          encodes --power-size scene frames in each mode and records activity.saif, then Vivado

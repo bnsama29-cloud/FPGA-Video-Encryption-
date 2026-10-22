@@ -218,7 +218,7 @@ certutil -hashfile future_work\board\overlay\secure_jpeg_lanes4.bit SHA256</pre>
     <div class="expect"><b>Expect</b><ul><li><code>git log</code> shows <code>d4e4392</code> or newer.</li><li>The hash starts <code>7f1260af5daf72b0</code>. Any other value: these are not the run-12 images; take the overlay folder from the run-12 PC or the team drive.</li></ul></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0b" aria-label="done"></span><div>
-    <p><b>Build the tamper image</b> for phase 12: the 2-lane image with the tamper injector (<code>future_work/board/axis_tamper.v</code>) between the encoder and the receive DMA. Same encoder, same bytes; only the extra block and its pins (<code>tamper_pynq_z2.xdc</code>) are new.</p>
+    <p><b>Build the tamper image</b> for phase 12: the 2-lane image with the tamper injector (<code>future_work/board/axis_tamper.v</code>) between the encoder and the receive DMA, and BTN1–BTN3 readable by the ARM (<code>axil_buttons.v</code>) to change the protection level. Same encoder, same bytes; only the extra blocks and their pins (<code>tamper_pynq_z2.xdc</code>) are new.</p>
     <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>py vivado\run_vivado_day.py --steps bd_tamper parse --fclk 100 --jobs 2</pre></div>
     <div class="expect"><b>Expect</b><ul>
       <li>It ends with <code>overlay meets timing at 100 MHz (WNS +…)</code>.</li>
@@ -247,7 +247,7 @@ py experiments\pq_kex_cost.py --runs 5</pre></div>
     <p><b>Rehearse the tamper run (phase 12)</b> with an emulated injector. Two windows: the first prints a board command; run it in the second with <code>--mock-lanes 2 --mock-e5 --mock-tamper</code> in place of <code>--bitfile …</code>, and with <code>py</code> in place of <code>sudo -E python3</code>.</p>
     <div class="cmd"><span class="who laptop">Laptop · cmd, window 1</span><pre>py -m pytest tests\test_hw_tamper.py tests\test_two_laptop.py -q
 py experiments\hw_tamper.py --external-sender 127.0.0.1 --trigger udp:127.0.0.1 --out sim_out\runs\hw_tamper_rehearsal</pre></div>
-    <div class="expect"><b>Expect</b><p>The tests pass. After ~4 minutes <code>hw_tamper.md</code> shows 25 shots, 25 detected, 0 missed, 1 frame rejected per shot, 0 unexplained rejections.</p></div>
+    <div class="expect"><b>Expect</b><p>The tests pass. After ~4 minutes <code>hw_tamper.md</code> shows 25 shots, 25 detected, 0 missed, 1 frame rejected per shot, 0 unexplained rejections. Add <code>--mock-buttons</code> to the second window to rehearse BTN1–BTN3 too: <code>py -c "import socket,json; socket.socket(2,2).sendto(json.dumps({'cmd':'button','n':1}).encode(),('127.0.0.1',47205))"</code> presses BTN1 (47205 = the sender control port of this run).</p></div>
   </div></div>
 </section>
 
@@ -522,6 +522,7 @@ CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --si
       <tr><td>SW0 (up)</td><td>continuous: one bit flipped in every frame (for the live demo, not for the measurement)</td></tr>
       <tr><td>BTN0, or a pulse on PMOD A pin 1</td><td>one shot: one bit of the next frame</td></tr>
       <tr><td>LED0 / LED1 / LED2 / LED3</td><td>enabled / shot pending / continuous / toggles per tampered frame</td></tr>
+      <tr><td>BTN1 / BTN2 / BTN3</td><td>protection level one down / one up (to E5) / back to automatic. Read by the ARM; the level changes at the next defence window (1 s) and shows on the dashboard.</td></tr>
     </tbody></table></div>
   <div class="step"><span class="check"><input type="checkbox" id="s12a" aria-label="done"></span><div>
     <p><b>Wire the Pico</b> (optional, gives millisecond timing). 3.3 V only; connect no power pin. Pico on the receiver laptop's USB.</p>
@@ -541,6 +542,15 @@ CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --si
       <li>After ~4 minutes <code>hw_tamper.md</code> shows 25 shots, 25 detected, 0 missed, 1 frame rejected per shot, 0 unexplained rejections, and a detection latency in milliseconds.</li>
       <li>Repeat as <code>hw_tamper_rep2</code> and <code>rep3</code>.</li></ul></div>
     <div class="note"><b>For the video</b><p>After the measured runs, flip SW0 up: every frame is rejected and the dashboard's policy goes to E5. Flip it down again: frames are accepted again. Then press BTN0 a few times.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s12c" aria-label="done"></span><div>
+    <p><b>Protection level from the board's buttons</b> (demo, any run with the tamper image; SW1 down so nothing is tampered). The board prints <code>buttons: BTN1 level down, BTN2 level up (max E5), BTN3 automatic policy</code> at the start.</p>
+    <ul>
+      <li>Press BTN1 twice: the board prints <code>buttons: BTN1 -&gt; manual E0</code>. Within 1 s the dashboard's level reads E0 and the attacker tile shows the picture in clear: E0 encrypts nothing.</li>
+      <li>Press BTN2 step by step to E5: the attacker tile turns to noise, then to shuffled blocks. Every frame is still <b>verified</b> at the receiver, because the level travels in the authenticated header.</li>
+      <li>Press BTN3: back to the automatic policy (E2 at rest; E5 under attack).</li>
+    </ul>
+    <div class="note"><b>Manual means manual</b><p>While a button level is set, the policy does not raise the level on an attack (the same as the dashboard's manual mode). Press BTN3 before phase 11 and before the measured tamper runs.</p></div>
   </div></div>
 </section>
 

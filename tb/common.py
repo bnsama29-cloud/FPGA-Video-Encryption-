@@ -38,6 +38,7 @@ SOURCES = {
     "huffman_packer": ["skid_buf.v", "huffman_enc.v", "bit_packer.v", "huffman_packer.v"],
     "axil_regs": ["axil_regs.v"],
     "axis_tamper": ["../future_work/board/axis_tamper.v"],     # board-day test equipment, not the encoder
+    "axil_buttons": ["../future_work/board/axil_buttons.v"],   # BTN1..BTN3 -> protection level (tamper overlay)
     "secure_jpeg_top": ASCON + [
         "skid_buf.v", "keystream_gen.v", "tag_unit.v", "rgb2ycbcr_block.v", "dct_stage.v",
         "dct8x8.v", "quantiser.v", "zigzag_rle.v", "selective_enc.v",

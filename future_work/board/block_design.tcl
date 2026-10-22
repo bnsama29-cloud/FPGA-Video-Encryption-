@@ -15,7 +15,8 @@
 #   ... -tclargs 100 2 lanes4yuyv (4 lanes, YUYV camera input: secure_jpeg_lanes4yuyv.bit)
 #   ... -tclargs 100 2 lanestamper (2 lanes as "lanes" + the hardware tamper injector between the encoder and
 #                                   the receive DMA, driven by SW0/SW1, BTN0 and PMOD A pin 1, LEDs show its
-#                                   state: secure_jpeg_lanes_tamper.bit, attack demonstration only)
+#                                   state; BTN1..BTN3 readable by the ARM (axil_buttons.v) to change the
+#                                   protection level: secure_jpeg_lanes_tamper.bit, demonstration only)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
@@ -85,6 +86,7 @@ add_files [glob [file join $root rtl *.v]]
 add_files [file join $root future_work board ${bdtop}.v]
 if {$design eq "lanestamper"} {
     add_files [file join $root future_work board axis_tamper.v]
+    add_files [file join $root future_work board axil_buttons.v]
     add_files -fileset constrs_1 [file join $root future_work board tamper_pynq_z2.xdc]
 }
 # The RTL `include`s generated headers (dct_coeffs.vh, ...). A module reference
@@ -153,6 +155,11 @@ if {$design eq "lanestamper"} {
     connect_bd_net [get_bd_ports sw]        [get_bd_pins tamper/sw]
     connect_bd_net [get_bd_ports pmod_trig] [get_bd_pins tamper/pmod_trig]
     connect_bd_net [get_bd_ports led]       [get_bd_pins tamper/led]
+    # BTN1..BTN3 -> read-only AXI-Lite registers; the ARM turns presses into protection-level changes
+    # (future_work/board/axil_buttons.v; the same btn net, BTN0 stays the tamper shot)
+    set buttons [create_bd_cell -type module -reference axil_buttons buttons]
+    connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins buttons/clk]
+    connect_bd_net [get_bd_ports btn]       [get_bd_pins buttons/btn]
 } else {
     connect_bd_intf_net [get_bd_intf_pins sjpeg/m_axis] [get_bd_intf_pins dma/S_AXIS_S2MM]
 }
@@ -167,6 +174,7 @@ proc axi_auto {master slave target} {
 }
 axi_auto /ps7/M_AXI_GP0  /dma/S_AXI_LITE   dma/S_AXI_LITE
 axi_auto /ps7/M_AXI_GP0  /sjpeg/s_axil     sjpeg/s_axil
+if {$design eq "lanestamper"} { axi_auto /ps7/M_AXI_GP0 /buttons/s_axil buttons/s_axil }
 # The second master must be the automation TARGET (bug #32): the first call connects HP0; a call that
 # targets ps7/S_AXI_HP0 again finds it already connected and does nothing, which left M_AXI_S2MM
 # unconnected with no address (on the board the receive DMA never wrote a byte and hung).
@@ -179,8 +187,10 @@ proc unconnected {pin} { expr {[llength [get_bd_nets -quiet -of_objects [get_bd_
 # (sjpeg/clk was connected to FCLK0 above)
 set rstblk [lindex [get_bd_cells -filter {VLNV =~ "*proc_sys_reset*"}] 0]
 if {[unconnected sjpeg/rst]} { connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins sjpeg/rst] }
-if {$design eq "lanestamper" && [unconnected tamper/rst]} {
-    connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins tamper/rst]
+if {$design eq "lanestamper"} {
+    foreach p {tamper/rst buttons/rst} {
+        if {[unconnected $p]} { connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins $p] }
+    }
 }
 
 # ---- interrupts: our DONE + both DMA channels -> IRQ_F2P
@@ -197,6 +207,10 @@ foreach space {dma/Data_MM2S dma/Data_S2MM} {
     if {[llength [get_bd_addr_segs -quiet -of_objects [get_bd_addr_spaces $space]]] == 0} {
         error "$space has no address segment: the DMA master is not connected to ps7/S_AXI_HP0"
     }
+}
+if {$design eq "lanestamper" && [llength [get_bd_addr_segs -quiet *buttons*]] == 0} {
+    # a warning, not an error: the tamper injector works without it (board_sender then prints no "buttons:" line)
+    puts "WARNING: buttons/s_axil has no address segment: the ARM may not be able to read BTN1..BTN3"
 }
 if {[llength [get_bd_cells -quiet -filter {VLNV =~ "*clk_wiz*"}]] > 0} {
     error "the AXI automation added a clk_wiz: every block must run on ps7/FCLK_CLK0 (see the comment at sjpeg/clk)"
