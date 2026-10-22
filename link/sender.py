@@ -54,6 +54,7 @@ class Sender:
         self.running = True
         self.paused = False
         self.manual_mode = None
+        self.extra_control = {}                 # cmd name -> fn(cmd): commands added by a wrapper (board test gear)
         self.enc_bits = self.payload_bits = self.frames_sent = 0
         self.t_encode = 0.0
 
@@ -112,6 +113,8 @@ class Sender:
                     self.fps = max(0.2, float(cmd["fps"]))
                 elif c == "pause":
                     self.paused = bool(cmd.get("on", True))
+                elif c in self.extra_control:
+                    self.extra_control[c](cmd)
             self.bus.event("control", cmd=cmd)
 
     def _rekey(self, reason):

@@ -175,7 +175,8 @@ class Bus:
 
     def __init__(self, cfg, source):
         self.sock = udp_socket()
-        self.addrs = [(cfg["link"]["host"], p) for p in cfg["link"]["bus"]]
+        from .config import bus_addrs
+        self.addrs = bus_addrs(cfg)
         self.source = source
         self.size = cfg["link"]["fragment"]
         self.msg = 0

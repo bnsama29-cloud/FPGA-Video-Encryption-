@@ -5,6 +5,11 @@
     python experiments/scenario.py --scenario experiments/scenarios/full_suite.json --external-sender <BOARD IP>
         (GUIDE.md A6: the PYNQ-Z2 is the sender; the script prints the command to start on the board
          and starts the scenario clock when the board's first report arrives)
+    python experiments/scenario.py --scenario experiments/scenarios/full_suite.json --external-sender <BOARD IP> \
+        --attacker <ATTACKER LAPTOP IP>
+        (two laptops, docs/BOARD_DAY.html: the channel = the attacker runs on its own laptop between the
+         board and this one; only the receiver runs here. Prints the commands for the attacker laptop and
+         the board. Attacks are still started by this script, over the control port of the attacker node)
 
 Starts channel + receiver + sender on their own port block (so a dashboard on the
 default ports is not disturbed; --watch also sends telemetry to the dashboard),
@@ -36,22 +41,63 @@ from link.buslog import BusLogger           # noqa: E402
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
-def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex=False):
+BOARD_BIT = "future_work/board/overlay/secure_jpeg_lanes.bit"
+
+
+def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex=False, bus_host=None,
+                  bitfile=BOARD_BIT):
     """The board_sender command whose ports match a scenario run on base_port (GUIDE.md A6). Settings that
-    both ends must share (the pre-shared key, keys.*) are passed on, or every frame would fail its tag."""
+    both ends must share (the pre-shared key, keys.*) are passed on, or every frame would fail its tag.
+    bus_host: two-laptop setup -- video goes to `laptop` (the attacker), telemetry to bus_host (the receiver)."""
     ports = [f"link.host={laptop}", "link.bind_host=0.0.0.0", f"link.video_in={base_port}",
              f"link.fb_out={base_port + 3}", f"link.sender_control={base_port + 5}",
              f"link.bus=[{base_port + 10}]", f"sender.policy={policy}"]
-    ports += [x for x in extra_sets if x.startswith(("keys.", "link.pad"))]
-    return ("python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes.bit "
+    if bus_host:
+        ports.append(f"link.bus_host={bus_host}")
+    ports += [x for x in extra_sets if x.startswith(("keys.", "link.pad", "sender."))]
+    return (f"sudo -E python3 -m future_work.board.board_sender --bitfile {bitfile} "
             + ("--pq-kex " if pq_kex else "") + " ".join(f"--set {x}" for x in ports))
 
 
+def attacker_command(base_port, receiver_ip, board_ip, kex_tamper_s=0.0, dashboard=True):
+    """The channel (attacker) node for the attacker laptop, ports matching a scenario run on base_port.
+    Telemetry goes to the receiver laptop's logger and, with dashboard, to a dashboard on the attacker
+    laptop itself (the attacker's screen: the 'wire' and 'attacker' tiles)."""
+    bus = [f"'{receiver_ip}:{base_port + 10}'"] + (["'127.0.0.1:47010'"] if dashboard else [])
+    sets = [f"link.host={receiver_ip}", f"link.sender_host={board_ip}", "link.bind_host=0.0.0.0",
+            f"link.video_in={base_port}", f"link.video_out={base_port + 1}", f"link.fb_in={base_port + 2}",
+            f"link.fb_out={base_port + 3}", f"link.control={base_port + 4}",
+            f"\"link.bus=[{','.join(bus)}]\"", "channel.kex_relay=true"]
+    if kex_tamper_s:
+        sets.append(f"channel.kex_tamper_s={kex_tamper_s}")
+    return "py -m link.channel " + " ".join(f"--set {x}" for x in sets)
+
+
+def local_ip_towards(host):
+    """This machine's address on the route to host (no packet is sent)."""
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect((host, 9))
+        return s.getsockname()[0]
+    except OSError:
+        return "<THIS LAPTOP IP>"
+    finally:
+        s.close()
+
+
 def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memory=None, quiet=False,
-        external_sender=None, wait_s=600, board_max_mode="E4", pq_kex=False):
+        external_sender=None, wait_s=600, board_max_mode="E4", pq_kex=False, attacker=None,
+        board_bitfile=BOARD_BIT, kex_tamper_s=0.0, hw_trigger=None):
     """external_sender = the board's IP: start only channel + receiver here, listen on the network,
     and let the PYNQ-Z2 (future_work/board/board_sender.py) be the sender. board_max_mode = the top level
-    the bitstream offers: E4 for the run-6 bitstreams, E5 for a lane bitstream with VERSION bit 7."""
+    the bitstream offers: E4 for the run-6 bitstreams, E5 for a lane bitstream with VERSION bit 7.
+    attacker = the attacker laptop's IP (needs external_sender): the channel runs there, only the receiver
+    here; this laptop still starts the attacks (control port of the remote channel) and logs everything.
+    hw_trigger(step) runs the scenario's {"hw": ...} steps (experiments/hw_tamper.py: one shot of the
+    tamper injector in the FPGA); each is logged as a src="hw" event with this PC's time."""
+    if attacker and not external_sender:
+        raise ValueError("--attacker needs --external-sender (the board is the sender in the two-laptop setup)")
     sc = json.loads(Path(scenario).read_text())
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -61,6 +107,13 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
             f"link.sender_control={base_port + 5}", f"link.bus={bus}",
             f"sender.policy='{policy}'",
             f"defence.memory_file='{memory or (out / 'bandit_memory.json')}'"] + list(sc.get("set", [])) + list(extra_sets)
+    me = local_ip_towards(attacker) if attacker else None
+    if attacker:
+        # the receiver sends feedback and control to the attacker (link.host); its telemetry stays here
+        sets += [f"link.host='{attacker}'", "link.bus_host='127.0.0.1'"]
+        print("\nOn the ATTACKER laptop, start this first (and `py -m link.dashboard` for its screen):\n  "
+              + attacker_command(base_port, me, external_sender, kex_tamper_s), flush=True)
+    to_board = dict(laptop=attacker or "<LAPTOP IP>", bus_host=me, bitfile=board_bitfile)
     if external_sender:
         # the top level is what the bitstream offers (future_work/board/board_sender.py caps at E4 unless
         # VERSION bit 7 says the RTL has E5); 'mitigated' means reaching that level (bug #31)
@@ -72,7 +125,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
         kargs = [x for s in kx for x in ("--set", s)]
         if external_sender:
             print("\nStart the sender on the board now (same ports as this run):\n  "
-                  + board_command(base_port, policy, extra_sets=extra_sets, pq_kex=True)
+                  + board_command(base_port, policy, extra_sets=extra_sets, pq_kex=True, **to_board)
                   + "\nWaiting for the key exchange ...", flush=True)
             tx = None
         else:
@@ -87,13 +140,13 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
     cfg = config.load(overrides=sets)
     log = BusLogger(base_port + 10, host="0.0.0.0" if external_sender else "127.0.0.1")
     out_log = None if not quiet else subprocess.DEVNULL
-    nodes = ("channel", "receiver") if external_sender else ("channel", "receiver", "sender")
+    nodes = ("receiver",) if attacker else ("channel", "receiver") if external_sender else ("channel", "receiver", "sender")
     procs = [subprocess.Popen([sys.executable, "-m", f"link.{n}"] + args, cwd=ROOT, stdout=out_log)
              for n in nodes]
     if external_sender:
         if not pq_kex:
             print("\nStart the sender on the board now (same ports as this run):\n  "
-                  + board_command(base_port, policy, extra_sets=extra_sets))
+                  + board_command(base_port, policy, extra_sets=extra_sets, **to_board))
         print("Waiting for the board's first report ...", flush=True)
         t_wait = time.time()
         while not log.take("window", "sender"):
@@ -105,6 +158,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
             time.sleep(0.2)
         print("board is streaming: scenario clock starts", flush=True)
     t0 = time.time()
+    hw_events = []
     try:
         for step in sorted(sc["steps"], key=lambda s: s["at"]):
             while time.time() - t0 < step["at"]:
@@ -116,6 +170,11 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
                                   duration=step.get("duration", 10), rate=step.get("rate", 1.0))
             if "impair" in step:
                 wire.send_control(cfg, "control", cmd="impair", **step["impair"])
+            if "hw" in step:
+                if hw_trigger is None:
+                    raise RuntimeError("the scenario has hardware steps: run it with experiments/hw_tamper.py")
+                t_hw = time.time()
+                hw_events.append(dict(src="hw", kind="hw_" + str(step["hw"]), t=t_hw, info=hw_trigger(step)))
             if not quiet:
                 print(f"  t={time.time() - t0:5.1f}s  {step}")
         while time.time() - t0 < sc["end_s"]:
@@ -127,7 +186,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
             p.wait()
         time.sleep(0.3)
         log.close()
-    events = log.take()
+    events = sorted(log.take() + hw_events, key=lambda e: e["t"])
     with open(out / "events.jsonl", "w") as f:
         for e in events:
             f.write(json.dumps(e) + "\n")
@@ -244,10 +303,16 @@ def main():
                     help="with --external-sender: E5 when the board runs a lane bitstream with E5 (VERSION bit 7)")
     ap.add_argument("--pq-kex", action="store_true",
                     help="start with the post-quantum session key exchange (link/kex.py) between the two ends")
+    ap.add_argument("--attacker", metavar="ATTACKER_IP",
+                    help="two laptops: the channel (attacker) runs on this other laptop between board and receiver")
+    ap.add_argument("--kex-tamper", type=float, default=0.0, metavar="S",
+                    help="with --attacker --pq-kex: the printed attacker command corrupts the key exchange for S s")
+    ap.add_argument("--board-bitfile", default=BOARD_BIT, help="bitstream named in the printed board command")
     a = ap.parse_args()
     out = a.out or ROOT / "sim_out" / "runs" / f"{Path(a.scenario).stem}_{a.policy}"
     s = run(a.scenario, a.policy, out, a.base_port, a.set, a.watch, a.memory, external_sender=a.external_sender,
-          board_max_mode=a.board_max_mode, pq_kex=a.pq_kex)
+          board_max_mode=a.board_max_mode, pq_kex=a.pq_kex, attacker=a.attacker, board_bitfile=a.board_bitfile,
+          kex_tamper_s=a.kex_tamper)
     print_summary(s)
     print(f"\nwritten {out}/")
 

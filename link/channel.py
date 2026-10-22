@@ -18,6 +18,13 @@ on command (dashboard buttons or experiments/run_scenario.py):
   feedback     fb_drop     suppress the feedback channel                  -> dead-man rule
                fb_forge    inject forged "all OK" heartbeats              -> fb_forged
                fb_replay   replay captured heartbeats                     -> fb_replay
+  key exchange (channel.kex_relay = true: the channel on its own laptop, between board and receiver)
+               channel.kex_tamper_s = N: flip a byte of every kex message for the first N s
+                                                                          -> HMAC fails, no key until it stops
+
+Two laptops (docs/BOARD_DAY.html): run this node on the attacker laptop with
+  --set link.host=<RECEIVER IP> --set link.sender_host=<BOARD IP> --set link.bind_host=0.0.0.0
+  --set channel.kex_relay=true   (+ the ports printed by experiments/scenario.py --attacker)
 
 Control commands (JSON over UDP to link.control):
   {"cmd":"attack","type":"bitflip","duration":10,"rate":1.0}   rate = fraction of frames
@@ -67,6 +74,15 @@ class Channel:
         self.frames = 0
         self.stats = dict(frames=0, attacked=0, dropped=0, injected=0, fb_dropped=0, fb_forged=0)
         self.msg_id = 1 << 30                  # ids for frames the attacker creates
+        self.t_start = time.monotonic()
+        self.kex_in = self.kex_up = None
+        if c.get("kex_relay"):
+            # sender side listens on link.kex; one upstream socket to the receiver, so the receiver sees
+            # one consistent peer (link/kex.py keeps the peer address of the first SVK0)
+            self.kex_in = wire.udp_socket(L["kex"], config.bind_host(cfg), timeout=0.2)
+            self.kex_up = wire.udp_socket(timeout=0.2)
+            self.kex_to = (L["host"], L.get("kex_rx") or L["kex"])
+            self.kex_peer = None
 
     # ------------------------------------------------------------- helpers
     def _schedule(self, addr, datagram, extra_s=0.0):
@@ -193,6 +209,42 @@ class Channel:
             self._schedule(self.to_tx, d)
         self.stats["fb_forged"] += 1
 
+    # ------------------------------------------------------- key exchange
+    def _kex_tamper(self, d, direction):
+        """During the first channel.kex_tamper_s seconds: flip one byte after the 4-byte magic."""
+        if time.monotonic() - self.t_start >= float(self.c.get("kex_tamper_s", 0.0)) or len(d) <= 4:
+            return d
+        buf = bytearray(d)
+        buf[self.rng.randrange(4, len(buf))] ^= 1 << self.rng.randrange(8)
+        self.stats["kex_tampered"] = self.stats.get("kex_tampered", 0) + 1
+        self.bus.event("kex_tamper", direction=direction, size=len(d))
+        return bytes(buf)
+
+    def _kex_down_loop(self):                  # sender -> receiver
+        while True:
+            try:
+                d, addr = self.kex_in.recvfrom(4096)
+            except OSError:
+                continue
+            self.kex_peer = addr
+            self.stats["kex_relayed"] = self.stats.get("kex_relayed", 0) + 1
+            try:
+                self.kex_up.sendto(self._kex_tamper(d, "to_receiver"), self.kex_to)
+            except OSError:
+                pass
+
+    def _kex_up_loop(self):                    # receiver -> sender
+        while True:
+            try:
+                d, _ = self.kex_up.recvfrom(4096)
+            except OSError:
+                continue
+            if self.kex_peer is not None:
+                try:
+                    self.kex_in.sendto(self._kex_tamper(d, "to_sender"), self.kex_peer)
+                except OSError:
+                    pass
+
     # ------------------------------------------------------------- control
     def control(self, cmd):
         c = cmd.get("cmd")
@@ -241,7 +293,12 @@ class Channel:
                 continue
 
     def run(self):
-        for fn in (self._video_loop, self._fb_loop, self._ctl_loop):
+        loops = [self._video_loop, self._fb_loop, self._ctl_loop]
+        if self.kex_in is not None:
+            loops += [self._kex_down_loop, self._kex_up_loop]
+            print(f"channel: relaying the key exchange {self.cfg['link']['kex']} -> {self.kex_to[0]}:{self.kex_to[1]}"
+                  + (f", tampering for the first {self.c['kex_tamper_s']} s" if self.c.get("kex_tamper_s") else ""))
+        for fn in loops:
             threading.Thread(target=fn, daemon=True).start()
         print(f"channel: video {self.cfg['link']['video_in']} -> {self.to_rx[1]}, "
               f"feedback {self.cfg['link']['fb_in']} -> {self.to_tx[1]}, control {self.cfg['link']['control']}")

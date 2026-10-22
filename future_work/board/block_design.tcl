@@ -13,6 +13,9 @@
 #                                                         reports in overlay/lanes4/)
 #   ... -tclargs 100 2 lanes4hd   (4 lanes, 1080p lines, NBUF = 1: secure_jpeg_lanes4hd.bit)
 #   ... -tclargs 100 2 lanes4yuyv (4 lanes, YUYV camera input: secure_jpeg_lanes4yuyv.bit)
+#   ... -tclargs 100 2 lanestamper (2 lanes as "lanes" + the hardware tamper injector between the encoder and
+#                                   the receive DMA, driven by SW0/SW1, BTN0 and PMOD A pin 1, LEDs show its
+#                                   state: secure_jpeg_lanes_tamper.bit, attack demonstration only)
 #
 # Output: future_work/board/overlay/secure_jpeg.bit and secure_jpeg.hwh -> copy both to
 # the board (same folder, same base name) and use them with pynq_driver.PynqBackend.
@@ -45,6 +48,12 @@ if {$design eq "lanes"} {
     set outname secure_jpeg_lanes
     set bdtop   sjpeg_lanes_bd_top
     set pxbits  64
+} elseif {$design eq "lanestamper"} {
+    # the 2-lane image unchanged + future_work/board/axis_tamper.v on the scan stream (board day, attack demo)
+    set projdir [file join $root future_work board vivado_proj_lanestamper]
+    set outname secure_jpeg_lanes_tamper
+    set bdtop   sjpeg_lanes_bd_top
+    set pxbits  64
 } elseif {$design in {lanes4 lanes4hd lanes4yuyv}} {
     # 4 lanes, same wrapper. lanes4: lines up to 1024 pixels (VGA); lanes4hd: 2048-pixel lines (1080p) with
     # one line-buffer set per lane (NBUF = 1, otherwise the BRAM would double); lanes4yuyv: camera-native
@@ -74,6 +83,10 @@ if {$bp ne ""} {
 
 add_files [glob [file join $root rtl *.v]]
 add_files [file join $root future_work board ${bdtop}.v]
+if {$design eq "lanestamper"} {
+    add_files [file join $root future_work board axis_tamper.v]
+    add_files -fileset constrs_1 [file join $root future_work board tamper_pynq_z2.xdc]
+}
 # The RTL `include`s generated headers (dct_coeffs.vh, ...). A module reference
 # (create_bd_cell -type module) only accepts them when they are project files of type
 # "Verilog Header" (first Vivado run: ERROR [filemgmt 56-591], bug #18).
@@ -126,7 +139,23 @@ set_property -dict [list \
 connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins sjpeg/clk]
 
 connect_bd_intf_net [get_bd_intf_pins dma/M_AXIS_MM2S] [get_bd_intf_pins sjpeg/s_axis]
-connect_bd_intf_net [get_bd_intf_pins sjpeg/m_axis]     [get_bd_intf_pins dma/S_AXIS_S2MM]
+if {$design eq "lanestamper"} {
+    # encoder -> tamper injector -> receive DMA; the board's buttons, switches, LEDs and PMOD A pin 1
+    set tamper [create_bd_cell -type module -reference axis_tamper tamper]
+    connect_bd_net [get_bd_pins ps7/FCLK_CLK0] [get_bd_pins tamper/clk]
+    connect_bd_intf_net [get_bd_intf_pins sjpeg/m_axis]  [get_bd_intf_pins tamper/s_axis]
+    connect_bd_intf_net [get_bd_intf_pins tamper/m_axis] [get_bd_intf_pins dma/S_AXIS_S2MM]
+    create_bd_port -dir I -from 3 -to 0 btn
+    create_bd_port -dir I -from 1 -to 0 sw
+    create_bd_port -dir I pmod_trig
+    create_bd_port -dir O -from 3 -to 0 led
+    connect_bd_net [get_bd_ports btn]       [get_bd_pins tamper/btn]
+    connect_bd_net [get_bd_ports sw]        [get_bd_pins tamper/sw]
+    connect_bd_net [get_bd_ports pmod_trig] [get_bd_pins tamper/pmod_trig]
+    connect_bd_net [get_bd_ports led]       [get_bd_pins tamper/led]
+} else {
+    connect_bd_intf_net [get_bd_intf_pins sjpeg/m_axis] [get_bd_intf_pins dma/S_AXIS_S2MM]
+}
 
 # ---- AXI-Lite control from the PS, memory access to DDR through HP0
 # (same -config form that Vivado 2019.2+ records in its journal; clocks "Auto" = FCLK_CLK0,
@@ -150,6 +179,9 @@ proc unconnected {pin} { expr {[llength [get_bd_nets -quiet -of_objects [get_bd_
 # (sjpeg/clk was connected to FCLK0 above)
 set rstblk [lindex [get_bd_cells -filter {VLNV =~ "*proc_sys_reset*"}] 0]
 if {[unconnected sjpeg/rst]} { connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins sjpeg/rst] }
+if {$design eq "lanestamper" && [unconnected tamper/rst]} {
+    connect_bd_net [get_bd_pins $rstblk/peripheral_reset] [get_bd_pins tamper/rst]
+}
 
 # ---- interrupts: our DONE + both DMA channels -> IRQ_F2P
 set cc [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat irq_concat]

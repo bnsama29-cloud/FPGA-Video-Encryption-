@@ -185,3 +185,24 @@ Not part of the fabric contract; both ends must agree.
 |---|---|
 | `link.pad` | frame-size padding against the size side channel (`link/wire.py :: SizePadder`): `none` (default), `bucket:<B>`, `runmax` (pad to the largest frame so far, 256-byte steps), `window:<N>`. Padding = COM segments (`FF FE len 00..`) right after SOI; decoders skip them, the tag does not cover them, the receiver ignores them |
 | `keys.exchange` (`run_all --pq-kex`, `board_sender --pq-kex`, `python -m link.kex`) | hybrid ML-KEM-768 (FIPS 203) + X25519 at session start, authenticated with HMAC-SHA256 under a key derived from the pre-shared key; K_master = HKDF-SHA256(salt = PSK, ikm = ss_mlkem ‖ ss_x25519, info = "SV session" ‖ SHA256(M1 ‖ M2)), 16 bytes. Messages: M1 1268 B (receiver → sender), M2 1172 B, confirm 20 B; UDP port `link.kex` (47006). The result is written to `configs/session_key.txt` (git-ignored) and used through `keys.master_file`. `link/keys.py :: kex_init / kex_respond / kex_finish` |
+| `link.bus_host`, `link.bus` entries `"ip:port"` | where telemetry goes (`link/config.py :: bus_addrs`): a port goes to `bus_host` (or `host` when empty), `"ip:port"` goes where it says. Two-laptop setup: the board and the attacker send video to the attacker laptop but telemetry to the receiver laptop's logger; the attacker also feeds its own dashboard (`127.0.0.1:47010`) |
+| `channel.kex_relay`, `link.kex_rx`, `channel.kex_tamper_s` | the channel on its own laptop relays the key exchange (listens on `link.kex`, forwards to `(link.host, link.kex_rx or link.kex)` through one socket, so the receiver sees one peer); `kex_tamper_s = N` flips one byte (after the 4-byte magic) of every relayed message during the first N s: each fails its HMAC or confirmation, so no key exists until the attacker stops. `run_all --no-channel` and `experiments/scenario.py --attacker <IP>` run the laptop side without a local channel |
+
+## 10. Test equipment overlay `secure_jpeg_lanes_tamper.bit` (board day, 22 Oct 2026)
+
+Not part of the encoder. The 2-lane image (VERSION `0x5EC00382`, same registers, same bytes) with
+`future_work/board/axis_tamper.v` between `sjpeg/m_axis` and the S2MM DMA, i.e. after the frame tag.
+Pins in `future_work/board/tamper_pynq_z2.xdc`.
+
+| Control | Effect |
+|---|---|
+| SW1 (M19) | enable; while down, the stream passes unchanged (every bit, valid, ready, last, keep) |
+| SW0 (M20) | continuous: one bit flipped in every frame |
+| BTN0 (D19) or rising edge on PMOD A pin 1 (Y18, 3.3 V, pulled down) | one shot: one bit of the next frame |
+| LED0..3 (R14, P14, N16, M14) | enabled, shot pending, continuous, toggles per tampered frame |
+
+Which bit: byte 0 of the first safe beat from a pseudo-random beat 1..15 on (or the last beat); a byte
+is safe when it is not 0xFF, would not become 0xFF and does not follow 0xFF, so markers and stuffing
+stay intact and only the Ascon tag can reveal the change. A shot with no safe beat waits for the next
+frame. Frames must be separated by at least one idle clock (the DMA always does this).
+`board_sender --mock-tamper` emulates it for rehearsals (`tamper_shot` on the sender control port).
