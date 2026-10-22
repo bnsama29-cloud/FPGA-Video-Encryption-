@@ -1125,18 +1125,18 @@
   "run": 9
  },
  {
-  "folder": "overlay",
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay",
   "name": "overlay",
   "util": {
    "lut": [
-    7433.0,
+    7679.0,
     53200.0,
-    13.97
+    14.43
    ],
    "ff": [
-    6731.0,
+    7185.0,
     106400.0,
-    6.33
+    6.75
    ],
    "bram": [
     27.5,
@@ -1150,15 +1150,15 @@
    ]
   },
   "timing": {
-   "wns": 0.76,
+   "wns": 1.309,
    "tns": 0.0,
    "whs": 0.03,
    "met": true
   },
   "power": {
-   "total": 1.799,
-   "dynamic": 1.656,
-   "static": 0.142,
+   "total": 1.821,
+   "dynamic": 1.679,
+   "static": 0.143,
    "confidence": "Medium",
    "internal": "Medium",
    "internal_detail": "User specified less than 25% of internal nodes"
@@ -1169,8 +1169,8 @@
     0,
     "system_wrapper",
     "(top)",
-    7433,
-    6731,
+    7679,
+    7185,
     27.5,
     23
    ],
@@ -1178,8 +1178,8 @@
     1,
     "system_i",
     "system",
-    7433,
-    6731,
+    7679,
+    7185,
     27.5,
     23
    ],
@@ -1187,8 +1187,8 @@
     2,
     "sjpeg",
     "system_sjpeg_0",
-    4747,
-    3052,
+    4996,
+    3506,
     25.5,
     23
    ],
@@ -1196,7 +1196,7 @@
     2,
     "axi_mem_intercon",
     "system_axi_mem_intercon_0",
-    814,
+    812,
     1007,
     0.0,
     0
@@ -1205,9 +1205,162 @@
     2,
     "dma",
     "system_dma_0",
-    1341,
+    1339,
     1963,
     2.0,
+    0
+   ],
+   [
+    2,
+    "ps7_axi_periph",
+    "system_ps7_axi_periph_0",
+    516,
+    675,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    1.309,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.541,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.646,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.646,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.646,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.646,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.646,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.662,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.662,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.7,
+    "system_i",
+    "system_i"
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 115.1,
+  "run": "run 12 (commit 03d5144, RTL = d34604f)"
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay\\lanes",
+  "name": "overlay_lanes",
+  "util": {
+   "lut": [
+    12679.0,
+    53200.0,
+    23.83
+   ],
+   "ff": [
+    10171.0,
+    106400.0,
+    9.56
+   ],
+   "bram": [
+    54.5,
+    140.0,
+    38.93
+   ],
+   "dsp": [
+    46.0,
+    220.0,
+    20.91
+   ]
+  },
+  "timing": {
+   "wns": 1.082,
+   "tns": 0.0,
+   "whs": 0.021,
+   "met": true
+  },
+  "power": {
+   "total": 1.95,
+   "dynamic": 1.8,
+   "static": 0.149,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "system_wrapper",
+    "(top)",
+    12679,
+    10171,
+    54.5,
+    46
+   ],
+   [
+    1,
+    "system_i",
+    "system",
+    12679,
+    10171,
+    54.5,
+    46
+   ],
+   [
+    2,
+    "sjpeg",
+    "system_sjpeg_0",
+    10097,
+    6648,
+    52.0,
+    46
+   ],
+   [
+    2,
+    "axi_mem_intercon",
+    "system_axi_mem_intercon_0",
+    656,
+    781,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "dma",
+    "system_dma_0",
+    1394,
+    2033,
+    2.5,
     0
    ],
    [
@@ -1222,96 +1375,96 @@
   ],
   "critical": [
    [
-    0.76,
+    1.082,
     "system_i",
     "system_i"
    ],
    [
-    0.783,
+    1.186,
     "system_i",
     "system_i"
    ],
    [
-    0.79,
+    1.224,
     "system_i",
     "system_i"
    ],
    [
-    0.83,
+    1.276,
     "system_i",
     "system_i"
    ],
    [
-    0.862,
+    1.276,
     "system_i",
     "system_i"
    ],
    [
-    0.864,
+    1.286,
     "system_i",
     "system_i"
    ],
    [
-    0.878,
+    1.286,
     "system_i",
     "system_i"
    ],
    [
-    0.893,
+    1.286,
     "system_i",
     "system_i"
    ],
    [
-    0.914,
+    1.296,
     "system_i",
     "system_i"
    ],
    [
-    0.923,
+    1.296,
     "system_i",
     "system_i"
    ]
   ],
   "period": 10.0,
   "missing": [],
-  "fmax_mhz": 108.2,
-  "run": 8
+  "fmax_mhz": 112.1,
+  "run": "run 12 (commit 03d5144, RTL = d34604f)"
  },
  {
-  "folder": "lanes",
-  "name": "overlay_lanes",
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay\\lanes4",
+  "name": "overlay_lanes4",
   "util": {
    "lut": [
-    11982.0,
+    20123.0,
     53200.0,
-    22.52
+    37.83
    ],
    "ff": [
-    9495.0,
+    14282.0,
     106400.0,
-    8.92
+    13.42
    ],
    "bram": [
-    54.5,
+    58.5,
     140.0,
-    38.93
+    41.79
    ],
    "dsp": [
-    46.0,
+    92.0,
     220.0,
-    20.91
+    41.82
    ]
   },
   "timing": {
-   "wns": 0.481,
+   "wns": 0.141,
    "tns": 0.0,
-   "whs": 0.01,
+   "whs": 0.024,
    "met": true
   },
   "power": {
-   "total": 1.943,
-   "dynamic": 1.794,
-   "static": 0.149,
+   "total": 2.22,
+   "dynamic": 2.061,
+   "static": 0.159,
    "confidence": "Medium",
    "internal": "Medium",
    "internal_detail": "User specified less than 25% of internal nodes"
@@ -1322,34 +1475,34 @@
     0,
     "system_wrapper",
     "(top)",
-    11982,
-    9495,
-    54.5,
-    46
+    20123,
+    14282,
+    58.5,
+    92
    ],
    [
     1,
     "system_i",
     "system",
-    11982,
-    9495,
-    54.5,
-    46
+    20123,
+    14282,
+    58.5,
+    92
    ],
    [
     2,
     "sjpeg",
     "system_sjpeg_0",
-    9397,
-    5972,
-    52.0,
-    46
+    17533,
+    10759,
+    56.0,
+    92
    ],
    [
     2,
     "axi_mem_intercon",
     "system_axi_mem_intercon_0",
-    653,
+    661,
     781,
     0.0,
     0
@@ -1367,159 +1520,6 @@
     2,
     "ps7_axi_periph",
     "system_ps7_axi_periph_0",
-    517,
-    675,
-    0.0,
-    0
-   ]
-  ],
-  "critical": [
-   [
-    0.481,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.481,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.481,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.522,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.571,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.571,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.571,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.571,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.571,
-    "system_i",
-    "system_i"
-   ],
-   [
-    0.571,
-    "system_i",
-    "system_i"
-   ]
-  ],
-  "period": 10.0,
-  "missing": [],
-  "fmax_mhz": 105.1,
-  "run": 9
- },
- {
-  "folder": "lanes4",
-  "name": "overlay_lanes4",
-  "util": {
-   "lut": [
-    20097.0,
-    53200.0,
-    37.78
-   ],
-   "ff": [
-    14269.0,
-    106400.0,
-    13.41
-   ],
-   "bram": [
-    58.5,
-    140.0,
-    41.79
-   ],
-   "dsp": [
-    92.0,
-    220.0,
-    41.82
-   ]
-  },
-  "timing": {
-   "wns": 0.433,
-   "tns": 0.0,
-   "whs": 0.014,
-   "met": true
-  },
-  "power": {
-   "total": 2.254,
-   "dynamic": 2.093,
-   "static": 0.16,
-   "confidence": "Medium",
-   "internal": "Medium",
-   "internal_detail": "User specified less than 25% of internal nodes"
-  },
-  "power_saif": {},
-  "hier": [
-   [
-    0,
-    "system_wrapper",
-    "(top)",
-    20097,
-    14269,
-    58.5,
-    92
-   ],
-   [
-    1,
-    "system_i",
-    "system",
-    20097,
-    14269,
-    58.5,
-    92
-   ],
-   [
-    2,
-    "sjpeg",
-    "system_sjpeg_0",
-    17508,
-    10746,
-    56.0,
-    92
-   ],
-   [
-    2,
-    "axi_mem_intercon",
-    "system_axi_mem_intercon_0",
-    661,
-    781,
-    0.0,
-    0
-   ],
-   [
-    2,
-    "dma",
-    "system_dma_0",
-    1397,
-    2033,
-    2.5,
-    0
-   ],
-   [
-    2,
-    "ps7_axi_periph",
-    "system_ps7_axi_periph_0",
     515,
     675,
     0.0,
@@ -1528,60 +1528,60 @@
   ],
   "critical": [
    [
-    0.433,
+    0.141,
     "system_i",
     "system_i"
    ],
    [
-    0.433,
+    0.141,
     "system_i",
     "system_i"
    ],
    [
-    0.433,
+    0.141,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.141,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.151,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.151,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.151,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.151,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.156,
     "system_i",
     "system_i"
    ],
    [
-    0.437,
+    0.156,
     "system_i",
     "system_i"
    ]
   ],
   "period": 8.0,
   "missing": [],
-  "fmax_mhz": 132.2,
-  "run": 10,
+  "fmax_mhz": 127.2,
+  "run": "run 12 (commit 03d5144, RTL = d34604f)",
   "attempts": [
    {
     "fclk_mhz": 100,
@@ -1609,6 +1609,21 @@
     "whs": 0.029,
     "met": false,
     "run": 10
+   },
+   {
+    "fclk_mhz": 142,
+    "file": "lanes4/timing_142MHz.txt",
+    "wns": -0.228,
+    "met": false,
+    "run": 12,
+    "limit": "quantiser reciprocal-table BRAM read (no output register) -> DSP, 0 logic levels"
+   },
+   {
+    "fclk_mhz": 125,
+    "file": "lanes4/timing_125MHz.txt",
+    "wns": 0.141,
+    "met": true,
+    "run": 12
    }
   ]
  },
@@ -6764,5 +6779,343 @@
   "missing": [],
   "fmax_mhz": 156.3,
   "run": 11
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay\\lanes4hd",
+  "name": "overlay_lanes4hd",
+  "util": {
+   "lut": [
+    20104.0,
+    53200.0,
+    37.79
+   ],
+   "ff": [
+    14278.0,
+    106400.0,
+    13.42
+   ],
+   "bram": [
+    58.5,
+    140.0,
+    41.79
+   ],
+   "dsp": [
+    92.0,
+    220.0,
+    41.82
+   ]
+  },
+  "timing": {
+   "wns": 0.032,
+   "tns": 0.0,
+   "whs": 0.008,
+   "met": true
+  },
+  "power": {
+   "total": 2.226,
+   "dynamic": 2.067,
+   "static": 0.159,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "system_wrapper",
+    "(top)",
+    20104,
+    14278,
+    58.5,
+    92
+   ],
+   [
+    1,
+    "system_i",
+    "system",
+    20104,
+    14278,
+    58.5,
+    92
+   ],
+   [
+    2,
+    "sjpeg",
+    "system_sjpeg_0",
+    17511,
+    10755,
+    56.0,
+    92
+   ],
+   [
+    2,
+    "axi_mem_intercon",
+    "system_axi_mem_intercon_0",
+    664,
+    781,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "dma",
+    "system_dma_0",
+    1397,
+    2033,
+    2.5,
+    0
+   ],
+   [
+    2,
+    "ps7_axi_periph",
+    "system_ps7_axi_periph_0",
+    516,
+    675,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.032,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.16,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.161,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.173,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.173,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.175,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.176,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.176,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.177,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.18,
+    "system_i",
+    "system_i"
+   ]
+  ],
+  "period": 8.0,
+  "missing": [],
+  "fmax_mhz": 125.5,
+  "run": "run 12 (commit 03d5144, RTL = d34604f)",
+  "attempts": [
+   {
+    "fclk_mhz": 142,
+    "wns": null,
+    "met": false,
+    "run": 12,
+    "note": "Vivado failed to synthesise an AXI interconnect IP (auto_us_0); no timing result"
+   },
+   {
+    "fclk_mhz": 125,
+    "file": "lanes4hd/timing_125MHz.txt",
+    "wns": 0.032,
+    "met": true,
+    "run": 12
+   }
+  ]
+ },
+ {
+  "folder": "E:\\FPGA-Video-Encryption-\\future_work\\board\\overlay\\lanes4yuyv",
+  "name": "overlay_lanes4yuyv",
+  "util": {
+   "lut": [
+    17780.0,
+    53200.0,
+    33.42
+   ],
+   "ff": [
+    12945.0,
+    106400.0,
+    12.17
+   ],
+   "bram": [
+    62.5,
+    140.0,
+    44.64
+   ],
+   "dsp": [
+    92.0,
+    220.0,
+    41.82
+   ]
+  },
+  "timing": {
+   "wns": 0.197,
+   "tns": 0.0,
+   "whs": 0.04,
+   "met": true
+  },
+  "power": {
+   "total": 2.282,
+   "dynamic": 2.12,
+   "static": 0.162,
+   "confidence": "Medium",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "system_wrapper",
+    "(top)",
+    17780,
+    12945,
+    62.5,
+    92
+   ],
+   [
+    1,
+    "system_i",
+    "system",
+    17780,
+    12945,
+    62.5,
+    92
+   ],
+   [
+    2,
+    "sjpeg",
+    "system_sjpeg_0",
+    15174,
+    9390,
+    60.0,
+    92
+   ],
+   [
+    2,
+    "axi_mem_intercon",
+    "system_axi_mem_intercon_0",
+    663,
+    781,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "dma",
+    "system_dma_0",
+    1411,
+    2065,
+    2.5,
+    0
+   ],
+   [
+    2,
+    "ps7_axi_periph",
+    "system_ps7_axi_periph_0",
+    515,
+    675,
+    0.0,
+    0
+   ]
+  ],
+  "critical": [
+   [
+    0.197,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.197,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.197,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.303,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.405,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.408,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.419,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.437,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.437,
+    "system_i",
+    "system_i"
+   ],
+   [
+    0.439,
+    "system_i",
+    "system_i"
+   ]
+  ],
+  "period": 8.0,
+  "missing": [],
+  "fmax_mhz": 128.2,
+  "run": "run 12 (commit 03d5144, RTL = d34604f)",
+  "attempts": [
+   {
+    "fclk_mhz": 142,
+    "file": "lanes4yuyv/timing_142MHz.txt",
+    "wns": -0.237,
+    "met": false,
+    "run": 12
+   },
+   {
+    "fclk_mhz": 125,
+    "file": "lanes4yuyv/timing_125MHz.txt",
+    "wns": 0.197,
+    "met": true,
+    "run": 12
+   }
+  ]
  }
 ]

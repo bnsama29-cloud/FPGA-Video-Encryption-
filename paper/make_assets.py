@@ -723,10 +723,18 @@ def system_and_lanes(results):
     # run 10: the 4-lane system was tried at 142.9 MHz first and missed by a few ps; the clock it was
     # built for is the first one that met (block_design.tcl fallback). Each attempt's report is kept.
     for a in (res.get("overlay_lanes4") or {}).get("attempts", []):
-        if a.get("run") == 10 and a.get("wns") is not None:
-            word = {125: "OneTwoFive", 142: "OneFourTwo"}.get(a["fclk_mhz"])
-            if word:
-                macro(f"OverlayLanesFourWnsAt{word}", f"{a['wns']:+.3f}")
+        word = {125: "OneTwoFive", 142: "OneFourTwo"}.get(a["fclk_mhz"])
+        if word and a.get("wns") is not None and a.get("run") in (10, 12):
+            # run 10: before the bug-#38 fix; run 12: the final board images (RTL of run 11)
+            macro(f"OverlayLanesFour{'Final' if a['run'] == 12 else ''}WnsAt{word}", f"{a['wns']:+.3f}")
+    # run 12: the 1080p-line and YUYV-input 4-lane systems (final board images)
+    for key, name in (("overlay_lanes4hd", "OverlayLanesFourHd"), ("overlay_lanes4yuyv", "OverlayLanesFourYuyv")):
+        r = res.get(key)
+        if r and r["timing"].get("wns") is not None and r.get("period"):
+            macro(f"{name}Mhz", f"{1000 / r['period']:.0f}")
+            macro(f"{name}Wns", f"{r['timing']['wns']:+.3f}")
+            macro(f"{name}Luts", n(r["util"]["lut"][0]))
+            macro(f"{name}Bram", f"{r['util']['bram'][0]:g}")
     for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
         v = lanes_vivado(l)
         if v:
