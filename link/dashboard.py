@@ -35,7 +35,8 @@ class Hub:
 
     def __init__(self, cfg):
         self.cfg = cfg
-        self.sock = wire.udp_socket(cfg["link"]["bus"][0], config.bind_host(cfg), timeout=0.2)
+        port = next(int(b) for b in cfg["link"]["bus"] if not (isinstance(b, str) and ":" in b))
+        self.sock = wire.udp_socket(port, config.bind_host(cfg), timeout=0.2)
         self.rasm = wire.Reassembler()
         self.frames = {}
         self.frame_seq = {}

@@ -36,6 +36,8 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
   bd_lanes4 the same with 4 lanes, lines up to 1024 px -> overlay/secure_jpeg_lanes4.bit/.hwh (overlay/lanes4/)
   bd_lanes4hd   4 lanes, 2048-px lines (1080p), one line-buffer set -> overlay/secure_jpeg_lanes4hd.bit
   bd_lanes4yuyv 4 lanes, camera-native YUYV input (4 px per beat) -> overlay/secure_jpeg_lanes4yuyv.bit
+  bd_tamper the 2-lane image + hardware tamper injector (board-day attack demo, buttons/switches/PMOD)
+            -> overlay/secure_jpeg_lanes_tamper.bit/.hwh (reports in overlay/lanestamper/); run it at --fclk 100
   power  post-route power with SIMULATED switching activity (needs ooc and/or lanes first): XSim
          encodes --power-size scene frames in each mode and records activity.saif, then Vivado
          re-reports the routed design's power with it -> power_saif_<v2|v3>_E<m>.txt next to power.txt
@@ -764,7 +766,7 @@ def step_collect(a):
         reports = ("timing*.txt", "utilization*.txt", "power.txt", "power_saif_*.txt")
         ov = ROOT / "future_work" / "board" / "overlay"
         for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov] + [ov / x for x in
-                                                                        ("lanes", "lanes4", "lanes4hd", "lanes4yuyv")]:
+                                                                        ("lanes", "lanes4", "lanes4hd", "lanes4yuyv", "lanestamper")]:
             for pat in reports:
                 for f in sorted(d.glob(pat)) if d.is_dir() else []:
                     z.write(f, f"{d.name}/{f.name}")
@@ -821,7 +823,7 @@ def day_main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
                     choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "bd_lanes4", "bd_lanes4hd", "bd_lanes4yuyv",
-                             "power", "parse"])
+                             "bd_tamper", "power", "parse"])
     ap.add_argument("--power-size", default="320x240",
                     help="WxH of the scene frame whose switching activity the power step records")
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
@@ -851,6 +853,8 @@ def day_main(argv=None):
             step_bd(a, "lanes")
         elif s in ("bd_lanes4", "bd_lanes4hd", "bd_lanes4yuyv"):
             step_bd(a, s[3:])
+        elif s == "bd_tamper":
+            step_bd(a, "lanestamper")
         else:
             globals()[f"step_{s}"](a)
     step_collect(a)

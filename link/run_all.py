@@ -5,6 +5,8 @@
     python -m link.run_all --set dashboard.bind_host=0.0.0.0  # trusted-LAN dashboard access
     python -m link.run_all --no-dashboard
     python -m link.run_all --no-sender --pq-kex ...  # board as camera: post-quantum session key first
+    python -m link.run_all --no-sender --no-channel --set link.host=<ATTACKER IP> --set link.bus_host=127.0.0.1 ...
+                                                   # two laptops: the channel (attacker) runs on the other one
 
 Each node is a separate process talking UDP on localhost, exactly as they would
 on separate machines (sender on the PYNQ-Z2, receiver + dashboard on a laptop).
@@ -32,6 +34,8 @@ def main():
     ap.add_argument("--no-dashboard", action="store_true")
     ap.add_argument("--no-sender", action="store_true",
                     help="laptop side only (the sender runs on the PYNQ board)")
+    ap.add_argument("--no-channel", action="store_true",
+                    help="the channel (network + attacker) runs on another laptop (docs/BOARD_DAY.html)")
     ap.add_argument("--pq-kex", action="store_true",
                     help="first run the post-quantum key exchange (link/kex.py) with the sender and use its "
                          "session key; keys.master is then only the pre-shared authentication key")
@@ -51,7 +55,8 @@ def main():
                 tx.wait(timeout=30)
             extra += ["--set", "keys.master_file=configs/session_key.txt"]
         for node in NODES:
-            if (node == "dashboard" and a.no_dashboard) or (node == "sender" and a.no_sender):
+            if (node == "dashboard" and a.no_dashboard) or (node == "sender" and a.no_sender) \
+                    or (node == "channel" and a.no_channel):
                 continue
             procs.append(subprocess.Popen([sys.executable, "-m", f"link.{node}"] + extra))
             time.sleep(0.4)

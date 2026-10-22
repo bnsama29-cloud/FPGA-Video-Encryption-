@@ -1,0 +1,14 @@
+{
+  "name": "hw_tamper",
+  "about": "~4 minutes: 25 single shots of the FPGA tamper injector (SW1 up, SW0 down), 8 s apart; no network attack. Every shot must cost exactly one rejected frame and nothing else may be rejected.",
+  "end_s": 220,
+  "steps": [
+    {"at": 15, "hw": "shot"}, {"at": 23, "hw": "shot"}, {"at": 31, "hw": "shot"}, {"at": 39, "hw": "shot"},
+    {"at": 47, "hw": "shot"}, {"at": 55, "hw": "shot"}, {"at": 63, "hw": "shot"}, {"at": 71, "hw": "shot"},
+    {"at": 79, "hw": "shot"}, {"at": 87, "hw": "shot"}, {"at": 95, "hw": "shot"}, {"at": 103, "hw": "shot"},
+    {"at": 111, "hw": "shot"}, {"at": 119, "hw": "shot"}, {"at": 127, "hw": "shot"}, {"at": 135, "hw": "shot"},
+    {"at": 143, "hw": "shot"}, {"at": 151, "hw": "shot"}, {"at": 159, "hw": "shot"}, {"at": 167, "hw": "shot"},
+    {"at": 175, "hw": "shot"}, {"at": 183, "hw": "shot"}, {"at": 191, "hw": "shot"}, {"at": 199, "hw": "shot"},
+    {"at": 207, "hw": "shot"}
+  ]
+}

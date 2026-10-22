@@ -27,7 +27,11 @@ DEFAULTS = {
         "control": 47004,        # dashboard / experiments -> channel and sender (JSON)
         "sender_control": 47005,
         "kex": 47006,            # post-quantum key exchange (link/kex.py), receiver listens
-        "bus": [47010],          # telemetry + previews -> dashboard / experiment logger
+        "bus": [47010],          # telemetry + previews -> dashboard / experiment logger; an entry is a port
+                                 # (on bus_host) or "ip:port" (two laptops: telemetry to both screens)
+        "bus_host": "",          # where telemetry goes; "" = host. Two-laptop attack setup: the board and
+                                 # the attacker send video to the attacker but telemetry to the receiver
+        "kex_rx": 0,             # channel kex relay: forward to (host, kex_rx); 0 = same port as kex
         "fragment": 1400,        # UDP payload bytes per fragment (+24 B header < 1472 = Ethernet MTU)
         "pad": "none",           # frame-size padding against the size side channel (link/wire.py
                                  # SizePadder): none | bucket:1024 | runmax | window:100
@@ -64,6 +68,11 @@ DEFAULTS = {
         "jitter_ms": 2.0,
         "reorder": 0.0,          # probability a frame is delayed by one frame time
         "attacker_view_every": 5,  # run the replacement attack on every Nth frame
+        "kex_relay": False,      # also relay the post-quantum key exchange (link/kex.py): needed when the
+                                 # channel runs on its own laptop between board and receiver
+        "kex_tamper_s": 0.0,     # attack on the key exchange: flip one byte of every relayed kex
+                                 # message during the first N seconds (each fails its HMAC; the
+                                 # exchange only completes once the attacker stops)
     },
     "defence": {
         "window_s": 1.0,
@@ -137,6 +146,19 @@ def bind_host(cfg):
 
 def sender_host(cfg):
     return cfg["link"].get("sender_host") or cfg["link"]["host"]
+
+
+def bus_addrs(cfg):
+    """Telemetry destinations: a port goes to bus_host (or host), "ip:port" goes where it says."""
+    host = cfg["link"].get("bus_host") or cfg["link"]["host"]
+    out = []
+    for b in cfg["link"]["bus"]:
+        if isinstance(b, str) and ":" in b:
+            h, _, p = b.rpartition(":")
+            out.append((h, int(p)))
+        else:
+            out.append((host, int(b)))
+    return out
 
 
 def add_args(ap):
