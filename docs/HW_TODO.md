@@ -1,4 +1,4 @@
-# What is left for the hardware (as of 21 Oct 2026, after Vivado run 10)
+# What is left for the hardware (as of 22 Oct 2026, after Vivado run 11)
 
 All software and all RTL are done and tested: the golden model, the receiver, the board driver, the board
 sender, the bit-exact gate, the XSim vector and check tools, the dashboard, and **E5 in the lane encoder**
@@ -10,7 +10,7 @@ left needs the board, or Vivado time.
 | H1 | E5 in the lane encoder | ✅ done (17–18 Oct, run 7: +2 % LUT, no BRAM/DSP, 318 mW SAIF) | the strongest level in hardware | — | `docs/INTERFACES.md` §8.6 |
 | H2 | **Board bring-up A1–A6** | ⏳ waiting for the board | every board number in the papers (red TODOs) | 1–2 days | **`docs/FPGA_HANDS_ON.md`** (step by step), `docs/BOARD_BRINGUP.md` (task list) |
 | H3 | 125 MHz: pipeline the colour converter | ✅ run 9: **125 MHz met** (v2 +0.060 ns, 2 lanes +0.213 ns) with stage P | 1 lane 82, 2 lanes ~150 Mpixel/s | — | below |
-| H10 | **150 / 166 MHz** (the commercial cores' clocks) | run 10: single pipeline **150 MHz met** (+0.074 ns), 166.7 MHz -0.284 ns; 2 lanes 150 MHz -0.060 ns; 4-lane system **125 MHz met** (+0.433 ns), 142.9 MHz -0.008 ns. Fix for both limiting paths in RTL (bug #38), not yet routed. **Decision 21 Oct: stop chasing the clock, board first** | 4 lanes at 125 MHz = 227 Mpixel/s from the cycle count | optional run 11 (below) | below, `docs/BENCHMARK_PLAN.md` |
+| H10 | **150 / 166 MHz** (the commercial cores' clocks) | ✅ run 11 (bug-#38 fixes): **1, 2 and 4 lanes meet 150 MHz** out of context (+0.270 / +0.003 / +0.011 ns); 166.7 MHz missed by 15 / 19 / 182 ps, no dominant path left. 4-lane system: 125 MHz (run 10). Board images of commit d34604f still to build (below) | 4 lanes at 150 MHz = 272 Mpixel/s from the cycle count | ~3.5 h Vivado | below |
 | H11 | YUYV (camera-native) input, 4 pixels per beat | RTL + model + driver done; run 10 OOC: 4 lanes meet 100 MHz (+0.599 ns, 15,138 LUT) | 4 lanes 0.434 clk/px (230 Mpx/s at 100 MHz), half the DDR bytes | `bd_lanes4yuyv` (~40 min) | `docs/INTERFACES.md` §8.7 |
 | H12 | 4 lanes with 1080p lines | run 10 OOC: meets 100 MHz (+0.789 ns); NBUF = 1 at 1024 px: 32 BRAM instead of 56 | 1080p at 4 lanes on the xc7z020 | `bd_lanes4hd` (~40 min) | §8.7 |
 | H6 | Fabric cycle counters CYCLES / IN_WAIT / OUT_STALL (0x54..0x5C) | ✅ in the run-8 bitstreams (100 MHz met, system WNS +0.311 ns); read on the board by first_contact | fabric-only time on silicon (the paper's A2 TODO) | rebuild | `py vivado\run_vivado_day.py --steps bd bd_lanes parse` |
@@ -57,6 +57,10 @@ directives; `SJPEG_IMPL=default` repeats the old flow).
 (bug #38). **Decision: stop chasing the clock and do the board with the run-10 bitstreams.** Optional run 11,
 only once the board works (~1 h, overwrites `secure_jpeg_lanes4.bit`: keep a copy of the 125 MHz one):
 `py vivado\run_vivado_day.py --steps bd_lanes4 parse --fclk 142 --parallel 1`.
+
+**Run 11 done (22 Oct, commit d34604f):** out of context only, see `paper/data/vivado/README.md`. Left: the five
+board images from this commit (the ones on the PC are from runs 8, 9 and 10), ~3.5 h, one line:
+`py vivado\run_vivado_day.py --steps bd bd_lanes --fclk 100 --parallel 1 --jobs 2 & py vivado\run_vivado_day.py --steps bd_lanes4 bd_lanes4hd bd_lanes4yuyv parse --fclk 142 --parallel 1 --jobs 2`
 
 Run 10 was (for the record):
 `py vivado\run_vivado_day.py --steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 2 --jobs 2`

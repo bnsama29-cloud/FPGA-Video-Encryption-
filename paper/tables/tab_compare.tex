@@ -9,11 +9,12 @@ post-route (Table~\ref{tab:resources}) with throughput from the RTL cycle count 
 \toprule
 Design & Device & LUT & BRAM & DSP & MHz & Mpx/s & Crypto \\
 \midrule
-Ours: encoder & Zynq-7020 & 5{,}028 & 25.5 & 23 & 100 & 65 & sel.\ AEAD \\
-Ours: encoder & Zynq-7020 & 5{,}124 & 25.0 & 23 & 150 & 98 & sel.\ AEAD \\
-Ours: one Ascon & Zynq-7020 & 733--970 & 0 & 0 & 100 & -- & AEAD core \\
-\ifextended Ours: 2 lanes (v3) & Zynq-7020 & 10{,}086 & 52.0 & 46 & 100 & 126 & sel.\ AEAD \\ \fi
-Ours: 4 lanes (v3) & Zynq-7020 & 17{,}478 & 56.0 & 92 & 100 & 182 & sel.\ AEAD \\
+Ours: encoder & Zynq-7020 & 5{,}043 & 25.5 & 23 & 100 & 65 & sel.\ AEAD \\
+Ours: encoder & Zynq-7020 & 5{,}126 & 25.0 & 23 & 150 & 98 & sel.\ AEAD \\
+Ours: one Ascon & Zynq-7020 & 743--970 & 0 & 0 & 100 & -- & AEAD core \\
+\ifextended Ours: 2 lanes (v3) & Zynq-7020 & 10{,}099 & 52.0 & 46 & 100 & 126 & sel.\ AEAD \\ \fi
+Ours: 4 lanes (v3) & Zynq-7020 & 17{,}515 & 56.0 & 92 & 100 & 182 & sel.\ AEAD \\
+Ours: 4 lanes (v3) & Zynq-7020 & 17{,}887 & 54.0 & 92 & 150 & 272 & sel.\ AEAD \\
 Ours: 4 lanes, system & Zynq-7020 & 20{,}097 & 58.5 & 92 & 125 & 227 & sel.\ AEAD \\
 logiJPGE~\cite{logijpge} & Zynq-7020 & 3{,}240 & 16 & 30 & 150 & 150 & none \\
 CAST JPEG-E-S~\cite{castjpeg} & Artix-7 & 3{,}069 & 2 & 16 & 166 & -- & none \\

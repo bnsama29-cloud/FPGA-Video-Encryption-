@@ -745,7 +745,9 @@ def system_and_lanes(results):
     # run 10: 150 and 166.7 MHz out of context, and Vivado's single-run fmax estimate at 166.7 MHz
     for key, name in (("secure_jpeg_top_6.667ns", "TopWnsAtOneFifty"), ("secure_jpeg_top_6.0ns", "TopWnsAtOneSixSix"),
                       ("secure_jpeg_lanes_top_6.667ns_lanes2_log_l1", "LanesTwoWnsAtOneFifty"),
-                      ("secure_jpeg_lanes_top_6.0ns_lanes2_log_l1", "LanesTwoWnsAtOneSixSix")):
+                      ("secure_jpeg_lanes_top_6.0ns_lanes2_log_l1", "LanesTwoWnsAtOneSixSix"),
+                      ("secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10", "LanesFourWnsAtOneFifty"),
+                      ("secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10", "LanesFourWnsAtOneSixSix")):
         x = res.get(key)
         if x and x["timing"].get("wns") is not None:
             macro(name, f"{x['timing']['wns']:+.3f}")
@@ -800,6 +802,18 @@ def compare(r, cores):
         row = (f"Ours: {lr['lanes']} lanes (v3) & Zynq-7020 & {f(v.get('lut'))} & {f(v.get('bram'), 1)} & "
                f"{f(v.get('dsp'))} & 100 & {lr['mpx_per_s_at_100mhz']:.0f} & sel.\\ AEAD \\\\")
         rows.append(row if lr["lanes"] == 4 else "\\ifextended " + row + " \\fi")   # 6-page limit
+        if lr["lanes"] == 4:
+            # run 11: the 4-lane encoder at the fastest clock it closes out of context, same cycle count
+            f4 = [x for n, x in vr.items() if n.startswith("secure_jpeg_lanes_top_") and "lanes4" in n
+                  and n.endswith("log_maxw10") and x["timing"].get("wns") is not None and x["timing"]["wns"] >= 0
+                  and x.get("period") and x["period"] < 10.0]
+            if f4:
+                fx = min(f4, key=lambda x: x["period"])
+                fm = 1000 / fx["period"]
+                rows.append(f"Ours: 4 lanes (v3) & Zynq-7020 & {f(fx['util']['lut'][0])} & {f(fx['util']['bram'][0], 1)} & "
+                            f"{f(fx['util']['dsp'][0])} & {fm:.0f} & {lr['mpx_per_s_at_100mhz'] * fm / 100:.0f} & sel.\\ AEAD \\\\")
+                macro("LanesFourFastMhz", f"{fm:.0f}")
+                macro("LanesFourFastMpix", f"{lr['mpx_per_s_at_100mhz'] * fm / 100:.0f}")
         sysl4 = vr.get("overlay_lanes4")
         if lr["lanes"] == 4 and sysl4 and sysl4.get("period") and sysl4["timing"].get("met"):
             # run 10: the complete PYNQ-Z2 system (PS + DMA + 4 lanes), post-route at the clock it was built for
