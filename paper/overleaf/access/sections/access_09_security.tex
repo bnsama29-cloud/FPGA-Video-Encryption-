@@ -1,0 +1,96 @@
+% =====================================================================================================
+\section{Security Evaluation}\label{sec:security}
+\subsection{Setup}
+We measure what a keyless observer can reconstruct. For every frame we take the better of two pictures: the protected stream decoded as is, and a \emph{replacement attack} that substitutes fixed guesses for the encrypted values (absolute values for encrypted signs, the smallest value of the size category for encrypted amplitudes, zero DC differences) and re-encodes a valid JPEG. Leakage is the edge correlation~\eqref{eq:edge} of this picture with the original; we also report SSIM~\cite{ssim}. Sources are a synthetic corridor scene; \NumClips{} clips that we analyse but do not reproduce (two film trailers, two talking-head videos and a handheld phone video, identified by hash); \NumOpenClips{} openly licensed films of the Blender Foundation, the Sintel trailer and Tears of Steel (CC~BY~3.0)\footnote{\url{https://durian.blender.org}, \url{https://mango.blender.org}}; and the 24 images of the Kodak set\footnote{\url{http://r0k.us/graphics/kodak/}}. Video is resized to 320$\times$240 and sampled every 150 frames; frames without edges are excluded.
+
+\textit{Format compliance.} The protected streams of \AllDecode{} six levels decode without error in \Decoders{}, at the original resolution, as Lemma~\ref{lem:format} requires.
+
+\subsection{Outline leakage}\label{sec:leakage}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.66\textwidth]{figures/fig_visual_grid.pdf}
+\caption{One frame of the Sintel trailer (\copyright{} Blender Foundation, CC~BY~3.0) per protection level. Top: what any viewer shows without the key. Middle: the eavesdropper's best reconstruction (replacement attack; for E5 followed by the jigsaw solver) with its edge correlation. Bottom: the key holder's output, bit-exact with the unprotected encoder.}
+\label{fig:grid}
+\end{figure*}
+\input{tables/tab_leakage.tex}
+Fig.~\ref{fig:grid} and Table~\ref{tab:leakage} show the main effect. Under E1--E4 the eavesdropper sees a clear outline of the scene: edge correlation stays between \LeakEOneFourMin{} and \LeakEOneFourMax{} on the real sources, and encrypting amplitudes in addition to signs (E3, E4) does not reduce it, because the positions and size categories of the non-zero coefficients remain public (Lemma~\ref{lem:format}). The keyed macroblock permutation of E5 removes the outline (edge correlation between \LeakEFiveMin{} and \LeakEFiveMax). In terms of cost, E2 encrypts \CostEtwo\,\% of the payload bits, E4 \CostEfour\,\%, and E5 only slightly more, \CostEfive\,\%, yet only E5 moves leakage to zero.
+
+\input{tables/tab_leakage_ci.tex}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_leakage_ci.pdf}
+\caption{Edge correlation of the eavesdropper's best keyless picture per source and level, with 95\,\% bootstrap intervals over up to \LeakFramesMax{} frames. E5's intervals lie at zero on every source; E1--E4 leak an outline everywhere.}
+\label{fig:leakage_ci}
+\end{figure}
+\textit{Statistical confidence.} Table~\ref{tab:leakage_ci} and Fig.~\ref{fig:leakage_ci} give every leakage value with a 95\,\% percentile-bootstrap interval over the frames of its source. The intervals of E1--E4 are narrow and far from zero on all sources, so the outline leakage is not an effect of a few frames; the intervals of E5 contain zero or lie within a few hundredths of it.
+
+\subsection{SVE-Bench: published schemes under the same attacks}\label{sec:bench}
+\input{tables/tab_bench.tex}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_bench.pdf}
+\caption{SVE-Bench in one view: edge correlation of every scheme under each attack, pooled over \BenchSources{} sources; the bar ends at the worst attack. Byte cost over plain JPEG in brackets when above 2\,\%.}
+\label{fig:bench}
+\end{figure}
+Leakage numbers from different papers are not comparable: each uses its own images, attack and metric. We therefore re-implemented four format-compliant schemes from their papers~\cite{vandroogenbroeck2002,kishore2015,auer2013,hirose2024}, with our keystream so that only the scheme differs, and scored them and ours under the same four attacks on \BenchFrames{} frames of \BenchSources{} sources (Table~\ref{tab:bench}, Fig.~\ref{fig:bench}):
+\begin{itemize}
+\item[A1] decoding the protected stream as is;
+\item[A2] the replacement attack;
+\item[A3] non-zero counting: a picture built from the number of non-zero coefficients per block, which no field encryption hides~\cite{hirose2024};
+\item[A4] a known-plaintext attacker that knows one frame in clear, recovers from it the permutation and the keystream bits of that frame, and applies them to the following frames.
+\end{itemize}
+At its strongest attack every published scheme leaks between \BenchPubMin{} and \BenchPubMax. Those with fixed key material fall to the one known frame, among them Hirose et al.\ with a restart marker after every block (\BenchHiroseOneCross), although it costs about as many bytes as E5 ($+$\BenchHiroseOneBytes\,\%). E1--E4 sit at the non-zero-counting ceiling of plain JPEG (\BenchPlainNzca). E5, whose keystream and permutation change with every frame (Proposition~\ref{prop:perm}), stays at or below \BenchEfiveMax{} under every attack, in both its model and its hardware form; a test checks that the pictures an eavesdropper makes of the two forms are pixel-identical. The difference between E5 and Hirose et al.\ with one block per segment is not the mechanism, which is the same, but that our permutation is keyed per frame.
+
+\input{tables/tab_bench_metrics.tex}
+\textit{The metrics of image-encryption papers.} Table~\ref{tab:bench-metrics} gives, for every scheme, the metrics that image-encryption papers report. They rank the schemes differently from Table~\ref{tab:bench}: a scheme that scrambles symbols without hiding positions can score well on PSNR, entropy and NPCR while leaking its outline, because these metrics measure how noisy the picture looks, not what an attacker can extract from it.
+
+\subsection{Jigsaw solvers and a chosen-plaintext attack}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_jigsaw.pdf}
+\caption{Neighbour pairs restored by the greedy and the minimum-spanning-tree solver on shuffled \emph{unencrypted} tiles of standard test photos (left) and on E5 tiles averaged over all sources (right).}
+\label{fig:jigsaw}
+\end{figure}
+A permutation of blocks invites a puzzle solver. Our greedy region-growing solver in the style of~\cite{pomeranz2011} restores most neighbour relations on unencrypted shuffled tiles. On E5 replacement-attack tiles it places at most \JigsawNeighboursMax\,\% of neighbour pairs correctly, and the solved picture has no outline (Table~\ref{tab:leakage}). The structure is not destroyed, only hidden: an oracle that knew the permutation would recover edge correlations of \JigsawOracleMin--\JigsawOracleMax. A minimum-spanning-tree solver with Mahalanobis gradient compatibility~\cite{gallagher2012}, which restores at least \GateMstMin{} of the neighbours on unencrypted tiles of \GatePhotos{} photos (greedy: \GateGreedyMin), is also at chance on E5 (at most \MstNbMax\,\% on \MstSources{} sources, Fig.~\ref{fig:jigsaw}). The solvers fail because E5 also encrypts signs and amplitudes, so the borders of neighbouring tiles no longer match.
+
+A chosen-plaintext attack~\cite{li2025shuffle} fails too: the attacker films a designed pattern whose per-block non-zero counts reveal the permutation. The permutation comes from the frame nonce, so on all \CpaSources{} sources one frame's exact permutation places at most \CpaPlacedEfive\,\% of the next frame's \CpaTiles{} tiles (chance) and leaves edge correlation $\le$\CpaEdgeEfive, where a key-only shuffle would give \CpaEdgeKeyMin--\CpaEdgeKeyMax.
+
+\subsection{Sign-bit recovery by optimization}
+\input{tables/tab_signrec.tex}
+The linear program of Lin et al.~\cite{lin2024} treats the unknown signs as relaxed variables and minimizes the total variation of the picture subject to the known magnitudes and the pixel range. In their setting, where only the first three or six AC signs of a block are unknown, it recovers \SrLinSignsMin--\SrLinSignsMax\,\% of the signs. On our levels it recovers \SrEoneSigns\,\% of E1's signs (\SrEoneSignsMin--\SrEoneSignsMax\,\% per frame), where every AC sign is hidden, and \SrEtwoSigns\,\% of E2's (chance 50\,\%) on \SrFrames{} frames of \SrSources{} source sets. It still sharpens E1's keyless picture (edge \SrEoneEdge{} against \SrEoneReplEdge{} for the replacement attack) and E2's and E3's by a few hundredths (Table~\ref{tab:signrec}): E1--E4 leak outlines however the hidden values are guessed.
+
+\subsection{Learned attackers}
+\input{tables/tab_learned.tex}
+\input{tables/tab_learned_ext.tex}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig_learned.pdf}
+\caption{SSIM of the learned attackers (U-Net, with 95\,\% interval) and of the replacement attack on unseen sources, per level. Dashed: the median training frame, which uses no ciphertext; dotted: the same frame recoloured with each test frame's true colour statistics. P4: four sources to three others; P5: trained on public films with an adversarial loss, tested on six other sources.}
+\label{fig:learned}
+\end{figure*}
+We trained a U-Net~\cite{unet} to map the two keyless pictures (decoded and replacement attack) to the original and always tested it on clips it had not seen (Table~\ref{tab:learned}). P1 and P2 train on \LearnTrain{} frames of one clip, P3 uses only the open films, and P4 trains a wider network for \LearnBigEpochs{} epochs on \LearnBigTrain{} frames of \LearnBigTrainSrc{} sources and tests on \LearnBigTest{} frames of \LearnBigTestSrc{} others. The network defeats sign-only encryption: under E1 it reaches an edge correlation of \LearnEoneEdge{} and SSIM \LearnEoneSsim{} (replacement attack: \ReplEoneEdge{}), so E1 is no protection against a trained attacker. Under E2 and E4 it adds little to the outline that replacement already reveals (edge correlation \LearnEtwoFourEdgeMin--\LearnEtwoFourEdge{} against \ReplEtwoFourEdge) but raises SSIM to about \LearnEtwoFourSsimBig{} by learning brightness and colour.
+
+\textit{Controls for frame-level statistics.} Table~\ref{tab:learned_ext} and Fig.~\ref{fig:learned} compare each learned attacker with three pictures that use no ciphertext: the median training frame, the same frame recoloured with the mean and spread of colour that the E5 stream itself reveals, and the same frame recoloured with the true statistics of each test frame. Under E5 the U-Net of P4 scores SSIM \LearnEfiveSsimBig{} [\LearnEfiveSsimLo, \LearnEfiveSsimHi], the oracle \CtrlTrueSsim{} [\CtrlTrueLo, \CtrlTrueHi]; the revealed-statistics control reaches \CtrlRevSsim. SSIM rewards flat pictures in smooth regions, so a flat picture of each frame's true mean colour already scores \FlatSsim; for this reason we read edge correlation, not SSIM, as the measure of recovered shape. Under E5 the network's edge correlation is \LearnEfiveEdgeBig{} against \CtrlTrueEdge{} for the oracle: what it learns from the stream is brightness and colour, not the shape of the scene.
+
+\textit{An adversarial attacker on public data.} P5 trains the same U-Net for \PfiveEpochs{} epochs on \PfiveTrain{} frames of \PfiveCorpus{} with an additional least-squares adversarial loss (weight \PfiveAdv) from a PatchGAN discriminator~\cite{isola2017}, and is tested on \PfiveTest{} frames of \PfiveTestSrc{} sources it never saw. It is the strongest attacker on sign-only encryption (E1: edge correlation \PfiveEoneEdge, SSIM \PfiveEoneSsim), adds nothing to the outline that the replacement attack already shows under E2 and E4 (\PfiveEtwoFourEdge{} against \PfiveReplEtwoFourEdge), and recovers nothing under E5 (SSIM \PfiveEfiveSsim{} below the no-stream control of \PfiveCtrlSsim; edge correlation \PfiveEfiveEdge).
+
+\subsection{Recognition}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_recognition.pdf}
+\caption{Share of the persons that a Faster R-CNN detector finds in the original frames and also finds, at the same place, in the eavesdropper's pictures (bars: pooled over \RecSources{} sources; dots: per source).}
+\label{fig:recognition}
+\end{figure}
+\input{tables/tab_recognition.tex}
+Correlations measure whether a picture is in the right place; a person looking at the screen needs no such alignment. We therefore ran an off-the-shelf person detector, Faster R-CNN~\cite{ren2015} with a ResNet-50 FPN backbone trained on COCO, on the original and on every picture an eavesdropper can make, at a score threshold of 0.5, and counted an original person as found if an attacker picture has a detection overlapping it by an IoU of at least 0.3. Fig.~\ref{fig:recognition} and Table~\ref{tab:recognition} show the result over \RecPersons{} persons. On unprotected frames the detector finds \RecPlainMin--\RecPlainMax\,\% of them. Sign-only encryption already defeats it on most sources (\RecEonePooled\,\% pooled), but not on one talking-head clip (\RecEoneMax\,\%); under E2 and E4 it finds at most \RecEtwoFourMax\,\% on any source, and under E5 none. Detections anywhere in a frame, regardless of position, occur in at most \RecHitEtwoFiveMax\,\% of the frames with a person under E2--E5, about as often as false alarms on frames without one.
+
+\subsection{Restart interval}\label{sec:restart}
+\input{tables/tab_restart.tex}
+E5 as specified costs \RiOverheadOneMin--\RiOverheadOneMax\,\% over the same E4 coefficients at 320$\times$240, as~\eqref{eq:e5cost} predicts: a two-byte marker per macroblock, padding and restarted DC prediction. $N$ macroblocks per segment reduce this to \RiOverheadFour\,\% at $N{=}4$ and \RiOverheadThirtyTwo\,\% at $N{=}32$ (Table~\ref{tab:restart}). Hirose et al.\ found that the non-zero counting attack reveals the scene unless the restart segments are permuted, and partly again when the restart interval is large~\cite{hirose2024}. Without the shuffle, our NZCA map correlates \RiNzcaEfourMin--\RiNzcaEfourMax{} with the original's block edge energy; with it, at most \RiNzcaEfiveMax{} for every $N$ we tried. At $N{=}32$, however, only \RiSegThirtyTwo{} segments remain, each an intact strip of 32 macroblocks, and a beam-search solver that chains segments by border continuity links \RiSuccThirtyTwoMin--\RiSuccThirtyTwoMax{} of them to their true successor on the real clips (chance \RiChanceThirtyTwo), against at most \RiSuccSmallMax{} for $N\le 8$. We keep $N{=}1$ and do not claim that longer intervals are safe.
+
+\subsection{Standard metrics and key sensitivity}
+\input{tables/tab_stdmetrics.tex}
+On all \StdSources{} sources (Table~\ref{tab:std}), key sensitivity holds: a one-bit key change makes E5 decryption differ in \StdNpcrEfiveMin--\StdNpcrEfiveMax\,\% of the pixels (SSIM $\le$\StdWrongSsimEfiveMax); in practice the receiver rejects such a frame because its tag fails. The other metrics assume a cipher that turns the image into noise: the 8$\times$8 block structure survives, so adjacent-pixel correlation stays at \StdCorrMin--\StdCorrMax{} and entropy rises only under E5 (\StdEntropyPlain{} to \StdEntropyEfive{} bits), and the 1-pixel NPCR (at most \StdPixelNpcrMax\,\%) measures diffusion, which a stream cipher with a fresh nonce per frame does not need: a one-pixel change of the plaintext under the same nonce never happens, because every frame has its own counter.
+
+\subsection{Security summary}
+Against goal G1, E1 is broken by a trained network and E2--E4 leak the outline under every attack we tried, however many bits they encrypt; E5 removed the outline under all of them, including known plaintext, chosen plaintext, two puzzle solvers, sign recovery and two trained networks, at a byte cost of \RiOverheadOneMin--\RiOverheadOneMax\,\%. What E5 leaks is the frame's colour statistics and its size; Section~\ref{sec:discussion} treats the latter.

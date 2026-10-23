@@ -1,0 +1,51 @@
+% Fabric datapath of the contract-v3 lane encoder (rtl/secure_jpeg_lanes_top.v, rtl/encoder_lane.v).
+% Bus widths are the RTL port widths; module names are the RTL file names.
+\begin{tikzpicture}[x=1cm, y=1cm, st/.style={pl, minimum height=9mm, minimum width=13.5mm, font=\tiny}]
+% ---- input and dealer
+\node[blk, fill=netfill, font=\tiny, minimum height=9mm] (in) at (0,0) {s\_axis\\64\,b\\2 px/beat};
+\node[pl, font=\tiny, minimum height=24mm, minimum width=11mm, align=center] (deal) at (1.45,-0.75) {dealer\\[2pt]MCU row\\$r\to$ lane\\$r \bmod L$};
+\draw[bus] (in) -- (in -| deal.west);
+% ---- lane 0 (full) -- y = 0
+\node[st] (cc0)  at (3.05,0) {rgb2ycbcr\\2px $\to$ 1\\sample/clk};
+\node[st] (dct0) at (4.65,0) {dct8x8\\two-pass\\13-bit};
+\node[st] (q0)   at (6.25,0) {quantiser\\$\times R_{uv}$,\\$\gg 16$};
+\node[st] (zz0)  at (7.85,0) {zigzag\_rle\\DC pred.\\reset/seg.};
+\node[st, fill=cryfill] (se0) at (9.45,0) {selective\\\_enc\\(XOR)};
+\node[st] (hu0)  at (11.05,0) {huffman\\\_enc\\(Annex K)};
+\node[st] (bp0)  at (12.65,0) {bit\_packer\\stuff, pad\\per seg.};
+\node[st, minimum width=10mm] (ff0)  at (14.05,0) {byte\\FIFO\\2\,KB};
+\node[cry, font=\tiny, minimum width=19mm, minimum height=8mm] (ks0) at (9.45,1.25) {keystream\_gen\\Ascon$(K_{\mathrm{seg}}, N_{s,t})$};
+\draw[arr] (ks0) -- node[lbl, left, align=right]{16-bit window,\\take $n\le 12$ bits} (se0);
+\draw[arr] (deal.east |- cc0) -- (cc0);
+\draw[arr] (cc0) -- node[lbl, above]{8} (dct0);
+\draw[arr] (dct0) -- node[lbl, above]{16} (q0);
+\draw[arr] (q0) -- node[lbl, above]{16} (zz0);
+\draw[arr] (zz0) -- node[lbl, above]{20} (se0);
+\draw[arr] (se0) -- node[lbl, above]{20} (hu0);
+\draw[arr] (hu0) -- node[lbl, above]{32} (bp0);
+\draw[arr] (bp0) -- node[lbl, above]{8} (ff0);
+\begin{scope}[on background layer]
+\node[grp, fill=plfill!30, fit=(cc0)(ff0)(ks0), inner sep=1.6mm, label={[font=\tiny\bfseries, anchor=south west, inner sep=1pt]north west:encoder\_lane 0}] (lane0) {};
+\end{scope}
+% ---- lane L-1 (collapsed) -- y = -1.6
+\node[pl, font=\tiny, text width=118mm, minimum height=7mm, align=center] (laneL) at (8.46,-1.8) {the same pipeline (colour, DCT, quantiser, zig-zag + RLE, \textbf{selective XOR}, Huffman, packer, FIFO) with its own keystream generator};
+\node[font=\tiny\bfseries, anchor=south west] at (laneL.north west) {encoder\_lane $L{-}1$ \ (lanes $1 \ldots L{-}1$; $L = 1, 2, 4$)};
+\draw[arr] (deal.east |- laneL) -- (laneL);
+% ---- merger, tag, word packer
+\node[pl, font=\tiny, minimum height=24mm, minimum width=13mm, align=center] (mrg) at (16.0,-0.75) {segment\\\_merger\\[2pt]seg.\ $h$ from\\lane $h \bmod L$\\(E5: $\lfloor h/c\rfloor$\\$\bmod L$)\\[2pt]+ RST$_{h \bmod 8}$};
+\draw[arr] (ff0.east) -- (ff0.east -| mrg.west);
+\draw[arr] (laneL.east) -- (laneL.east -| mrg.west);
+\node[cry, font=\tiny, minimum width=18mm, minimum height=9mm] (tag) at (18.15,0.35) {tag\_unit\\Ascon MAC over\\prefix $\|$ scan};
+\node[pl, font=\tiny, minimum width=18mm, minimum height=9mm] (wp) at (18.15,-1.85) {scan\_word\\\_packer\\32\,b + TKEEP};
+\draw[arr] (mrg.east |- tag) -- node[lbl, above]{8} (tag.west);
+\draw[arr] (mrg.east |- wp) -- node[lbl, above]{8} (wp.west);
+\node[blk, fill=netfill, font=\tiny, minimum height=8mm] (out) at (18.15,-3.1) {m\_axis 32\,b};
+\draw[bus] (wp) -- (out);
+% ---- per-frame key, registers
+\node[cry, font=\tiny, minimum width=24mm, minimum height=8mm] (kseg) at (5.6,2.85) {kseg\_unit: $K_{\mathrm{seg}}$ =\\Ascon-MAC$(K, N^{\mathrm{enc}}_t, \text{``lanes''})$};
+\draw[arr] (kseg.east) -| node[lbl, pos=0.75, right]{$K_{\mathrm{seg}}$, once per frame, to every lane} (ks0.north);
+\node[pl, font=\tiny, minimum width=24mm, minimum height=8mm] (regs) at (1.6,2.85) {axil\_regs\\$K$, $\sigma$, $t$, mode, size, $R_{uv}$};
+\draw[arr] (regs) -- (kseg);
+\draw[arr] (regs.north) -- ++(0,0.3) -| node[lbl, pos=0.25, above]{$K$ and the 26-byte prefix (mode, $\sigma$, $t$, $W$, $H$)} (tag.north);
+\draw[arr] (tag.south) ++(0.5,0) -- ++(0,-0.35) node[lbl, right]{$T$ to TAG0--3};
+\end{tikzpicture}

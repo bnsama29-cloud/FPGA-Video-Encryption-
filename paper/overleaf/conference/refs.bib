@@ -1,0 +1,401 @@
+% References for the conference draft.
+% Each entry says how it was checked (14 Oct 2026). On 17 Oct 2026 every cited sentence of main.tex was
+% checked against the full PDF of its source (all 30); see docs/RESEARCH.md, 'Reference check'. Before submission, open every DOI/URL once more
+% and complete the two fields marked TODO from IEEE Xplore. Do not add an entry you have not read.
+
+% ---- standards and ciphers ------------------------------------------------------------
+@techreport{sp800232,
+  author      = {Meltem S{\"o}nmez Turan and Kerry A. McKay and Donghoon Chang and Jinkeon Kang and John Kelsey},
+  title       = {Ascon-Based Lightweight Cryptography Standards for Constrained Devices: Authenticated Encryption, Hash, and Extendable Output Functions},
+  institution = {National Institute of Standards and Technology},
+  type        = {NIST Special Publication},
+  number      = {800-232},
+  month       = aug,
+  year        = {2025},
+  doi         = {10.6028/NIST.SP.800-232}
+}
+% checked: csrc.nist.gov news item (title, Aug 2025) + citation record (authors, DOI)
+% The team's reference folder holds the initial public draft (Nov 2024, withdrawn 13 Aug 2025); cite the
+% final (Aug 2025). The model passes the official SP 800-232 KAT file (tests/test_ascon_kat.py).
+
+@article{ascon,
+  author  = {Christoph Dobraunig and Maria Eichlseder and Florian Mendel and Martin Schl{\"a}ffer},
+  title   = {Ascon v1.2: Lightweight Authenticated Encryption and Hashing},
+  journal = {Journal of Cryptology},
+  volume  = {34},
+  number  = {3},
+  pages   = {33},
+  year    = {2021},
+  doi     = {10.1007/s00145-021-09398-9}
+}
+% checked: ascon.isec.tugraz.at/publications
+
+@article{gross2017,
+  author  = {Hannes Gro{\ss} and Erich Wenger and Christoph Dobraunig and Christoph Ehrenh{\"o}fer},
+  title   = {Ascon Hardware Implementations and Side-Channel Evaluation},
+  journal = {Microprocessors and Microsystems},
+  volume  = {52},
+  pages   = {470--479},
+  year    = {2017}
+}
+% checked: ascon.isec.tugraz.at/publications
+
+@article{kurian2025,
+  author  = {Meera {Gladis Kurian} and Yuhua Chen},
+  title   = {Ascon on {FPGA}: Post-Quantum Safe Authenticated Encryption with Replay Protection for {IoT}},
+  journal = {Electronics},
+  volume  = {14},
+  number  = {13},
+  pages   = {2668},
+  year    = {2025},
+  doi     = {10.3390/electronics14132668}
+}
+% checked: mdpi.com/2079-9292/14/13/2668
+
+@techreport{t81,
+  author      = {{ITU-T}},
+  title       = {Information Technology -- Digital Compression and Coding of Continuous-Tone Still Images -- Requirements and Guidelines},
+  institution = {International Telecommunication Union},
+  type        = {Recommendation},
+  number      = {T.81},
+  year        = {1992}
+}
+% standard reference (ISO/IEC 10918-1)
+
+@article{wallace1992,
+  author  = {Gregory K. Wallace},
+  title   = {The {JPEG} Still Picture Compression Standard},
+  journal = {IEEE Transactions on Consumer Electronics},
+  volume  = {38},
+  number  = {1},
+  pages   = {xviii--xxxiv},
+  year    = {1992}
+}
+% standard reference
+
+@techreport{rfc3711,
+  author      = {Mark Baugher and David McGrew and Mats Naslund and Elisabetta Carrara and Karl Norrman},
+  title       = {The Secure Real-time Transport Protocol ({SRTP})},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {3711},
+  month       = mar,
+  year        = {2004}
+}
+% standard reference (replay window used by our feedback channel)
+
+% ---- selective encryption of images and video ------------------------------------------
+@inproceedings{vandroogenbroeck2002,
+  author    = {Marc {Van Droogenbroeck} and Rapha{\"e}l Benedett},
+  title     = {Techniques for a Selective Encryption of Uncompressed and Compressed Images},
+  booktitle = {Proc. Advanced Concepts for Intelligent Vision Systems (ACIVS)},
+  address   = {Ghent, Belgium},
+  pages     = {90--97},
+  month     = sep,
+  year      = {2002}
+}
+% checked 17 Oct 2026 against the PDF: title page prints "Raphael Benedett" (the institution page writes
+% "Benedetti"); we follow the PDF. Pages 90-97, Ghent, Sept. 2002 printed in the PDF header.
+
+@inproceedings{puech2005,
+  author    = {William Puech and Jos{\'e} Marconi Rodrigues},
+  title     = {Crypto-Compression of Medical Images by Selective Encryption of {DCT}},
+  booktitle = {Proc. 13th European Signal Processing Conference (EUSIPCO)},
+  address   = {Antalya, Turkey},
+  year      = {2005}
+}
+% checked: HAL lirmm-00106485 + EUSIPCO 2005 programme (pages TODO: from the EURASIP library)
+
+@article{massoudi2008,
+  author  = {Ayoub Massoudi and Fr{\'e}d{\'e}ric Lefebvre and Christophe {De Vleeschouwer} and Beno{\^\i}t Macq and Jean-Jacques Quisquater},
+  title   = {Overview on Selective Encryption of Image and Video: Challenges and Perspectives},
+  journal = {EURASIP Journal on Information Security},
+  volume  = {2008},
+  pages   = {179290},
+  year    = {2008},
+  doi     = {10.1155/2008/179290}
+}
+% checked: jis-eurasipjournals.springeropen.com/articles/10.1155/2008/179290
+
+@article{auer2013,
+  author  = {Stefan Auer and Alexander Bliem and Dominik Engel and Andreas Unterweger},
+  title   = {Bitstream-Based {JPEG} Encryption in Real-time},
+  journal = {International Journal of Digital Crime and Forensics},
+  volume  = {5},
+  number  = {3},
+  pages   = {1--14},
+  year    = {2013},
+  doi     = {10.4018/jdcf.2013070101}
+}
+% checked: pure.fh-ooe.at record (four authors)
+
+@inproceedings{hirose2024,
+  author    = {Mare Hirose and Shoko Imaizumi and Hitoshi Kiya},
+  title     = {On the Security of Bitstream-level {JPEG} Encryption with Restart Markers},
+  booktitle = {Proc. Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
+  year      = {2024},
+  note      = {arXiv:2410.06522}
+}
+% checked 17 Oct 2026 against the PDF: page 1 header names APSIPA ASC 2024. Pages TODO from IEEE Xplore.
+% NZCA is from Peng et al. (ACM TOMM 2024, their ref. [4]); Hirose et al. apply it: contours appear
+% without restart-segment permutation and partly again with a large restart interval.
+
+@inproceedings{sirichotedumrong2020,
+  author    = {Warit Sirichotedumrong and Hitoshi Kiya},
+  title     = {Visual Security Evaluation of Learnable Image Encryption Methods against Ciphertext-only Attacks},
+  booktitle = {Proc. Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
+  year      = {2020},
+  note      = {arXiv:2010.06198}
+}
+% checked 18 Oct 2026: arXiv abstract page only (listed as "to be appeared in APSIPA ASC 2020"; pages and
+% final publication TODO from IEEE Xplore). Cited sentence uses only what the abstract states: a GAN-based
+% ciphertext-only attack defeats most protection methods. TODO: a team member reads the full PDF.
+% 18 Oct 2026: full arXiv text read (cloud session): targets are pixel/block-wise learnable encryption on
+% STL-10 96x96 images, not JPEG; Table I: ITN attack SSIM 0.91 and GAN attack 0.72 on Tanaka's scheme.
+
+@misc{qiu2025,
+  author = {Hanshuo Qiu and Jing Lian and Xiaoyuan Wang and Jizhao Liu},
+  title  = {Securing Satellite Communications: Real-Time Video Encryption Scheme on Satellite Payloads},
+  year   = {2025},
+  note   = {arXiv:2503.16287}
+}
+% checked 18 Oct 2026: arXiv abstract page only (preprint, no venue listed). Cited sentence uses only the
+% abstract: two 1-D chaotic maps, real time on a satellite payload, also implemented on an FPGA.
+% 18 Oct 2026: full arXiv HTML read (cloud session): Raspberry Pi 4B payload, maps also run via HLS on a
+% Zynq xc7z020; frames XORed with the chaotic sequence and stored raw (no JPEG/H.264), no MAC or tag.
+% TODO: a team member reads the full PDF.
+
+@article{lin2024,
+  author  = {Ruiyuan Lin and Sheng Liu and Jun Jiang and Shujun Li and Chengqing Li and C.-C. Jay Kuo},
+  title   = {Recovering Sign Bits of {DCT} Coefficients in Digital Images as an Optimization Problem},
+  journal = {Journal of Visual Communication and Image Representation},
+  pages   = {104045},
+  year    = {2024},
+  doi     = {10.1016/j.jvcir.2023.104045}
+}
+% checked: arXiv 2211.01096 (DOI) + authors' GitHub (journal, year). Volume TODO from ScienceDirect.
+
+@article{boyadjis2017,
+  author  = {Benoit Boyadjis and Cyril Bergeron and B{\'e}atrice Pesquet-Popescu and Fr{\'e}d{\'e}ric Dufaux},
+  title   = {Extended Selective Encryption of {H.264/AVC} ({CABAC})- and {HEVC}-Encoded Video Streams},
+  journal = {IEEE Transactions on Circuits and Systems for Video Technology},
+  volume  = {27},
+  number  = {4},
+  pages   = {892--906},
+  year    = {2017},
+  doi     = {10.1109/TCSVT.2015.2511879}
+}
+% checked 17 Oct 2026 against the PDF (HAL hal-01433748 cover page: vol. 27, no. 4, pp. 892-906, DOI).
+
+% ---- hardware JPEG encryption ---------------------------------------------------------------
+@article{kishore2015,
+  author  = {B. Kishore and B. K. {Shreyamsha Kumar} and Chidamber R. Patil},
+  title   = {{FPGA} Based Simple and Fast {JPEG} Encryptor},
+  journal = {Journal of Real-Time Image Processing},
+  volume  = {10},
+  number  = {3},
+  pages   = {551--559},
+  year    = {2015},
+  doi     = {10.1007/s11554-012-0282-5}
+}
+% checked: link.springer.com/article/10.1007/s11554-012-0282-5 (online 2012, issue Sept. 2015); PDF read
+% 17 Oct 2026: PN-sequence block and symbol scrambling, Stratix II/IV, about 1 % extra hardware.
+
+@inproceedings{bagbaba2015,
+  author    = {Ahmet {\c{C}}a{\u{g}}r{\i} Ba{\u{g}}baba and Berna {\"O}rs},
+  title     = {Hardware Implementation of Novel Image Compression-Encryption System on a {FPGA}},
+  booktitle = {Proc. 9th International Conference on Electrical and Electronics Engineering (ELECO)},
+  address   = {Bursa, Turkey},
+  pages     = {1159--1163},
+  year      = {2015}
+}
+% checked: avesis.itu.edu.tr record; PDF read 17 Oct 2026 (Ahmet Cagri Bagbaba, Berna Ors; TEA on DC,
+% or DC + first five AC coefficients).
+
+% ---- attacks and methods used in the evaluation ------------------------------------------------
+@inproceedings{pomeranz2011,
+  author    = {Dolev Pomeranz and Michal Shemesh and Ohad Ben-Shahar},
+  title     = {A Fully Automated Greedy Square Jigsaw Puzzle Solver},
+  booktitle = {Proc. IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {9--16},
+  year      = {2011},
+  doi       = {10.1109/CVPR.2011.5995331}
+}
+% checked: mlanthology.org/cvpr/2011
+
+@inproceedings{unet,
+  author    = {Olaf Ronneberger and Philipp Fischer and Thomas Brox},
+  title     = {{U-Net}: Convolutional Networks for Biomedical Image Segmentation},
+  booktitle = {Proc. Medical Image Computing and Computer-Assisted Intervention (MICCAI)},
+  series    = {LNCS},
+  volume    = {9351},
+  pages     = {234--241},
+  year      = {2015}
+}
+% standard reference
+
+@article{ssim,
+  author  = {Zhou Wang and Alan C. Bovik and Hamid R. Sheikh and Eero P. Simoncelli},
+  title   = {Image Quality Assessment: From Error Visibility to Structural Similarity},
+  journal = {IEEE Transactions on Image Processing},
+  volume  = {13},
+  number  = {4},
+  pages   = {600--612},
+  year    = {2004}
+}
+% standard reference
+
+@book{sutton2018,
+  author    = {Richard S. Sutton and Andrew G. Barto},
+  title     = {Reinforcement Learning: An Introduction},
+  edition   = {2nd},
+  publisher = {MIT Press},
+  year      = {2018}
+}
+% standard reference (epsilon-greedy, optimistic initial values, sample-average updates)
+
+% ---- hardware comparison (Table: comparison) ---------------------------------------------------
+@misc{logijpge,
+  author       = {{Xylon d.o.o.}},
+  title        = {{logiJPGE} Motion {JPEG} Encoder Data Sheet, v1.0},
+  howpublished = {\url{https://www.logicbricks.com/Documentation/Datasheets/IP/logiJPGE_hds.pdf}},
+  year         = {2020}
+}
+% checked 14 Oct 2026: PDF, dated 3 Jul 2020; Table 1 XC7Z020-1: 3240 LUT, 1969 FF, 16 BRAM, 30 DSP,
+% 150 MHz (Vivado 2019.2, 4:2:2, max width 2048); "150 MPix/s when running at 150 MHz".
+
+@misc{castjpeg,
+  author       = {{CAST, Inc.}},
+  title        = {{JPEG-E-S} Baseline {JPEG} Encoder, product brief},
+  howpublished = {\url{https://www.cast-inc.com/pdfs/cast_jpeg-e-s-brief-amd.pdf}},
+  note         = {Accessed 14 Oct. 2026}
+}
+% checked 14 Oct 2026: undated brief; Artix-7 (-1): 3069 LUT, 16 DSP, 2 BRAM, 166 MHz; one colour
+% sample per clock. No FF count, no year printed (hence note instead of year).
+
+@inproceedings{khairallah2023,
+  author       = {Mustafa Khairallah and Srinivasan Yadhunathan},
+  title        = {{FPGA} Implementations of Message Authentication Codes based on {Ascon-p}},
+  booktitle    = {NIST Lightweight Cryptography Workshop},
+  year         = {2023},
+  howpublished = {\url{https://csrc.nist.gov/csrc/media/Events/2023/lightweight-cryptography-workshop-2023/documents/accepted-papers/14-fpga-implementations-of-message-authentication-codes.pdf}}
+}
+% checked 14 Oct 2026: PDF (accepted paper 14); Artix-7 100T; Ascon-PRF-192, 1 round/cycle: 1031 LUT,
+% 391 FF, period 5 ns (200 MHz). Authors and affiliation (Seagate Research Group) from page 1.
+
+% ---- traffic analysis --------------------------------------------------------------------
+@inproceedings{wampler2015,
+  author    = {Chris Wampler and Selcuk Uluagac and Raheem Beyah},
+  title     = {Information Leakage in Encrypted {IP} Video Traffic},
+  booktitle = {Proc. IEEE Global Communications Conference (GLOBECOM)},
+  year      = {2015},
+  doi       = {10.1109/GLOCOM.2014.7417767}
+}
+% checked 15 Oct 2026: author PDF at csl.fiu.edu (title, authors, (c)2015 IEEE, ISBN 978-1-4799-5952-5;
+% detects motion and scene changes, e.g. a person walking past, from packet size, timing and bandwidth
+% of encrypted streams incl. an MJPEG camera; no padding countermeasure evaluated) and FIU Discovery
+% (GLOBECOM 2015). TODO: the two FIU records give the DOI with GLOCOM.2014 and GLOCOM.2015 -- confirm
+% on IEEE Xplore (document 7417767) and add pages.
+
+@inproceedings{schuster2017,
+  author    = {Roei Schuster and Vitaly Shmatikov and Eran Tromer},
+  title     = {Beauty and the Burst: Remote Identification of Encrypted Video Streams},
+  booktitle = {Proc. 26th USENIX Security Symposium},
+  pages     = {1357--1374},
+  year      = {2017}
+}
+% checked 15 Oct 2026: usenix.org presentation page (authors, title, venue, pages 1357-1374): identifies
+% which video is streamed from the burst pattern of encrypted MPEG-DASH traffic.
+
+@article{apthorpe2019,
+  author  = {Noah Apthorpe and Danny Yuxing Huang and Dillon Reisman and Arvind Narayanan and Nick Feamster},
+  title   = {Keeping the Smart Home Private with Smart(er) {IoT} Traffic Shaping},
+  journal = {Proceedings on Privacy Enhancing Technologies},
+  volume  = {2019},
+  number  = {3},
+  pages   = {128--148},
+  year    = {2019},
+  doi     = {10.2478/popets-2019-0040}
+}
+% checked 15 Oct 2026: PDF at petsymposium.org (title, authors, pages, DOI). Stochastic traffic padding;
+% overheads about 1.1-1.7x for 50 % adversary confidence on real traces, about 18x for a Nest camera at
+% maximum padding.
+
+@article{li2025shuffle,
+  author  = {Shanshan Li and Yali Guo and Jiaxin Huang and Ruoyun Gao},
+  title   = {Fast Attack Algorithm for {JPEG} Image Encryption with Block Position Shuffle},
+  journal = {Journal of Shanghai Jiaotong University (Science)},
+  volume  = {30},
+  number  = {5},
+  pages   = {976--987},
+  year    = {2025},
+  doi     = {10.1007/s12204-023-2676-x}
+}
+% checked 15 Oct 2026: Springer abstract page (authors, journal, vol/issue/pages, online 13 Dec 2023).
+% Chosen-plaintext attack: a designed image reveals the block permutation (non-zero counts per block
+% survive), which is then inverted. Full text read 17 Oct 2026 (PDF page 1: vol. 30(5) 976-987, DOI).
+
+@inproceedings{gallagher2012,
+  author    = {Andrew C. Gallagher},
+  title     = {Jigsaw Puzzles with Pieces of Unknown Orientation},
+  booktitle = {Proc. IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {382--389},
+  year      = {2012},
+  doi       = {10.1109/CVPR.2012.6247699}
+}
+% checked 16 Oct 2026: mlanthology.org record (title, author, pages, DOI). Mahalanobis gradient
+% compatibility and a minimum-spanning-tree assembly; our solver follows it with known orientation.
+
+@inproceedings{ren2015,
+  author    = {Shaoqing Ren and Kaiming He and Ross Girshick and Jian Sun},
+  title     = {Faster {R-CNN}: Towards Real-Time Object Detection with Region Proposal Networks},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  pages     = {91--99},
+  year      = {2015}
+}
+% checked 16 Oct 2026: mlanthology.org record (title, authors, pages); detector family of B23
+% (torchvision's Faster R-CNN ResNet-50 FPN v2, COCO weights).
+
+@inproceedings{isola2017,
+  author    = {Phillip Isola and Jun-Yan Zhu and Tinghui Zhou and Alexei A. Efros},
+  title     = {Image-to-Image Translation with Conditional Adversarial Networks},
+  booktitle = {Proc. IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {1125--1134},
+  year      = {2017}
+}
+% checked 16 Oct 2026: CVF open-access page (title, authors, pages). PatchGAN discriminator used in P5.
+
+@inproceedings{farahmand2016,
+  author    = {Farnoud Farahmand and Ekawat Homsirikamol and Kris Gaj},
+  title     = {A {Z}ynq-based Testbed for the Experimental Benchmarking of Algorithms Competing in Cryptographic Contests},
+  booktitle = {Proc. International Conference on ReConFigurable Computing and FPGAs (ReConFig)},
+  month     = dec,
+  year      = {2016}
+}
+% checked 20 Oct 2026: BibTeX record and PDF on the authors' group page (cryptography.gmu.edu, docid 2529),
+% read in full. ZedBoard (Zynq-7020): AXI DMA between DDR and the core, AXI Timer for hardware and software
+% time, output checked against software, clock raised by binary search to the maximum working frequency.
+% Pages and DOI not on that page: \TODO before submission (IEEE Xplore).
+
+@inproceedings{grover1996,
+  author    = {Lov K. Grover},
+  title     = {A Fast Quantum Mechanical Algorithm for Database Search},
+  booktitle = {Proc. 28th Annual ACM Symposium on Theory of Computing (STOC)},
+  address   = {Philadelphia, PA, USA},
+  year      = {1996},
+  pages     = {212--219}
+}
+% checked 21 Oct 2026: arXiv quant-ph/9605043 (title, author, O(sqrt N) claim) and the author's updated
+% version, which states "Proceedings, STOC 1996, Philadelphia PA USA, pages 212-219". DOI not checked: omitted.
+
+@techreport{fips203,
+  author      = {{National Institute of Standards and Technology}},
+  title       = {Module-Lattice-Based Key-Encapsulation Mechanism Standard},
+  institution = {NIST},
+  type        = {Federal Information Processing Standards Publication},
+  number      = {FIPS 203},
+  year        = {2024},
+  month       = aug,
+  doi         = {10.6028/NIST.FIPS.203}
+}
+% checked 21 Oct 2026: csrc.nist.gov/pubs/fips/203/final (title, 13 Aug 2024, DOI).
