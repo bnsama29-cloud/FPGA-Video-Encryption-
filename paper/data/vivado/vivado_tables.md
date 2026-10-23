@@ -23,6 +23,7 @@
 | secure_jpeg_top_6.667ns | 5126 (9.6%) | 3512 (3.3%) | 25.0 (17.9%) | 23 (10.4%) | 150 | 0.270 | yes | 156.3 | 0.318 / 0.211 |
 | overlay_lanes4hd | 20104 (37.8%) | 14278 (13.4%) | 58.5 (41.8%) | 92 (41.8%) | 125 | 0.032 | yes | 125.5 | 2.226 / 2.067 |
 | overlay_lanes4yuyv | 17780 (33.4%) | 12945 (12.2%) | 62.5 (44.6%) | 92 (41.8%) | 125 | 0.197 | yes | 128.2 | 2.282 / 2.120 |
+| overlay_lanestamper | 12811 (24.1%) | 10342 (9.7%) | 54.5 (38.9%) | 46 (20.9%) | 100 | 1.021 | yes | 111.4 | 1.961 / 1.808 |
 
 Power is Vivado's vectorless estimate (confidence shown in power.txt); measure the board for real power.
 Est. fmax = 1000 / (period - WNS): a single-run estimate, confirm by re-running at that period.
@@ -66,6 +67,7 @@ Run = contract (v2: secure_jpeg_top, v3: 2 lanes) and mode; activity of one scen
 | secure_jpeg_top_6.667ns | 150 | +0.270: u_enc -> u_huff; +0.277: u_enc -> u_huff; +0.283: u_enc -> u_huff; +0.300: u_pack -> u_pack; +0.309: u_conv -> u_dct |
 | overlay_lanes4hd | 125 | +0.032: system_i -> system_i; +0.160: system_i -> system_i; +0.161: system_i -> system_i; +0.173: system_i -> system_i; +0.173: system_i -> system_i |
 | overlay_lanes4yuyv | 125 | +0.197: system_i -> system_i; +0.197: system_i -> system_i; +0.197: system_i -> system_i; +0.303: system_i -> system_i; +0.405: system_i -> system_i |
+| overlay_lanestamper | 100 | +1.021: system_i -> system_i; +1.098: system_i -> system_i; +1.181: system_i -> system_i; +1.240: system_i -> system_i; +1.240: system_i -> system_i |
 
 ### Resource breakdown: secure_jpeg_top_log_maxw9
 
@@ -716,4 +718,18 @@ Run = contract (v2: secure_jpeg_top, v3: 2 lanes) and mode; activity of one scen
 | &nbsp;&nbsp;&nbsp;&nbsp;axi_mem_intercon | system_axi_mem_intercon_0 | 663 | 781 | 0 | 0 |
 | &nbsp;&nbsp;&nbsp;&nbsp;dma | system_dma_0 | 1411 | 2065 | 2.5 | 0 |
 | &nbsp;&nbsp;&nbsp;&nbsp;ps7_axi_periph | system_ps7_axi_periph_0 | 515 | 675 | 0 | 0 |
+
+### Resource breakdown: overlay_lanestamper
+
+| Block | Module | LUT | FF | BRAM | DSP |
+|---|---|---|---|---|---|
+| system_wrapper | (top) | 12811 | 10342 | 54.5 | 46 |
+| &nbsp;&nbsp;(system_wrapper) | (top) | 0 | 0 | 0 | 0 |
+| &nbsp;&nbsp;system_i | system | 12811 | 10342 | 54.5 | 46 |
+| &nbsp;&nbsp;&nbsp;&nbsp;tamper | system_tamper_0 | 52 | 47 | 0 | 0 |
+| &nbsp;&nbsp;&nbsp;&nbsp;axi_mem_intercon | system_axi_mem_intercon_0 | 655 | 781 | 0 | 0 |
+| &nbsp;&nbsp;&nbsp;&nbsp;buttons | system_buttons_0 | 62 | 123 | 0 | 0 |
+| &nbsp;&nbsp;&nbsp;&nbsp;dma | system_dma_0 | 1396 | 2033 | 2.5 | 0 |
+| &nbsp;&nbsp;&nbsp;&nbsp;ps7_axi_periph | system_ps7_axi_periph_0 | 537 | 676 | 0 | 0 |
+| &nbsp;&nbsp;&nbsp;&nbsp;sjpeg | system_sjpeg_0 | 10094 | 6648 | 52 | 46 |
 

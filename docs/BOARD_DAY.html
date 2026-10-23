@@ -112,6 +112,7 @@ section.phase { margin-top: 44px; display: grid; gap: 14px; scroll-margin-top: 7
 .cmd .who.laptop { background: var(--laptop); color: var(--code-bg); }
 .cmd .who.board { background: var(--board); color: var(--code-bg); }
 .cmd .who.vivado { background: var(--vivado); color: var(--code-bg); }
+.cmd .who.attacker { background: var(--bad); color: var(--code-bg); }
 .cmd pre { margin: 0; padding: 18px 14px 14px; overflow-x: auto; font: 13px/1.55 var(--f-mono); white-space: pre; }
 .cmd pre .c { color: var(--code-dim); }
 .cmd pre .v { color: #ffb3d1; }
@@ -157,9 +158,9 @@ html { scroll-behavior: smooth; }
   <h1>Board day, from the box to the paper's numbers</h1>
   <p class="lede">Every step of the hardware part in order: what runs on which machine, the exact command, and what the screen must show before you move on. Type the IP addresses once in the bar below and every command fills itself in (the attacker laptop is only needed for the two-laptop runs). Tick each step as you go; the ticks stay in this browser only.</p>
   <div class="facts">
-    <div><b>35 min</b><span>Vivado, before the board: the tamper image only (phase 0)</span></div>
-    <div><b>~2 h</b><span>first board session: A1, A2, A3</span></div>
-    <div><b>~3.5 h</b><span>second session: power, live link, attacks, tamper</span></div>
+    <div><b>done</b><span>Vivado: all six images built (run 12 + tamper image, run 13, 23 Oct)</span></div>
+    <div><b>5½ h</b><span>one board day: setup, single parts first, then the whole system on two laptops</span></div>
+    <div><b>A1–A6</b><span>every result the papers still wait for</span></div>
     <div><b>5 + 1</b><span>board images from run 12, plus the tamper image</span></div>
   </div>
 </header>
@@ -176,7 +177,8 @@ html { scroll-behavior: smooth; }
 
 <main class="wrap">
 <nav class="toc" aria-label="Phases">
-  <a href="#p0"><span>0</span>Before the board: check images, build tamper<em>45 min</em></a>
+  <a href="#plan"><span>⏱</span>The 5½-hour plan and the two-laptop setup<em>read first</em></a>
+  <a href="#p0"><span>0</span>Before the board: check images (tamper built)<em>5 min</em></a>
   <a href="#p1"><span>1</span>Rehearse on the laptop<em>20 min</em></a>
   <a href="#p2"><span>2</span>Kit, jumpers, SD card<em>25 min</em></a>
   <a href="#p3"><span>3</span>Power on and network<em>15 min</em></a>
@@ -193,10 +195,64 @@ html { scroll-behavior: smooth; }
   <a href="#trouble"><span>?</span>When something goes wrong<em>table</em></a>
 </nav>
 
+<!-- ============================================================ plan -->
+<section class="phase" id="plan">
+  <div class="ph-head"><div class="ph-num">⏱</div><h2>The 5½-hour plan: single parts first, then the whole system</h2>
+    <div class="ph-meta"><span class="chip time">read before you start</span></div></div>
+  <p>Do phase 1 (the laptop rehearsal) the day before. On the day, keep this order: each block only needs the ones above it, and the paper's must-haves (A1–A3) are done in the first two hours. Times include typing and reading the output.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Clock</th><th>Phases</th><th>What you get</th><th>Machines</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0:00–0:45</td><td>2 → 3 → 4</td><td>SD card, jumpers, power on, network, project and bitstreams copied, Python ready</td><td>board + laptop A</td></tr>
+      <tr><td class="num">0:45–1:00</td><td>5</td><td><b>Single part 1:</b> the 4-lane FPGA image bit-exact on a tiny frame</td><td>board</td></tr>
+      <tr><td class="num">1:00–1:40</td><td>6</td><td><b>Single part 2:</b> A1 bit-exact + A2 speed of every image (fabric-only ms)</td><td>board</td></tr>
+      <tr><td class="num">1:40–2:15</td><td>8</td><td><b>Single part 3:</b> A3, the same encoder on the ARM; key-exchange cost</td><td>board</td></tr>
+      <tr><td class="num">2:15–3:00</td><td>9</td><td><b>Single part 4:</b> A4, power with the USB meter (idle, FPGA, ARM)</td><td>board + meter</td></tr>
+      <tr><td class="num">3:00–3:15</td><td>13 (first copy)</td><td>copy the results off the board now, then a break</td><td>laptop A</td></tr>
+      <tr><td class="num">3:15–3:45</td><td>10</td><td><b>Whole system:</b> board = camera, laptop A = receiver + dashboard, laptop B = second viewer (dashboard + VLC); level changed from the board's buttons</td><td>board + A + B</td></tr>
+      <tr><td class="num">3:45–4:45</td><td>11</td><td>A6: the 11 attacks against the board, one-laptop run, then laptop B as the attacker in the middle</td><td>board + A + B</td></tr>
+      <tr><td class="num">4:45–5:15</td><td>12</td><td>tamper inside the board (BTN0 / Pico), BTN1–3 demo, film it</td><td>board + A (+ B)</td></tr>
+      <tr><td class="num">5:15–5:30</td><td>13</td><td>copy everything, zip, shut down</td><td>laptop A</td></tr>
+    </tbody></table></div>
+  <div class="note"><b>Running late? Cut in this order</b><p>Phase 7 (1080p and YUYV images) is not in the plan: do it only if you are ahead. Then cut the A6 repetitions to one run each (the paper says "1 run" instead of "3 runs"), then the two-laptop attacker run (11c). Never cut phases 5, 6, 8, 9: they fill the papers' remaining <code>\TODO</code>s.</p></div>
+
+  <div class="board-fig" aria-label="The whole system on two laptops">
+    <svg viewBox="0 0 640 250" role="img" aria-labelledby="sys-t">
+      <title id="sys-t">Board as camera, laptop B as the network in the middle, laptop A as the receiver</title>
+      <rect x="20" y="40" width="170" height="150" rx="10" fill="var(--board-soft)" stroke="var(--board)" stroke-width="2"/>
+      <text x="105" y="64" text-anchor="middle" font-family="Archivo, sans-serif" font-size="15" font-weight="700" fill="var(--ink)">PYNQ-Z2</text>
+      <text x="105" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">PL: encoder + Ascon</text>
+      <text x="105" y="106" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">PS: board_sender</text>
+      <text x="105" y="124" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">key exchange, policy</text>
+      <text x="105" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">BTN1–3: level</text>
+      <text x="105" y="168" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">SW/BTN0: tamper</text>
+      <rect x="235" y="40" width="170" height="150" rx="10" fill="var(--panel)" stroke="var(--bad)" stroke-width="2"/>
+      <text x="320" y="64" text-anchor="middle" font-family="Archivo, sans-serif" font-size="15" font-weight="700" fill="var(--ink)">Laptop B</text>
+      <text x="320" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">phase 10: viewer</text>
+      <text x="320" y="106" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">browser + VLC</text>
+      <text x="320" y="132" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">phase 11c: attacker</text>
+      <text x="320" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">link.channel relays</text>
+      <text x="320" y="168" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">+ attacker dashboard</text>
+      <rect x="450" y="40" width="170" height="150" rx="10" fill="var(--panel)" stroke="var(--laptop)" stroke-width="2"/>
+      <text x="535" y="64" text-anchor="middle" font-family="Archivo, sans-serif" font-size="15" font-weight="700" fill="var(--ink)">Laptop A</text>
+      <text x="535" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">receiver: verify tag,</text>
+      <text x="535" y="106" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">decrypt, feedback</text>
+      <text x="535" y="124" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">dashboard :8000</text>
+      <text x="535" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">scenario.py starts</text>
+      <text x="535" y="168" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">every attack</text>
+      <line x1="190" y1="100" x2="235" y2="100" stroke="var(--ink)" stroke-width="2"/>
+      <line x1="405" y1="100" x2="450" y2="100" stroke="var(--ink)" stroke-width="2"/>
+      <text x="320" y="222" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">UDP: video →, heartbeats and alerts ←, all on one router (or switch)</text>
+    </svg>
+  </div>
+  <p>Without the attacker run, laptop B is only a second screen: it opens laptop A's dashboard and the wire stream, and the board's video goes straight to laptop A. In phase 11c laptop B sits in the middle: the board sends to B, B forwards to A, and B's attacks are started from A. The key exchange crosses B too; B relays it but cannot read it.</p>
+  <div class="note"><b>Rehearsed on 23 Oct</b><p>Every board command on this page was run against the bitstream emulation on the laptop, with the run-13 code: the bit-exact gate of all four image types (E0–E5), the key-exchange cost, the board sender with the emulated buttons, and the whole 11-attack scenario with the emulated board as the sender (11 of 11 mitigated, 0 false alarms in 128 calm windows, every tampered frame rejected). The emulated board is the Python golden model, so it is slow: rehearse at 64×48 (<code>--set sender.width=64 --set sender.height=48</code> on the board-sender line), never judge reaction times from it. The ARM C baseline (phase 8) needs <code>gcc</code>, which the board has and the laptop does not; it gets its first run on the board.</p></div>
+</section>
+
 <!-- ============================================================ 0 -->
 <section class="phase" id="p0">
   <div class="ph-head"><div class="ph-num">0</div><h2>Before the board: check the run-12 images, build the tamper image</h2>
-    <div class="ph-meta"><span class="chip vivado">Vivado PC</span><span class="chip time">≈ 45 min, 35 of them unattended</span></div></div>
+    <div class="ph-meta"><span class="chip vivado">Vivado PC</span><span class="chip time">5 min (the builds are done)</span></div></div>
   <p>Run 12 (22 Oct, <code>vivado_results_20261022_2123.zip</code>, commit <code>03d5144</code>, RTL of <code>d34604f</code>) built all five board images from the final RTL; the paper's Vivado tables come from the same run. The RTL is frozen. These are the clocks to expect on the board:</p>
   <div class="tbl"><table>
     <thead><tr><th>Image</th><th>VERSION</th><th>Clock</th><th>WNS</th><th>Note</th></tr></thead>
@@ -206,7 +262,7 @@ html { scroll-behavior: smooth; }
       <tr><td><code>secure_jpeg_lanes4</code></td><td class="num">0x5EC00384</td><td class="num">125 MHz</td><td class="num">+0.141 ns</td><td>the headline; 142.9 MHz missed by 0.228 ns</td></tr>
       <tr><td><code>secure_jpeg_lanes4hd</code></td><td class="num">0x5EC00384</td><td class="num">125 MHz</td><td class="num">+0.032 ns</td><td>1080p lines; <b>thin margin</b>, see phase 7</td></tr>
       <tr><td><code>secure_jpeg_lanes4yuyv</code></td><td class="num">0x5EC003C4</td><td class="num">125 MHz</td><td class="num">+0.197 ns</td><td>YUYV input; 142.9 MHz missed by 0.237 ns</td></tr>
-      <tr><td><code>secure_jpeg_lanes_tamper</code></td><td class="num">0x5EC00382</td><td class="num">100 MHz</td><td class="num">—</td><td>test equipment, built in step 0b</td></tr>
+      <tr><td><code>secure_jpeg_lanes_tamper</code></td><td class="num">0x5EC00382</td><td class="num">100 MHz</td><td class="num">+1.021 ns</td><td>run 13 (23 Oct): 2 lanes + tamper injector (52 LUT) + BTN1–3 reader (62 LUT, AXI-Lite 0x4000_1000)</td></tr>
     </tbody></table></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0a" aria-label="done"></span><div>
     <p>Pull, then check that the images on this PC are the run-12 ones (the hash must match <code>summary.txt</code> of the run-12 zip).</p>
@@ -218,6 +274,7 @@ certutil -hashfile future_work\board\overlay\secure_jpeg_lanes4.bit SHA256</pre>
     <div class="expect"><b>Expect</b><ul><li><code>git log</code> shows <code>d4e4392</code> or newer.</li><li>The hash starts <code>7f1260af5daf72b0</code>. Any other value: these are not the run-12 images; take the overlay folder from the run-12 PC or the team drive.</li></ul></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0b" aria-label="done"></span><div>
+    <p><b>Done 23 Oct (run 13, <code>vivado_results_20261023_1109.zip</code>, 31.9 min, timing met at 100 MHz).</b> Check on the PC that copies the files to the board: <code>certutil -hashfile future_work\board\overlay\secure_jpeg_lanes_tamper.bit SHA256</code> must start <code>c6a92ab60e8e176d</code>. The text below is only for a rebuild.</p>
     <p><b>Build the tamper image</b> for phase 12: the 2-lane image with the tamper injector (<code>future_work/board/axis_tamper.v</code>) between the encoder and the receive DMA, and BTN1–BTN3 readable by the ARM (<code>axil_buttons.v</code>) to change the protection level. Same encoder, same bytes; only the extra blocks and their pins (<code>tamper_pynq_z2.xdc</code>) are new.</p>
     <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>py vivado\run_vivado_day.py --steps bd_tamper parse --fclk 100 --jobs 2</pre></div>
     <div class="expect"><b>Expect</b><ul>
@@ -480,6 +537,18 @@ CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --si
       <li>A second device opens <code>http://<span data-v="laptop">LAPTOP</span>:8000</code>; VLC → Open Network Stream → <code>http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</code> shows the scrambled wire stream.</li>
       <li>Press <b>bit flip</b> on the dashboard: one frame rejected, the policy jumps to E5, then back to E2. Film this with a phone.</li></ul></div>
     <div class="note"><b>Webcam</b><p><code>--set sender.source=webcam:0</code> with a USB camera on the board. Windows firewall: allow Python on private networks when asked.</p></div>
+  </div></div>
+  <div class="step"><span class="check"><input type="checkbox" id="s10c" aria-label="done"></span><div>
+    <h3>The whole system on two laptops, controlled from the board</h3>
+    <p>Stop the board sender (Ctrl+C) and start it again with the tamper image, which is the same 2-lane encoder plus the buttons. Laptop A keeps running. Keep SW1 <b>down</b> (no tampering here).</p>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes_tamper.bit --pq-kex --set keys.master=&lt;KEY&gt; --set link.host=<span data-v="laptop">LAPTOP</span> --set link.bind_host=0.0.0.0 --set link.pad=runmax --set sender.source=synthetic</pre></div>
+    <div class="cmd"><span class="who attacker">Laptop B · browser and VLC</span><pre>http://<span data-v="laptop">LAPTOP</span>:8000
+http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</pre></div>
+    <div class="expect"><b>Check</b><ul>
+      <li>The board prints <code>buttons: BTN1 level down, BTN2 level up (max E5), BTN3 automatic policy</code>, then <code>sender: session …, encoder=board</code>.</li>
+      <li>Both laptops show the dashboard; laptop A's receiver view is the clear picture, VLC on laptop B the scrambled wire.</li>
+      <li>BTN1 twice → the board prints <code>buttons: BTN1 -&gt; manual E0</code> and within 1 s both dashboards say E0 and the wire picture becomes clear. BTN2 up to E5 → noise, then shuffled blocks; <b>verified</b> keeps rising, <b>rejected</b> stays 0. BTN3 → back to automatic (E2).</li>
+      <li>Dashboard bit flip with BTN3 pressed: one frame rejected, E5, back to E2.</li></ul></div>
   </div></div>
 </section>
 

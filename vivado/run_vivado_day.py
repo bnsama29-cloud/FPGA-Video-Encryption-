@@ -415,7 +415,7 @@ def parse_hier(text, depth=2):
 
 def _name(folder):
     """Design name from the folder: vivado_<design> (OOC runs), overlay, overlay/lanes -> overlay_lanes."""
-    if folder.name in ("lanes", "lanes4", "lanes4hd", "lanes4yuyv") and folder.parent.name == "overlay":
+    if folder.name in ("lanes", "lanes4", "lanes4hd", "lanes4yuyv", "lanestamper") and folder.parent.name == "overlay":
         return f"overlay_{folder.name}"
     return folder.name.replace("vivado_", "")
 
@@ -499,7 +499,8 @@ def parse_main(argv=None):
                      ROOT / "future_work" / "board" / "overlay" / "lanes",
                      ROOT / "future_work" / "board" / "overlay" / "lanes4",
                      ROOT / "future_work" / "board" / "overlay" / "lanes4hd",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes4yuyv"] if (p / "timing.txt").exists()]
+                     ROOT / "future_work" / "board" / "overlay" / "lanes4yuyv",
+                     ROOT / "future_work" / "board" / "overlay" / "lanestamper"] if (p / "timing.txt").exists()]
     folders = [f for f in folders if f.is_dir() and f.name != "vivado_logs"]   # logs are not a design
     if not folders:
         sys.exit("no report folders: run vivado/vivado_ooc.tcl (or vivado/run_vivado_day.py) first")
