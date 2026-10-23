@@ -47,7 +47,7 @@ Van Droogenbroeck and Benedett encrypted the appended bits of AC coefficients of
 \begin{figure*}[t]
 \centering
 \resizebox{0.92\textwidth}{!}{\input{figures/tikz/arch_system.tex}}
-\caption{System architecture. The fabric (PL) encodes, encrypts and tags; the ARM core (PS) adds headers, reorders E5 segments and runs the key ratchet and policy; the receiver undoes the order, verifies the tag and decrypts, and reports back over an authenticated feedback channel. Shaded red: cryptographic operations.}
+\caption{System architecture. The fabric (PL) encodes, encrypts and tags; the ARM core (PS) adds headers, reorders E5 segments and runs the key ratchet and policy; the receiver undoes the order, verifies the tag and decrypts, and reports back over an authenticated feedback channel. Red: cryptography; dashed: attacker.}
 \label{fig:system}
 \end{figure*}
 \begin{figure*}[t]
