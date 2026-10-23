@@ -28,6 +28,7 @@ import ctypes
 import hashlib
 import os
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -55,11 +56,16 @@ def load_library():
     cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
     cache.mkdir(parents=True, exist_ok=True)
     so = cache / f"sjpeg_sw_{tag}.so"
+    cc = os.environ.get("CC", "gcc" if os.name == "nt" else "cc")
     if not so.exists():
-        cc = os.environ.get("CC", "cc")
         r = subprocess.run([cc, *flags, "-o", str(so), str(_SRC)], capture_output=True, text=True, timeout=120)
         if r.returncode:
             raise RuntimeError(f"cannot compile {_SRC.name}: {r.stderr.strip()}")
+    cc_path = shutil.which(cc)
+    if os.name == "nt" and cc_path:
+        # MinGW links -pthread against libwinpthread-1.dll next to gcc.exe; Python >= 3.8 does not search
+        # PATH for a DLL's dependencies on Windows (bug #41). Linux (the board) needs nothing.
+        os.add_dll_directory(os.path.dirname(cc_path))
     lib = ctypes.CDLL(str(so))
     u8p, u32p, i32 = ctypes.c_char_p, ctypes.POINTER(ctypes.c_uint32), ctypes.c_int32
     lib.sjpeg_set_tables.argtypes = [ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_int32),
