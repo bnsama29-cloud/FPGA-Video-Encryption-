@@ -14,10 +14,10 @@ Fig.~\ref{fig:system} shows the system. The ARM core of the Zynq places a frame 
 \begin{figure*}[t]
 \centering
 \resizebox{0.78\textwidth}{!}{\input{figures/tikz/keys.tex}}
-\caption{Key and nonce hierarchy. One pre-shared master key yields the feedback key and the epoch-0 video key; a one-way ratchet yields every later epoch. Per frame, the video key derives the segment key (keystream) and the E5 permutation key and authenticates the frame.}
+\caption{Key and nonce hierarchy. One master key, the session key of the authenticated key exchange, yields the feedback key and the epoch-0 video key; a one-way ratchet yields every later epoch. Per frame, the video key derives the segment key (keystream) and the E5 permutation key and authenticates the frame.}
 \label{fig:keys}
 \end{figure*}
-All keys derive from $K_{\mathrm{m}}$ with one primitive, the Ascon tag used as a pseudorandom function (Fig.~\ref{fig:keys}):
+$K_{\mathrm{m}}$ is the session key that the ARM cores of camera and viewer agree on at session start with a hybrid ML-KEM-768 + X25519 exchange authenticated by the pre-shared key (Section~\ref{sec:discussion}); without that exchange it is the pre-shared key itself. All keys derive from $K_{\mathrm{m}}$ with one primitive, the Ascon tag used as a pseudorandom function (Fig.~\ref{fig:keys}):
 \begin{equation}
 \KDF(K, \ell, c) = \MAC_K\bigl(N(0, c, 1), \ell\bigr),
 \label{eq:kdf}
@@ -48,7 +48,7 @@ Across boots, two runs that start from the same epoch use the same key and are s
 p_{\mathrm{coll}} \le \binom{B}{2} 2^{-48} \approx \BootCollide \quad \text{for } B = \BootCount,
 \label{eq:boot}
 \end{equation}
-about one boot a day for 27 years. A deployment that cannot accept this persists the counter or the epoch across reboots instead. The 63-bit counter cannot wrap in practice ($2^{63}$ frames at 30 frames/s last about $10^{10}$ years).
+about one boot a day for 27 years. The bound matters only when the pre-shared key is used directly: with the key exchange every session has a fresh $K_{\mathrm{m}}$, so two boots never share a key. A deployment without it that cannot accept the bound persists the counter or the epoch across reboots instead. The 63-bit counter cannot wrap in practice ($2^{63}$ frames at 30 frames/s last about $10^{10}$ years).
 
 \subsection{Selective encryption inside the entropy coder}\label{sec:selenc}
 Every level carries the per-frame tag. Table~\ref{tab:levels} lists which fields each level encrypts. E0 encrypts nothing (authentication only), E1 the AC sign bits, E2 also the DC-difference signs (the default minimum), E3 also the AC amplitude bits, E4 also the DC amplitude bits, and E5 encrypts the fields of E4 and permutes the macroblocks (Section~\ref{sec:e5}).

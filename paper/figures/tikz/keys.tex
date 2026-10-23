@@ -1,7 +1,7 @@
 % Key and nonce hierarchy (link/keys.py, model/ascon.py :: make_nonce, model/hw.py :: shuffle_key,
 % rtl/kseg_unit.v). KDF(K, label, c) = Ascon-AEAD128 tag under K, nonce (sigma = 0, c, purpose 1), AD = label.
 \begin{tikzpicture}[x=1cm, y=1cm, k/.style={cry, font=\tiny, minimum height=6mm}, n/.style={blk, font=\tiny, fill=netfill, minimum height=6mm}]
-\node[k] (m) at (0,0) {$K_{\mathrm{m}}$ (pre-shared)};
+\node[k] (m) at (0,0) {$K_{\mathrm{m}}$ (session key)};
 \node[k] (fb) at (-1.9,-1.0) {$K_{\mathrm{fb}} = \mathrm{KDF}(K_{\mathrm{m}}, \text{feedback})$};
 \node[k] (v0) at (2.0,-1.0) {$K_0 = \mathrm{KDF}(K_{\mathrm{m}}, \text{video}, 0)$};
 \node[k] (ve) at (2.0,-2.0) {$K_{e+1} = \mathrm{KDF}(K_e, \text{ratchet}, e{+}1)$};
