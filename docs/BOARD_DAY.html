@@ -159,7 +159,7 @@ html { scroll-behavior: smooth; }
   <p class="lede">Every step of the hardware part in order: what runs on which machine, the exact command, and what the screen must show before you move on. Type the IP addresses once in the bar below and every command fills itself in (the attacker laptop is only needed for the two-laptop runs). Tick each step as you go; the ticks stay in this browser only.</p>
   <div class="facts">
     <div><b>done</b><span>Vivado: all six images built (run 12 + tamper image, run 13, 23 Oct)</span></div>
-    <div><b>5½ h</b><span>one board day: setup, single parts first, then the whole system on two laptops</span></div>
+    <div><b>≈ 4 h</b><span>one board session if the SD card is ready: single parts first, then the whole system on two laptops</span></div>
     <div><b>A1–A6</b><span>every result the papers still wait for</span></div>
     <div><b>5 + 1</b><span>board images from run 12, plus the tamper image</span></div>
   </div>
@@ -177,44 +177,45 @@ html { scroll-behavior: smooth; }
 
 <main class="wrap">
 <nav class="toc" aria-label="Phases">
-  <a href="#plan"><span>⏱</span>The 5½-hour plan and the two-laptop setup<em>read first</em></a>
+  <a href="#plan"><span>⏱</span>The 4-hour plan and the two-laptop setup<em>read first</em></a>
   <a href="#p0"><span>0</span>Before the board: check images (tamper built)<em>5 min</em></a>
   <a href="#p1"><span>1</span>Rehearse on the laptop<em>20 min</em></a>
-  <a href="#p2"><span>2</span>Kit, jumpers, SD card<em>25 min</em></a>
-  <a href="#p3"><span>3</span>Power on and network<em>15 min</em></a>
+  <a href="#p2"><span>2</span>Kit, jumpers, SD card<em>day before + 5 min</em></a>
+  <a href="#p3"><span>3</span>Power on and network<em>10 min</em></a>
   <a href="#p4"><span>4</span>Copy the project, prepare Python<em>15 min</em></a>
   <a href="#p5"><span>5</span>Smoke test the 4-lane image<em>10 min</em></a>
-  <a href="#p6"><span>6</span>A1 + A2: bit-exact and speed<em>40 min</em></a>
-  <a href="#p7"><span>7</span>Optional images: 1080p, YUYV<em>20 min</em></a>
-  <a href="#p8"><span>8</span>A3: ARM baseline, PQ key cost<em>40 min</em></a>
-  <a href="#p9"><span>9</span>A4: power and energy<em>60 min</em></a>
-  <a href="#p10"><span>10</span>A5: live link, board as camera<em>30 min</em></a>
-  <a href="#p11"><span>11</span>A6: scripted attacks on hardware<em>90 min</em></a>
-  <a href="#p12"><span>12</span>Tamper inside the board<em>30 min</em></a>
+  <a href="#p6"><span>6</span>A1 + A2: bit-exact and speed<em>35 min</em></a>
+  <a href="#p7"><span>7</span>Optional images: 1080p, YUYV<em>if ahead, 20 min</em></a>
+  <a href="#p8"><span>8</span>A3: ARM baseline, PQ key cost<em>20 min</em></a>
+  <a href="#p9"><span>9</span>A4: power and energy<em>30 min</em></a>
+  <a href="#p10"><span>10</span>A5: live link, two laptops<em>25 min</em></a>
+  <a href="#p11"><span>11</span>A6: scripted attacks on hardware<em>40 min</em></a>
+  <a href="#p12"><span>12</span>Tamper inside the board<em>25 min</em></a>
   <a href="#p13"><span>13</span>Bring the results back<em>10 min</em></a>
   <a href="#trouble"><span>?</span>When something goes wrong<em>table</em></a>
 </nav>
 
 <!-- ============================================================ plan -->
 <section class="phase" id="plan">
-  <div class="ph-head"><div class="ph-num">⏱</div><h2>The 5½-hour plan: single parts first, then the whole system</h2>
+  <div class="ph-head"><div class="ph-num">⏱</div><h2>The 4-hour plan: single parts first, then the whole system</h2>
     <div class="ph-meta"><span class="chip time">read before you start</span></div></div>
-  <p>Do phase 1 (the laptop rehearsal) the day before. On the day, keep this order: each block only needs the ones above it, and the paper's must-haves (A1–A3) are done in the first two hours. Times include typing and reading the output.</p>
+  <p><b>The day before:</b> run phase 1 (the laptop rehearsal: 20/20 checks), write the SD card (phase 2, step 1: 15 min of downloading and flashing you do not want on the day), charge both laptops, copy the overlay folder to a USB stick. On the day keep this order: each block only needs the ones above it, and everything the papers still wait for (A1–A4) is done in the first two hours. Times include typing and reading the output.</p>
   <div class="tbl"><table>
     <thead><tr><th>Clock</th><th>Phases</th><th>What you get</th><th>Machines</th></tr></thead>
     <tbody>
-      <tr><td class="num">0:00–0:45</td><td>2 → 3 → 4</td><td>SD card, jumpers, power on, network, project and bitstreams copied, Python ready</td><td>board + laptop A</td></tr>
-      <tr><td class="num">0:45–1:00</td><td>5</td><td><b>Single part 1:</b> the 4-lane FPGA image bit-exact on a tiny frame</td><td>board</td></tr>
-      <tr><td class="num">1:00–1:40</td><td>6</td><td><b>Single part 2:</b> A1 bit-exact + A2 speed of every image (fabric-only ms)</td><td>board</td></tr>
-      <tr><td class="num">1:40–2:15</td><td>8</td><td><b>Single part 3:</b> A3, the same encoder on the ARM; key-exchange cost</td><td>board</td></tr>
-      <tr><td class="num">2:15–3:00</td><td>9</td><td><b>Single part 4:</b> A4, power with the USB meter (idle, FPGA, ARM)</td><td>board + meter</td></tr>
-      <tr><td class="num">3:00–3:15</td><td>13 (first copy)</td><td>copy the results off the board now, then a break</td><td>laptop A</td></tr>
-      <tr><td class="num">3:15–3:45</td><td>10</td><td><b>Whole system:</b> board = camera, laptop A = receiver + dashboard, laptop B = second viewer (dashboard + VLC); level changed from the board's buttons</td><td>board + A + B</td></tr>
-      <tr><td class="num">3:45–4:45</td><td>11</td><td>A6: the 11 attacks against the board, one-laptop run, then laptop B as the attacker in the middle</td><td>board + A + B</td></tr>
-      <tr><td class="num">4:45–5:15</td><td>12</td><td>tamper inside the board (BTN0 / Pico), BTN1–3 demo, film it</td><td>board + A (+ B)</td></tr>
-      <tr><td class="num">5:15–5:30</td><td>13</td><td>copy everything, zip, shut down</td><td>laptop A</td></tr>
+      <tr><td class="num">0:00–0:30</td><td>2 (jumpers) → 3 → 4</td><td>jumpers, power on, network, project and bitstreams copied, Python ready</td><td>board + laptop A</td></tr>
+      <tr><td class="num">0:30–0:40</td><td>5</td><td><b>Single part 1:</b> the 4-lane image bit-exact on a tiny frame</td><td>board</td></tr>
+      <tr><td class="num">0:40–1:15</td><td>6</td><td><b>Single part 2:</b> A1 bit-exact + A2 speed (fabric-only ms) of 4 lanes, 2 lanes, single pipeline</td><td>board</td></tr>
+      <tr><td class="num">1:15–1:35</td><td>8</td><td><b>Single part 3:</b> A3, the same encoder on the ARM; key-exchange cost</td><td>board</td></tr>
+      <tr><td class="num">1:35–2:05</td><td>9</td><td><b>Single part 4:</b> A4, power with the USB meter (idle, FPGA, ARM)</td><td>board + meter</td></tr>
+      <tr><td class="num">2:05–2:15</td><td>13 (first copy)</td><td>copy the results off the board, short break</td><td>laptop A</td></tr>
+      <tr><td class="num">2:15–2:40</td><td>10</td><td><b>Whole system:</b> board = camera, laptop A = receiver + dashboard, laptop B = second viewer; level from the board's buttons</td><td>board + A + B</td></tr>
+      <tr><td class="num">2:40–3:20</td><td>11</td><td>A6: one attack-suite run (5 min) + one benign run (2½ min), then laptop B as the attacker in the middle</td><td>board + A + B</td></tr>
+      <tr><td class="num">3:20–3:45</td><td>12</td><td>tamper inside the board: one measured run (4 min), the BTN1–3 and SW0 demo, film it</td><td>board + A</td></tr>
+      <tr><td class="num">3:45–4:00</td><td>13</td><td>copy everything, zip, shut down</td><td>laptop A</td></tr>
     </tbody></table></div>
-  <div class="note"><b>Running late? Cut in this order</b><p>Phase 7 (1080p and YUYV images) is not in the plan: do it only if you are ahead. Then cut the A6 repetitions to one run each (the paper says "1 run" instead of "3 runs"), then the two-laptop attacker run (11c). Never cut phases 5, 6, 8, 9: they fill the papers' remaining <code>\TODO</code>s.</p></div>
+  <div class="note"><b>Ahead of time? Add in this order</b><p>Repetitions 2 and 3 of the attack suite, the benign run and the tamper run (≈ 25 min, gives "3 runs" in the paper instead of "1 run"); phase 7, the 1080p and YUYV images (≈ 20 min); more bit-exact frames on the 4-lane image (<code>--frames 10</code> at 320×240 only). <b>Behind?</b> Drop the attacker-in-the-middle run (11c) first, then phase 10's second laptop. Never drop phases 5, 6, 8, 9: they fill the papers' remaining <code>\TODO</code>s.</p></div>
+  <div class="note"><b>Where the time goes on the board</b><p>The bit-exact check computes every reference frame with the Python golden model on the board's ARM. On the laptop one 640×480 reference takes 3.4 s; on the Cortex-A9 expect roughly ten times that, about 40 s (320×240: about 8 s). Six levels × frames × sizes adds up fast, so phase 6 uses few frames per image (the 2-lane image was already checked with 13 frames per level on 20 Oct). The FPGA itself and the timing runs take seconds. If the first 640×480 line takes much longer than a minute, drop 640×480 from the bit-exact runs and keep it for timing.</p></div>
 
   <div class="board-fig" aria-label="The whole system on two laptops">
     <svg viewBox="0 0 640 250" role="img" aria-labelledby="sys-t">
@@ -297,7 +298,7 @@ git pull
 .venv\Scripts\activate
 set CC=gcc
 py scripts\rehearse_board_day.py</pre></div>
-  <div class="expect"><b>Expect</b><p>PASS for every check (25 on 23 Oct) and <code>Ready for the board</code>. It starts the emulated board itself; no second window. <code>--quick</code> skips the two 5-minute runs and the full test suite; <code>--only 3</code> repeats one step. Logs: <code>sim_out\rehearsal\</code>. The steps below are the same commands by hand.</p></div>
+  <div class="expect"><b>Expect</b><p>PASS for every check (20 of 20 on 23 Oct) and <code>Ready for the board</code>. It starts the emulated board itself; no second window. <code>--quick</code> skips the two 5-minute runs and the full test suite; <code>--only 3</code> repeats one step. Logs: <code>sim_out\rehearsal\</code>. The steps below are the same commands by hand.</p></div>
   <div class="step"><span class="check"><input type="checkbox" id="s1a" aria-label="done"></span><div>
     <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
 git pull
@@ -317,7 +318,7 @@ py experiments\hw_tamper.py --external-sender 127.0.0.1 --trigger udp:127.0.0.1 
 <!-- ============================================================ 2 -->
 <section class="phase" id="p2">
   <div class="ph-head"><div class="ph-num">2</div><h2>Kit, jumpers and the SD card</h2>
-    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip time">25 min</span></div></div>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip time">day before + 5 min</span></div></div>
   <div class="tbl"><table>
     <thead><tr><th>Item</th><th>Why</th><th>Note</th></tr></thead>
     <tbody>
@@ -360,7 +361,7 @@ py experiments\hw_tamper.py --external-sender 127.0.0.1 --trigger udp:127.0.0.1 
   </div>
 
   <div class="step"><span class="check"><input type="checkbox" id="s2a" aria-label="done"></span><div>
-    <p><b>Write the SD card.</b> Download the PYNQ-Z2 image (v3.0.x) from <a href="https://www.pynq.io/boards.html" target="_blank" rel="noopener">pynq.io → Boards → PYNQ-Z2</a>, write it with balenaEtcher (or Raspberry Pi Imager → "Use custom"), eject safely, and insert it into the slot under the board, contacts facing the board.</p>
+    <p><b>Write the SD card the day before.</b> If the card from 20 Oct still boots, reuse it. Otherwise download the PYNQ-Z2 image (3.1.1, the version the board ran on 20 Oct) from <a href="https://www.pynq.io/boards.html" target="_blank" rel="noopener">pynq.io → Boards → PYNQ-Z2</a>, write it with balenaEtcher (or Raspberry Pi Imager → "Use custom"), eject safely, and insert it into the slot under the board, contacts facing the board.</p>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s2b" aria-label="done"></span><div>
     <p><b>Set two jumpers before power-on:</b> Boot → <b>SD</b>, Power → <b>USB</b>. USB power is also what the inline meter measures in phase 9. Use REG only with a 12 V adapter whose polarity you have checked against the TUL manual.</p>
@@ -370,7 +371,7 @@ py experiments\hw_tamper.py --external-sender 127.0.0.1 --trigger udp:127.0.0.1 
 <!-- ============================================================ 3 -->
 <section class="phase" id="p3">
   <div class="ph-head"><div class="ph-num">3</div><h2>Power on and put the board on the network</h2>
-    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip time">15 min</span></div></div>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip time">10 min</span></div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s3a" aria-label="done"></span><div>
     <p>Micro-USB into <b>PROG / UART</b>, Ethernet in, power switch on.</p>
     <div class="tbl"><table><thead><tr><th>You see</th><th>It means</th></tr></thead><tbody>
@@ -443,17 +444,17 @@ pip3 install kyber-py           <span class="c"># needs internet (router); pure 
 <!-- ============================================================ 6 -->
 <section class="phase" id="p6">
   <div class="ph-head"><div class="ph-num">6</div><h2>A1 + A2: bit-exact on silicon, and the real speed</h2>
-    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A1 · A2</span><span class="chip time">40 min</span></div></div>
-  <p>For each image: 10 frames per size and protection level are encoded on the FPGA and compared byte for byte (scan and tag) with the golden model; then 50 timed frames per size and level. <code>--zero-copy</code> lets the ARM write pixels straight into the DMA buffer.</p>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A1 · A2</span><span class="chip time">35 min</span></div></div>
+  <p>For each image: N frames per size and protection level are encoded on the FPGA and compared byte for byte (scan and tag) with the golden model; then 50 timed frames per size and level. <code>--zero-copy</code> lets the ARM write pixels straight into the DMA buffer. The golden model on the ARM is the slow part (plan note above), so N is small: 3 for the new 4-lane image, 1 for the images already proven.</p>
   <div class="step"><span class="check"><input type="checkbox" id="s6a" aria-label="done"></span><div>
-    <h3>4 lanes (the headline)</h3>
-    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4_final
-python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --fclk 100 --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4_final_100</pre></div>
+    <h3>4 lanes (the headline) · ≈ 15 min</h3>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 320x240 640x480 --frames 3 --timing-frames 50 --zero-copy --out sim_out/board/lanes4_final</pre></div>
+    <div class="note"><b>Only if ahead</b><p>The same image at 100 MHz, for the clock comparison: <code>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --fclk 100 --sizes 320x240 640x480 --frames 1 --timing-frames 50 --zero-copy --out sim_out/board/lanes4_final_100</code></p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s6b" aria-label="done"></span><div>
-    <h3>2 lanes and the single pipeline (for the lanes figure)</h3>
-    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes2_final
-python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/v2_final</pre></div>
+    <h3>2 lanes and the single pipeline (for the lanes figure) · ≈ 8 min each</h3>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 1 --timing-frames 50 --zero-copy --out sim_out/board/lanes2_final
+python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg.bit --sizes 320x240 640x480 --frames 1 --timing-frames 50 --zero-copy --out sim_out/board/v2_final</pre></div>
     <div class="note"><b>Single pipeline</b><p>VERSION <code>0x5EC00200</code>: contract v2, levels E0–E4 only (no E5). That is expected.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s6c" aria-label="done"></span><div>
@@ -484,7 +485,7 @@ python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/s
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s7b" aria-label="done"></span><div>
     <p><b>YUYV.</b> VERSION bit 6 set (<code>0x5EC003C4</code>): the driver converts its test frames to YUYV before timing, so it times what a YUYV camera would deliver (2 bytes per pixel instead of 4).</p>
-    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4yuyv.bit --sizes 320x240 640x480 --frames 10 --timing-frames 50 --zero-copy --out sim_out/board/lanes4yuyv_final</pre></div>
+    <div class="cmd"><span class="who board">Board · ssh</span><pre>python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4yuyv.bit --sizes 320x240 640x480 --frames 1 --timing-frames 50 --zero-copy --out sim_out/board/lanes4yuyv_final</pre></div>
     <div class="expect"><b>Expect</b><p>Bit-exact <b>yes</b>, <code>fabric clock: 125.0 MHz</code>, and a fabric time near 0.434 cycles per pixel (1.07 ms at 640×480 and 125 MHz; 1.33 ms with <code>--fclk 100</code>).</p></div>
   </div></div>
 </section>
@@ -492,7 +493,7 @@ python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/s
 <!-- ============================================================ 8 -->
 <section class="phase" id="p8">
   <div class="ph-head"><div class="ph-num">8</div><h2>A3: the same encoder on the ARM, and the post-quantum key's cost</h2>
-    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A3</span><span class="chip time">40 min</span></div></div>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip task">A3</span><span class="chip time">20 min</span></div></div>
   <p>The fair comparison is the same function on the same chip's processor. The C encoder is first checked bit-exact against the model, then timed on 1 and 2 Cortex-A9 cores next to libjpeg-turbo, libjpeg-turbo + Ascon, and libjpeg-turbo + AES-GCM; the fabric's numbers from phase 6 go next to them.</p>
   <div class="step"><span class="check"><input type="checkbox" id="s8a" aria-label="done"></span><div>
     <div class="cmd"><span class="who board">Board · ssh</span><pre>CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30 --pl-json sim_out/board/lanes4_final/first_contact.json --out sim_out/board/arm_final
@@ -505,7 +506,7 @@ python3 experiments/pq_kex_cost.py --runs 20</pre></div>
 <!-- ============================================================ 9 -->
 <section class="phase" id="p9">
   <div class="ph-head"><div class="ph-num">9</div><h2>A4: power and energy per frame</h2>
-    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip task">A4</span><span class="chip time">60 min</span></div></div>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip task">A4</span><span class="chip time">30 min</span></div></div>
   <p>Wiring: USB supply → meter → micro-USB cable → PROG/UART. Each reading is the meter's average over 30 s while one workload runs in a loop. Photograph the meter for every reading.</p>
   <div class="step"><span class="check"><input type="checkbox" id="s9a" aria-label="done"></span><div>
     <p><b>Idle.</b> Board booted, nothing running, 30 s average → the idle watts.</p>
@@ -527,7 +528,7 @@ CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --si
 <!-- ============================================================ 10 -->
 <section class="phase" id="p10">
   <div class="ph-head"><div class="ph-num">10</div><h2>A5: the live link, with the board as the camera</h2>
-    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A5</span><span class="chip time">30 min</span></div></div>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A5</span><span class="chip time">25 min</span></div></div>
   <p>The board encodes and encrypts, the laptop receives, verifies and shows the dashboard. Both ends first agree on a session key (ML-KEM-768 + X25519, authenticated by the pre-shared key), and the board pads frame sizes so they do not reveal motion.</p>
   <div class="step"><span class="check"><input type="checkbox" id="s10a" aria-label="done"></span><div>
     <p><b>Make a fresh pre-shared key</b> on the laptop. It prints the key and both commands. The public key in <code>configs/default.toml</code> is never for a demo, and the key never goes through the dashboard, a web page or a chat: type it by hand on the board.</p>
@@ -561,14 +562,14 @@ http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</pre></div>
 <!-- ============================================================ 11 -->
 <section class="phase" id="p11">
   <div class="ph-head"><div class="ph-num">11</div><h2>A6: the scripted attack suite on hardware</h2>
-    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A6</span><span class="chip time">90 min</span></div></div>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A6</span><span class="chip time">40 min</span></div></div>
   <p>The same 11 attacks the simulation ran, now with the board as sender. Three repetitions of the attack suite and three of the benign run give the "on hardware" row of the paper.</p>
   <div class="step"><span class="check"><input type="checkbox" id="s11a" aria-label="done"></span><div>
     <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <span data-v="board">BOARD</span> --board-max-mode E5 --pq-kex --set keys.master=&lt;KEY&gt; --out sim_out\runs\board_full_suite_rep1</pre></div>
     <p>It prints the exact board command for its ports (with <code>--pq-kex</code> and your key). Start that on the board, add <code>--set link.pad=runmax</code>, and wait: the laptop runs the attacks 25 s apart.</p>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s11b" aria-label="done"></span><div>
-    <p>Repeat with <code>_rep2</code>, <code>_rep3</code>, then three times with <code>experiments\scenarios\benign.json</code> and <code>--out sim_out\runs\board_benign_rep1</code> … <code>rep3</code>.</p>
+    <p>Then once with <code>experiments\scenarios\benign.json</code> and <code>--out sim_out\runs\board_benign_rep1</code> (2½ min). If you are ahead at the end of the day, add <code>_rep2</code> and <code>_rep3</code> of both (the paper then says 3 runs instead of 1).</p>
     <div class="expect"><b>Expect</b><p>Each run folder ends with a summary: attacks detected, frames rejected, time to E5 and back. The simulation's figure is 11 of 11 detected.</p></div>
     <div class="note"><b>Windows firewall</b><p>Scenario runs use UDP ports 47200–47210 and 47006, not the 47000–47010 of phase 10. Open both ranges once (cmd as administrator; on every Windows laptop that takes part): <code>netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010,47200-47215</code></p></div>
   </div></div>
@@ -588,7 +589,7 @@ http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</pre></div>
 <!-- ============================================================ 12 -->
 <section class="phase" id="p12">
   <div class="ph-head"><div class="ph-num">12</div><h2>Tamper inside the board: bits flipped after the tag</h2>
-    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A6 · hardware</span><span class="chip time">30 min</span></div></div>
+    <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip board">Board</span><span class="chip task">A6 · hardware</span><span class="chip time">25 min</span></div></div>
   <p>Phase 11 changes frames on the network. Here the change happens inside the camera: the tamper image flips one bit of one frame's scan between the encoder and the DMA, i.e. <b>after</b> the Ascon tag is computed. It stands for a fault or an implant anywhere on the path DMA → DDR → ARM → network card. It never touches a marker byte, so the frame still decodes as JPEG and only the tag can reveal the change. The claim to check: <b>every shot costs exactly one rejected frame, and no other frame is rejected.</b></p>
   <div class="tbl"><table>
     <thead><tr><th>Control on the board</th><th>Effect</th></tr></thead>
@@ -615,7 +616,7 @@ http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</pre></div>
     <div class="expect"><b>Expect</b><ul>
       <li>The board prints <code>sender: session …, encoder=…</code> and the script starts its clock at the board's first report. LED0 is on and LED3 toggles once per shot.</li>
       <li>After ~4 minutes <code>hw_tamper.md</code> shows 25 shots, 25 detected, 0 missed, 1 frame rejected per shot, 0 unexplained rejections, and a detection latency in milliseconds.</li>
-      <li>Repeat as <code>hw_tamper_rep2</code> and <code>rep3</code>.</li></ul></div>
+      <li>If you are ahead at the end of the day: repeat as <code>hw_tamper_rep2</code> and <code>rep3</code> (4 min each).</li></ul></div>
     <div class="note"><b>For the video</b><p>After the measured runs, flip SW0 up: every frame is rejected and the dashboard's policy goes to E5. Flip it down again: frames are accepted again. Then press BTN0 a few times.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s12c" aria-label="done"></span><div>
