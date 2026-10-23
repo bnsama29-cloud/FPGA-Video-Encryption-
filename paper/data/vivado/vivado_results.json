@@ -7117,5 +7117,184 @@
     "run": 12
    }
   ]
+ },
+ {
+  "folder": "future_work\\board\\overlay\\lanestamper",
+  "name": "overlay_lanestamper",
+  "util": {
+   "lut": [
+    12811.0,
+    53200.0,
+    24.08
+   ],
+   "ff": [
+    10342.0,
+    106400.0,
+    9.72
+   ],
+   "bram": [
+    54.5,
+    140.0,
+    38.93
+   ],
+   "dsp": [
+    46.0,
+    220.0,
+    20.91
+   ]
+  },
+  "timing": {
+   "wns": 1.021,
+   "tns": 0.0,
+   "whs": 0.012,
+   "met": true
+  },
+  "power": {
+   "total": 1.961,
+   "dynamic": 1.808,
+   "static": 0.153,
+   "confidence": "Low",
+   "internal": "Medium",
+   "internal_detail": "User specified less than 25% of internal nodes"
+  },
+  "power_saif": {},
+  "hier": [
+   [
+    0,
+    "system_wrapper",
+    "(top)",
+    12811,
+    10342,
+    54.5,
+    46
+   ],
+   [
+    1,
+    "(system_wrapper)",
+    "(top)",
+    0,
+    0,
+    0.0,
+    0
+   ],
+   [
+    1,
+    "system_i",
+    "system",
+    12811,
+    10342,
+    54.5,
+    46
+   ],
+   [
+    2,
+    "tamper",
+    "system_tamper_0",
+    52,
+    47,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "axi_mem_intercon",
+    "system_axi_mem_intercon_0",
+    655,
+    781,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "buttons",
+    "system_buttons_0",
+    62,
+    123,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "dma",
+    "system_dma_0",
+    1396,
+    2033,
+    2.5,
+    0
+   ],
+   [
+    2,
+    "ps7_axi_periph",
+    "system_ps7_axi_periph_0",
+    537,
+    676,
+    0.0,
+    0
+   ],
+   [
+    2,
+    "sjpeg",
+    "system_sjpeg_0",
+    10094,
+    6648,
+    52.0,
+    46
+   ]
+  ],
+  "critical": [
+   [
+    1.021,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.098,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.181,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.24,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.24,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.24,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.24,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.248,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.268,
+    "system_i",
+    "system_i"
+   ],
+   [
+    1.268,
+    "system_i",
+    "system_i"
+   ]
+  ],
+  "period": 10.0,
+  "missing": [],
+  "fmax_mhz": 111.4
  }
 ]

@@ -735,6 +735,16 @@ def system_and_lanes(results):
             macro(f"{name}Wns", f"{r['timing']['wns']:+.3f}")
             macro(f"{name}Luts", n(r["util"]["lut"][0]))
             macro(f"{name}Bram", f"{r['util']['bram'][0]:g}")
+    # run 13: the 2-lane system with the hardware tamper injector and the BTN1..3 level buttons (attack demo)
+    r = res.get("overlay_lanestamper")
+    if r and r["timing"].get("wns") is not None and r.get("period"):
+        macro("OverlayTamperMhz", f"{1000 / r['period']:.0f}")
+        macro("OverlayTamperWns", f"{r['timing']['wns']:+.3f}")
+        macro("OverlayTamperLuts", n(r["util"]["lut"][0]))
+        cells = {row[1]: row[3] for row in r.get("hier", [])}
+        for cell, name in (("tamper", "TamperInjLuts"), ("buttons", "TamperBtnLuts")):
+            if cell in cells:
+                macro(name, n(cells[cell]))
     for l, name in ((2, "TwoLanes"), (4, "FourLanes")):
         v = lanes_vivado(l)
         if v:

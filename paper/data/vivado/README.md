@@ -90,3 +90,16 @@ Run in two parts: `--steps xsim ooc lanes ... --periods 6.667 6.0`, stopped afte
   lane FIFO full flag, converter chroma sum); none dominates.
 * The 4-lane PYNQ-Z2 system in the snapshot is still the run-10 build (commit dd13f55, 125 MHz).
 
+
+## Run 13 (23 Oct 2026)
+
+`vivado_results_20261023_1109.zip`, Vivado 2026.1, Samarth's PC, **commit 20e9f91** (RTL unchanged since run 12;
+adds `future_work/board/axil_buttons.v`). Command: `--steps bd_tamper parse --fclk 100 --jobs 2` (31.9 min, PASS).
+Only `overlay_lanestamper` is new (tables of this run alone: `vivado_tables_run13.md`); the other folders in the zip
+are the run-12 copies and are not taken.
+
+* The 2-lane system with the tamper injector (`axis_tamper.v`, between the encoder and the S2MM DMA) and the
+  BTN1..BTN3 reader (`axil_buttons.v`, AXI-Lite at 0x4000_1000): 100 MHz, WNS +1.021 ns, 12,811 LUT, 54.5 BRAM,
+  46 DSP. The injector takes 52 LUT, the button reader 62 LUT; the encoder (`sjpeg`) 10,094 LUT, as in run 12.
+* Bitstream `secure_jpeg_lanes_tamper.bit` sha256 c6a92ab6...3be43b, `.hwh` 26caca9b...5f37d9c76.
+* `run_vivado_day.py parse` did not yet list `overlay/lanestamper`; fixed in the same commit, then re-parsed.
