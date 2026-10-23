@@ -292,6 +292,12 @@ certutil -hashfile future_work\board\overlay\secure_jpeg_lanes4.bit SHA256</pre>
   <div class="ph-head"><div class="ph-num">1</div><h2>Rehearse on the laptop (no board)</h2>
     <div class="ph-meta"><span class="chip laptop">Laptop</span><span class="chip time">10 min</span></div></div>
   <p>The same scripts run against an emulation of each bitstream. If a rehearsal fails, fix it here, where it costs nothing.</p>
+  <div class="cmd"><span class="who laptop">Laptop · cmd, all of phase 1 in one command (~20 min)</span><pre>cd /d E:\FPGA-Video-Encryption-
+git pull
+.venv\Scripts\activate
+set CC=gcc
+py scripts\rehearse_board_day.py</pre></div>
+  <div class="expect"><b>Expect</b><p>PASS for every check (25 on 23 Oct) and <code>Ready for the board</code>. It starts the emulated board itself; no second window. <code>--quick</code> skips the two 5-minute runs and the full test suite; <code>--only 3</code> repeats one step. Logs: <code>sim_out\rehearsal\</code>. The steps below are the same commands by hand.</p></div>
   <div class="step"><span class="check"><input type="checkbox" id="s1a" aria-label="done"></span><div>
     <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
 git pull
