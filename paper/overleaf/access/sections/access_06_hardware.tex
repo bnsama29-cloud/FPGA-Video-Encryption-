@@ -1,0 +1,107 @@
+% =====================================================================================================
+\section{Hardware Architecture}\label{sec:hardware}
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{\input{figures/tikz/arch_pl.tex}}
+\caption{Fabric datapath of the lane encoder \texttt{secure\_jpeg\_lanes\_top} (module names are the RTL files; numbers on arrows are bus widths in bits). The dealer sends MCU row $r$ to lane $r \bmod L$; each lane converts two pixels per clock into one sample per clock, transforms, quantizes and entropy-codes its restart segments with its own keystream; the merger restores raster order and inserts restart markers; the tag unit authenticates the 26-byte prefix and the merged scan; the word packer writes 32-bit words to the DMA. The single-pipeline encoder \texttt{secure\_jpeg\_top} is one lane without dealer and merger, with one keystream per frame.}
+\label{fig:pl}
+\end{figure*}
+
+\subsection{Datapath}\label{sec:datapath}
+Fig.~\ref{fig:pl} shows the encoder. All stages are joined by valid/ready handshakes: data moves on a rising edge where both are high, a sender holds its data while valid is high and ready is low, and valid never depends on ready. Every stage therefore tolerates back-pressure from the DMA without losing or corrupting data, which the testbenches check with random stalls on every interface.
+
+\textit{Colour conversion and line buffers.} \texttt{rgb2ycbcr\_2px} takes two pixels per clock from the 64-bit stream, applies~\eqref{eq:ycc} with three multiply-add trees per pixel (the luma line buffer is split into even and odd banks so that both pixels are written in one clock), averages chroma and writes an MCU row (16 lines) into block-RAM line buffers sized for 2048-pixel lines (1024 with four lanes). It reads the samples back block by block in the order Y0 Y1 Y2 Y3 Cb Cr, one sample per clock. Its buffers hold all block RAM of the encoder.
+
+\textit{Transform and quantizer.} \texttt{dct8x8} computes~\eqref{eq:dct} as two passes of an eight-tap multiply-accumulate with a transpose buffer between them, one sample per clock; the row sums are pipelined over five stages. \texttt{quantiser} implements~\eqref{eq:quant} with one DSP multiplication by the reciprocal table, which the ARM writes through the register map once per session.
+
+\textit{Zig-zag, run-length and DC coding.} \texttt{zigzag\_rle} stores the coefficients of a block in zig-zag order, takes the DC difference with one predictor per component, and emits symbols (is\_dc, run, $s$, $\amp$, EOB, component, frame-last), at most one per clock. Its predictors reset at every restart segment.
+
+\textit{Encryption.} \texttt{selective\_enc} implements~\eqref{eq:selenc} (Section~\ref{sec:circuit}). \texttt{huffman\_enc} maps each symbol to a right-aligned chunk of up to 27 bits (code followed by the field) from the Annex~K tables, and \texttt{bit\_packer} assembles bytes, inserts the 0x00 after every 0xFF, and at the end of a segment pads with 1-bits and marks the last byte.
+
+\textit{Merger, tag and output.} \texttt{segment\_merger} copies segment $h$ byte by byte from its lane's FIFO until the byte marked last, then writes 0xFF, 0xD0 $+ (h \bmod 8)$ unless $h$ is the last segment, and moves to the next lane. \texttt{tag\_unit} absorbs the prefix and every merged byte into an Ascon core; \texttt{scan\_word\_packer} packs bytes into 32-bit little-endian words with TKEEP and TLAST and counts them for the OUT\_BYTES register.
+
+\subsection{Circuit of the encryption stage}\label{sec:circuit}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_selective_enc_bitslice.pdf}
+\caption{Gate-level circuit of bit slice $k$ of \texttt{selective\_enc.v}, generated from the RTL by Yosys and netlistsvg. The OR of the size bits gives $[s \ne 0]$; comparators on the mode and two multiplexers selected by is\_dc form the sign enable $\gamma$ (upper path) and the amplitude enable $\alpha$ (lower path); the two XORs implement~\eqref{eq:slice}. $m_k = [k < s]$ and $m_{k+1}$ are bits of the mask $2^s - 1$; ks0 and ks\_k1 are bits 0 and $k{+}1$ of the keystream window. A test simulates the slice exhaustively and compares it with the golden model.}
+\label{fig:circuit}
+\end{figure}
+Fig.~\ref{fig:circuit} is one bit slice of the stage at gate level, generated from its RTL; the handshake around it is described by the equations below. The control part decodes $\gamma = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 2 : \text{mode} \ge 1)$ and $\alpha = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 4 : \text{mode} \ge 3)$; mode 5 selects the same fields as mode 4 because all comparisons are $\ge$. The data part is eleven identical bit slices,
+\begin{equation}
+\amp'_k = \amp_k \xor (\gamma z_0 \wedge m_k) \xor (\alpha z_{k+1} \wedge m_{k+1}), \quad m = 2^s - 1,
+\label{eq:slice}
+\end{equation}
+one XOR gate deep after the masks, so the stage closes timing with room to spare. The handshake accepts a symbol when $i_{\mathrm{ready}} = (\neg o_{\mathrm{valid}} \vee o_{\mathrm{ready}}) \wedge (k_{\mathrm{avail}} \ge n)$ and signals the keystream generator to advance by $n$ bits.
+
+\textit{Keystream window.} \texttt{keystream\_gen} holds two 128-bit slots, the block being consumed ($u$) and the next one ($u'$), and a pointer $p \in [0, 127]$ to the next unused bit. It presents the 16-bit window $(u' \cat u) \gg p$ and its fill level $k_{\mathrm{avail}} = \min(16, 128 - p + 128\,[u' \text{ valid}])$; taking $n$ bits sets $p \leftarrow p + n$, and when $p$ passes 128 the next slot moves in. A new block is requested whenever fewer than two are held or in flight, so the core runs ahead of the consumer.
+
+\begin{proposition}[The cipher never stalls the encoder]\label{prop:supply}
+Once the first keystream block of a segment is available, the encryption stage never waits for keystream bits.
+\end{proposition}
+\begin{IEEEproof}
+The stage accepts at most one symbol per clock and takes $n \le 11$ bits per symbol~\eqref{eq:need}, so the demand never exceeds 11 bits per cycle. The core produces 128 bits per data block in nine cycles (one cycle to absorb, eight rounds of $p^8$), i.e.\ $128/9 > 14$ bits per cycle, and it keeps up to 256 bits buffered, more than the 16 that the window exposes. Supply exceeds the worst-case demand, so the window, once filled, can never drop below the 11 bits a symbol needs.
+\end{IEEEproof}
+The first block costs an initialization ($p^{12}$, 12 cycles) and one data block (nine cycles). At the start of a frame this overlaps with filling the first MCU row (16 lines), so it is invisible; RTL simulation confirms that the cycle counts of E0--E4 differ by at most \MaxExtraCycles{} cycles per frame. In the lane encoder every segment restarts its keystream, and in E5 every MCU does; a segment of one MCU takes at least 384 cycles, so a 21-cycle restart overlapped with the previous segment costs a few per cent of throughput, which we measure in Section~\ref{sec:hwresults}.
+
+\subsection{Ascon core}\label{sec:asconcore}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_ascon_sbox_slice.pdf}
+\caption{One of the 64 bit slices of the Ascon round of \texttt{ascon\_round.v} ($p_C$ and $p_S$), generated from the RTL by Yosys and netlistsvg: twelve XOR (one for the round-constant bit rc\_j, zero for $j \ge 8$), five AND and six NOT gates. The linear layer $p_L$ acts on whole 64-bit words (two rotations and two XORs per bit). A test checks that 64 such slices followed by $p_L$ reproduce a round of the golden model.}
+\label{fig:asconslice}
+\end{figure}
+\texttt{ascon\_aead128\_core} computes one round per clock cycle: a 320-bit state register, a 4-bit round counter $r$ and the combinational round of Fig.~\ref{fig:asconslice}, with the round constant $c = \bar r \cat r$ (eight bits, $\bar r$ the complement of $r$), which equals $16(15 - i) + i$ for round $i$. The $p^{12}$ permutation counts $r$ from 0 to 11, the $p^8$ permutation from 4 to 11. Counting the operators of \texttt{ascon\_round.v}, one bit slice of $p_S$ has 22 gates (eleven XOR, five AND, six NOT), so $p_S$ is $64 \times 22 = 1408$ gates, $p_L$ adds $2 \times 320$ two-input XORs and $p_C$ eight. A block interface accepts associated data and message blocks with byte masks and the padding rule of the standard; the same core serves as keystream generator (message blocks of zeros, never finalized), as MAC (associated data only, empty message) and as key-derivation unit. The design instantiates one core per lane for keystreams, one for the segment key and one for the tag.
+
+\textit{Tag unit.} \texttt{tag\_unit} latches the 26-byte prefix at frame start, absorbs it, then gathers scan bytes into 128-bit blocks. A block of 16 bytes arrives in at least 16 cycles at one byte per clock, while absorbing it takes nine, so the tag unit never slows the merger; the final partial block, the empty message and the $p^{12}$ finalization add a fixed number of cycles after the last byte.
+
+\subsection{Parallel lanes}\label{sec:lanes}
+One pipeline consumes one sample per clock; with 1.5 samples per pixel it needs at least 1.5 cycles per pixel. Restart segments are independent (DC predictors reset, byte alignment, own keystream~\eqref{eq:zs}), so $L$ copies of the pipeline can code segments simultaneously: the dealer sends MCU row $r$ to lane $r \bmod L$ and the merger reads segment $h$ from lane $h \bmod L$ (in E5, segment $h$ belongs to MCU row $\lfloor h/c \rfloor$ with $c = W/16$ MCUs per row, so it comes from lane $\lfloor h/c \rfloor \bmod L$, tracked with row and column counters instead of a divider). The 64-bit input bus brings two pixels per clock. The cost per pixel is therefore bounded below by
+\begin{equation}
+c_L \ge \max\Bigl(\frac{1.5}{L}, \frac{1}{2}\Bigr), \qquad \Theta_L = \frac{f_{\mathrm{clk}}}{c_L},
+\label{eq:lanes}
+\end{equation}
+i.e.\ \BoundOneCpp, \BoundTwoCpp{} and \BoundFourCpp{} cycles per pixel, or at most \BoundOneMpix, \BoundTwoMpix{} and \BoundFourMpix\,Mpixel/s at 100\,MHz for $L = 1, 2, 4$; beyond four lanes the input bus, not the encoder, is the limit. Two costs come on top. Before the first MCU row is complete no block can be transformed, which for a single pipeline gives the measured law
+\begin{equation}
+c_1(r) = 1.5 + \frac{A}{r}, \qquad A = \FillA,
+\label{eq:fill}
+\end{equation}
+for a frame of $r$ MCU rows; and each segment adds a keystream restart and a byte flush. The bytes do not depend on $L$, because segments are merged in raster order and each one depends only on its own pixels and keystream. The second term of~\eqref{eq:lanes} is the 64-bit input carrying two RGB pixels. A camera's signal processor delivers YCbCr, usually 4:2:2 as YUYV, so a lane encoder can also be built for that input: \texttt{yuyv\_4px} takes four pixels per beat, needs no multipliers, writes the luminance into four memory banks and forms 4:2:0 chroma as the rounded mean $(a+b+1)\gg 1$ of two 4:2:2 lines; the bound becomes $c_L \ge \max(1.5/L, 1/4)$, i.e.\ \BoundYuyvFourCpp{} cycles per pixel for four lanes, and the DMA reads two bytes per pixel instead of four. A second option halves the converter memory: with one line-buffer set per lane, a lane takes its next MCU row only after it has read the previous one out, which costs little when $L = 4$, because a lane receives every fourth row and reads one out in about the time the other three lanes take theirs in.
+
+\subsection{Register map and driver}\label{sec:regs}
+\begin{table}[t]
+\caption{AXI4-Lite register map (32-bit; \texttt{axil\_regs.v}).}
+\label{tab:regs}
+\centering\small\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lll}
+\toprule
+Offset & Name & Function \\
+\midrule
+0x00 & CTRL & bit 0 START (self-clearing), bits 3:1 level E0--E5 \\
+0x04 & STATUS & DONE, BUSY, TAG\_VALID \\
+0x08 & VERSION & 0x5EC0\_0200 (single pipeline); 0x5EC0\_03LL ($L$ lanes, bit 7 = E5, bit 6 = YUYV) \\
+0x10, 0x14 & WIDTH, HEIGHT & pixels (multiples of 16) \\
+0x18, 0x50 & FRAME\_CTR (lo, hi) & 63-bit frame counter $t$ \\
+0x1C, 0x4C & SESSION\_ID (lo, hi) & 64-bit session identifier $\sigma$ \\
+0x20--0x2C & KEY0--3 & video key $K_e$ (write-only) \\
+0x30 & OUT\_BYTES & scan bytes of the last frame \\
+0x34--0x40 & TAG0--3 & tag $T_t$ \\
+0x44, 0x48 & QT\_ADDR, QT\_DATA & 17-bit reciprocals $R(u, v)$ \\
+0x54 & CYCLES & clocks from START to DONE \\
+0x58, 0x5C & IN\_WAIT, OUT\_STALL & clocks waiting for pixels / for the output DMA \\
+\bottomrule
+\end{tabular}
+\end{table}
+Table~\ref{tab:regs} gives the register map. Once per session the driver writes the key, the session identifier and the 128 reciprocals; per frame it writes the size and the counter, sets CTRL to $1 + 2 \cdot \text{level}$, starts the DMA receive and send channels, waits for DONE, and reads OUT\_BYTES and the tag. The VERSION register tells the driver which contract the bitstream implements: bit 7 says that the fabric codes E5 segments, and only then does the driver allow level E5; bit 6 says that it takes YUYV input. The three counters let the board report the fabric's own time per frame, apart from the ARM and the DMA.
+
+\subsection{PYNQ-Z2 system}\label{sec:zynq}
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{\input{figures/tikz/zynq_bd.tex}}
+\caption{Block design of the PYNQ-Z2 system as built by our script. The processing system clocks the fabric at 100\,MHz, or 125\,MHz for four lanes (FCLK\_CLK0), controls the DMA and the encoder over M\_AXI\_GP0 and an AXI interconnect, and gives the DMA access to DDR over the 64-bit high-performance port S\_AXI\_HP0. The DMA streams pixels into the encoder (64 bits, two pixels per beat) and scan words out of it (32 bits). Interrupts of the encoder and both DMA channels are concatenated into IRQ\_F2P; the reset block drives the encoder's active-high synchronous reset.}
+\label{fig:zynq}
+\end{figure*}
+Fig.~\ref{fig:zynq} shows the system around the encoder. A script builds it in Vivado from the RTL (the encoder enters as a module reference, without packaging), runs synthesis, place and route and bitstream generation, and exports the hardware handoff file that the PYNQ framework reads to find the IP blocks by name. The DMA runs in simple (register) mode; the driver allocates physically contiguous buffers, writes a frame into the input buffer (directly, without an intermediate copy, in the final driver), and starts both channels. Everything in the system runs on one clock, which avoids clock-domain crossings.
+
+\subsection{Timing closure}\label{sec:timing}
+Four lessons from the Vivado runs are worth recording. The first implementation met timing in simulation but reached only about 47\,MHz after routing, because the DCT summed a full row in one clock; splitting the sums over five pipeline stages with a stall-able handshake restored 100\,MHz without changing an output bit. The second appeared only in the complete Zynq system: the DMA's output register fed the colour conversion, clamp and line-buffer write in one clock. Registering the pixel, the multiply-add sums and the clamped result moved the writes three clocks later in the same order. The third came with the lanes: the zig-zag stage, which formed the zig-zag address, read the block buffer, took the DC difference and derived the size category and field in one clock, had been the critical path of the single pipeline with tens of picoseconds of slack, and missed 100\,MHz in the two-lane system. Storing coefficients in zig-zag order and splitting the coding into two handshaked stages closed timing for every configuration and raised the encoder's slack to $+$\TopWns\,ns. The fourth was the clock. At 125\,MHz the constant multiply-add of the colour conversion was the worst path (twelve logic levels of carry chains); in the lane encoder the same path appeared between lanes, because synthesis shares the identical conversion of the pixel stream that both lanes receive. Registering the nine products before the sums halved it, and both the single pipeline and the two-lane encoder now meet 125\,MHz out of context (WNS \TopWnsAtOneTwoFive{} and \LanesTwoWnsAtOneTwoFive\,ns). The new limit is control, not arithmetic: the \TopLimitAtOneTwoFive{} and a ready signal that ran from the packer back through the Huffman coder and the encryption stage into the keystream pointer, nine logic levels in one clock. Skid buffers (two-entry register slices) now cut that chain, the keystream slots are used as a ring instead of being copied, and the zig-zag stage reads a non-zero flag instead of a coefficient; the bytes are unchanged. With these slices the single pipeline met 150\,MHz, and the next limit was a loop in which the encryption stage's stall decision fed the keystream pointer's adder and the next window size (eight to eleven logic levels); it was the worst path at 166.7\,MHz and the only failing one of the complete four-lane PYNQ-Z2 system at 142.9\,MHz (WNS \OverlayLanesFourWnsAtOneFourTwo\,ns; that system was built for 125\,MHz, WNS \OverlayLanesFourWnsAtOneTwoFive\,ns). With the loop removed, the final four-lane system still misses 142.9\,MHz (WNS \OverlayLanesFourFinalWnsAtOneFourTwo\,ns), now on the read of the quantiser's reciprocal table, a block RAM without an output register feeding a multiplier directly; the board images are therefore built for 125\,MHz (WNS \OverlayLanesFourFinalWnsAtOneTwoFive\,ns), and registering that output is the next step. The keystream generator now prepares both outcomes from registers and lets the stall decision only choose between them, and the multiply that turns the frame size into the number of restart segments got a second register stage; both changes are bit- and cycle-exact. With them one, two and four lanes meet 150\,MHz out of context (WNS \TopWnsAtOneFifty, \LanesTwoWnsAtOneFifty{} and \LanesFourWnsAtOneFifty\,ns), and one and two lanes miss 166.7\,MHz by only \TopWnsAtOneSixSix{} and \LanesTwoWnsAtOneSixSix\,ns (four lanes by \LanesFourWnsAtOneSixSix\,ns). No single path is left to fix: the near-critical paths are spread over the block-RAM read into the transform, the Huffman code length into the packer and each lane FIFO's full flag. Vivado crashed in its physical optimisation of the four-lane encoder at 150 and 166.7\,MHz with the most aggressive settings; the runs above use a flow without that step where it crashed. In all four cases the golden model was the referee: a fix was accepted only when every RTL test still matched it bit for bit.

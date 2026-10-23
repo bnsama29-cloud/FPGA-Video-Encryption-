@@ -1,0 +1,200 @@
+% =====================================================================================================
+\section{Cryptographic Design}\label{sec:design}
+\begin{figure*}[t]
+\centering
+\resizebox{0.95\textwidth}{!}{\input{figures/tikz/arch_system.tex}}
+\caption{System architecture. The programmable logic (PL) encodes, encrypts and tags every frame; the ARM core (PS) moves pixels and scan through DDR with an AXI DMA, adds the JPEG headers and the APP11 segment with the tag, sends E5 segments in the keyed order, and runs the key ratchet and the adaptive policy. The receiver undoes the order, verifies the tag, decrypts, and reports back over an authenticated feedback channel. Shaded red: cryptographic operations.}
+\label{fig:system}
+\end{figure*}
+
+\subsection{Overview}
+Fig.~\ref{fig:system} shows the system. The ARM core of the Zynq places a frame in DDR, writes the per-frame registers (level, counter, size) and starts the DMA; the fabric reads the pixels, codes them into a JPEG scan in which the selected coefficient fields are encrypted, computes the frame tag over the metadata and the scan, and writes the scan back. The ARM core reads the tag, wraps the scan in standard JPEG headers and an application segment (APP11) that carries the metadata and the tag, reorders the segments if the level is E5, and sends the frame in UDP datagrams. All per-byte cryptographic work happens in the fabric; the ARM touches each output byte once.
+
+\subsection{Keys, nonces and their uniqueness}\label{sec:nonce}
+\begin{figure*}[t]
+\centering
+\resizebox{0.78\textwidth}{!}{\input{figures/tikz/keys.tex}}
+\caption{Key and nonce hierarchy. One master key, the session key of the authenticated key exchange, yields the feedback key and the epoch-0 video key; a one-way ratchet yields every later epoch. Per frame, the video key derives the segment key (keystream) and the E5 permutation key and authenticates the frame.}
+\label{fig:keys}
+\end{figure*}
+$K_{\mathrm{m}}$ is the session key that the ARM cores of camera and viewer agree on at session start with a hybrid ML-KEM-768 + X25519 exchange authenticated by the pre-shared key (Section~\ref{sec:discussion}); without that exchange it is the pre-shared key itself. All keys derive from $K_{\mathrm{m}}$ with one primitive, the Ascon tag used as a pseudorandom function (Fig.~\ref{fig:keys}):
+\begin{equation}
+\KDF(K, \ell, c) = \MAC_K\bigl(N(0, c, 1), \ell\bigr),
+\label{eq:kdf}
+\end{equation}
+the tag of an empty message with label $\ell$ as associated data, under a nonce with session identifier $0$, which no frame carries. The feedback key is $\Kfb = \KDF(K_{\mathrm{m}}, \text{feedback}, 0)$; the video key of epoch $e$ follows the ratchet
+\begin{equation}
+K_0 = \KDF(K_{\mathrm{m}}, \text{video}, 0), \qquad K_{e+1} = \KDF(K_e, \text{ratchet}, e+1),
+\label{eq:ratchet}
+\end{equation}
+and each end erases $K_e$ once it has moved on, so a key captured in epoch $e$ does not decrypt epochs before $e$ (goal G5). Rekeying needs no handshake: the epoch is part of the authenticated session identifier of every frame, so the receiver ratchets forward when a frame from a later epoch verifies. Reusing the verified Ascon core for key derivation avoids a second primitive in hardware; the extendable-output function of SP~800-232 is the textbook alternative.
+
+The nonce is the 128-bit string
+\begin{equation}
+N(\sigma, t, b) = \underbrace{\sigma}_{x_3,\ 64\text{ bits}} \cat \underbrace{t \cat b}_{x_4,\ 63 + 1\text{ bits}},
+\qquad \sigma = \beta \cat e,
+\label{eq:nonce}
+\end{equation}
+with $\beta$ a 48-bit random base drawn at every boot ($\beta \ne 0$), $e$ the 16-bit epoch, $t$ the frame counter and $b$ the purpose bit (0 for keystream derivation, 1 for the tag). The words map directly onto the Ascon state words $x_3$ and $x_4$.
+
+\begin{proposition}[Nonce uniqueness]\label{prop:nonce}
+Within one boot, no key is used twice with the same nonce, provided the sender never writes the same frame counter twice in an epoch.
+\end{proposition}
+\begin{IEEEproof}
+Under a video key $K_e$ the nonces used are $N(\sigma, t, 0)$ for the segment key, $N(\sigma, t, 1)$ for the tag, $N(0, 0, 0)$ for the permutation key and $N(0, c, 1)$ for derivations; $\sigma \ne 0$ because $\beta \ne 0$, $b$ separates the first two, and $t$ is fresh per frame. Under a segment key $\Kseg$, which is a pseudorandom function of $(K_e, \sigma, t)$ and therefore distinct for every frame, the nonces $N(h, t, 0)$ differ in the segment index $h$. Under $K_\pi$ the nonces $N(\sigma, t, 0)$ differ in $t$. A rekey changes both $K_e$ and $e$, hence $\sigma$.
+\end{IEEEproof}
+Across boots, two runs that start from the same epoch use the same key and are separated only by $\beta$. For $B$ boots under one master key the probability that any two share $\beta$ is at most
+\begin{equation}
+p_{\mathrm{coll}} \le \binom{B}{2} 2^{-48} \approx \BootCollide \quad \text{for } B = \BootCount,
+\label{eq:boot}
+\end{equation}
+about one boot a day for 27 years. The bound matters only when the pre-shared key is used directly: with the key exchange every session has a fresh $K_{\mathrm{m}}$, so two boots never share a key. A deployment without it that cannot accept the bound persists the counter or the epoch across reboots instead. The 63-bit counter cannot wrap in practice ($2^{63}$ frames at 30 frames/s last about $10^{10}$ years).
+
+\subsection{Selective encryption inside the entropy coder}\label{sec:selenc}
+Every level carries the per-frame tag. Table~\ref{tab:levels} lists which fields each level encrypts. E0 encrypts nothing (authentication only), E1 the AC sign bits, E2 also the DC-difference signs (the default minimum), E3 also the AC amplitude bits, E4 also the DC amplitude bits, and E5 encrypts the fields of E4 and permutes the macroblocks (Section~\ref{sec:e5}).
+
+\begin{table}[t]
+\caption{Protection levels: encrypted fields of every non-zero coefficient (sign: the whole field is inverted; amplitude: its $s{-}1$ low bits are XORed) and block positions.}
+\label{tab:levels}
+\centering\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Level & AC sign & DC sign & AC ampl. & DC ampl. & Positions \\
+\midrule
+E0 & & & & & \\
+E1 & \checkmark & & & & \\
+E2 & \checkmark & \checkmark & & & \\
+E3 & \checkmark & \checkmark & \checkmark & & \\
+E4 & \checkmark & \checkmark & \checkmark & \checkmark & \\
+E5 & \checkmark & \checkmark & \checkmark & \checkmark & keyed per frame \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For a selected symbol with size category $s$ and keystream bits $z_0 z_1 z_2 \ldots$ (taken in order from the segment keystream), the encryption stage computes
+\begin{equation}
+\amp' = \amp \xor \underbrace{\gamma z_0 (2^s - 1)}_{\text{sign}} \xor \underbrace{\alpha \textstyle\sum_{k=1}^{s-1} z_k\, 2^{k-1}}_{\text{amplitude}},
+\label{eq:selenc}
+\end{equation}
+where $\gamma, \alpha \in \{0, 1\}$ say whether the level selects the sign and the amplitude of this coefficient (DC or AC). It consumes
+\begin{equation}
+n(s) = \gamma + \alpha (s - 1) \le 11
+\label{eq:need}
+\end{equation}
+keystream bits; decryption is the same XOR.
+
+\begin{lemma}[Format preservation]\label{lem:format}
+For every $v \ne 0$ and every keystream, \eqref{eq:selenc} maps $\amp(v)$ to $\amp(v')$ for some $v'$ with $s(v') = s(v)$. Hence the Huffman symbol (run, $s$), the code length and the length of the scan are unchanged, and the encrypted scan is a valid baseline JPEG scan.
+\end{lemma}
+\begin{IEEEproof}
+Let $m = 2^s - 1$. For $v > 0$, $\amp(v) = v < 2^s$, so $\amp(v) \xor m = m - v = \amp(-v)$ by~\eqref{eq:amp}; the case $v < 0$ is symmetric. The sign term therefore maps $\amp(v)$ to $\amp(-v)$, and $|{-v}| = |v|$. The amplitude term changes only bits $0 \ldots s-2$ of the field, never bit $s-1$. By~\eqref{eq:amp} and~\eqref{eq:size}, bit $s-1$ of $\amp(v)$ is 1 exactly when $v > 0$, and the low $s-1$ bits encode $|v| - 2^{s-1}$ (positive $v$) or its complement (negative $v$); any value of them gives a magnitude in $[2^{s-1}, 2^s - 1]$, i.e.\ size category $s$, with the same sign. Neither term touches the run or the Huffman code.
+\end{IEEEproof}
+Two consequences matter. The scan has exactly the length of the unencrypted one, so encryption needs no buffer and adds no bandwidth; and the sign term is an exact negation, not a bit flip of the field's top bit, which would change the magnitude (an earlier version of our model did that, see Section~\ref{sec:verification}). The lemma also shows what cannot be hidden: the run lengths and size categories, i.e.\ which coefficients are non-zero and roughly how large, stay public at every level E0--E4.
+
+\subsection{Segment keystreams and the frame tag}\label{sec:tag}
+Every frame is coded as restart segments (one per MCU row, or one per MCU in E5). Each segment $h$ of frame $t$ has its own keystream under a per-frame segment key:
+\begin{align}
+\Kseg &= \MAC_{K_e}\bigl(N(\sigma, t, 0), \text{``lanes''}\bigr), \label{eq:kseg}\\
+Z_h &= \Enc_{\Kseg}\bigl(N(h, t, 0), 0^{\ell}\bigr), \label{eq:zs}
+\end{align}
+taken least significant bit first. Seeking to a segment therefore costs one initialization and nothing else, which is what lets lanes encrypt independently (Section~\ref{sec:lanes}). The tag authenticates a 26-byte prefix and every byte of the scan, including restart markers:
+\begin{equation}
+T_t = \MAC_{K_e}\bigl(N(\sigma, t, 1),\ P_t \cat \text{scan}_t\bigr),
+\label{eq:tag}
+\end{equation}
+\begin{equation*}
+P_t = \texttt{SJV1} \cat \text{version} \cat \text{level} \cat \sigma \cat t \cat W \cat H.
+\end{equation*}
+The ARM core places $P_t$ (without $W$, $H$, which are in the frame header) and $T_t$ in a 38-byte APP11 segment that ordinary viewers skip. Binding the level into the tag matters: an earlier version authenticated only the scan, and a frame could be downgraded from E2 to E1 undetected, so the receiver showed a wrongly decrypted frame as authentic. The receiver accepts a frame only if~\eqref{eq:tag} verifies and the counter passes the replay window (Algorithm~\ref{alg:replay}); a single flipped bit anywhere in the prefix or scan is rejected except with probability $2^{-128}$ per forgery attempt.
+
+\subsection{E5: a keyed permutation of macroblocks in hardware form}\label{sec:e5}
+Lemma~\ref{lem:format} shows that field encryption cannot hide where the non-zero coefficients are; the number of non-zero coefficients per block alone rebuilds the contours (the non-zero counting attack, NZCA~\cite{hirose2024}). E5 therefore also hides \emph{where} each macroblock belongs. Permuting macroblocks before entropy coding would need a frame buffer in the fabric. Restart segments make a cheaper split possible (Fig.~\ref{fig:e5}):
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{\input{figures/tikz/e5_flow.tex}}
+\caption{E5 in hardware form. The fabric codes one restart segment per MCU in raster order, each with its own keystream, and tags them in that order; the ARM sends segment $\pi_t(p)$ at wire position $p$; the receiver restores raster order before checking the tag. Black bars: restart markers.}
+\label{fig:e5}
+\end{figure}
+
+\begin{enumerate}
+\item the fabric codes every MCU $h = r \cdot (W/16) + c$ as its own restart segment, encrypted like E4 with keystream $Z_h$ of~\eqref{eq:zs}, and authenticates the segments in raster order with~\eqref{eq:tag} (level byte 5);
+\item the ARM splits the scan at the restart markers and sends segment $\pi_t(p)$ at position $p$, renumbering the markers RST$_{p \bmod 8}$ in output order; headers, APP11 and tag are unchanged, and DRI = 1;
+\item the receiver splits the received scan, restores raster order with $\pi_t^{-1}$, verifies $T_t$ and only then decrypts.
+\end{enumerate}
+The permutation is drawn from its own key, $K_\pi = \MAC_{K_e}(N(0,0,0), \text{``E5 MCU shuffle''})$, with the Fisher--Yates shuffle (Algorithm~\ref{alg:fy}) on the keystream of $(K_\pi, N(\sigma, t, 0))$; uniform indices come from rejection sampling.
+
+\begin{algorithm}[t]
+\caption{E5 order $\pi_t$ (ARM core and receiver)}
+\label{alg:fy}
+\begin{algorithmic}[1]
+\Require $K_\pi$, $\sigma$, $t$, number of segments $M$
+\State $Z \gets$ keystream of $(K_\pi, N(\sigma, t, 0))$; $\pi \gets (0, 1, \ldots, M-1)$
+\For{$i = M-1$ \textbf{down to} $1$}
+  \State $b \gets \lfloor \log_2 i \rfloor + 1$ \Comment{bits to express $i$}
+  \Repeat \ $j \gets$ next $b$ bits of $Z$ \Until{$j \le i$}
+  \State swap $\pi(i)$ and $\pi(j)$
+\EndFor
+\State \Return $\pi$ \Comment{wire position $p$ carries segment $\pi(p)$}
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proposition}[Uniform per-frame permutation]\label{prop:perm}
+If the keystream bits are uniform and independent, Algorithm~\ref{alg:fy} returns each of the $M!$ permutations with probability $1/M!$, and it consumes on average
+\begin{equation}
+\bar n_\pi = \sum_{i=1}^{M-1} b_i \frac{2^{b_i}}{i+1} < 2 \sum_{i=1}^{M-1} b_i
+\label{eq:fybits}
+\end{equation}
+keystream bits, $b_i = \lfloor \log_2 i \rfloor + 1$.
+\end{proposition}
+\begin{IEEEproof}
+A $b_i$-bit draw is uniform on $\{0, \ldots, 2^{b_i} - 1\}$; conditioned on $j \le i$ it is uniform on $\{0, \ldots, i\}$, and the number of draws is geometric with success probability $(i+1)/2^{b_i} > 1/2$. Fisher--Yates with uniform $j \in \{0, \ldots, i\}$ at every step produces every permutation exactly once among the $\prod_{i=1}^{M-1}(i+1) = M!$ equally likely choice sequences.
+\end{IEEEproof}
+At 320$\times$240 ($M = \McuQVGA$) the permutation carries $\log_2 M! = \PermBitsQVGA$ bits of entropy and costs on average \FyBitsQVGA{} keystream bits (\FyRatioQVGA{} times the entropy); at 640$\times$480 ($M = \McuVGA$) $\log_2 M! = \PermBitsVGA$ bits and \FyBitsVGA{} keystream bits. The permutation changes with every frame because $t$ enters the nonce, so knowing the order of one frame tells nothing about the next; schemes with a fixed permutation fail exactly here (Section~\ref{sec:bench}).
+
+\textit{Authentication of the order.} Because the tag covers the raster-order scan and the receiver computes $\pi_t^{-1}$ from the authenticated $(\sigma, t)$, moving, swapping, dropping or duplicating a segment on the wire changes the associated data of~\eqref{eq:tag} and the frame is rejected. Sending the frame unshuffled is also rejected, since the receiver always applies $\pi_t^{-1}$.
+
+\textit{Equivalence.} An eavesdropper sees the same multiset of encrypted macroblocks at uniformly random positions as with a frame-level shuffle; the only difference is that each segment carries its own keystream instead of a slice of one frame keystream, which is invisible without the key. In our measurements the eavesdropper's pictures of both forms are pixel-identical (Section~\ref{sec:bench}).
+
+\textit{Cost.} Each segment adds a two-byte marker, on average half a byte of padding, and loses DC prediction across macroblocks, so the overhead over E4 is roughly
+\begin{equation}
+\Delta B \approx M\bigl(2 + \tfrac12\bigr) + \Delta_{\mathrm{DC}} \ \text{bytes per frame},
+\label{eq:e5cost}
+\end{equation}
+where $\Delta_{\mathrm{DC}}$ is the extra length of DC differences coded from zero. Measured, E5 costs \RiOverheadOneMin--\RiOverheadOneMax\,\% over E4 at 320$\times$240 (Section~\ref{sec:restart}); the fabric needs no frame buffer and no extra cipher core, and the ARM touches each output byte once.
+
+\subsection{Authenticated feedback and the replay window}\label{sec:feedback}
+The receiver returns a heartbeat every 0.5\,s and rate-limited alerts (tag failures, replays, malformed or stale frames, loss statistics). Feedback messages are Ascon-AEAD128 encrypted under $\Kfb$ with their own session and counter, so the attacker can neither read nor forge them, and they pass their own replay window. Both directions use the sliding window of SRTP~\cite{rfc3711} with 64 entries (Algorithm~\ref{alg:replay}). A frame older than the window, or seen before, is discarded; frames that arrive late but inside the window are accepted, which tolerates reordering on UDP. Frames older than the last frame shown are discarded as late without counting as replays, so that benign reordering does not raise alarms.
+
+\begin{algorithm}[t]
+\caption{Replay window (64 entries, after RFC~3711)}
+\label{alg:replay}
+\begin{algorithmic}[1]
+\Require counter $t$; state: highest counter $\tau$, bitmap $w$
+\If{$t > \tau$}
+  \State $w \gets ((w \ll (t - \tau)) \lor 1) \bmod 2^{64}$; $\tau \gets t$; \Return accept
+\EndIf
+\State $o \gets \tau - t$
+\If{$o \ge 64$ \textbf{or} bit $o$ of $w$ is set} \Return reject \EndIf
+\State set bit $o$ of $w$; \Return accept
+\end{algorithmic}
+\end{algorithm}
+
+\textit{Dead-man rule.} If no valid heartbeat arrives for 3\,s, the sender assumes that the feedback path is attacked: it switches to the highest level and rekeys (goal G4). Rekeys are rate-limited to one per 10\,s.
+
+\subsection{Adaptive protection policies}\label{sec:policy}
+The sender's ARM core collects evidence in one-second windows: tag failures $f_{\mathrm{int}}$, replays $f_{\mathrm{rep}}$, forged or replayed feedback $f_{\mathrm{fb}}$, junk floods $f_{\mathrm{fl}}$, the dead-man state $f_{\mathrm{dm}}$ and a loss level $f_{\mathrm{loss}} \in \{0, 1, 2\}$ (frame loss below 5\,\%, between 5 and 90\,\%, above 90\,\%) judged over three windows. It condenses them into a threat score
+\begin{equation}
+\theta = \min\bigl(1,\ f_{\mathrm{int}} + f_{\mathrm{rep}} + 0.8 f_{\mathrm{fb}} + 0.6 f_{\mathrm{fl}} + f_{\mathrm{dm}} + 0.25 f_{\mathrm{loss}}\bigr),
+\label{eq:threat}
+\end{equation}
+shown on the dashboard and used by the bandit. Loss level 1 is reported as a degraded network, because more encryption cannot help against loss; only near-total suppression (level 2) counts as jamming. Two policies map evidence to a level, and neither goes below the configured minimum.
+
+\textit{Threshold rule.} Any tag failure, replay, feedback attack or flood in a window raises the highest level and holds it for 8\,s after the evidence ends; suppression (loss level 2) does the same for 4\,s. Both policies share a safety layer: the dead-man rule, and a rekey when the tag failures of one window reach a configured burst size.
+
+\textit{Contextual bandit.} The context $c$ is a small discrete vector of the evidence flags and whether an attack was seen in the last 30\,s; the action is a level $a$. After each window the bandit observes the loss
+\begin{equation}
+\ell(a) = \theta' \lambda(a) + w_c\, \kappa(a) + w_s [a \ne a_{\mathrm{prev}}],
+\label{eq:loss}
+\end{equation}
+where $\theta'$ is the threat score of the next window, $\lambda(a)$ the measured edge correlation of level $a$, $\kappa(a)$ its fraction of encrypted bits, $w_c = 0.5$ and $w_s = 0.02$. It updates $Q(c, a) \leftarrow Q(c, a) + \eta \bigl(-\ell(a) - Q(c, a)\bigr)$ with $\eta = \max(0.05, 1/N(c,a))$ (sample average, then a floor), chooses an untried action first (optimistic initialization), and otherwise explores with probability $\varepsilon_c = 0.1/\sqrt{1 + n_c}$ and exploits $\arg\max_a Q(c, a)$~\cite{sutton2018}. Its table persists across episodes, so what it learned about an attack is used the next time the same context appears.

@@ -23,8 +23,10 @@ make schematics     # gate-level figures from Verilog: figures/netlist/*.v -> Yo
 ```
 
 * **Requirements:** a TeX installation with `IEEEtran` (TeX Live: `texlive-publishers`), `booktabs`,
-  `tikz`, `circuitikz`, `algorithmicx` (`texlive-science`, `texlive-pictures`). Overleaf works: upload the
-  whole `paper/` folder after `make tables`, set the main document to `conference.tex` or `access.tex`.
+  `tikz`, `circuitikz`, `algorithmicx` (`texlive-science`, `texlive-pictures`).
+* **Overleaf:** `python paper/make_overleaf.py` writes `overleaf/conference/` and `overleaf/access/` (only the
+  files each paper needs) and `overleaf/conference.zip`, `overleaf/access.zip`. On Overleaf: New Project →
+  Upload Project → the zip; compiler pdfLaTeX. Rerun the script after every change; never edit the copies.
 * **Page limit.** Check `pdfinfo conference.pdf` after every edit of `conference.tex`: it must stay at 6.
   To make room, cut sentences or move detail to `access.tex`; never shrink fonts or margins.
 
