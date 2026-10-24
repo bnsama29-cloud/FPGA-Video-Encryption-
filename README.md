@@ -95,6 +95,30 @@ python -m link.run_all          # whole link + dashboard -> http://localhost:800
 Sign and amplitude encryption cannot hide *which* coefficients are non-zero, so E1–E4 leak an
 outline sketch to an eavesdropper; E5 removes it. The measured numbers are in `paper/data/paper_tables.md`.
 
+## How the paper's gate diagrams work
+
+In the conference paper, **Fig. 3** shows how the encoder encrypts selected JPEG coefficient bits.
+After the DCT, each coefficient is a number describing an image pattern. A nonzero coefficient has
+a value field to encode; a zero coefficient is represented differently, so there is no value field
+for this circuit to change.
+
+Fig. 3 shows one bit of that value field. Its control logic checks whether the coefficient is DC or
+AC, whether it is nonzero, and which protection level is selected. The masks make sure the circuit
+only changes bits that belong to the value field. The XOR gates then combine those bits with secret
+keystream bits: XOR with 0 leaves a bit as it is, and XOR with 1 flips it. One selected keystream
+bit can flip the whole field to change the coefficient's sign; other selected bits can change its
+magnitude without changing the field's size. The encoder repeats this small circuit across the bits.
+Because the size and Huffman code stay the same, the encrypted scan remains playable as JPEG.
+Decryption applies the same XOR operation again with the same keystream, restoring the original bits.
+
+**Fig. 4** shows one bit slice of Ascon's round logic, which helps produce the secret keystream and
+the frame-authentication tag. Ascon has five 64-bit state words, so the slice's logic is repeated
+across all 64 bit positions. XOR gates mix bits and add the round-constant bit; AND and NOT gates
+provide the nonlinear part of the substitution. A separate linear layer then spreads the changes
+across each word. The full circuit runs one round per clock cycle.
+
+In short, **Fig. 4 helps make the secret bits; Fig. 3 uses them to change selected JPEG bits.**
+
 ## Repository map
 
 See GUIDE.md §3. In short:
