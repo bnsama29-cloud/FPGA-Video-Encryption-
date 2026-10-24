@@ -200,7 +200,7 @@ Pins in `system/board/tamper_pynq_z2.xdc`.
 | SW0 (M20) | continuous: one bit flipped in every frame |
 | BTN0 (D19) or rising edge on PMOD A pin 1 (Y18, 3.3 V, pulled down) | one shot: one bit of the next frame |
 | LED0..3 (R14, P14, N16, M14) | enabled, shot pending, continuous, toggles per tampered frame |
-| BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `system/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself |
+| BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `system/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself. With `board_sender --buttons attacks` (`ButtonAttacks`) the same presses instead send the dashboard's `{"cmd": "attack", ...}` command to the attack node on the laptop (`link.host`, port `link.control`); default BTN1 replay, BTN2 splice, BTN3 flood (`--button-attacks`), 6 s each (`--attack-s`) |
 
 `axil_buttons` (AXI-Lite, block `buttons` in the `.hwh`, read-only, writes acknowledged and ignored):
 `0x0` ID `0xB7750001`; `0x4` STATE bits [2:0] = debounced BTN3..BTN1; `0x8` COUNT = 8-bit press counters
