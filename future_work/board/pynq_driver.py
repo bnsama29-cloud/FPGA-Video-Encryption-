@@ -24,7 +24,9 @@ reads the VERSION register and adapts: the pixel words are the same uint32 array
     scan, tag = ip.encode(rgb, mode=2, frame_ctr=1)
     jpeg = ip.build_jpeg(rgb.shape[1], rgb.shape[0], 2, 1, scan, tag)
 """
+import re
 import time
+from pathlib import Path
 
 import numpy as np
 
@@ -224,6 +226,35 @@ def _encode_with_reciprocals(rgb, luma_r, chroma_r, mode, key, ctr, sid, contrac
     return scan, hw.frame_tag(key, mode, ctr, sid, w, h, scan, version=3)
 
 
+def built_fclk_mhz(bitfile):
+    """The FCLK0 the bitstream was built and timed for, from its .hwh (PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ), or
+    None. PYNQ does not set this frequency: it copies the .hwh's FCLK0 dividers, which assume the IO PLL of
+    the Vivado project. The 100 MHz images assume a 1600 MHz IO PLL (dividers 4 x 4); the PYNQ-Z2 boots with
+    1000 MHz, so those dividers give 62.5 MHz (bug #44). The 125 MHz images assume 1000 MHz and are right."""
+    try:
+        text = Path(bitfile).with_suffix(".hwh").read_text(errors="ignore")
+    except OSError:
+        return None
+    for name in ("PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ", "PCW_FPGA0_PERIPHERAL_FREQMHZ"):
+        m = re.search(rf'NAME="{name}" VALUE="([0-9.]+)"', text)
+        if m:
+            return float(m.group(1))
+    return None
+
+
+def choose_fclk(built, now, requested=None):
+    """-> (MHz to set FCLK0 to, or None to leave it; a note to print, or ""). requested (--fclk) may only lower
+    the clock below the one the image was built for; without it FCLK0 is put back to that clock."""
+    if requested:
+        if built and requested > built + 0.5:
+            raise ValueError(f"fclk {requested} MHz is above the {built:g} MHz this bitstream was built for")
+        return requested, ""
+    if built and abs(now - built) > 0.5:
+        return built, (f"FCLK0 came up at {now:.1f} MHz from the .hwh dividers (another IO PLL); "
+                       f"setting it to the {built:g} MHz this bitstream was built for")
+    return None, ""
+
+
 class PynqBackend:
     """The real PYNQ-Z2. Needs the overlay built by future_work/board/block_design.tcl.
 
@@ -234,19 +265,24 @@ class PynqBackend:
                  fclk_mhz=None):
         from pynq import Overlay, allocate          # only available on the board
         self.ol = Overlay(bitfile)
-        # Fabric clock: PYNQ sets FCLK0 from the .hwh when it loads the bitstream (100 MHz for the v2 and
-        # 2-lane overlays, 125 MHz for the run-10 4-lane overlay). fclk_mhz lowers it, e.g. 100 for a first
-        # bring-up of the 4-lane overlay: a design that meets timing at 125 MHz also works at 100 MHz.
-        # Never set it above the clock in the .hwh: timing was only checked up to that clock.
+        # Fabric clock: PYNQ copies the .hwh's FCLK0 dividers when it loads the bitstream, which gives 62.5 MHz
+        # instead of 100 for the 100 MHz images on this board (built_fclk_mhz), so FCLK0 is set here to the
+        # clock the image was built for (100 MHz: v2, 2-lane, tamper; 125 MHz: the 4-lane images). fclk_mhz
+        # lowers it, e.g. 100 for a first bring-up of a 125 MHz image. Never above the built clock: timing was
+        # only checked up to that clock.
         self.fabric_hz = FABRIC_HZ
         try:
             from pynq import Clocks
-            if fclk_mhz:
-                built = Clocks.fclk0_mhz
-                if fclk_mhz > built + 0.5:
-                    raise ValueError(f"fclk {fclk_mhz} MHz is above the {built:.1f} MHz this bitstream was built for")
-                Clocks.fclk0_mhz = fclk_mhz
+            built = built_fclk_mhz(bitfile)
+            target, note = choose_fclk(built, Clocks.fclk0_mhz, fclk_mhz)
+            if note:
+                print(note)
+            if target:
+                Clocks.fclk0_mhz = target
             self.fabric_hz = Clocks.fclk0_mhz * 1e6
+            want = fclk_mhz or built
+            if want and abs(Clocks.fclk0_mhz - want) > 0.5:
+                print(f"WARNING: FCLK0 is {Clocks.fclk0_mhz:.1f} MHz, not the {want:g} MHz asked for")
         except ImportError:
             pass
         names = list(self.ol.ip_dict)
