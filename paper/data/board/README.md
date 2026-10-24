@@ -31,3 +31,20 @@ How to read the numbers:
   been measured on the board yet.
 
 The files were copied from `sim_out/board/` on tom's PC (the `.json` / `.md` exactly as the script wrote them).
+
+## Board day, 24 Oct 2026 (`board_day_24oct/`)
+
+Copied by `scripts/save_board_day.py` (see its `MANIFEST.md` for every file and hash). The final board images of
+Vivado runs 12 and 13, each at the clock it was built for: `lanes4_final` (4 lanes, 125 MHz, 3 frames per level
+and size), `lanes2_final` (2 lanes, 100 MHz) and `v2_final` (single pipeline, 100 MHz), all bit-exact; the ARM
+baseline (`arm_final`), the post-quantum key on the A9 (`pq_kex`), the energy table without a meter (`energy`,
+Vivado estimate) and, with the board as sender, the attack suite, the benign run and the tamper run (`runs/`).
+`paper/make_assets.py :: board_day()` turns them into `tab_board.tex`, the `\Bd...` macros, the column "Board"
+of `tab_attacks.tex` and `fig_board_fps.pdf` / `fig_board_cycles.pdf`.
+
+How to read the fabric time: CYCLES counts START to DONE; IN_WAIT counts the clocks in which the encoder could
+take a pixel but the DMA had none. The driver (`pynq_driver.encode`) writes START before it starts the pixel DMA,
+so IN_WAIT is almost the same for every image (about 0.62 ms per frame); CYCLES minus IN_WAIT equals the RTL
+simulation's cycle count to within 1 %. `lanes2_final_62mhz` is an extra run of the 2-lane image at 62.5 MHz
+(not used in the papers). In the tamper run 9 of 25 button presses cost two rejected frames: BTN0 is not
+debounced in `axis_tamper.v`.
