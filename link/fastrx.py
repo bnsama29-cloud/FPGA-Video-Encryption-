@@ -42,7 +42,9 @@ def _dll_dir(cc):
     """On Windows let ctypes find MinGW's runtime DLLs next to gcc.exe (bug #41). Linux needs nothing."""
     path = shutil.which(cc)
     if os.name == "nt" and path:
-        os.add_dll_directory(os.path.dirname(path))
+        # winget puts an alias (a link) in ...\WinGet\Links; the DLLs are next to the real gcc.exe
+        for d in {os.path.dirname(path), os.path.dirname(os.path.realpath(path))}:
+            os.add_dll_directory(d)
 
 
 def _machine(cc):
