@@ -836,14 +836,18 @@ def compare(r, cores):
         if lr["lanes"] == 4 and sysl4 and sysl4.get("period") and sysl4["timing"].get("met"):
             # run 10: the complete PYNQ-Z2 system (PS + DMA + 4 lanes), post-route at the clock it was built for
             sm, su = 1000 / sysl4["period"], sysl4["util"]
-            rows.append(f"Ours: 4 lanes, system & Zynq-7020 & {f(su['lut'][0])} & {f(su['bram'][0], 1)} & "
-                        f"{f(su['dsp'][0])} & {sm:.0f} & {lr['mpx_per_s_at_100mhz'] * sm / 100:.0f} & sel.\\ AEAD \\\\")
+            b4 = bd_runs().get(4)                       # measured on the board (24 Oct): fabric time of one frame
+            smpx = 640 * 480 / (bd_row(b4)["fabric_ms"] * 1e3) if b4 else lr['mpx_per_s_at_100mhz'] * sm / 100
+            rows.append(f"Ours: 4 lanes, {'board' if b4 else 'system'} & Zynq-7020 & {f(su['lut'][0])} & {f(su['bram'][0], 1)} & "
+                        f"{f(su['dsp'][0])} & {sm:.0f} & {smpx:.0f} & sel.\\ AEAD \\\\")
     if lr_all:
         pending = not all(lanes_vivado(x["lanes"]) for x in lr_all)
         lanes_note = (" Lanes (v3): throughput in RTL simulation at 100\\,MHz" +
                       ("; area pending (--)" if pending else ", area post-route") +
-                      ("; system: the complete PYNQ-Z2 design (processing system, DMA, 4 lanes), the same "
-                       "cycle count at its post-route clock (board measurement pending)" if "overlay_lanes4" in vr else "") + ".")
+                      (("; board: the complete PYNQ-Z2 design (processing system, DMA, 4 lanes) measured on the "
+                        "board, encoder time of a 640$\\times$480 frame from its cycle counter" if bd_runs().get(4) else
+                        "; system: the complete PYNQ-Z2 design (processing system, DMA, 4 lanes), the same "
+                        "cycle count at its post-route clock") if "overlay_lanes4" in vr else "") + ".")
     for x in J(rel)["rows"]:
         row = (f"{x['work']}~\\cite{{{x['cite']}}} & {x['device']} & {f(x['lut'])} & {f(x['bram'])} & "
                f"{f(x['dsp'])} & {x['mhz']} & {f(x['mpix_s'], 1 if (x['mpix_s'] or 100) < 100 else 0)} & {x['crypto']} \\\\")
@@ -1507,20 +1511,26 @@ def protocol():
              "inject": "forged frame injection", "replay": "frame replay", "delay": "frame delay",
              "drop": "frame dropping", "flood": "junk flood", "fb_drop": "feedback dropping",
              "fb_forge": "forged feedback", "fb_replay": "feedback replay"}
+    # the same suite with the PYNQ-Z2 as sender (board day 24 Oct 2026, one run): mitigated after, per attack
+    bsuite = BD / "runs" / "board_full_suite_rep1" / "summary.json"
+    beps = {e["type"]: e for e in J(bsuite)["episodes"]} if bsuite.exists() else {}
+    bcol = lambda t: "" if not beps else (" & --" if beps.get(t, {}).get("time_to_mitigate_s") is None
+                                          else f" & {beps[t]['time_to_mitigate_s']:.2f}")
     rows = []
     for t, es in eps.items():
         rej = [e["rx_first_rejection_s"] for e in es]
         rows.append(f"{names.get(t, t)} & {sum(e['time_to_mitigate_s'] is not None for e in es)}/{len(es)} & "
-                    f"{ms(rej) if any(x is not None for x in rej) else '--'} & {ms([e['time_to_mitigate_s'] for e in es])} \\\\")
+                    f"{ms(rej) if any(x is not None for x in rej) else '--'} & {ms([e['time_to_mitigate_s'] for e in es])}{bcol(t)} \\\\")
     S = [J(p) for p in suite]
     B = [J(p) for p in sorted(SIM.glob("runs/benign_*_rep*/summary.json"))]
+    bnote = (" Board: the same suite with the PYNQ-Z2 as the sender, one run, mitigated after (s)." if beps else "")
     write("tab_attacks.tex", rf"""\begin{{table}}[t]
-\caption{{Reaction to each active attack (full suite, threshold policy, {len(S)} runs; mean\,$\pm$\,s.d. in seconds). ``First rejection'' is when the receiver first discards a frame; ``mitigated'' is when the sender has raised protection or rekeyed.}}
+\caption{{Reaction to each active attack (full suite, threshold policy, {len(S)} runs; mean\,$\pm$\,s.d. in seconds). ``First rejection'' is when the receiver first discards a frame; ``mitigated'' is when the sender has raised protection or rekeyed.{bnote}}}
 \label{{tab:attacks}}
 \centering\small\setlength{{\tabcolsep}}{{4pt}}
-\begin{{tabular}}{{lccc}}
+\begin{{tabular}}{{lccc{'c' if beps else ''}}}
 \toprule
-Attack & Mitigated & First rejection & Mitigated after \\
+Attack & Mitigated & First rejection & Mitigated after{' & Board' if beps else ''} \\
 \midrule
 {chr(10).join(rows)}
 \bottomrule
@@ -1923,6 +1933,235 @@ Size & Frames/level & Bit-exact & Encode (ms) & E2 frame, ms (fps) & E5 frame, m
 """)
 
 
+BD = DATA / "board" / "board_day_24oct"           # board day 24 Oct 2026 (scripts/save_board_day.py)
+BD_IMAGES = ((4, "lanes4_final", "Four"), (2, "lanes2_final", "Two"), (1, "v2_final", "One"))
+
+
+def bd_runs():
+    """The final board images on the PYNQ-Z2, each at the clock it was built for: {lanes: first_contact.json}."""
+    out = {}
+    for lanes, name, _ in BD_IMAGES:
+        f = BD / "board" / name / "first_contact.json"
+        if f.exists() and J(f).get("backend") == "pynq":     # never report mock runs
+            out[lanes] = J(f)
+    return out
+
+
+def bd_row(d, size="640x480", mode=2, zero_copy=True):
+    return next((s for s in d["speed"] if s["size"] == size and s["mode"] == mode
+                 and bool(s.get("zero_copy")) == zero_copy), None)
+
+
+def bd_mhz(row):
+    return row["cycles"] / (row["fabric_ms"] * 1e3)        # CYCLES register over the fabric time
+
+
+def board_day():
+    """Board day of 24 Oct 2026: bit-exact gate and fabric/frame time of the final images (A1, A2), the same
+    encoder in C on the ARM (A3), energy from fps and Vivado's estimate (A4, no meter), the post-quantum key on
+    the A9, the attack suite and the benign run with the board as sender (A6), and the tamper image's shots."""
+    runs = bd_runs()
+    if not runs:
+        return
+    px = 640 * 480
+    frames = sum(e["frames"] for d in runs.values() for e in d["exactness"])
+    macro("BdAllExact", "yes" if all(e["bit_exact"] for d in runs.values() for e in d["exactness"]) else "no")
+    macro("BdFramesTotal", f"{frames}")
+    macro("BdImages", NUMWORD.get(len(runs), str(len(runs))))
+    rows = []
+    for lanes, _, name in BD_IMAGES:
+        d = runs.get(lanes)
+        if not d:
+            continue
+        r, r5 = bd_row(d), bd_row(d, mode=5)
+        rt = bd_row(d, zero_copy=False)
+        mhz = bd_mhz(r)
+        fab = [bd_row(d, mode=m)["fabric_ms"] for m in range(5)]
+        macro(f"Bd{name}Mhz", f"{mhz:.0f}")
+        macro(f"Bd{name}FabricMs", f"{r['fabric_ms']:.2f}")
+        macro(f"Bd{name}FabricMpix", f"{px / (r['fabric_ms'] * 1e3):.0f}")
+        macro(f"Bd{name}FabricFps", f"{1000 / r['fabric_ms']:.0f}")
+        macro(f"Bd{name}InWaitPct", f"{100 * r['in_wait'] / r['cycles']:.0f}")
+        macro(f"Bd{name}BusyCpp", f"{(r['cycles'] - r['in_wait']) / px:.3f}")
+        # the driver writes START before it starts the pixel DMA (pynq_driver.encode), so IN_WAIT is mostly
+        # that start-up gap; the encoding clocks alone are what the RTL simulation predicts
+        busy_ms = (r["cycles"] - r["in_wait"]) / (mhz * 1e3)
+        macro(f"Bd{name}BusyMs", f"{busy_ms:.2f}")
+        macro(f"Bd{name}BusyMpix", f"{px / (busy_ms * 1e3):.0f}")
+        macro(f"Bd{name}WaitMs", f"{r['in_wait'] / (mhz * 1e3):.2f}")
+        busy = [bd_row(d, mode=m)["cycles"] - bd_row(d, mode=m)["in_wait"] for m in range(5)]
+        macro(f"Bd{name}BusySpreadClk", f"{max(busy) - min(busy):.0f}")      # E0..E4: encryption costs no clocks
+        macro(f"Bd{name}ZcMs", f"{r['full_ms']:.1f}")
+        macro(f"Bd{name}ZcFps", f"{r['full_fps']:.0f}")
+        macro(f"Bd{name}RtMs", f"{rt['full_ms']:.0f}")
+        macro(f"Bd{name}RtFps", f"{rt['full_fps']:.1f}")
+        macro(f"Bd{name}FabricSpreadUs", f"{1000 * (max(fab) - min(fab)):.0f}")
+        if r5:
+            macro(f"Bd{name}EfiveZcFps", f"{r5['full_fps']:.0f}")
+            macro(f"Bd{name}EfiveExtraMs", f"{r5['full_ms'] - r['full_ms']:.1f}")
+        levels = sorted({e["mode"] for e in d["exactness"]})
+        rows.append(f"{lanes} lane{'s' if lanes > 1 else ''} & {mhz:.0f} & E{levels[0]}--E{levels[-1]} & "
+                    f"{r['fabric_ms']:.2f} ({px / (r['fabric_ms'] * 1e3):.0f}) & {100 * r['in_wait'] / r['cycles']:.0f} & "
+                    f"{r['full_ms']:.1f} ({r['full_fps']:.0f}) & "
+                    + (f"{r5['full_ms']:.1f} ({r5['full_fps']:.0f})" if r5 else "--") + " \\\\")
+    rtl = LANES_RTL / "results.json"           # the RTL cycle count against the counter, input waits taken out
+    if rtl.exists():
+        cpp = {x["lanes"]: x["clocks_per_pixel"] for x in J(rtl)["rows"] if (x["width"], x["height"]) == (640, 480)}
+        dev = [abs((bd_row(runs[l])["cycles"] - bd_row(runs[l])["in_wait"]) / px / cpp[l] - 1) * 100
+               for l in runs if l in cpp]
+        if dev:
+            macro("BdBusyVsRtlMaxPct", f"{max(dev):.0f}" if max(dev) >= 0.5 else f"{max(dev):.1f}")
+    waits = [bd_row(d)["in_wait"] / (bd_mhz(bd_row(d)) * 1e3) for d in runs.values()]
+    macro("BdWaitMsMin", f"{min(waits):.2f}")
+    macro("BdWaitMsMax", f"{max(waits):.2f}")
+    # A3: the same encoder in C on the ARM (future_work/arm/arm_baseline.py), and libjpeg-turbo
+    arm, armrows = BD / "board" / "arm_final" / "arm_baseline.json", []
+    if arm.exists():
+        a = J(arm)["sizes"]["640x480"]
+        get = lambda key: a[key]["ms"]
+        ours1, ours2 = get("ours on the PS, E2, 1 core"), get("ours on the PS, E2, 2 cores")
+        turbo, ascon = get("libjpeg-turbo (no security)"), get("libjpeg-turbo + Ascon-AEAD128 whole file (C)")
+        aes = get("libjpeg-turbo + AES-128-GCM whole file (OpenSSL)")
+        for k, v in (("OursOne", ours1), ("OursTwo", ours2), ("Turbo", turbo), ("TurboAscon", ascon), ("TurboAes", aes)):
+            macro(f"BdArm{k}Ms", f"{v:.1f}")
+            macro(f"BdArm{k}Fps", f"{1000 / v:.1f}")
+        macro("BdArmOursTwoEfiveFps", f"{1000 / get('ours on the PS, E5, 2 cores'):.1f}")
+        if 4 in runs:
+            r = bd_row(runs[4])
+            macro("BdSpeedupFabric", f"{ours2 / r['fabric_ms']:.0f}")
+            macro("BdSpeedupFrame", f"{ours2 / r['full_ms']:.1f}")
+            macro("BdSpeedupTurboAscon", f"{ascon / r['full_ms']:.1f}")
+        armrows = [f"ARM, ours in C, 1 core & -- & E0--E5 & -- & -- & {ours1:.1f} ({1000 / ours1:.1f}) & "
+                   f"{get('ours on the PS, E5, 1 core'):.1f} ({1000 / get('ours on the PS, E5, 1 core'):.1f}) \\\\",
+                   f"ARM, ours in C, 2 cores & -- & E0--E5 & -- & -- & {ours2:.1f} ({1000 / ours2:.1f}) & "
+                   f"{get('ours on the PS, E5, 2 cores'):.1f} ({1000 / get('ours on the PS, E5, 2 cores'):.1f}) \\\\",
+                   f"ARM, libjpeg-turbo, no security & -- & -- & -- & -- & {turbo:.1f} ({1000 / turbo:.1f}) & -- \\\\",
+                   f"ARM, libjpeg-turbo + Ascon (file) & -- & -- & -- & -- & {ascon:.1f} ({1000 / ascon:.1f}) & -- \\\\",
+                   f"ARM, libjpeg-turbo + AES-GCM (file) & -- & -- & -- & -- & {aes:.1f} ({1000 / aes:.1f}) & -- \\\\"]
+    # A4 without a meter: fps measured on the board x Vivado's post-route power of the same image
+    en = BD / "energy" / "power_template.json"
+    if en.exists():
+        e = {(x["method"], x["mode"]): x for x in J(en)["rows"]}
+        e2, e5 = e.get(("FPGA 4 lanes", "E2")), e.get(("FPGA 4 lanes", "E5"))
+        if e2 and e2.get("energy_mj"):
+            macro("BdPowerEstW", f"{e2['power_w']:.2f}")
+            macro("BdEnergyEtwoMj", f"{e2['energy_mj']:.1f}")
+        if e5 and e5.get("energy_mj"):
+            macro("BdEnergyEfiveMj", f"{e5['energy_mj']:.1f}")
+    kex = BD / "pq_kex" / "armv7l_pynq.json"
+    if kex.exists():
+        b = next(iter(J(kex)["backends"].values()))
+        macro("BdKexMs", f"{b['total_ms']:.0f}")
+    # A6: the attack suite and the benign run with the board as sender (experiments/scenario.py --external-sender)
+    suite = BD / "runs" / "board_full_suite_rep1" / "summary.json"
+    if suite.exists():
+        s = J(suite)
+        macro("BdSuiteMit", s["mitigated_episodes"])
+        macro("BdTtmMean", f"{s['mean_time_to_mitigate_s']:.2f}")
+        macro("BdSuiteFalse", f"{s['false_alarm_windows']}/{s['calm_windows']}")
+        macro("BdTtmMax", f"{max(x['time_to_mitigate_s'] for x in s['episodes']):.1f}")
+    benign = BD / "runs" / "board_benign_rep1" / "summary.json"
+    if benign.exists():
+        s = J(benign)
+        macro("BdBenignFalse", f"{s['false_alarm_windows']}/{s['calm_windows']}")
+    tamper = BD / "runs" / "hw_tamper_rep1" / "hw_tamper.json"
+    if tamper.exists():
+        t = J(tamper)
+        per = t["frames_rejected_per_shot"]
+        macro("BdTamperShots", f"{t['shots']}")
+        macro("BdTamperDetected", f"{t['detected']}")
+        macro("BdTamperMissed", f"{t['missed']}")
+        macro("BdTamperUnexplained", f"{t['unexplained_rejections']}")
+        macro("BdTamperOneFrame", f"{per.get('1', 0)}")
+        macro("BdTamperTwoFrames", f"{per.get('2', 0)}")
+    write("tab_board.tex", rf"""\begin{{table*}}[t]
+\caption{{On the PYNQ-Z2 (24 Oct 2026): the final board images, each at the clock it was built for, and the same
+function on the board's ARM Cortex-A9. Bit-exact: every frame of every level compared byte for byte (scan and tag)
+with the golden model running on the board ({macros['BdFramesTotal']} frames in all). Fabric: START to DONE from
+the encoder's CYCLES register for one 640$\times$480 frame (Mpixel/s in brackets); wait: share of those cycles in
+which the encoder could take a pixel but the DMA had none, mostly because the Python driver starts the DMA after the encoder. Frame: a complete authenticated JPEG with headers (and
+for E5 the segment order) on the ARM, the pixels already in the DMA buffer as a camera would leave them, median of
+50 frames (frames/s in brackets). ARM rows: median of 30 frames; ``file'' encrypts the whole JPEG, so it does not
+play without the key.}}
+\label{{tab:board}}
+\centering\small\setlength{{\tabcolsep}}{{4pt}}
+\begin{{tabular}}{{lrlrrrr}}
+\toprule
+Encoder & MHz & Bit-exact & Fabric, ms & Wait (\%) & E2 frame, ms & E5 frame, ms \\
+\midrule
+{chr(10).join(rows)}
+\midrule
+{chr(10).join(armrows)}
+\bottomrule
+\end{{tabular}}
+\end{{table*}}
+""")
+    board_figures(runs, arm)
+
+
+def board_figures(runs, arm):
+    """fig_board_fps: frames/s at 640x480, FPGA against the same encoder in C on the ARM and libjpeg-turbo;
+    fig_board_cycles: where the fabric's clocks go (encoding vs waiting for pixels) against the RTL count."""
+    plt = _style()
+    px = 640 * 480
+    bars = []                                       # (label, frame fps, fabric fps or None, colour)
+    if arm.exists():
+        a = J(arm)["sizes"]["640x480"]
+        for key, lab in (("ours on the PS, E2, 1 core", "ARM, ours, 1 core"), ("ours on the PS, E2, 2 cores", "ARM, ours, 2 cores"),
+                         ("libjpeg-turbo + Ascon-AEAD128 whole file (C)", "ARM, libjpeg-turbo + Ascon*")):
+            bars.append((lab, 1000 / a[key]["ms"], None, ORANGE))
+    for lanes, _, _ in reversed(BD_IMAGES):
+        if lanes in runs:
+            r = bd_row(runs[lanes])
+            bars.append((f"FPGA, {lanes} lane{'s' if lanes > 1 else ''} ({bd_mhz(r):.0f} MHz)", r["full_fps"],
+                         1000 / r["fabric_ms"], BLUE))
+    fig, ax = plt.subplots(figsize=(3.4, 2.15))
+    y = np.arange(len(bars))
+    for i, (lab, fps, fab, col) in enumerate(bars):
+        if fab:
+            ax.barh(i, fab, height=0.62, color=col, alpha=0.25, edgecolor=col, lw=0.6)
+        ax.barh(i, fps, height=0.62, color=col)
+        ax.text(fps + 6, i, f"{fps:.0f}", va="center", fontsize=6.3, color=INK)
+        if fab:
+            ax.text(fab + 6, i, f"{fab:.0f}", va="center", fontsize=6.3, color=INK2)
+    ax.set_yticks(y)
+    ax.set_yticklabels([b[0] for b in bars], fontsize=6.3)
+    ax.set_xlabel("frames/s at 640$\\times$480, level E2", fontsize=6.5)
+    ax.set_xlim(0, max(b[2] or b[1] for b in bars) * 1.15)
+    from matplotlib.patches import Patch
+    fig.legend(handles=[Patch(color=BLUE, label="complete frame"),
+                        Patch(facecolor=BLUE, alpha=0.25, edgecolor=BLUE, label="encoder alone"),
+                        Patch(color=ORANGE, label="software, ARM")],
+               fontsize=5.8, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.0), ncol=3,
+               handlelength=1.2, columnspacing=1.0)
+    _clean(ax, grid="x")
+    fig.tight_layout(rect=(0, 0, 1, 0.92))
+    fig.savefig(FIG / "fig_board_fps.pdf")
+    plt.close(fig)
+
+    rtl = LANES_RTL / "results.json"
+    cpp = {x["lanes"]: x["clocks_per_pixel"] for x in J(rtl)["rows"] if (x["width"], x["height"]) == (640, 480)} if rtl.exists() else {}
+    fig, ax = plt.subplots(figsize=(3.4, 1.9))
+    ls = [l for l, _, _ in reversed(BD_IMAGES) if l in runs]
+    x = np.arange(len(ls))
+    busy = [(bd_row(runs[l])["cycles"] - bd_row(runs[l])["in_wait"]) / px for l in ls]
+    wait = [bd_row(runs[l])["in_wait"] / px for l in ls]
+    ax.bar(x, busy, width=0.5, color=BLUE, label="encoding")
+    ax.bar(x, wait, width=0.5, bottom=busy, color=BLUE, alpha=0.25, edgecolor=BLUE, lw=0.6, label="waiting for pixels (driver starts the DMA)")
+    rl = [i for i, l in enumerate(ls) if l in cpp]
+    if rl:
+        ax.plot(rl, [cpp[ls[i]] for i in rl], "D", ms=4, color=ORANGE, mec=SURFACE, mew=0.6, ls="none",
+                label="RTL simulation", zorder=4)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{l} lane{'s' if l > 1 else ''}, {bd_mhz(bd_row(runs[l])):.0f} MHz" for l in ls], fontsize=6.5)
+    ax.set_ylabel("clocks per pixel")
+    ax.legend(fontsize=6, frameon=False, loc="upper right")
+    _clean(ax)
+    fig.tight_layout()
+    fig.savefig(FIG / "fig_board_cycles.pdf")
+    plt.close(fig)
+
+
 def main():
     TAB.mkdir(exist_ok=True)
     FIG.mkdir(exist_ok=True)
@@ -1940,6 +2179,7 @@ def main():
     lanes_rtl()
     lanes_variants()
     board()
+    board_day()              # after board(): its tab_board.tex replaces the 20 Oct one
     research_figures()
     protocol()
     peculiar_cases()
