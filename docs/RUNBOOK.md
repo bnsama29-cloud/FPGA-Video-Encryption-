@@ -44,7 +44,7 @@ Three configurations of the camera node, all producing the **same bytes**:
 | `vivado/run_vivado_day.py` | Vivado PC | XSim, post-route OOC, block designs, bitstreams, reports |
 | `future_work/board/first_contact.py` | board | A1 bit-exact gate + A2 timing with breakdown and fabric-only time |
 | `future_work/arm/arm_baseline.py` | board | A3: same encoder on the PS (1/2 cores) vs libjpeg-turbo ± Ascon / AES-GCM vs PL |
-| `future_work/baselines/energy_table.py` | laptop | A4: energy per frame from the meter readings |
+| `future_work/baselines/energy_table.py` | laptop | A4: energy per frame from the board's fps and the meter readings, or Vivado's power estimate without a meter (`--no-meter`) |
 | `future_work/board/board_sender.py` | board | A5/A6: the board as camera into the laptop's receiver (`--pq-kex`, `--set link.pad=runmax`) |
 | `python -m link.channel` | attacker laptop | two-laptop runs: network + attacker between board and receiver (command printed by `scenario.py --attacker`) |
 | `experiments/hw_tamper.py` | receiver laptop (+ board, Pico) | tamper inside the board: one bit flipped after the tag per shot (`secure_jpeg_lanes_tamper.bit`, `INTERFACES.md` §10) |
@@ -72,7 +72,8 @@ images; the paper's Vivado tables are from the same run, and the RTL is frozen.
    (all hashes in `summary.txt` of `vivado_results_20261022_2123.zip`).
 2. Build the tamper image (~35 min; only step 11 needs it):
    `py vivado\run_vivado_day.py --steps bd_tamper parse --fclk 100 --jobs 2`
-   → `overlay\secure_jpeg_lanes_tamper.bit` + `.hwh`. Copy the overlay folder to the team drive and a USB stick (H5).
+   → `overlay\secure_jpeg_lanes_tamper.bit` + `.hwh`. Put the images into git once (`py scripts\publish_bitstreams.py`, then commit and push: it checks the
+   hashes and stages only the `.bit`/`.hwh` files and `MANIFEST.md`), and keep a USB-stick copy (H5).
    Board results are only comparable with the Vivado numbers of the same commit.
 3. Rehearse on the laptop (no board): section 4 below, plus
    `py -m pytest tests/test_hw_tamper.py tests/test_two_laptop.py` and
@@ -99,8 +100,11 @@ images; the paper's Vivado tables are from the same run, and the RTL is frozen.
 **Day 2 — board + laptop(s).** Windows laptops: allow UDP once (admin cmd), the scenario runs use 47200–47215:
 `netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010,47200-47215`
 
-8. A4 power: meter inline; idle, `first_contact … --timing-frames 2000`, `arm_baseline … --frames 2000`;
-   fill `future_work/baselines/power_template.csv`; `py -m future_work.baselines.energy_table …`.
+8. A4 power (meter optional). Without a meter, on the laptop after step 7:
+   `py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json`
+   (Vivado power estimate, labelled as such). With a meter: idle, `first_contact … --timing-frames 2000`,
+   `arm_baseline … --frames 2000`; fill `power_w` / `idle_power_w` in `power_template.csv`; the same command
+   without `--no-meter` (BOARD_DAY.html phase 9).
 9. A5 live link: `py scripts\demo_key.py`, then `link.run_all --no-sender --pq-kex …` on the laptop and
    `board_sender --pq-kex --set link.pad=runmax …` on the board (exact lines in `BOARD_DAY.html` phase 10).
 10. A6: `py experiments\scenario.py --scenario experiments\scenarios\full_suite.json --external-sender <BOARD IP> --board-max-mode E5 --pq-kex --set keys.master=<KEY> --out sim_out\runs\board_full_suite_rep1`

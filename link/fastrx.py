@@ -16,6 +16,7 @@ import dataclasses
 import hashlib
 import hmac
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -30,6 +31,20 @@ _lib = None
 _skeys = {}
 
 
+def _cc(name=None, env=None):
+    """C compiler: $CC, else gcc on Windows (MinGW has no `cc`), else cc."""
+    name = os.name if name is None else name
+    env = os.environ if env is None else env
+    return env.get("CC") or ("gcc" if name == "nt" else "cc")
+
+
+def _dll_dir(cc):
+    """On Windows let ctypes find MinGW's runtime DLLs next to gcc.exe (bug #41). Linux needs nothing."""
+    path = shutil.which(cc)
+    if os.name == "nt" and path:
+        os.add_dll_directory(os.path.dirname(path))
+
+
 def _load():
     global _lib
     if _lib is not None:
@@ -39,9 +54,11 @@ def _load():
         cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
         cache.mkdir(parents=True, exist_ok=True)
         so = cache / f"sjpeg_rx_{tag}.so"
+        cc = _cc()
         if not so.exists():
-            subprocess.run([os.environ.get("CC", "cc"), "-O2", "-shared", "-fPIC", "-o", str(so), str(_SRC)],
+            subprocess.run([cc, "-O2", "-shared", "-fPIC", "-o", str(so), str(_SRC)],
                            check=True, capture_output=True, timeout=120)
+        _dll_dir(cc)
         lib = ctypes.CDLL(str(so))
         u64, i32, p = ctypes.c_uint64, ctypes.c_int32, ctypes.c_char_p
         lib.rx_mac2.argtypes = [p, u64, u64, p, i32, p, i32, ctypes.c_void_p]

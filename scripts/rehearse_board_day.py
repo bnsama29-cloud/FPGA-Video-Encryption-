@@ -13,14 +13,13 @@ Steps (board phase in brackets):
   3  live link: receiver + dashboard, board sender, BTN1..BTN3               (10)
   4  the 11 network attacks against the board: 11/11 mitigated, 0 false alarms (11)
   5  tamper inside the board: 25 shots, 25 detected, 1 frame rejected each   (12)
-  6  energy table script                                                     (9)
+  6  energy table without the USB meter (fps from steps 1-2, Vivado power)   (9)
   7  two-laptop / tamper / button tests, then the full test suite
-  8  the bitstreams on this PC: present, with .hwh, run-12 / run-13 hashes
+  8  the bitstreams on this PC: present, with .hwh, run-12 / run-13 hashes (scripts/publish_bitstreams.py)
 The emulated board is the Python golden model: its times are never results (64x48 frames keep it fast enough).
 Logs: sim_out/rehearsal/<step>.log
 """
 import argparse
-import hashlib
 import json
 import os
 import shutil
@@ -40,9 +39,6 @@ SMALL = ["--set", "sender.width=64", "--set", "sender.height=48"]
 LOCAL = ["--set", "link.host=127.0.0.1", "--set", "link.bind_host=0.0.0.0"]
 SCEN_PORTS = ["--set", "link.video_in=47200", "--set", "link.fb_out=47203", "--set", "link.sender_control=47205",
               "--set", "link.bus=[47210]", "--set", "sender.policy=threshold"]
-OVERLAY = ROOT / "future_work" / "board" / "overlay"
-HASHES = {"secure_jpeg_lanes4.bit": "7f1260af5daf72b0",          # run 12
-          "secure_jpeg_lanes_tamper.bit": "c6a92ab60e8e176d"}    # run 13
 RESULTS = []
 
 
@@ -206,11 +202,21 @@ def step5():
 
 
 def step6():
-    say("\nStep 6  energy table (board phase 9)")
-    code, out = run(["-m", "future_work.baselines.energy_table", "future_work/baselines/power_template.csv"],
-                    "6_energy_table.log")
-    # with the empty template it stops on purpose ("no measured rows yet", exit code 1)
-    record(6, "energy_table runs (waits for the meter readings)", code == 0 or "no measured rows yet" in out)
+    say("\nStep 6  energy table without the USB meter (board phase 9)")
+    fc = LOGS / "fc_4" / "first_contact.json"
+    if not fc.exists():                             # step 1 not run: make the 4-lane result it reads
+        run(["-m", "future_work.board.first_contact", "--mock-lanes", "4", "--mock-e5", "--sizes", "64x48",
+             "--frames", "1", "--timing-frames", "2", "--out", "sim_out/rehearsal/fc_4"], "6_first_contact.log")
+    tpl = (ROOT / "future_work" / "baselines" / "power_template.csv").read_text(encoding="utf-8")
+    csv_path = LOGS / "energy.csv"                  # the template at the rehearsal's 64x48 size
+    csv_path.write_text(tpl.replace(",640,480,", ",64,48,"), encoding="utf-8")
+    args = ["-m", "future_work.baselines.energy_table", str(csv_path), "--no-meter", "--fpga-json", str(fc)]
+    arm = LOGS / "arm" / "arm_baseline.json"
+    if arm.exists():
+        args += ["--arm-json", str(arm)]
+    code, out = run(args, "6_energy_table.log")
+    record(6, "energy table: FPGA rows from fps + Vivado estimate, no meter", code == 0 and "Vivado estimate" in out,
+           "" if code == 0 else "see sim_out/rehearsal/6_energy_table.log")
 
 
 def step7(quick):
@@ -225,14 +231,16 @@ def step7(quick):
 
 def step8():
     say("\nStep 8  bitstreams on this PC")
-    bits = sorted(OVERLAY.glob("*.bit"))
-    missing = [b.name for b in bits if not b.with_suffix(".hwh").exists()]
-    record(8, "six .bit files, each with its .hwh", len(bits) >= 6 and not missing,
-           f"{len(bits)} .bit" + (f", no .hwh for {', '.join(missing)}" if missing else ""))
-    for name, prefix in HASHES.items():
-        p = OVERLAY / name
-        h = hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else "missing"
-        record(8, f"{name} is the expected build", h.startswith(prefix), h[:16])
+    sys.path.insert(0, str(ROOT))
+    from scripts import publish_bitstreams as pb
+    rows = pb.check(use_manifest=True)
+    for r in rows:
+        if r["status"] != "missing":                # missing optional images are not a failure
+            record(8, f"{r['file']}: present with .hwh, expected build", r["status"] == "ok",
+                   r["problem"] or (r["sha256"] or "")[:16])
+    n = sum(r["status"] == "ok" for r in rows)
+    say(f"  {n} of {len(rows)} board images here; missing optional ones: "
+        f"{', '.join(r['file'] for r in rows if r['status'] == 'missing') or 'none'}")
 
 
 def main():

@@ -12,6 +12,7 @@ import os
 import subprocess
 from pathlib import Path
 
+from link.fastrx import _cc, _dll_dir
 from model import ascon, hw
 
 _SRC = Path(__file__).resolve().parent / "native" / "e5_order.c"
@@ -28,10 +29,11 @@ def _load():
         cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
         cache.mkdir(parents=True, exist_ok=True)
         so = cache / f"e5_order_{tag}.so"
+        cc = _cc()
         if not so.exists():
-            cc = os.environ.get("CC", "cc")
             subprocess.run([cc, "-O2", "-shared", "-fPIC", "-o", str(so), str(_SRC)], check=True,
                            capture_output=True, timeout=60)
+        _dll_dir(cc)
         lib = ctypes.CDLL(str(so))
         lib.e5_order.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int32, ctypes.POINTER(ctypes.c_int32)]
         lib.e5_order.restype = None

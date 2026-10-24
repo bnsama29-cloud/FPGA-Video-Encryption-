@@ -269,7 +269,7 @@ inputs with random stalls and compares every output with `model/`. `common.py` h
 |---|---|---|---|
 | A1–A2 | **Bit-exact gate and real fps on the PYNQ-Z2** (both bitstreams) — the milestone | 1 | `docs/BOARD_BRINGUP.md` §5 |
 | A3 | ARM software baseline on the same board | 2 | §6 |
-| A4 | Power and energy per frame (USB meter) | 1 + 5 | §7 |
+| A4 | Power and energy per frame (USB meter optional; Vivado estimate without it) | 1 + 5 | §7 |
 | A5 | Live link board → laptop with the dashboard | 3 + 4 | §8 |
 | A6 | Attack scenarios with the board as sender (3 runs each) | 3 | §8, A6 |
 | A7–A8 | Webcam on the board; 2-minute demo video | 4 | GUIDE.md §4.2 |

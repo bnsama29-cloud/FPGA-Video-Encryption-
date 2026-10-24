@@ -19,7 +19,7 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 
 ---
 
-## 1. Where the project stands (20 Oct 2026: papers split into conference + IEEE Access, board guide ready)
+## 1. Where the project stands (24 Oct 2026: E0–E5 bit-exact on the board, every board image built)
 
 | Part | State | Evidence |
 |---|---|---|
@@ -27,17 +27,19 @@ REMAINING_WORK files). Give it to Claude together with `docs/TEAM_CONTEXT.md` wh
 | RTL, single pipeline (E0–E4) | ✅ bit-exact with the model in cocotb + Icarus, 0 extra cycles for encryption | `tb/`, `make test` |
 | RTL, lane encoder (E0–E5, 1/2/4 lanes) | ✅ bit-exact with the model, E5 included (B6) | `tb/test_lanes_top.py`, `rtl/secure_jpeg_lanes_top.v` |
 | Vivado testbench | ✅ Icarus · ✅ Vivado XSim 2026.1, both designs, E5 frames included (run 7) | `make xsim-icarus`, `python vivado/run_vivado_day.py --steps xsim` |
-| Post-route resources / timing / power | ✅ run 7 (18 Oct, 27/27 steps): encoder, 2 and 4 lanes with E5 and both PYNQ-Z2 systems meet 100 MHz; power from simulated activity (SAIF) | `paper/data/vivado/`, §4.1 |
+| Post-route resources / timing / power | ✅ run 11 (22 Oct): 1, 2 and 4 lanes meet 150 MHz out of context. Run 12 (22 Oct): five PYNQ-Z2 images (single pipeline and 2 lanes at 100 MHz, 2 lanes 12,679 LUT; 4 lanes, 4 lanes 1080p and 4 lanes YUYV at 125 MHz, 4 lanes 20,123 LUT). Run 13 (23 Oct): the tamper image (12,811 LUT, 100 MHz). Power from simulated activity (SAIF) | `paper/data/vivado/`, §4.1 |
 | System simulation (feedback, ratchet, defence, attacks, dashboard) | ✅ | `link/`, `experiments/` |
 | Simulation results (private clips, open data, learned attackers, jigsaw, sign recovery, recognition, size channel) | ✅ Kaggle runs 14–17 Oct | `paper/data/simulation/`, `paper/data/extra/` |
 | SVE-Bench: ours vs four published schemes under the same attacks | ✅ Kaggle 18 Oct (method v2), in the paper | `paper/data/benchmark/`, B39/B41 |
-| PYNQ-Z2 board tests | ⏳ E5 bitstream built (tom's PC, not in git: keep a copy, `docs/HW_TODO.md` H5); `first_contact` passes against the emulated board for E0–E5; **not yet run on the board**. Step-by-step manual: `docs/FPGA_HANDS_ON.md` | §4.2 |
+| PYNQ-Z2 board tests | ✅ A1 (20 Oct): E0–E5 byte-identical with the model on silicon (2-lane E5 image; 64x48, 320x240, 640x480). ✅ first A2: Python round trip 45 fps at 320x240 and 10.8 fps at 640x480, the same in every level (E5 34 / 8.5 fps: the ARM shuffle). ⏳ the run-12/13 images on the board (4 lanes, fabric-only time), A3–A8. The images go into git with `scripts/publish_bitstreams.py`. How to run: `HOW_TO_RUN.md`; board day: `docs/BOARD_DAY.html` | `paper/data/board/`, §4.2 |
+| ARM side and key exchange | ✅ our encoder in C on the PS, bit-exact (A3 code, `future_work/arm/`); receiver in C on the laptop (`link/fastrx.py`); optional ML-KEM-768 + X25519 session key (`--pq-kex`, `link/kex.py`); FPGA tamper injector + level buttons (run 13, `docs/INTERFACES.md` §10) | `tests/test_arm_software.py`, `tests/test_pq_kex.py`, `tests/test_hw_tamper.py` |
 | Phase 2 demo | ✅ LAN dashboard + VLC (Aravind, `docs/DASHBOARD_LAN_DEMO.md`); fresh pre-shared key `scripts/demo_key.py`; script and judge Q&A `docs/PHASE2_DEMO.md` | `tests/test_dashboard.py`, `tests/test_demo_key.py` |
-| Paper | 📝 two papers: `conference.pdf` (exactly 6 pages, condensed, 7 figures) and `access.pdf` (IEEE Access, 24 pages, maths with lemmas/propositions, gate-level and block-design figures); open TODOs are author details, board/ARM results and the AI disclosure | `paper/conference.tex`, `paper/access.tex`, `cd paper && make` |
+| Paper | 📝 two papers: `conference.pdf` (exactly 6 pages, condensed, 7 figures) and `access.pdf` (IEEE Access, 24 pages, maths with lemmas/propositions, gate-level and block-design figures); open TODOs are the board numbers (A2–A6), author details, the AI disclosure and the Access biographies | `paper/conference.tex`, `paper/access.tex`, `cd paper && make` |
 
-**Rough position: ~75 % of the project.** Design, simulation, Vivado and the security evaluation are
-finished. Left: the board (§4.2, the critical path to 12 Nov), the ARM baseline (A3 + B1), then the
-board numbers in the paper and the final proof-reading.
+**Rough position: ~85 % of the project.** Design, simulation, Vivado, the security evaluation and the first
+board run (A1) are finished. Left: the board day (A2 fabric-only time, A3–A8 and the tamper run, §4.2,
+by 12 Nov), then the board numbers in both papers and the final proof-reading. Every command, in order:
+`HOW_TO_RUN.md`.
 
 A full re-run on a fresh Windows 11 PC (WSL Ubuntu 24.04, 18 Oct) reproduced the simulation side:
 `make test` (154 + 16 passed), `RUN_SLOW=1 pytest tests/` (155 passed), `make xsim-icarus` (v2 5 frames,
@@ -96,6 +98,8 @@ shows exactly what a PR will bring.
 
 | Command | What it does |
 |---|---|
+| `python scripts/check_setup.py` (`--board` on the PYNQ-Z2, `--vivado` on the Vivado PC) | is this machine ready? one line per check, with the fix |
+| `python scripts/publish_bitstreams.py` | Vivado PC: check the board images and stage them for git (`--check` only checks) |
 | `make test` | model + system + RTL tests; must pass before every merge (~1 min) |
 | `RUN_SLOW=1 python -m pytest tests/` | adds the end-to-end UDP link test |
 | `make xsim-icarus` | the Vivado testbench, run in Icarus |
@@ -180,7 +184,7 @@ Step by step, from unboxing to every number below: **`docs/FPGA_HANDS_ON.md`** (
 | A1 | **Bit-exact gate on silicon** ✅ 20 Oct (`paper/data/board/`) | 1 | ½ day | copy the repo and the `.bit` + `.hwh` to `/home/xilinx/fpga`, then `sudo -E python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 320x240 640x480 --frames 10` (already passes with `--mock --mock-lanes 2 --mock-e5`) | all modes E0–E5 byte-identical with the model |
 | A2 | FPGA speed ✅ 20 Oct, Python round trip only (fabric-only time still open) | 1 | same run | part 2 of the same script | fps table in `sim_out/board/first_contact.md` |
 | A3 | ARM baseline on the same board: our encoder in C on the PS (1 and 2 cores, bit-exact gate) vs libjpeg-turbo, + Ascon / AES-GCM whole file, vs the fabric | 2 | 1 h | `CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --sizes 320x240 640x480 --frames 30` (after A1/A2) | `sim_out/board/arm_baseline.md` |
-| A4 | Power and energy per frame | 1 + 5 | 1 day | USB meter: idle / ARM / FPGA per mode, 30 s averages → `future_work/baselines/power_template.csv` → `python -m future_work.baselines.energy_table <csv>` | mJ/frame, FPGA vs ARM |
+| A4 | Power and energy per frame | 1 + 5 | 1 h | Meter optional. Without: `python -m future_work.baselines.energy_table future_work/baselines/power_template.csv --no-meter --fpga-json <A2 first_contact.json> --arm-json <A3 arm_baseline.json>` (measured fps, Vivado power estimate). With a USB meter: idle / ARM / FPGA per mode, 30 s averages in `power_w` / `idle_power_w`, same command without `--no-meter` | mJ/frame, FPGA vs ARM, power source named per row |
 | A5 | Live link board → laptop | 3 + 4 | 1 day | board: `python3 -m future_work.board.board_sender --bitfile ... --set link.host=<laptop> --set link.bind_host=0.0.0.0`; laptop: `python -m link.run_all --no-sender --set link.bind_host=0.0.0.0 --set link.sender_host=<board>` | the dashboard shows the board's stream |
 | A6 | Attacks against the board | 3 | 1 day | `experiments/scenario.py --external-sender <BOARD IP>` with `full_suite.json` and `benign.json`, 3 runs each (docs/BOARD_BRINGUP.md §8) | "on hardware" row in the reaction table |
 | A7 | Webcam on the board | 4 | ½ day | `--set sender.source=webcam:0` | live demo |
