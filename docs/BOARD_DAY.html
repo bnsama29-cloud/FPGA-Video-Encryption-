@@ -207,7 +207,7 @@ html { scroll-behavior: smooth; }
       <tr><td class="num">0:30–0:40</td><td>5</td><td><b>Single part 1:</b> the 4-lane image bit-exact on a tiny frame</td><td>board</td></tr>
       <tr><td class="num">0:40–1:15</td><td>6</td><td><b>Single part 2:</b> A1 bit-exact + A2 speed (fabric-only ms) of 4 lanes, 2 lanes, single pipeline</td><td>board</td></tr>
       <tr><td class="num">1:15–1:35</td><td>8</td><td><b>Single part 3:</b> A3, the same encoder on the ARM; key-exchange cost</td><td>board</td></tr>
-      <tr><td class="num">1:35–2:05</td><td>9</td><td><b>Single part 4:</b> A4, power with the USB meter (idle, FPGA, ARM)</td><td>board + meter</td></tr>
+      <tr><td class="num">1:35–2:05</td><td>9</td><td><b>Single part 4:</b> A4, energy per frame: with the USB meter (idle, FPGA, ARM), or without it from the fps of phases 6 and 8 and the Vivado power estimate</td><td>board + meter (optional)</td></tr>
       <tr><td class="num">2:05–2:15</td><td>13 (first copy)</td><td>copy the results off the board, short break</td><td>laptop A</td></tr>
       <tr><td class="num">2:15–2:40</td><td>10</td><td><b>Whole system:</b> board = camera, laptop A = receiver + dashboard, laptop B = second viewer; level from the board's buttons</td><td>board + A + B</td></tr>
       <tr><td class="num">2:40–3:20</td><td>11</td><td>A6: one attack-suite run (5 min) + one benign run (2½ min), then laptop B as the attacker in the middle</td><td>board + A + B</td></tr>
@@ -284,7 +284,11 @@ certutil -hashfile future_work\board\overlay\secure_jpeg_lanes4.bit SHA256</pre>
     <div class="note"><b>Keep the PC awake</b><p>Plug it in, set sleep to "never", and do not click inside the window (a selection pauses the run until you press Esc). If you must stop: Ctrl+C, then end <code>vivado.exe</code> in Task Manager. If the build fails, phases 2–11 do not need this image; only phase 12 does.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s0c" aria-label="done"></span><div>
-    <p>Put the overlay folder in two safe places: the team drive and a USB stick. The board day must not depend on one PC.</p>
+    <p>Put the images into git, so every clone has them and the board day does not depend on one PC. The script checks each <code>.bit</code> has its <code>.hwh</code> and the run-12 / run-13 hashes, writes <code>overlay\MANIFEST.md</code> with every hash, and stages only the images (about 4 MB each). Keep a USB-stick copy as well.</p>
+    <div class="cmd"><span class="who vivado">Vivado PC · cmd</span><pre>py scripts\publish_bitstreams.py
+git commit -m "Board images: run 12 + tamper image of run 13"
+git push</pre></div>
+    <div class="expect"><b>Expect</b><p>Six <code>ok</code> lines (at least the three required: <code>secure_jpeg_lanes</code>, <code>secure_jpeg_lanes4</code>, <code>secure_jpeg_lanes_tamper</code>), then <code>staged … files</code>. On any other machine, after <code>git pull</code>: <code>py scripts\publish_bitstreams.py --check</code> must say every image is ok.</p></div>
   </div></div>
 </section>
 
@@ -326,7 +330,7 @@ py experiments\hw_tamper.py --external-sender 127.0.0.1 --trigger udp:127.0.0.1 
       <tr><td>micro-SD, 16 GB or more</td><td>PYNQ Linux</td><td>class 10; it gets erased</td></tr>
       <tr><td>micro-USB data cable</td><td>power and serial console</td><td>into the port marked <b>PROG / UART</b></td></tr>
       <tr><td>Ethernet cable</td><td>board ↔ laptop or router</td><td>CAT5e or 6</td></tr>
-      <tr><td>Inline USB power meter</td><td>A4 energy per frame</td><td>between the USB supply and the board's cable</td></tr>
+      <tr><td>Inline USB power meter (optional)</td><td>A4 measured energy per frame</td><td>between the USB supply and the board's cable; without it, A4 uses the Vivado power estimate (phase 9)</td></tr>
       <tr><td>Laptop with the repo</td><td>receiver, dashboard, attacker</td><td><code>E:\FPGA-Video-Encryption-</code>, on the latest commit</td></tr>
       <tr><td>Overlay folder on a USB stick</td><td>the bitstreams</td><td>every <code>.bit</code> with its <code>.hwh</code>, same base name</td></tr>
       <tr><td>Router (optional), USB webcam (optional)</td><td>internet for <code>pip</code>, LAN demo; live camera</td><td>a webcam that can give raw YUYV suits the YUYV image</td></tr>
@@ -406,7 +410,7 @@ ssh xilinx@<span data-v="board">BOARD</span> "uname -a"</pre></div>
 dir future_work\board\overlay\*.bit
 ssh xilinx@<span data-v="board">BOARD</span> "mkdir -p /home/xilinx/fpga"
 scp -r model link future_work configs experiments scripts requirements.txt xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/</pre></div>
-    <div class="expect"><b>Expect</b><p><code>dir</code> lists the five run-12 <code>.bit</code> files and <code>secure_jpeg_lanes_tamper.bit</code> from phase 0 (at least <code>secure_jpeg_lanes4.bit</code> and <code>secure_jpeg_lanes.bit</code>). No <code>scp</code>? Open <code>\\<span data-v="board">BOARD</span>\xilinx</code> in Explorer (xilinx/xilinx) and drag the folders.</p></div>
+    <div class="expect"><b>Expect</b><p><code>dir</code> lists the five run-12 <code>.bit</code> files and <code>secure_jpeg_lanes_tamper.bit</code> from phase 0 (at least <code>secure_jpeg_lanes4.bit</code> and <code>secure_jpeg_lanes.bit</code>); if they are in git, <code>git pull</code> brought them. On the board, <code>python3 scripts/publish_bitstreams.py --check</code> confirms the copy is complete. No <code>scp</code>? Open <code>\\<span data-v="board">BOARD</span>\xilinx</code> in Explorer (xilinx/xilinx) and drag the folders.</p></div>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s4b" aria-label="done"></span><div>
     <p>Log in, become root and load PYNQ's Python. Every later board command runs in this shell.</p>
@@ -505,23 +509,26 @@ python3 experiments/pq_kex_cost.py --runs 20</pre></div>
 
 <!-- ============================================================ 9 -->
 <section class="phase" id="p9">
-  <div class="ph-head"><div class="ph-num">9</div><h2>A4: power and energy per frame</h2>
-    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip task">A4</span><span class="chip time">30 min</span></div></div>
-  <p>Wiring: USB supply → meter → micro-USB cable → PROG/UART. Each reading is the meter's average over 30 s while one workload runs in a loop. Photograph the meter for every reading.</p>
+  <div class="ph-head"><div class="ph-num">9</div><h2>A4: energy per frame (USB meter optional)</h2>
+    <div class="ph-meta"><span class="chip board">Board</span><span class="chip laptop">Laptop</span><span class="chip task">A4</span><span class="chip time">5 min without the meter, 30 min with it</span></div></div>
+  <p>Energy per frame = power ÷ fps. The fps are always measured on the board (phases 6 and 8). The power comes from the meter if you have one; otherwise from Vivado's post-route estimate of the same bitstream, and the table says so in a "Power source" column. Report meter rows as measured and Vivado rows as estimates.</p>
+  <div class="step"><span class="check"><input type="checkbox" id="s9n" aria-label="done"></span><div>
+    <p><b>Without a meter.</b> Nothing to run on the board. After the first copy (phase 13), on the laptop:</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json</pre></div>
+    <div class="expect"><b>Expect</b><p>The FPGA rows with fps, about 2.2 W "Vivado estimate (overlay_lanes4, confidence Medium)" and mJ per frame; the ARM rows with their fps and "not measured" power (Vivado has no model of the ARM's load). Written to <code>power_template.md</code> / <code>.json</code>. Skip the two steps below.</p></div>
+  </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s9a" aria-label="done"></span><div>
-    <p><b>Idle.</b> Board booted, nothing running, 30 s average → the idle watts.</p>
+    <p><b>With a meter: idle.</b> Wiring: USB supply → meter → micro-USB cable → PROG/UART. Each reading is the meter's average over 30 s; photograph the meter for every reading. Board booted, nothing running → the idle watts.</p>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s9b" aria-label="done"></span><div>
-    <p><b>Loaded.</b> Start each workload, wait 10 s, read the 30 s average, note the fps it prints.</p>
+    <p><b>With a meter: loaded.</b> Start each workload, wait 10 s, read the 30 s average.</p>
     <div class="cmd"><span class="who board">Board · ssh</span><pre><span class="c"># FPGA, 4 lanes, E2 and E5 (one at a time)</span>
 python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes4.bit --sizes 640x480 --frames 1 --timing-frames 2000 --zero-copy --out sim_out/board/power_lanes4
 <span class="c"># ARM, our encoder and the baselines</span>
 CFLAGS="-mcpu=cortex-a9 -mfpu=neon" python3 -m future_work.arm.arm_baseline --sizes 640x480 --frames 2000 --out sim_out/board/power_arm</pre></div>
-  </div></div>
-  <div class="step"><span class="check"><input type="checkbox" id="s9c" aria-label="done"></span><div>
-    <p>Fill <code>future_work\baselines\power_template.csv</code> (one row per workload: method, mode, width, height, fps, power_w, idle_power_w), delete the example row, then:</p>
-    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py -m future_work.baselines.energy_table future_work\baselines\power_template.csv</pre></div>
-    <div class="expect"><b>Expect</b><p>Energy per frame (total and above idle) for each row and the ratio to software.</p></div>
+    <p>Write the watts into the <code>power_w</code> column of <code>future_work\baselines\power_template.csv</code> and the idle watts into <code>idle_power_w</code> (leave <code>fps</code> empty: it is read from the JSON files), then (the fps of the same 2000-frame runs):</p>
+    <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --fpga-json sim_out\board\power_lanes4\first_contact.json --arm-json sim_out\board\power_arm\arm_baseline.json</pre></div>
+    <div class="expect"><b>Expect</b><p>"USB meter" in the Power source column, energy per frame total and above idle, and the ratio to the first row of the same size.</p></div>
   </div></div>
 </section>
 
@@ -638,8 +645,8 @@ http://<span data-v="laptop">LAPTOP</span>:8000/stream/wire.mjpg</pre></div>
     <div class="cmd"><span class="who laptop">Laptop · cmd</span><pre>cd /d E:\FPGA-Video-Encryption-
 scp -r xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/sim_out/board sim_out\
 scp -r xilinx@<span data-v="board">BOARD</span>:/home/xilinx/fpga/sim_out/pq_kex sim_out\
-powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,future_work\baselines\power_template.csv board_results.zip</pre></div>
-    <p>Send <code>board_results.zip</code>, the meter photos and the phone videos to Claude. <code>sim_out\runs</code> holds the A6, two-laptop and tamper runs. Claude puts the results in <code>paper/data/board/</code>, fills the red <code>\TODO{A2…A6}</code> in both papers, checks that the conference paper is still 6 pages, and opens the pull request.</p>
+powershell Compress-Archive -Force sim_out\board,sim_out\pq_kex,sim_out\runs,future_work\baselines\power_template.* board_results.zip</pre></div>
+    <p>Send <code>board_results.zip</code>, the meter photos (if you used the meter) and the phone videos to Claude. <code>sim_out\runs</code> holds the A6, two-laptop and tamper runs. Claude puts the results in <code>paper/data/board/</code>, fills the red <code>\TODO{A2…A6}</code> in both papers, checks that the conference paper is still 6 pages, and opens the pull request.</p>
   </div></div>
   <div class="step"><span class="check"><input type="checkbox" id="s13b" aria-label="done"></span><div>
     <p>Shut the board down cleanly before the switch: wait until the LEDs stop.</p>

@@ -37,3 +37,7 @@ vivado_results_*.zip
 # fresh demo key (scripts/demo_key.py): never commit it
 configs/demo_key.txt
 configs/session_key.txt
+
+# Vivado report folders next to the board images; the images themselves (.bit + .hwh) are committed
+# with scripts/publish_bitstreams.py
+future_work/board/overlay/*/

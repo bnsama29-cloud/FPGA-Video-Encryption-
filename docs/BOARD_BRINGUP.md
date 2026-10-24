@@ -147,14 +147,27 @@ The same C encoder also runs the camera node without a bitstream (PS only):
 
 ---
 
-## 7. A4: power and energy per frame (1-2 h, needs the USB meter)
+## 7. A4: power and energy per frame (USB meter optional)
+
+Energy per frame = power / fps. The fps always come from the board (A2 `first_contact.json`, A3
+`arm_baseline.json`); the power comes from the meter if you have one, otherwise from Vivado's post-route
+estimate of the same bitstream. The table names the source of every row ("USB meter" or "Vivado estimate").
+
+**Without a meter** (nothing more to run on the board), on the laptop after copying the A2/A3 results:
+`python -m future_work.baselines.energy_table future_work/baselines/power_template.csv --no-meter --fpga-json sim_out/board/lanes4_final/first_contact.json --arm-json sim_out/board/arm_final/arm_baseline.json`
+→ FPGA rows with fps, Vivado power (about 2.2 W for the 4-lane image) and mJ/frame; ARM rows with fps and
+"not measured" power (Vivado has no model of the ARM's load). Report these as estimates.
+
+**With a meter:**
 
 1. Meter inline on the board's supply. Record **idle** (booted, nothing running) for 30 s, average W.
 2. For each row of `future_work/baselines/power_template.csv`: run that workload continuously (ARM: the
-   baseline script with a large `--frames`; FPGA: `first_contact` with a large `--timing-frames`), read
-   the meter's 30 s average, and fill in `fps`, `power_w`, `idle_power_w`.
-3. On the laptop: `python -m future_work.baselines.energy_table future_work/baselines/power_template.csv`
-   → energy per frame (total and dynamic) and the ratio to software.
+   baseline script with `--frames 2000 --out sim_out/board/power_arm`; FPGA: `first_contact` with
+   `--timing-frames 2000 --out sim_out/board/power_lanes4`), read the meter's 30 s average, and fill in
+   `power_w` and `idle_power_w` (leave `fps` empty: it is read from the JSON files).
+3. On the laptop: the same command without `--no-meter`, with `--fpga-json sim_out/board/power_lanes4/first_contact.json
+   --arm-json sim_out/board/power_arm/arm_baseline.json` → energy per frame (total and above idle) and the
+   ratio to the first row of the same size.
 
 Rule from GUIDE.md: report what you measure, even if the FPGA path is not better on some metric.
 
