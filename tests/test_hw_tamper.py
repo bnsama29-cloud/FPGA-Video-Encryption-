@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "experiments"))
 import hw_tamper  # noqa: E402
 import scenario  # noqa: E402
 
-from future_work.board.board_sender import MockTamper  # noqa: E402
+from system.board.board_sender import MockTamper  # noqa: E402
 
 
 def ev(t, src, kind, **kw):
@@ -62,7 +62,7 @@ def test_rehearsal_every_shot_costs_exactly_one_frame(tmp_path):
     toks = shlex.split(cmd)
     sets = [x for a, t in zip(toks, toks[1:]) if a == "--set" for x in ("--set", t)]
     sets += ["--set", "sender.width=160", "--set", "sender.height=128"]
-    board = subprocess.Popen([sys.executable, "-m", "future_work.board.board_sender", "--mock-lanes", "2",
+    board = subprocess.Popen([sys.executable, "-m", "system.board.board_sender", "--mock-lanes", "2",
                               "--mock-e5", "--mock-tamper"] + sets, cwd=ROOT, stdout=subprocess.DEVNULL)
     try:
         scenario.run(sc, "threshold", tmp_path, bp, ["sender.width=160", "sender.height=128"], quiet=True,

@@ -1,0 +1,23 @@
+{
+ "about": "The PYNQ-Z2 board images. Built by vivado/run_vivado_day.py into system/board/overlay/ (each .bit needs its .hwh beside it). scripts/publish_bitstreams.py checks them against this list, writes overlay/MANIFEST.md and stages them for git. sha256_prefix is the hash recorded when the image was built (null = not recorded here; MANIFEST.json then holds the full hash).",
+ "images": [
+  {"file": "secure_jpeg_lanes.bit", "design": "overlay_lanes", "step": "bd_lanes", "version": "0x5EC00382",
+   "clock_mhz": 100, "run": "run 12", "sha256_prefix": null, "required": true,
+   "purpose": "2 lanes + E5, the main demo image (A1, A2, A5, A6)"},
+  {"file": "secure_jpeg_lanes4.bit", "design": "overlay_lanes4", "step": "bd_lanes4", "version": "0x5EC00384",
+   "clock_mhz": 125, "run": "run 12", "sha256_prefix": "7f1260af5daf72b0", "required": true,
+   "purpose": "4 lanes + E5, lines up to 1024 px (A1, A2, A4); --fclk 100 if 125 MHz fails"},
+  {"file": "secure_jpeg_lanes_tamper.bit", "design": "overlay_lanestamper", "step": "bd_tamper", "version": "0x5EC00382",
+   "clock_mhz": 100, "run": "run 13", "sha256_prefix": "c6a92ab60e8e176d", "required": true,
+   "purpose": "2 lanes + E5 + tamper injector (SW0/SW1/BTN0) and level buttons (BTN1-BTN3)"},
+  {"file": "secure_jpeg.bit", "design": "overlay", "step": "bd", "version": "0x5EC00200",
+   "clock_mhz": 100, "run": "run 12", "sha256_prefix": null, "required": false,
+   "purpose": "single pipeline, E0-E4 (contract v2)"},
+  {"file": "secure_jpeg_lanes4hd.bit", "design": "overlay_lanes4hd", "step": "bd_lanes4hd", "version": "0x5EC00384",
+   "clock_mhz": 125, "run": "run 12", "sha256_prefix": null, "required": false,
+   "purpose": "4 lanes, lines up to 2048 px (1920x1088)"},
+  {"file": "secure_jpeg_lanes4yuyv.bit", "design": "overlay_lanes4yuyv", "step": "bd_lanes4yuyv", "version": "0x5EC003C4",
+   "clock_mhz": 125, "run": "run 12", "sha256_prefix": null, "required": false,
+   "purpose": "4 lanes, camera-native YUYV input"}
+ ]
+}

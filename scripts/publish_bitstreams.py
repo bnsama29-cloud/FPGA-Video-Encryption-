@@ -8,7 +8,7 @@ Run it on the PC that built them (Vivado PC), from the repo root, after vivado/r
 
     py scripts\\publish_bitstreams.py --check    only check (laptop, or on the board after copying)
 
-What it checks, for every image in future_work/board/bitstreams.json:
+What it checks, for every image in system/board/bitstreams.json:
   * the .bit is there with its .hwh (PYNQ needs both, same name, same folder);
   * the SHA-256 starts with the prefix recorded when the image was built (run 12 / run 13). A different hash
     means a different build: it stops, unless --force (say in the commit which run built it);
@@ -24,8 +24,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LIST = ROOT / "future_work" / "board" / "bitstreams.json"
-OVERLAY = ROOT / "future_work" / "board" / "overlay"
+LIST = ROOT / "system" / "board" / "bitstreams.json"
+OVERLAY = ROOT / "system" / "board" / "overlay"
 
 
 def sha256(path):

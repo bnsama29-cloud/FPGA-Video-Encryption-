@@ -1,4 +1,4 @@
-"""R1 -- where do the encoder's cycles go? (GUIDE.md B18, research suite)
+"""R1 -- where do the encoder's cycles go? (research suite)
 
     python experiments/stall_profile.py                      # 128x96, scene/noise/bars, E0/E2/E4 (~2 min)
     python experiments/stall_profile.py --size 320x240       # slower, closer to the paper's frames

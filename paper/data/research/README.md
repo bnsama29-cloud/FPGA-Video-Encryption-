@@ -20,7 +20,7 @@ Known limits of this snapshot (docs/TESTING.md §8):
   on black frames that cannot reach the budget); all controllers settle within +-5 % afterwards.
 
 Sources: `synthetic` (fixed-camera corridor scene of `link/sources.py`), four copyrighted film clips
-identified by hash in `future_work/clips_manifest.md` (numbers only, never pictures), Sintel trailer and
+identified by hash in `system/clips_manifest.md` (numbers only, never pictures), Sintel trailer and
 Tears of Steel (Blender Foundation, CC BY 3.0; the R3 plots are only from these and the synthetic scene).
 The film clips contain shot cuts and camera motion; the fixed-camera case of R4 and R7 is represented
 only by the synthetic scene until a static-camera clip is added.

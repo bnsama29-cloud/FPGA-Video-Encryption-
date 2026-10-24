@@ -1,5 +1,5 @@
-"""BTN1..BTN3 of the tamper overlay -> protection level (future_work/board/board_sender.py :: ButtonLevels,
-RTL future_work/board/axil_buttons.v, checked in tb/test_axil_buttons.py).
+"""BTN1..BTN3 of the tamper overlay -> protection level (system/board/board_sender.py :: ButtonLevels,
+RTL system/board/axil_buttons.v, checked in tb/test_axil_buttons.py).
 
 Checks, on a real link Sender with the emulated 2-lane bitstream: BTN1 steps down to E0 and no further, BTN2
 steps up to what the bitstream offers (E5, or E4 without E5), BTN3 returns to the automatic policy, presses
@@ -11,7 +11,7 @@ import socket
 import threading
 import time
 
-from future_work.board.board_sender import ButtonLevels, MockButtons, make_board_sender
+from system.board.board_sender import ButtonLevels, MockButtons, make_board_sender
 from link import config
 
 

@@ -1,4 +1,4 @@
-"""The standard image-encryption metrics, per protection level (GUIDE.md B13).
+"""The standard image-encryption metrics, per protection level.
 
     python experiments/standard_metrics.py                                   # synthetic scene
     python experiments/standard_metrics.py --video data/kodak --frames 24 --stride 1 --size 768x512 --name kodak

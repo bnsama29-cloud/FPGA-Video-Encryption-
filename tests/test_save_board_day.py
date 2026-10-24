@@ -27,7 +27,7 @@ def test_copies_only_board_results_with_a_manifest(tmp_path):
         "sim_out/runs/hw_tamper_rep1/events.jsonl": "{}\n",
         "sim_out/runs/quick_threshold/summary.json": "{}",                # laptop simulation: not board day
         "sim_out/board_backups/x.json": "{}",                             # checkpoints stay out
-        "future_work/baselines/power_template.md": "| |",
+        "system/baselines/power_template.md": "| |",
         "configs/demo_key.txt": "167ae045648ba4c22af59f4c743abc38"})
     dest = tmp_path / "paper/data/board/day"
     rows, skipped = sbd.save(dest, root=tmp_path)

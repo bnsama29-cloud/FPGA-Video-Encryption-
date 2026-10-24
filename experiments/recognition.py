@@ -1,4 +1,4 @@
-"""Recognition test (GUIDE B23): can an off-the-shelf detector find the PEOPLE in the eavesdropper's
+"""Recognition test: can an off-the-shelf detector find the PEOPLE in the eavesdropper's
 pictures? Correlations need the picture to be in the right place; a person looking at the screen, or a
 detector, does not.
 

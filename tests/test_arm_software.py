@@ -1,4 +1,4 @@
-"""The encoder on the processing system (future_work/arm/native/sjpeg_sw.c) must give the same bytes as
+"""The encoder on the processing system (system/arm/native/sjpeg_sw.c) must give the same bytes as
 the golden model (model/hw.py), and therefore as the programmable logic, in every mode and contract,
 for any number of threads. Also: the full-file Ascon baseline matches model/ascon.py, the A3 script runs."""
 import json
@@ -11,7 +11,7 @@ import pytest
 from model import ascon, hw
 from model.testimage import make_image
 
-sw = pytest.importorskip("future_work.arm.sw_encoder")
+sw = pytest.importorskip("system.arm.sw_encoder")
 ROOT = Path(__file__).resolve().parents[1]
 KEY, SID = bytes(range(16)), 0x5EC0_1234_5678
 
@@ -48,7 +48,7 @@ def test_ps_encoder_bit_exact_with_model(w, h, kind, q):
 
 def test_software_backend_through_the_board_driver():
     """SecureJpegIP on the PS-only backend: same JPEG as the model incl. the E5 shuffle."""
-    from future_work.board.pynq_driver import SecureJpegIP
+    from system.board.pynq_driver import SecureJpegIP
     ip = SecureJpegIP(sw.SoftwareBackend(contract=3, lanes=2, e5=True, threads=2))
     ip.setup_session(KEY, SID, 75)
     rgb = make_image(64, 48, "scene")
@@ -69,7 +69,7 @@ def test_full_file_ascon_matches_model(n):
 
 
 def test_arm_baseline_script_runs(tmp_path):
-    r = subprocess.run([sys.executable, "-m", "future_work.arm.arm_baseline", "--sizes", "32x32", "--frames", "1",
+    r = subprocess.run([sys.executable, "-m", "system.arm.arm_baseline", "--sizes", "32x32", "--frames", "1",
                         "--out", str(tmp_path)], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
     d = json.loads((tmp_path / "arm_baseline.json").read_text())

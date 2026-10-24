@@ -1,4 +1,4 @@
-"""Two-laptop attack setup (docs/BOARD_DAY.html): board -> attacker laptop (link.channel) -> receiver laptop.
+"""Two-laptop attack setup: board -> attacker laptop (link.channel) -> receiver laptop.
 
     python -m pytest tests/test_two_laptop.py                 (~5 s)
     RUN_SLOW=1 python -m pytest tests/test_two_laptop.py      (adds a three-address loopback run, ~20 s)

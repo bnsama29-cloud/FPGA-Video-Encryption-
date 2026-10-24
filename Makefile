@@ -23,7 +23,7 @@ help:
 	@echo "make full         long run: all 1089 Ascon KATs, 320x240 frames"
 	@echo "make one T=tb/test_dct_quant.py::test_dct8x8 [SEED=n]   one test, full log"
 	@echo "make waves T=...  same with waveforms -> gtkwave sim_build/<top>/*.fst"
-	@echo "make bundle T=... [SEED=n]   debug_bundle.md to paste into Claude"
+	@echo "make bundle T=... [SEED=n]   debug_bundle.md for a bug report"
 	@echo "make xsim-icarus  Vivado testbench (vivado/tb_secure_jpeg_top.v) run in Icarus"
 	@echo "                  (in Vivado: bash vivado/run_xsim.sh  or  vivado\\run_xsim.bat)"
 	@echo "make lint | lint-strict | synth | hls-csim | demo | clean"

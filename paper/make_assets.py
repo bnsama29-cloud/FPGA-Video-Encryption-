@@ -938,7 +938,7 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
         macro("TopMhz", f"{mhz:.0f}")
         macro("TopPowerMw", f"{1000 * r['power'].get('total', 0):.0f}")
         macro("TopDynMw", f"{1000 * r['power'].get('dynamic', 0):.0f}")
-        # power from simulated switching activity (SAIF, GUIDE.md B37), when the run has it
+        # power from simulated switching activity (SAIF), when the run has it
         saif = r.get("power_saif") or {}
         if saif:
             macro("SaifTopMw", f"{1000 * max(v['total'] for v in saif.values()):.0f}")
@@ -980,7 +980,7 @@ Mode & Cycles & Cycles/pixel & $\Delta$ vs E0 & fps (640$\times$480) \\
         for label, d in (("\\quad keystream generator", ks), ("\\quad tag unit", tg), ("\\quad selective-encryption stage", se)):
             if d:
                 body += f"{label} & {d['lut']} & {d['ff']} & {d['bram']:g} & {d['dsp']} \\\\\n"
-        src = r"Yosys \texttt{synth\_xilinx} estimate, \textbf{not} post-route; \TODO{replace with Vivado (GUIDE.md 4.1)}"
+        src = r"Yosys \texttt{synth\_xilinx} estimate, \textbf{not} post-route; \TODO{replace with Vivado}"
         macro("ResourceSource", "a Yosys synthesis estimate")
         if top and ks and tg:
             macro("CryptoLutShare", f"{100 * (ks['lut'] + tg['lut']) / top['lut']:.0f}")
@@ -1866,7 +1866,7 @@ def maths():
 
 
 def board():
-    """Results measured on the PYNQ-Z2 (future_work/board/first_contact.py; snapshot in paper/data/board/)."""
+    """Results measured on the PYNQ-Z2 (system/board/first_contact.py; snapshot in paper/data/board/)."""
     runs = {}
     for f in sorted((DATA / "board").glob("*/first_contact.json")):
         d = J(f)
@@ -2014,7 +2014,7 @@ def board_day():
     waits = [bd_row(d)["in_wait"] / (bd_mhz(bd_row(d)) * 1e3) for d in runs.values()]
     macro("BdWaitMsMin", f"{min(waits):.2f}")
     macro("BdWaitMsMax", f"{max(waits):.2f}")
-    # A3: the same encoder in C on the ARM (future_work/arm/arm_baseline.py), and libjpeg-turbo
+    # A3: the same encoder in C on the ARM (system/arm/arm_baseline.py), and libjpeg-turbo
     arm, armrows = BD / "board" / "arm_final" / "arm_baseline.json", []
     if arm.exists():
         a = J(arm)["sizes"]["640x480"]

@@ -40,7 +40,7 @@ Est. fmax = 1000 / (period - WNS): a single-run estimate, confirm by re-running 
 | secure_jpeg_top | v2_E2 | 0.230 | 0.125 | 0.143 | Medium | Medium: User specified less than 25% of internal nodes |
 | secure_jpeg_top | v2_E4 | 0.230 | 0.125 | 0.143 | Medium | Medium: User specified less than 25% of internal nodes |
 
-Run = contract (v2: secure_jpeg_top, v3: 2 lanes) and mode; activity of one scene frame (vivado/run_vivado_day.py --steps power). Activity from RTL simulation matches only the nets whose names survive synthesis; the rest keep Vivado's default. Still an estimate: the board measurement (GUIDE A4) is the measured number.
+Run = contract (v2: secure_jpeg_top, v3: 2 lanes) and mode; activity of one scene frame (vivado/run_vivado_day.py --steps power). Activity from RTL simulation matches only the nets whose names survive synthesis; the rest keep Vivado's default. Still an estimate: the board measurement is the measured number.
 
 ### Worst setup paths (block of source -> destination)
 

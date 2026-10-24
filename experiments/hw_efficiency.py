@@ -1,4 +1,4 @@
-"""Hardware figures of merit in the units published FPGA papers use (RESEARCH.md items 12-13, GUIDE B40).
+"""Hardware figures of merit in the units published FPGA papers use (docs/RESEARCH.md items 12-13).
 
     python experiments/hw_efficiency.py
     python experiments/hw_efficiency.py --vivado sim_out/vivado/vivado_results.json   # a fresh Vivado run
@@ -18,7 +18,7 @@ Derived columns:
   nJ/pixel         total on-chip power / throughput (energy per pixel)
 Limits: throughput is RTL simulation with no DMA stalls; SAIF and vectorless power are estimates. A Vivado run
 older than the E5 RTL (run 6, 17 Oct 2026) has no E5 logic in its netlist, so with it E5 rows pair E5
-throughput with the pre-E5 area; run 7 (18 Oct) includes E5. Board measurements replace both (GUIDE A4).
+throughput with the pre-E5 area; run 7 (18 Oct) includes E5. Board measurements replace both.
 Writes sim_out/hw_efficiency/hw_efficiency.json and .md.
 """
 import argparse

@@ -452,7 +452,7 @@ def split_segments(scan):
 
 
 def arm_shuffle(jpeg, key, session_id, frame_ctr):
-    """The ARM's part of E5 (future_work/board): split the fabric's scan at the RST markers, send the
+    """The ARM's part of E5 (system/board): split the fabric's scan at the RST markers, send the
     segments in e5_order with RST0..7 renumbered in output order. Header, APP11 and tag are unchanged."""
     head, scan = split_scan(jpeg)
     segs = split_segments(scan)

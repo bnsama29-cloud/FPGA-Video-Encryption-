@@ -5,7 +5,7 @@ for the PYNQ-Z2 is unchanged by R2-R4 (they are model-level studies), and R1 onl
 Rules as everywhere: every number comes from a script that writes `sim_out/`; the golden model is the
 referee; every failure gets a bug-log row and a new approach, not a workaround.
 
-**Run everything at once:** `future_work/kaggle/kaggle_runs.py (JOB = "research")` (one Kaggle cell, ~1.5 h, CPU only)
+**Run everything at once:** `system/kaggle/kaggle_runs.py (JOB = "research")` (one Kaggle cell, ~1.5 h, CPU only)
 and, on the laptop with Vivado, `python vivado\run_vivado_day.py --steps ooc parse --periods 8.0 6.667`
 (R5). Status: the sections R1-R7 below were written from the development VM (synthetic scene, RTL in
 Icarus). The Kaggle run of 15 Oct 2026 (7 sources, 47/47 steps PASS, snapshot in
@@ -15,7 +15,7 @@ leak, E0-E5 and padding rows).
 
 ## What the real clips changed (Kaggle, 15 Oct 2026)
 
-An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the paper until it is labelled and hashed in `future_work/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
+An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the paper until it is labelled and hashed in `system/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
 
 Important for reading the numbers: the six clips are **edited films** (shot cuts, camera motion). The
 threat model of R4 and R7 is a **fixed camera**; only the synthetic scene is one so far. A short clip
@@ -172,7 +172,7 @@ in the DCT domain *is* a pattern of sign changes, and E4/E5 already encrypt ever
 replacement view drops signs anyway). Only transposition is left: with oracle tile positions, SSIM
 0.555 for E5 against 0.545 for E5+T; our jigsaw solver is at chance for both (~1 % neighbours).
 **Consequence:** E5's protection rests entirely on the block *positions* staying unsolved; an attacker
-who recovered them would see SSIM ~0.55. Stronger solvers are the threat to watch (GUIDE B9).
+who recovered them would see SSIM ~0.55. Stronger solvers are the threat to watch.
 
 ## R7 -- the frame-size side channel of every level (`experiments/size_leak.py`)
 
@@ -210,9 +210,9 @@ IP-camera traffic from sizes and timing. Synthetic scene, 90 frames; the attacke
 
 Written 16 Oct 2026, from a competitor-datasheet check (logiJPGE, CAST JPEG-E-S/EX-S) done
 against our own R1 (`experiments/stall_profile.py`) and R2 (`experiments/parallel_lanes.py`)
-numbers. Nothing here is implemented yet — this is the brainstorming list Samarth asked for
+numbers. Nothing here is implemented yet — this is a brainstorming list
 before deciding what to build next. Do not start RTL changes from this file alone; turn a
-chosen item into a GUIDE.md task first.
+chosen item into a task first.
 
 ### The arithmetic
 
@@ -267,7 +267,7 @@ Area / memory
    throughput with 4 lanes; 4:2:0 needs 16 lines where logiJPGE's 4:2:2 needs 8. CAST's 2 BRAM need
    block-order input from a 2-D DMA: open.)
 7. DSPs: 23, between CAST's 16 and logiJPGE's ~30 (each extra lane: ~+22).
-8. Two separate Ascon cores running -- GUIDE B7 (sharing one core) still open.
+8. Two separate Ascon cores running -- sharing one core is still open.
 
 Features others have that we don't
 9. Chroma formats: only 4:2:0. CAST does 4:2:0/4:2:2/4:4:4/grayscale/12-bit; logiJPGE does
@@ -279,14 +279,14 @@ Features others have that we don't
 
 Evidence gaps vs. published crypto/hardware papers
 12. No board measurements yet (real fps, power, energy/frame) -- power is a vectorless
-    estimate only (a SAIF-based flow exists since 17 Oct: GUIDE B37). Biggest gap for the paper's credibility.
+    estimate only (a SAIF-based flow exists since 17 Oct). Biggest gap for the paper's credibility.
 13. (Partly done 18 Oct 2026: `experiments/hw_efficiency.py` reports Mpixel/s per kLUT, input Gbit/s and
     nJ/pixel per design and mode; the Ascon core on its own is still not measured.)
     Ascon throughput never reported in Gbps or Gbps/LUT, the metric comparable NIST
     LWC hardware papers (Kurian, Khairallah, Mozaffari-Kermani et al.) use.
     21 Oct 2026: Ascon block rate measured in RTL (9 clocks per 128-bit block, `tb/test_ascon_core.py ::
     ascon_block_rate`) → `\AsconGbps`, `\AsconGbpsPerKlut` in the papers.
-14. No software (ARM/PS-side) baseline for comparison (GUIDE B1). **Code done 21 Oct 2026:** `future_work/arm/` -- the whole encoder in C on the PS, bit-exact with
+14. No software (ARM/PS-side) baseline for comparison. **Code done 21 Oct 2026:** `system/arm/` -- the whole encoder in C on the PS, bit-exact with
     the model (1 and 2 cores), vs libjpeg-turbo ± whole-file Ascon / AES-GCM (`arm_baseline.py`); needs the board run.
 15. No side-channel resistance -- no masking against power analysis; physical attacks are
     explicitly out of scope, but recent Ascon hardware papers address this.
@@ -333,7 +333,7 @@ the line buffers), 9-11, 12-17.
 
 ## Reference check (17 Oct 2026): every cited sentence against the full PDF
 
-The team collected the PDFs of all 30 references (`references.zip`, kept outside the repository:
+The PDFs of all 30 references were collected (`references.zip`, kept outside the repository:
 copyrighted). Every sentence of the paper (then `paper/main.tex`, now `conference.tex` and `access.tex`) that carries a `\cite` was checked against the source.
 
 | Key | What the paper uses it for | Verdict | Change |

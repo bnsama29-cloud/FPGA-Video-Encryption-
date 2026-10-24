@@ -24,13 +24,13 @@ Steps (all in one command, cached in sim_out/learned_attack/):
                 (dark letterbox bars, average brightness), which encryption cannot hide.
             The learned edge correlation is reported with a 95 % bootstrap interval over the test
             frames, so a small value can be told apart from zero.
-            Frame-level-statistics controls (GUIDE B25): (d) the flat true mean colour of each test
+            Frame-level-statistics controls: (d) the flat true mean colour of each test
             frame; (e) the control (c) recoloured to the TRUE per-channel mean and spread of each test
             frame (an oracle of frame statistics); (f) (c) recoloured to the mean and spread of the
             attacker's replacement picture (what the stream itself reveals at frame level). If the
             network's SSIM is no better than (e), its gain over (c) is explained by frame statistics.
   --adv W:  adds a PatchGAN discriminator with weight W on a least-squares adversarial loss (the
-            GAN-style attacker of GUIDE B17; 0 = plain L1 as before).
+            GAN-style attacker; 0 = plain L1 as before).
 Use DIFFERENT videos for --train-source and --test-source (different scenes), or
 the network just memorises the background and the result means nothing.
 Writes results.json, results.md and examples_<mode>.png (original | attack | network).
@@ -101,7 +101,7 @@ def make_pairs(source, mode, n, size, stride, quality, tag):
 
 def make_pairs_multi(sources, mode, n, size, stride, quality, tag):
     """Several sources ("a.mp4,b.mp4,kodak/"): n frames split evenly between them, concatenated.
-    More, and more varied, training scenes make a stronger attacker (GUIDE.md B17)."""
+    More, and more varied, training scenes make a stronger attacker."""
     parts = [s for s in str(sources).split(",") if s]
     if len(parts) == 1:
         return make_pairs(parts[0], mode, n, size, stride, quality, tag)

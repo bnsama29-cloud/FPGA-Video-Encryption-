@@ -27,9 +27,9 @@ vivado/xsim_work/
 vivado/xsim_work_v3/
 vivado/xsim_work_v3l4/
 vivado/xsim_power_*/
-future_work/board/vivado_proj_lanes/
+system/board/vivado_proj_lanes/
 vivado/proj/
-future_work/board/vivado_proj/
+system/board/vivado_proj/
 vivado_pid*.str
 *.backup.jou
 vivado_results_*.zip
@@ -40,4 +40,23 @@ configs/session_key.txt
 
 # Vivado report folders next to the board images; the images themselves (.bit + .hwh) are committed
 # with scripts/publish_bitstreams.py
-future_work/board/overlay/*/
+system/board/overlay/*/
+
+# generated for Overleaf by paper/make_overleaf.py; built PDFs
+paper/overleaf/
+paper/conference.pdf
+paper/access.pdf
+
+# Vivado projects and overlay reports (any design), Vivado/Java crash logs
+system/board/vivado_proj*/
+system/board/overlay/*.txt
+hs_err_pid*
+clockInfo.txt
+# private material kept next to the clone: clips, reference PDFs, result archives
+clips.zip
+references/
+references.zip
+references_results.zip
+benchmark_results.zip
+docs/claude_chrome.txt
+2010.06198v1.pdf

@@ -18,7 +18,7 @@
 set top    [expr {[llength $argv] > 0 ? [lindex $argv 0] : "secure_jpeg_top"}]
 set period [expr {[llength $argv] > 1 ? [lindex $argv 1] : "10.0"}]
 # optional 3rd + 4th arguments: a top-level parameter and its value, e.g. LOG_MAXW 10 (memory sweep,
-# GUIDE B19). Two arguments, not LOG_MAXW=10: Windows cmd splits arguments at '=' (bug #19).
+# ). Two arguments, not LOG_MAXW=10: Windows cmd splits arguments at '=' (bug #19).
 # More pairs may follow (LANES 2 LOG_L 1 ...).
 set gens {}
 for {set i 2} {$i + 1 < [llength $argv]} {incr i 2} {

@@ -42,7 +42,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "experiments"))
-from future_work.attacks.jigsaw_attack import T, edge_corr, luma                # noqa: E402
+from system.attacks.jigsaw_attack import T, edge_corr, luma                # noqa: E402
 from link.sources import open_source                                         # noqa: E402
 from model import ascon                                                      # noqa: E402
 from model.entropy import run_length_encode                                  # noqa: E402
@@ -124,7 +124,7 @@ def repair_orientation(y):
 
 
 def edge_corr_luma(a, b):
-    from future_work.attacks.jigsaw_attack import _normalised  # noqa: F401  (same module, same Sobel)
+    from system.attacks.jigsaw_attack import _normalised  # noqa: F401  (same module, same Sobel)
     import cv2
     g = lambda x: np.hypot(cv2.Sobel(x, cv2.CV_64F, 1, 0), cv2.Sobel(x, cv2.CV_64F, 0, 1)).ravel()
     ga, gb = g(a.astype(np.float64)), g(b.astype(np.float64))

@@ -11,9 +11,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from future_work.board import pynq_driver as pd       # noqa: E402
+from system.board import pynq_driver as pd       # noqa: E402
 
-OVERLAY = ROOT / "future_work" / "board" / "overlay"
+OVERLAY = ROOT / "system" / "board" / "overlay"
 
 
 @pytest.mark.parametrize("image, mhz", [("secure_jpeg.bit", 100), ("secure_jpeg_lanes.bit", 100),
