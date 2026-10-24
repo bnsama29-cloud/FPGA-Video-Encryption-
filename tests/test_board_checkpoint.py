@@ -61,7 +61,7 @@ def test_progress_of_another_check_is_not_reused(tmp_path, monkeypatch):
 
 
 def test_a_failed_level_is_checked_again_on_resume(tmp_path):
-    meta = dict(bitfile="mock", ip=[3, 2, True, "rgb"], frames=1, source="synthetic", quality=75)
+    meta = dict(bitfile="mock", ip=[3, 2, True, "rgb"], frames=1, source="synthetic", quality=75, fclk_mhz=None)
     rows = [dict(size="32x16", mode=0, frames=1, bit_exact=True, first_mismatch=None),
             dict(size="32x16", mode=1, frames=1, bit_exact=False, first_mismatch=dict(frame=0))]
     fc.save_progress(tmp_path, meta, rows)

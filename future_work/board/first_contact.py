@@ -98,7 +98,9 @@ def progress_meta(a, ip):
     image = "mock" if a.mock else Path(a.bitfile).name
     return dict(bitfile=image, ip=[ip.contract, getattr(ip, "lanes", 1), getattr(ip, "e5", False),
                                    getattr(ip, "pixfmt", "rgb")],
-                frames=a.frames, source=a.source, quality=a.quality)
+                frames=a.frames, source=a.source, quality=a.quality,
+                fclk_mhz=round(getattr(ip.b, "fabric_hz", 0) / 1e6, 1) or None)   # a level proven at
+    # another clock does not count (bug #44: the 100 MHz images first ran at 62.5 MHz)
 
 
 def load_progress(out, meta, resume):
