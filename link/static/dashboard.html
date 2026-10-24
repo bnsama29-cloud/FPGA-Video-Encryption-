@@ -705,9 +705,12 @@ function onEvent(ev) {
     if ($("policy").value !== ev.policy && document.activeElement !== $("policy")) $("policy").value = ev.policy;
     if (lastMode && ev.mode !== lastMode) {
       log(`Protection ${lastMode} → ${ev.mode}: ${ev.reason}`, "def");
-      // reaction time: attack start -> first escalation after it (both clocks on this machine)
+      // reaction time: attack start (channel, laptop clock) -> first escalation after it (sender: the board's clock
+      // when the board is the sender, so scripts/set_board_clock.py must have run)
       if (pending && MODES.indexOf(ev.mode) > MODES.indexOf(lastMode)) {
-        $("k-react").textContent = (ev.t - pending).toFixed(1) + " s"; pending = null;
+        const dt = ev.t - pending;
+        $("k-react").textContent = Math.abs(dt) > 3600 ? "clocks differ: py scripts\\set_board_clock.py" : dt.toFixed(1) + " s";
+        pending = null;
       }
     }
     if (lastPolicy && ev.policy !== lastPolicy) log(`Policy changed to ${ev.policy}`, "def");
@@ -733,9 +736,13 @@ function onEvent(ev) {
     b.textContent = ok ? `✓ Verified · #${ev.ctr} · ${ev.mode}` : `✕ Rejected: ${ev.verdict}`;
     if (ok) {
       nOk++; $("v-rx").classList.add("ok");
-      if (ev.latency_ms != null) { $("f-lat").textContent = ev.latency_ms + " ms"; $("n-lat").textContent = ev.latency_ms + " ms"; }
+      if (ev.latency_ms != null) {
+        // over a minute means the sender's clock is off (a board boots with an old date), not a slow link
+        const lat = ev.latency_ms > 60000 ? "clocks differ: py scripts\\set_board_clock.py" : ev.latency_ms + " ms";
+        $("f-lat").textContent = lat; $("n-lat").textContent = lat;
+      }
       if (ev.bytes != null) { $("n-size").textContent = (ev.bytes / 1024).toFixed(1) + " kB"; $("foot-wire").textContent = `Valid JPEG, scrambled · ${(ev.bytes / 1024).toFixed(1)} kB`; }
-      frames.push({ t: ev.t, kb: ev.bytes != null ? ev.bytes / 1024 : null, lat: ev.latency_ms, mode: ev.mode });
+      frames.push({ t: ev.t, kb: ev.bytes != null ? ev.bytes / 1024 : null, lat: ev.latency_ms > 60000 ? null : ev.latency_ms, mode: ev.mode });
     } else {
       nRej++; $("v-rx").classList.remove("ok"); $("v-rx").classList.add("flash-bad");
       setTimeout(() => $("v-rx").classList.remove("flash-bad"), 400);

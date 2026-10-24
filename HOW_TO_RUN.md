@@ -157,8 +157,13 @@ Follow **`docs/BOARD_DAY.html`** (open it in a browser and tick the steps). The 
 
 **Board with the laptop**
 
-6. The complete system (A5): the board is the camera, the laptop is the receiver and dashboard. Start the
-   laptop first:
+6. The complete system (A5): the board is the camera, the laptop is the receiver and dashboard. The board
+   boots with an old date (no battery clock, no internet on the cable), which makes the latency and the
+   reaction times wrong, so after every board power-up first copy the laptop's clock to it (passwords xilinx):
+   ```
+   py scripts\set_board_clock.py --board <BOARD>
+   ```
+   It should end with a difference left of under 1 ms. Then start the laptop:
    ```
    py -m link.run_all --no-sender --pq-kex --set keys.master=<KEY> --set link.bind_host=0.0.0.0 --set link.sender_host=<BOARD> --set dashboard.bind_host=0.0.0.0
    ```
