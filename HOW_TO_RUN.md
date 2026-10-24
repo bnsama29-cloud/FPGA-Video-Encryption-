@@ -191,7 +191,7 @@ Without a meter, nothing extra runs on the board. Copy the results back (BOARD_D
 laptop:
 
 ```
-py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json
+py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json --zero-copy
 ```
 
 Energy per frame = power ÷ fps:

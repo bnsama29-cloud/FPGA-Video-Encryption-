@@ -173,3 +173,17 @@ def test_check_setup_runs(capsys):
 def test_check_setup_cli():
     r = subprocess.run([sys.executable, "scripts/check_setup.py", "--vivado"], cwd=ROOT, capture_output=True, text=True)
     assert "Setup check (vivado)" in r.stdout and "Vivado" in r.stdout, r.stdout + r.stderr
+
+
+def test_energy_table_zero_copy_fps(tmp_path):
+    """--zero-copy takes the FPGA fps from first_contact's zero-copy rows (on the board 169 fps at 640x480 instead
+    of 20 fps, which is mostly numpy copying the pixels into the DMA buffer)."""
+    rows = [dict(method="FPGA 4 lanes", mode="E2", width="640", height="480", fps="", power_w="", idle_power_w="",
+                 image="overlay_lanes4")]
+    fpga = {"speed": [{"size": "640x480", "mode": 2, "zero_copy": False, "full_fps": 20.4},
+                      {"size": "640x480", "mode": 2, "zero_copy": True, "full_fps": 169.4}]}
+    viv = _vivado_json(tmp_path)
+    for zc, want in ((False, 20.4), (True, 169.4)):
+        got = et.build(rows, fpga, None, no_meter=True, vivado_json=viv, zero_copy=zc)[0]["fps"]
+        assert got == want, f"zero_copy={zc}: fps {got}, expected {want}"
+    assert "zero-copy" in et.markdown(et.build(rows, fpga, None, True, viv, True), zero_copy=True)
