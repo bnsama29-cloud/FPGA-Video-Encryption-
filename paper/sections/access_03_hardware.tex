@@ -2,7 +2,7 @@
 \section{Hardware Architecture}\label{sec:hardware}
 \begin{figure*}[t]
 \centering
-\resizebox{\textwidth}{!}{\input{figures/tikz/arch_pl.tex}}
+\includegraphics[width=\textwidth]{figures/fig_datapath.pdf}
 \caption{Fabric datapath of the lane encoder \texttt{secure\_jpeg\_lanes\_top} (module names are the RTL files; numbers on arrows are bus widths in bits). The dealer sends MCU row $r$ to lane $r \bmod L$; each lane converts, transforms, quantizes and entropy-codes its restart segments with its own keystream; the merger restores raster order and inserts restart markers; the tag unit authenticates the prefix and the merged scan. The single-pipeline encoder is one lane without dealer and merger.}
 \label{fig:pl}
 \end{figure*}

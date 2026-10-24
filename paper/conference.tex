@@ -46,13 +46,13 @@ Van Droogenbroeck and Benedett encrypted the appended bits of AC coefficients of
 \section{System Design}\label{sec:design}
 \begin{figure*}[t]
 \centering
-\resizebox{0.92\textwidth}{!}{\input{figures/tikz/arch_system.tex}}
+\includegraphics[width=0.88\textwidth]{figures/fig_system.pdf}
 \caption{System architecture. The fabric (PL) encodes, encrypts and tags; the ARM core (PS) adds headers, reorders E5 segments and runs the key ratchet and policy; the receiver undoes the order, verifies the tag and decrypts, and reports back over an authenticated feedback channel. Red: cryptography; dashed: attacker.}
 \label{fig:system}
 \end{figure*}
 \begin{figure*}[t]
 \centering
-\resizebox{\textwidth}{!}{\input{figures/tikz/arch_pl.tex}}
+\includegraphics[width=\textwidth]{figures/fig_datapath.pdf}
 \caption{Fabric datapath of the lane encoder (\texttt{secure\_jpeg\_lanes\_top}); numbers on arrows are bus widths in bits. MCU row $r$ goes to lane $r \bmod L$; every lane restarts DC prediction and its keystream per restart segment; the merger restores raster order and inserts restart markers; the tag unit authenticates the merged scan.}
 \label{fig:pl}
 \end{figure*}

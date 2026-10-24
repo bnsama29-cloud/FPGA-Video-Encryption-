@@ -16,7 +16,7 @@ Two properties follow, and the design rests on both: the field can be changed wi
 \section{Cryptographic Design}\label{sec:design}
 \begin{figure*}[t]
 \centering
-\resizebox{0.95\textwidth}{!}{\input{figures/tikz/arch_system.tex}}
+\includegraphics[width=\textwidth]{figures/fig_system.pdf}
 \caption{System architecture. The programmable logic (PL) encodes, encrypts and tags every frame; the ARM core (PS) moves pixels and scan through DDR with an AXI DMA, adds the JPEG headers and the tag, sends E5 segments in the keyed order, and runs the key ratchet and the adaptive policy. The receiver undoes the order, verifies the tag, decrypts, and reports back over an authenticated feedback channel. Red: cryptography; dashed: attacker.}
 \label{fig:system}
 \end{figure*}
