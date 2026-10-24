@@ -85,8 +85,11 @@ def compiler():
     elif fastrx.available():
         res("ok", "C compiler", f"{shutil.which(cc)}; fast receiver (link/fastrx.py) builds and loads")
     else:
-        res("WARN", "C compiler", f"{cc} found but link/native/sjpeg_rx.c did not build or load",
-            f"run: {cc} -O2 -shared -fPIC -o x.so link/native/sjpeg_rx.c   and read the error")
+        err = fastrx.load_error() or "unknown error"
+        fix = ("install a 64-bit gcc (admin: choco install mingw), open a new window, check `gcc -dumpmachine` "
+               "says x86_64-w64-mingw32 (or set CC=<full path of that gcc.exe>)" if "32-bit" in err
+               else f"read the error; try: {cc} -O2 -shared -fPIC -o x.so link/native/sjpeg_rx.c")
+        res("WARN", "C compiler", f"{cc} found but link/native/sjpeg_rx.c did not build or load: {err}", fix)
 
 
 def rtl_tools():

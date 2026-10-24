@@ -25,15 +25,13 @@ CFLAGS="-mcpu=cortex-a9 -mfpu=neon"), cached in ~/.cache/sjpeg. tests/test_arm_s
 byte against model/hw.py.
 """
 import ctypes
-import hashlib
 import os
 import shlex
-import shutil
-import subprocess
 from pathlib import Path
 
 import numpy as np
 
+from link.fastrx import native_lib
 from model import hw
 from model.dct_quant import STAGE1_SHIFT, STAGE2_SHIFT
 from model.tables import AC_CODES, DC_CODES, ZIGZAG
@@ -51,22 +49,7 @@ def load_library():
     global _lib
     if _lib is not None:
         return _lib
-    flags = _compile_flags()
-    tag = hashlib.sha1(_SRC.read_bytes() + " ".join(flags).encode()).hexdigest()[:10]
-    cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
-    cache.mkdir(parents=True, exist_ok=True)
-    so = cache / f"sjpeg_sw_{tag}.so"
-    cc = os.environ.get("CC", "gcc" if os.name == "nt" else "cc")
-    if not so.exists():
-        r = subprocess.run([cc, *flags, "-o", str(so), str(_SRC)], capture_output=True, text=True, timeout=120)
-        if r.returncode:
-            raise RuntimeError(f"cannot compile {_SRC.name}: {r.stderr.strip()}")
-    cc_path = shutil.which(cc)
-    if os.name == "nt" and cc_path:
-        # MinGW links -pthread against libwinpthread-1.dll next to gcc.exe; Python >= 3.8 does not search
-        # PATH for a DLL's dependencies on Windows (bug #41). Linux (the board) needs nothing.
-        os.add_dll_directory(os.path.dirname(cc_path))
-    lib = ctypes.CDLL(str(so))
+    lib = native_lib(_SRC, "sjpeg_sw", _compile_flags())    # MinGW DLL folder and cache: bugs #41, #43
     u8p, u32p, i32 = ctypes.c_char_p, ctypes.POINTER(ctypes.c_uint32), ctypes.c_int32
     lib.sjpeg_set_tables.argtypes = [ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_int32),
                                      ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint8),

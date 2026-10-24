@@ -221,6 +221,7 @@ make -C paper
 | dashboard does not open | another `run_all` is still running (Ctrl+C it); `check_setup` lists busy ports |
 | every frame **rejected (tag)** | the two ends have different keys: the same `--set keys.master=` on both |
 | receiver falls behind at E5 | no C compiler: install gcc (step 1), restart `run_all` |
+| `check_setup`: C compiler WARN with `WinError 193` / "32-bit gcc" | an old 32-bit MinGW (`gcc -dumpmachine` = `mingw32`): install a 64-bit gcc (`choco install mingw`), open a new window, `gcc -dumpmachine` must say `x86_64-w64-mingw32` (else `set CC=<path of that gcc.exe>`) |
 | phone or second laptop cannot connect | `--set dashboard.bind_host=0.0.0.0`, run from Windows not WSL, firewall rule above |
 | `Overlay(...)` fails on the board | the `.bit` and `.hwh` must be side by side with the same name: `publish_bitstreams.py --check` |
 | `ModuleNotFoundError: pynq` | `sudo -i` and `source /etc/profile.d/pynq_venv.sh` first |

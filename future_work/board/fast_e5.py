@@ -7,12 +7,9 @@ with bytes.find. Without a compiler it falls back to the model, so it is never w
 tests/test_future_work.py checks both against model/hw.py.
 """
 import ctypes
-import hashlib
-import os
-import subprocess
 from pathlib import Path
 
-from link.fastrx import _cc, _dll_dir
+from link.fastrx import native_lib
 from model import ascon, hw
 
 _SRC = Path(__file__).resolve().parent / "native" / "e5_order.c"
@@ -25,16 +22,7 @@ def _load():
     if _lib is not None:
         return _lib or None
     try:
-        tag = hashlib.sha1(_SRC.read_bytes()).hexdigest()[:10]
-        cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
-        cache.mkdir(parents=True, exist_ok=True)
-        so = cache / f"e5_order_{tag}.so"
-        cc = _cc()
-        if not so.exists():
-            subprocess.run([cc, "-O2", "-shared", "-fPIC", "-o", str(so), str(_SRC)], check=True,
-                           capture_output=True, timeout=60)
-        _dll_dir(cc)
-        lib = ctypes.CDLL(str(so))
+        lib = native_lib(_SRC, "e5_order", ["-O2", "-shared", "-fPIC"], timeout=60)
         lib.e5_order.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int32, ctypes.POINTER(ctypes.c_int32)]
         lib.e5_order.restype = None
         i32p = ctypes.POINTER(ctypes.c_int32)

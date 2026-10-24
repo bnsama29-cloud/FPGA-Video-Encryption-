@@ -45,21 +45,59 @@ def _dll_dir(cc):
         os.add_dll_directory(os.path.dirname(path))
 
 
+def _machine(cc):
+    """The compiler's target (x86_64-w64-mingw32, mingw32, aarch64-linux-gnu, ...), or "" if unknown."""
+    try:
+        return subprocess.run([cc, "-dumpmachine"], capture_output=True, text=True, timeout=30).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def native_lib(src, stem, flags, timeout=120):
+    """Compile `src` once into ~/.cache/sjpeg and load it with ctypes. Used by every native helper
+    (this module, future_work/board/fast_e5.py, future_work/arm/sw_encoder.py).
+
+    The cache name covers the source, the flags and the compiler's target, so a library built by another
+    compiler is never reused; a library that does not load is deleted so the next run rebuilds it (bug #43:
+    a 32-bit MinGW gcc builds a DLL that 64-bit Python cannot load). Raises RuntimeError with the reason."""
+    cc = _cc()
+    machine = _machine(cc)
+    tag = hashlib.sha1(src.read_bytes() + " ".join(flags).encode() + machine.encode()).hexdigest()[:10]
+    cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
+    cache.mkdir(parents=True, exist_ok=True)
+    so = cache / f"{stem}_{tag}.so"
+    if not so.exists():
+        try:
+            r = subprocess.run([cc, *flags, "-o", str(so), str(src)], capture_output=True, text=True, timeout=timeout)
+        except (OSError, subprocess.SubprocessError) as e:
+            raise RuntimeError(f"no C compiler '{cc}' ({e})") from e
+        if r.returncode:
+            raise RuntimeError(f"cannot compile {src.name} with {cc}: {r.stderr.strip()[-600:]}")
+    _dll_dir(cc)
+    try:
+        return ctypes.CDLL(str(so))
+    except OSError as e:
+        so.unlink(missing_ok=True)
+        hint = (" A 32-bit gcc cannot build for 64-bit Python: install a 64-bit gcc (x86_64-w64-mingw32)."
+                if os.name == "nt" and not machine.startswith("x86_64") else "")
+        raise RuntimeError(f"cannot load {src.name} built by {cc} (target {machine or 'unknown'}): {e}.{hint}") from e
+
+
+_error = None
+
+
+def load_error():
+    """Why the C path is not used (None when it is, or before the first use)."""
+    _load()
+    return _error
+
+
 def _load():
-    global _lib
+    global _lib, _error
     if _lib is not None:
         return _lib or None
     try:
-        tag = hashlib.sha1(_SRC.read_bytes()).hexdigest()[:10]
-        cache = Path(os.environ.get("SJPEG_CACHE", Path.home() / ".cache" / "sjpeg"))
-        cache.mkdir(parents=True, exist_ok=True)
-        so = cache / f"sjpeg_rx_{tag}.so"
-        cc = _cc()
-        if not so.exists():
-            subprocess.run([cc, "-O2", "-shared", "-fPIC", "-o", str(so), str(_SRC)],
-                           check=True, capture_output=True, timeout=120)
-        _dll_dir(cc)
-        lib = ctypes.CDLL(str(so))
+        lib = native_lib(_SRC, "sjpeg_rx", ["-O2", "-shared", "-fPIC"])
         u64, i32, p = ctypes.c_uint64, ctypes.c_int32, ctypes.c_char_p
         lib.rx_mac2.argtypes = [p, u64, u64, p, i32, p, i32, ctypes.c_void_p]
         lib.rx_mac2.restype = None
@@ -77,8 +115,8 @@ def _load():
             vals[256 * t:256 * t + len(v)] = bytes(v)
         lib.rx_set_tables(bytes(bits), bytes(vals), (ctypes.c_int32 * 64)(*ZIGZAG))
         _lib = lib
-    except Exception:
-        _lib = False
+    except Exception as e:                          # noqa: BLE001 -- fall back to the model, say why
+        _lib, _error = False, str(e)
     return _lib or None
 
 

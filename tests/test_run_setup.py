@@ -1,9 +1,12 @@
 """Running the project from a fresh clone (HOW_TO_RUN.md): the native-library compiler default on Windows,
 the energy table without a USB meter, publishing / checking the board images, and the setup check."""
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -19,8 +22,33 @@ def test_native_compiler_default():
                             ("posix", {"CC": "gcc-12"}, "gcc-12"), ("nt", {"CC": ""}, "gcc")):
         got = fastrx._cc(name, env)
         assert got == want, f"os.name={name!r}, env={env}: got {got!r}, expected {want!r}"
+    from future_work.arm import sw_encoder
     from future_work.board import fast_e5
-    assert fast_e5._cc is fastrx._cc
+    assert fast_e5.native_lib is fastrx.native_lib is sw_encoder.native_lib
+
+
+@pytest.mark.skipif(not shutil.which(fastrx._cc()), reason="no C compiler")
+def test_native_cache_rebuilds_a_library_that_does_not_load(tmp_path, monkeypatch):
+    """Bug #43: a DLL built by a 32-bit MinGW stayed in ~/.cache/sjpeg and was loaded (and failed) on every
+    run, even after a 64-bit gcc was installed. Now the compiler's target is part of the cache name, and a
+    library that does not load is deleted, with the reason in the error."""
+    src = tmp_path / "t.c"
+    src.write_text("int seven(void) { return 7; }\n")
+    flags = ["-O2", "-shared", "-fPIC"]
+    first, cache = tmp_path / "first", tmp_path / "cache"
+    monkeypatch.setenv("SJPEG_CACHE", str(first))
+    assert fastrx.native_lib(src, "t", flags).seven() == 7
+    name = next(first.glob("t_*.so")).name
+    monkeypatch.setenv("SJPEG_CACHE", str(cache))         # a fresh path: the OS has not loaded it yet
+    cache.mkdir()
+    (cache / name).write_bytes(b"not a library")         # what a wrong-architecture build looks like
+    with pytest.raises(RuntimeError, match="cannot load t.c"):
+        fastrx.native_lib(src, "t", flags)
+    assert not (cache / name).exists(), "the unloadable library must be deleted"
+    assert fastrx.native_lib(src, "t", flags).seven() == 7     # rebuilt
+    monkeypatch.setattr(fastrx, "_machine", lambda cc: "another-target")
+    fastrx.native_lib(src, "t", flags)
+    assert len(list(cache.glob("t_*.so"))) == 2, "another compiler target gets its own cache file"
 
 
 def _vivado_json(tmp_path):
