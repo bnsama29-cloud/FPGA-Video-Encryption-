@@ -1,0 +1,47 @@
+% =====================================================================================================
+\section{Hardware Architecture}\label{sec:hardware}
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{\input{figures/tikz/arch_pl.tex}}
+\caption{Fabric datapath of the lane encoder \texttt{secure\_jpeg\_lanes\_top} (module names are the RTL files; numbers on arrows are bus widths in bits). The dealer sends MCU row $r$ to lane $r \bmod L$; each lane converts, transforms, quantizes and entropy-codes its restart segments with its own keystream; the merger restores raster order and inserts restart markers; the tag unit authenticates the prefix and the merged scan. The single-pipeline encoder is one lane without dealer and merger.}
+\label{fig:pl}
+\end{figure*}
+\subsection{Datapath}\label{sec:datapath}
+Fig.~\ref{fig:pl} shows the encoder. All stages are joined by valid/ready handshakes and tolerate back-pressure from the DMA, which the testbenches check with random stalls. The colour converter takes two pixels per clock into block-RAM line buffers, the DCT is two passes of an eight-tap multiply-accumulate, the quantizer multiplies by a reciprocal table in one DSP slice, and the zig-zag stage emits one symbol per clock and resets its DC predictors at every segment, ahead of encryption, Huffman coding and byte packing. The merger copies the segments of all lanes in raster order and writes the restart markers, and the tag unit absorbs the prefix and every merged byte into an Ascon core.
+
+\subsection{Circuit of the encryption stage}\label{sec:circuit}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_selective_enc_bitslice.pdf}
+\caption{Gate-level circuit of bit slice $k$ of \texttt{selective\_enc.v}, generated from the RTL by Yosys and netlistsvg: comparators on the mode and multiplexers selected by is\_dc form the sign and amplitude enables; two XORs implement~\eqref{eq:slice}. $m_k = [k < s]$; ks0 and ks\_k1 are keystream bits 0 and $k{+}1$. A test simulates the slice exhaustively against the golden model.}
+\label{fig:circuit}
+\end{figure}
+Fig.~\ref{fig:circuit} is one bit slice of the stage. The control part decodes $\gamma = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 2 : \text{mode} \ge 1)$ and $\alpha = [s \ne 0] \wedge (\text{is\_dc} \mathbin{?} \text{mode} \ge 4 : \text{mode} \ge 3)$; mode 5 selects the fields of mode 4 because all comparisons are $\ge$. The data part is eleven identical slices,
+\begin{equation}
+\amp'_k = \amp_k \xor (\gamma z_0 \wedge m_k) \xor (\alpha z_{k+1} \wedge m_{k+1}), \quad m = 2^s - 1,
+\label{eq:slice}
+\end{equation}
+one XOR deep after the masks, which are computed one register earlier. The stage accepts a symbol when its output is free and at least $n$ keystream bits are available.
+
+\textit{Keystream window.} \texttt{keystream\_gen} holds two 128-bit blocks and a pointer to the next unused bit and presents a 16-bit window; taking $n$ bits advances the pointer, and a new block is requested whenever fewer than two are held or in flight.
+
+\begin{proposition}[The cipher never stalls the encoder]\label{prop:supply}
+Once the first keystream block of a segment is available, the encryption stage never waits for keystream bits.
+\end{proposition}
+\begin{IEEEproof}
+The stage accepts at most one symbol per clock and takes at most 11 bits per symbol. The core produces 128 bits per data block in nine cycles (one to absorb, eight rounds), more than 14 bits per cycle, and keeps up to 256 bits buffered, more than the 16 that the window exposes. Supply exceeds the worst-case demand, so the window, once filled, never drops below what a symbol needs.
+\end{IEEEproof}
+The first block of a segment costs an initialization and one data block, 21 cycles, which overlaps with the previous segment; RTL simulation confirms that the cycle counts of E0--E4 differ by at most \MaxExtraCycles{} cycles per frame.
+
+\textit{Ascon core.} \texttt{ascon\_aead128\_core} computes one round per clock: a 320-bit state register, a 4-bit round counter whose complement and value form the round constant, and the combinational round. One bit slice of the S-box layer has eleven XOR, five AND and six NOT gates, so the layer has $64 \times 22 = 1408$ gates; the linear layer adds $2 \times 320$ two-input XORs, and its rotations are wiring. The design instantiates one core per lane for keystreams, one for the segment key and one for the tag.
+
+\subsection{Parallel lanes}\label{sec:lanes}
+One pipeline consumes one sample per clock, i.e.\ at least 1.5 cycles per pixel. Restart segments are independent (DC predictors reset, byte alignment, own keystream), so $L$ pipelines can code segments simultaneously: the dealer sends MCU row $r$ to lane $r \bmod L$ and the merger reads segment $h$ from its lane (under E5 from lane $\lfloor h/c \rfloor \bmod L$ with $c = W/16$, tracked by counters). With a 64-bit input carrying two pixels per clock,
+\begin{equation}
+c_L \ge \max\Bigl(\frac{1.5}{L}, \frac{1}{2}\Bigr), \qquad \Theta_L = \frac{f_{\mathrm{clk}}}{c_L},
+\label{eq:lanes}
+\end{equation}
+i.e.\ at most \BoundOneMpix, \BoundTwoMpix{} and \BoundFourMpix\,Mpixel/s at 100\,MHz for $L = 1, 2, 4$. The bytes do not depend on $L$. A lane encoder can also be built for a camera's YUYV (4:2:2) input: four pixels per beat, no colour multipliers, a bound of $\max(1.5/L, 1/4)$ and half the bytes read from DDR.
+
+\subsection{System and timing closure}\label{sec:zynq}
+A script builds the PYNQ-Z2 system in Vivado: the Zynq processing system, an AXI DMA on the 64-bit high-performance port and the encoder as a module reference, all on one clock (100\,MHz, or 125\,MHz for four lanes). The register map holds the key, session identifier, counter, size, mode, tag, output length and three cycle counters (start to done, waiting for pixels, waiting for the output DMA), so the board reports the fabric's own time. Timing closure needed four changes, each accepted only when every RTL test still matched the model bit for bit: a five-stage pipeline for the DCT row sums (the first implementation reached only about 47\,MHz after routing), registered pixel conversion in the complete system, a zig-zag stage split into two handshaked stages, and two-entry register slices that cut the ready chain from the packer back to the keystream pointer.
