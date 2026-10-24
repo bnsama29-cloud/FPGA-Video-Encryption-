@@ -1,4 +1,4 @@
-"""Hardware tamper injector (future_work/board/axis_tamper.v) for the board-day attack demonstration.
+"""Hardware tamper injector (system/board/axis_tamper.v) for the board-day attack demonstration.
 
 Random scan-like frames (with 0xFF00 stuffing and RST markers), random valid gaps and backpressure.
 Checks: nothing changes while SW1 (enable) is off; a trigger pulse changes exactly one bit of the next

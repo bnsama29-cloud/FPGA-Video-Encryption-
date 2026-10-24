@@ -2,7 +2,7 @@
 
 This note says how the security and hardware numbers for E5 are produced, so a reviewer can line them up
 with the papers we compare against. Every number comes from a script in `experiments/` that writes to
-`sim_out/`. The paper only states rows that are ✅ in GUIDE.md §5.
+`sim_out/`. The paper only states results that a script reproduces.
 
 ## 1. What changed on 18 Oct 2026, and why
 
@@ -44,7 +44,7 @@ What to expect, and why:
   forms (quality 50 and 90 give the same picture).
 * **Per-frame keys hold.** E1-E5 draw a fresh keystream (and E5 a fresh permutation) from the frame counter,
   so what A4 learns from the known frame is useless on any other frame. E1-E4 still leak through A3 (NZCA) because they do not
-  permute; that is a known, stated weakness (GUIDE §5).
+  permute; that is a known, stated weakness.
 * **A4 is not a full attack on a per-frame scheme.** For E5 it recovers the known frame's own permutation (91 % of
   positions on the synthetic scene; the rest are identical segments), but this does not help on other frames.
 
@@ -65,7 +65,7 @@ non-zero AC coefficients, the realistic worst case for the defender. E5's result
 | NPCR / UACI (1 pixel) | no-key pictures of two frames one pixel apart, same key and counter | 99.6 % / 33.5 % | no diffusion step. In contract v2 a size change shifts every later keystream bit, so the rest of the frame changes; in contract v3 (E5 hardware form) each segment has its own keystream, so only that segment changes (0.3 % NPCR on the synthetic scene, 53 % in v2). This is by design (the nonce never repeats, so two real frames never share a keystream), and must be explained, not hidden |
 
 `experiments/standard_metrics.py` reports the same family per level, now including **E5 (v3, hw)**, plus the
-wrong-key decryption (SSIM to the original, share of pixels that differ). GUIDE §5 already says standard
+wrong-key decryption (SSIM to the original, share of pixels that differ). As stated in the paper, standard
 metrics are "for comparability only": they assume full-image ciphers.
 
 ## 4. Hardware figures of merit (`experiments/hw_efficiency.py`)
@@ -76,8 +76,8 @@ encoder) with the post-route Vivado results and the published rows of `paper/dat
 * **Mpixel/s per kLUT**: the efficiency number hardware papers compare. Kishore et al. report 11.1 Mpixel/s
   on 2250 Stratix IV ALUTs; ALUTs and 7-series LUTs are not the same unit, so the table says so.
 * **nJ per pixel** = total on-chip power / throughput. Power is the SAIF-annotated report for that mode
-  when `run_vivado_day.py --steps power` has been run (GUIDE B37), else Vivado's vectorless estimate,
-  labelled as such. Board measurement (GUIDE A4) replaces both.
+  when `run_vivado_day.py --steps power` has been run, else Vivado's vectorless estimate,
+  labelled as such. Board measurements replace both where they exist.
 * **Input Gbit/s** = Mpixel/s x 24 bit, the data the design consumes, for comparison with cipher cores.
 
 Limits: throughput is RTL simulation without DMA stalls. Since Vivado run 7 (18 Oct) the lane rows use the
@@ -95,7 +95,7 @@ python experiments/lanes_rtl_throughput.py --sizes 320x240 640x480 --modes 2 5
 python experiments/hw_efficiency.py
 ```
 
-The full set of sources runs on Kaggle with `JOB = "benchmark"` in `future_work/kaggle/kaggle_runs.py`
+The full set of sources runs on Kaggle with `JOB = "benchmark"` in `system/kaggle/kaggle_runs.py`
 (it now also runs `standard_metrics.py` on every source and packs both into `benchmark_results.zip`).
 `paper/make_assets.py` reads either the old (`cross_frame`) or the new (`known_plaintext`) format; with new
 data it also writes `tab_bench_metrics.tex`.

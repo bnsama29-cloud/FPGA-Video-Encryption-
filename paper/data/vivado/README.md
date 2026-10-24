@@ -3,8 +3,8 @@
 | File | Produced by | Run |
 |---|---|---|
 | `vivado_results.json`, `vivado_tables.md` | `vivado/run_vivado_day.py parse` on the report folders of two runs (below), one folder per design, the newer run where both have it | |
-| (run 8) `secure_jpeg_top`, `secure_jpeg_top_8.0ns`, `secure_jpeg_lanes_top_lanes2_log_l1`, `secure_jpeg_lanes_top_8.0ns_lanes2_log_l1`, `secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10`, `overlay`, `overlay_lanes` | `vivado_results_20261021_0055.zip` (tables: `vivado_tables_run8.md`) | Vivado 2026.1, Samarth's PC, 21 Oct 2026, run 8 (`--steps xsim ooc lanes bd bd_lanes power parse --periods 8.0 --jobs 2`), 30/30 steps passed. **RTL of commit 9815fd9**: cycle counters (0x54..0x5C) and the D3 write stage of the colour converters |
-| (run 7, superseded by run 8 where both exist) `secure_jpeg_top`, `secure_jpeg_lanes_top_lanes2_log_l1`, `secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10`, `overlay_lanes` | `vivado_results_20261018_1847.zip` | Vivado 2026.1, tom's PC, 18 Oct 2026, run 7 (`--steps xsim ooc lanes bd_lanes power parse --jobs 2`), 27/27 steps passed. **RTL with E5** (commit b41c733 and later); power also from simulated activity (SAIF) |
+| (run 8) `secure_jpeg_top`, `secure_jpeg_top_8.0ns`, `secure_jpeg_lanes_top_lanes2_log_l1`, `secure_jpeg_lanes_top_8.0ns_lanes2_log_l1`, `secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10`, `overlay`, `overlay_lanes` | `vivado_results_20261021_0055.zip` (tables: `vivado_tables_run8.md`) | Vivado 2026.1, 21 Oct 2026, run 8 (`--steps xsim ooc lanes bd bd_lanes power parse --periods 8.0 --jobs 2`), 30/30 steps passed. **RTL of commit 9815fd9**: cycle counters (0x54..0x5C) and the D3 write stage of the colour converters |
+| (run 7, superseded by run 8 where both exist) `secure_jpeg_top`, `secure_jpeg_lanes_top_lanes2_log_l1`, `secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10`, `overlay_lanes` | `vivado_results_20261018_1847.zip` | Vivado 2026.1, 18 Oct 2026, run 7 (`--steps xsim ooc lanes bd_lanes power parse --jobs 2`), 27/27 steps passed. **RTL with E5** (commit b41c733 and later); power also from simulated activity (SAIF) |
 | (run 6) the 125 / 150 MHz and line-buffer variants, `overlay` (v2 system) | `vivado_results_20261017_0919.zip` | Vivado 2026.1, Windows laptop, 17 Oct 2026, run 6 (`--steps xsim ooc lanes bd bd_lanes parse --maxw 9 10 --periods 8.0 6.667 --jobs 2`), 20/20 steps passed. **Before E5**: the 2-lane runs at 125 / 150 MHz have no E5 logic (they miss timing either way) |
 
 Run 6 = RTL after the zig-zag/RLE pipelining and the byte-FIFO register (docs/TESTING.md bug #27) and
@@ -16,7 +16,7 @@ the block-design clock fix (#28). Designs in the snapshot:
   (LOG_MAXW = 10) at 100 MHz, out of context;
 * `overlay`: the complete PYNQ-Z2 system (Zynq PS + AXI DMA + v2 encoder), FCLK0 = 100 MHz;
 * `overlay_lanes`: the same with the 2-lane encoder and a 64-bit pixel DMA (reports from
-  `future_work/board/overlay/lanes/`; parsed with `vivado/run_vivado_day.py parse <...>/overlay/lanes`).
+  `system/board/overlay/lanes/`; parsed with `vivado/run_vivado_day.py parse <...>/overlay/lanes`).
 
 Run 7 rebuilt the 2- and 4-lane encoders and the 2-lane PYNQ-Z2 system with E5 (contract v3 mode 5).
 Against run 6, E5 adds 200 LUT to 2 lanes (9,869 -> 10,069), 320 to 4 lanes (16,573 -> 16,893) and 197
@@ -45,7 +45,7 @@ reports 1,423 LUT, lane 0's 147). The product stage P (RTL after run 8) splits t
 
 ## Run 10 (21 Oct 2026)
 
-`vivado_results_20261021_2101.zip`, Vivado 2026.1, Samarth's PC, **RTL of commit dd13f55** (skid buffers,
+`vivado_results_20261021_2101.zip`, Vivado 2026.1, **RTL of commit dd13f55** (skid buffers,
 keystream ring, packer and zig-zag fixes, YUYV and NBUF options), `SJPEG_IMPL=perf`. Command:
 `--steps xsim ooc lanes bd_lanes4 power parse --periods 6.667 6.0 --fclk 142 --parallel 1 --jobs 2`, then
 (after the two crashed 4-lane jobs) `--steps bd_lanes4 power parse --fclk 142 --parallel 1`.
@@ -93,8 +93,8 @@ Run in two parts: `--steps xsim ooc lanes ... --periods 6.667 6.0`, stopped afte
 
 ## Run 13 (23 Oct 2026)
 
-`vivado_results_20261023_1109.zip`, Vivado 2026.1, Samarth's PC, **commit 20e9f91** (RTL unchanged since run 12;
-adds `future_work/board/axil_buttons.v`). Command: `--steps bd_tamper parse --fclk 100 --jobs 2` (31.9 min, PASS).
+`vivado_results_20261023_1109.zip`, Vivado 2026.1, **commit 20e9f91** (RTL unchanged since run 12;
+adds `system/board/axil_buttons.v`). Command: `--steps bd_tamper parse --fclk 100 --jobs 2` (31.9 min, PASS).
 Only `overlay_lanestamper` is new (tables of this run alone: `vivado_tables_run13.md`); the other folders in the zip
 are the run-12 copies and are not taken.
 

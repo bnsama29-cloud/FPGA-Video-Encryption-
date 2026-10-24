@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from future_work.board import first_contact as fc          # noqa: E402
+from system.board import first_contact as fc          # noqa: E402
 from scripts import pull_board_results as pbr              # noqa: E402
 
 ARGS = ["--mock-lanes", "2", "--mock-e5", "--sizes", "32x16", "--frames", "1", "--timing-frames", "1"]

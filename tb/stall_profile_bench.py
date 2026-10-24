@@ -1,4 +1,4 @@
-"""Stall profile of the encoder pipeline (research R1, GUIDE.md B18).
+"""Stall profile of the encoder pipeline (research R1).
 
 Not a pass/fail test of the design: it measures WHERE the cycles go. The encoder needs about
 1.64 cycles per pixel; 4:2:0 sampling sets a floor of 1.5 (one DCT sample per clock, 1.5 samples

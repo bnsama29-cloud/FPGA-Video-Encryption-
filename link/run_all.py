@@ -11,7 +11,7 @@
 Each node is a separate process talking UDP on localhost, exactly as they would
 on separate machines (sender on the PYNQ-Z2, receiver + dashboard on a laptop).
 You can also run each one in its own terminal (python -m link.<node>), which is
-how the team splits the work. Ctrl+C stops everything.
+how the nodes split the work. Ctrl+C stops everything.
 """
 import argparse
 import signal
@@ -35,7 +35,7 @@ def main():
     ap.add_argument("--no-sender", action="store_true",
                     help="laptop side only (the sender runs on the PYNQ board)")
     ap.add_argument("--no-channel", action="store_true",
-                    help="the channel (network + attacker) runs on another laptop (docs/BOARD_DAY.html)")
+                    help="the channel (network + attacker) runs on another laptop")
     ap.add_argument("--pq-kex", action="store_true",
                     help="first run the post-quantum key exchange (link/kex.py) with the sender and use its "
                          "session key; keys.master is then only the pre-shared authentication key")

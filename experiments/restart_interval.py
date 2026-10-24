@@ -1,4 +1,4 @@
-"""Restart interval of the E5 shuffle, and the non-zero counting attack (GUIDE.md B5 + B15).
+"""Restart interval of the E5 shuffle, and the non-zero counting attack.
 
     python experiments/restart_interval.py                                   # synthetic scene
     python experiments/restart_interval.py --video clips/open.mp4 --frames 8 --stride 120
@@ -49,7 +49,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from future_work.attacks.jigsaw_attack import (T, _normalised, accuracies, assemble, dissimilarities,  # noqa: E402
+from system.attacks.jigsaw_attack import (T, _normalised, accuracies, assemble, dissimilarities,  # noqa: E402
                                                edge_corr, solve, tiles_of)
 from link.sources import open_source                               # noqa: E402
 from model import ascon                                            # noqa: E402

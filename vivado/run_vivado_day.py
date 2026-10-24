@@ -31,13 +31,13 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
           --fmax: re-run the top at the period the first run's slack suggests, to confirm fmax)
   lanes  out-of-context runs of secure_jpeg_lanes_top (contract v3): 2 lanes (2048-pixel lines) and 4 lanes
          (1024-pixel lines) at 100 MHz and at every --periods clock, + 4 lanes with 2048-pixel lines (1080p)
-  bd     PYNQ-Z2 block design + bitstream -> future_work/board/overlay/secure_jpeg.bit/.hwh
+  bd     PYNQ-Z2 block design + bitstream -> system/board/overlay/secure_jpeg.bit/.hwh
   bd_lanes  the same for the lane encoder -> overlay/secure_jpeg_lanes.bit/.hwh (reports in overlay/lanes/)
   bd_lanes4 the same with 4 lanes, lines up to 1024 px -> overlay/secure_jpeg_lanes4.bit/.hwh (overlay/lanes4/)
   bd_lanes4hd   4 lanes, 2048-px lines (1080p), one line-buffer set -> overlay/secure_jpeg_lanes4hd.bit
   bd_lanes4yuyv 4 lanes, camera-native YUYV input (4 px per beat) -> overlay/secure_jpeg_lanes4yuyv.bit
   bd_tamper the 2-lane image + hardware tamper injector (board-day attack demo, BTN0/switches/PMOD)
-            + BTN1..BTN3 for the protection level (future_work/board/axil_buttons.v)
+            + BTN1..BTN3 for the protection level (system/board/axil_buttons.v)
             -> overlay/secure_jpeg_lanes_tamper.bit/.hwh (reports in overlay/lanestamper/); run it at --fclk 100
   power  post-route power with SIMULATED switching activity (needs ooc and/or lanes first): XSim
          encodes --power-size scene frames in each mode and records activity.saif, then Vivado
@@ -45,8 +45,8 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
          (v2 encoder: E0, E2, E4; 2-lane encoder: E2, E5)
   parse  every report -> sim_out/vivado/vivado_tables.md (the paper's hardware table)
   collect  (always, last) summary + reports -> vivado_results_<date>.zip
-At the end it prints a PASS/FAIL table with the time of every step. Paste a FAIL's log
-(the first "ERROR:" line and ~20 lines around it) into Claude with docs/TEAM_CONTEXT.md.
+At the end it prints a PASS/FAIL table with the time of every step; a FAIL names its log
+(the first "ERROR:" line there is the cause).
 
 One file, four tools (they were separate scripts until 17 Oct 2026):
     python vivado/run_vivado_day.py [--steps ...]   the Vivado day (above)
@@ -94,7 +94,7 @@ xsim_work/frame<N>_decrypted.jpg (what the key holder sees).
 PARSE_DOC = r"""Turn Vivado reports into the paper's hardware table (no number typed by hand).
 
     python vivado/run_vivado_day.py parse                       # every sim_build/vivado_*/ and both overlays
-    python vivado/run_vivado_day.py parse sim_build/vivado_secure_jpeg_top future_work/board/overlay
+    python vivado/run_vivado_day.py parse sim_build/vivado_secure_jpeg_top system/board/overlay
 
 Reads, in each folder: utilization.txt (LUT / FF / BRAM / DSP), timing.txt (WNS, TNS, WHS),
 power.txt (total / dynamic / static W) and utilization_hier.txt (per-block LUT / FF).
@@ -466,7 +466,7 @@ def tables(results):
         md += ["", "Run = contract (v2: secure_jpeg_top, v3: 2 lanes) and mode; activity of one scene frame "
                "(vivado/run_vivado_day.py --steps power). Activity from RTL simulation matches only the nets "
                "whose names survive synthesis; the rest keep Vivado's default. Still an estimate: the "
-               "board measurement (GUIDE A4) is the measured number.", ""]
+               "board measurement is the measured number.", ""]
     crit = [r for r in results if r.get("critical")]
     if crit:
         md += ["### Worst setup paths (block of source -> destination)", "",
@@ -495,12 +495,12 @@ def parse_main(argv=None):
     if argv and argv[0] in ("-h", "--help"):
         sys.exit(PARSE_DOC)
     folders = [Path(a) for a in argv] or sorted((ROOT / "sim_build").glob("vivado_*")) + \
-        [p for p in [ROOT / "future_work" / "board" / "overlay",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes4",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes4hd",
-                     ROOT / "future_work" / "board" / "overlay" / "lanes4yuyv",
-                     ROOT / "future_work" / "board" / "overlay" / "lanestamper"] if (p / "timing.txt").exists()]
+        [p for p in [ROOT / "system" / "board" / "overlay",
+                     ROOT / "system" / "board" / "overlay" / "lanes",
+                     ROOT / "system" / "board" / "overlay" / "lanes4",
+                     ROOT / "system" / "board" / "overlay" / "lanes4hd",
+                     ROOT / "system" / "board" / "overlay" / "lanes4yuyv",
+                     ROOT / "system" / "board" / "overlay" / "lanestamper"] if (p / "timing.txt").exists()]
     folders = [f for f in folders if f.is_dir() and f.name != "vivado_logs"]   # logs are not a design
     if not folders:
         sys.exit("no report folders: run vivado/vivado_ooc.tcl (or vivado/run_vivado_day.py) first")
@@ -615,7 +615,7 @@ def step_ooc(a):
     jobs = [("ooc_secure_jpeg_top", "vivado/vivado_ooc.tcl", "secure_jpeg_top 10.0")]
     for per in a.periods:               # clock sweep (research R5): which block limits 125 / 150 / 166 MHz?
         jobs.append((f"ooc_period_{per}ns", "vivado/vivado_ooc.tcl", f"secure_jpeg_top {per}"))
-    for w in a.maxw:                    # memory sweep (GUIDE B19): line buffers for 2^w-pixel lines
+    for w in a.maxw:                    # memory sweep: line buffers for 2^w-pixel lines
         jobs.append((f"ooc_maxw{w}", "vivado/vivado_ooc.tcl", f"secure_jpeg_top 10.0 LOG_MAXW {w}"))
     out = vivado_many(a, jobs).get("ooc_secure_jpeg_top")
     if a.blocks:
@@ -659,7 +659,7 @@ POWER_RUNS = [   # (tag, contract flag, modes, OOC report folder, testbench inst
 
 
 def step_power(a):
-    """Post-route power with simulated switching activity (GUIDE B37, HW_TODO H4). For each routed
+    """Post-route power with simulated switching activity . For each routed
     OOC design and mode: XSim encodes one --power-size scene frame with SAIF logging on, then Vivado
     reads the SAIF into the routed checkpoint and reports power."""
     sim = "vivado\\run_xsim.bat" if WIN else "bash vivado/run_xsim.sh"
@@ -705,7 +705,7 @@ def overlay_wns(out):
 
 
 def step_bd(a, design="v2"):
-    overlay = ROOT / "future_work" / "board" / "overlay"
+    overlay = ROOT / "system" / "board" / "overlay"
     rpt = overlay if design == "v2" else overlay / design
     base = "block_design" if design == "v2" else f"block_design_{design}"
     clocks = [a.fclk] + ([] if a.no_fallback else [f for f in FALLBACK_MHZ if f < a.fclk])
@@ -713,7 +713,7 @@ def step_bd(a, design="v2"):
         clocks = [f for f in clocks if f >= 100]        # a fast try falls back to 100 MHz, not below
     for i, f in enumerate(clocks):
         name = base if i == 0 else f"{base}_{f}MHz"
-        out = vivado(name, "future_work/board/block_design.tcl", f"{f} {a.jobs} {design}", r"RESULT overlay",
+        out = vivado(name, "system/board/block_design.tcl", f"{f} {a.jobs} {design}", r"RESULT overlay",
                      a.dry_run)
         if a.dry_run:
             return
@@ -734,12 +734,12 @@ def step_bd(a, design="v2"):
 def step_parse(a):
     run("parse_reports", f"{sys.executable} vivado/run_vivado_day.py parse", dry=a.dry_run)
     if not a.dry_run:
-        run("paper_tables", f"{sys.executable} -m future_work.figures.paper_tables --root sim_out "
+        run("paper_tables", f"{sys.executable} -m system.figures.paper_tables --root sim_out "
                             f"--out sim_out/paper_tables.md")
 
 
 def step_collect(a):
-    """Pack what Claude / the team needs into one zip: summary, paper tables, every report (no bitstream)."""
+    """Pack the results into one zip: summary, paper tables, every report (no bitstream)."""
     import zipfile
     if a.dry_run:
         RESULTS.append(("collect", "DRY", 0.0, ""))
@@ -766,7 +766,7 @@ def step_collect(a):
         for f in sorted((ROOT / "sim_out" / "vivado").glob("*")) if (ROOT / "sim_out" / "vivado").exists() else []:
             z.write(f, f"sim_out/vivado/{f.name}")
         reports = ("timing*.txt", "utilization*.txt", "power.txt", "power_saif_*.txt")
-        ov = ROOT / "future_work" / "board" / "overlay"
+        ov = ROOT / "system" / "board" / "overlay"
         for d in sorted((ROOT / "sim_build").glob("vivado_*")) + [ov] + [ov / x for x in
                                                                         ("lanes", "lanes4", "lanes4hd", "lanes4yuyv", "lanestamper")]:
             for pat in reports:
@@ -791,13 +791,13 @@ def run_info():
             return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=30).stdout.strip()
         except (OSError, subprocess.SubprocessError):
             return ""
-    ov = ROOT / "future_work" / "board" / "overlay"
+    ov = ROOT / "system" / "board" / "overlay"
     bits = []
     for f in sorted(ov.glob("secure_jpeg*.bit")) + sorted(ov.glob("secure_jpeg*.hwh")) if ov.exists() else []:
         bits.append(dict(file=f.name, bytes=f.stat().st_size, sha256=hashlib.sha256(f.read_bytes()).hexdigest(),
                          modified=time.strftime("%Y-%m-%d %H:%M", time.localtime(f.stat().st_mtime))))
     return dict(commit=git("rev-parse", "HEAD") or "unknown", branch=git("rev-parse", "--abbrev-ref", "HEAD"),
-                dirty=bool(git("status", "--porcelain", "--untracked-files=no", "rtl", "vivado", "future_work/board")),
+                dirty=bool(git("status", "--porcelain", "--untracked-files=no", "rtl", "vivado", "system/board")),
                 impl=os.environ.get("SJPEG_IMPL", "perf"), date=time.strftime("%Y-%m-%d %H:%M"), bitstreams=bits)
 
 

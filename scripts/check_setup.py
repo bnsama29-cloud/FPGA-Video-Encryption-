@@ -5,7 +5,7 @@
     py scripts\\check_setup.py --vivado        the PC that builds the bitstreams
 
 FAIL = the project will not run until it is fixed (exit code 1). WARN = one part is slower or unavailable.
-See HOW_TO_RUN.md for the whole sequence.
+See README.md for the whole sequence.
 """
 import argparse
 import importlib
@@ -153,8 +153,8 @@ def bitstreams(required):
     level = "ok" if not bad else ("FAIL" if required else "WARN")
     detail = f"{len(ok)} of {len(rows)} present and checked" + ("; " + "; ".join(bad) if bad else "")
     fix = ("on the Vivado PC: py scripts\\publish_bitstreams.py, commit, push; then git pull here "
-           "(or copy future_work/board/overlay/ by hand)") if bad else ""
-    res(level, "board images (future_work/board/overlay)", detail, fix if required or bad else "")
+           "(or copy system/board/overlay/ by hand)") if bad else ""
+    res(level, "board images (system/board/overlay)", detail, fix if required or bad else "")
 
 
 def key():
@@ -217,7 +217,7 @@ def main(argv=None):
     fails = [r for r in RESULTS if r[0] == "FAIL"]
     warns = [r for r in RESULTS if r[0] == "WARN"]
     print(f"\n{len(fails)} FAIL, {len(warns)} WARN. " +
-          ("Ready: see HOW_TO_RUN.md." if not fails else "Fix the FAIL lines first."))
+          ("Ready: see README.md." if not fails else "Fix the FAIL lines first."))
     return 1 if fails else 0
 
 

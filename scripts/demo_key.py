@@ -38,7 +38,7 @@ Laptop only (simulated sender, receiver, attacker, dashboard):
 
 Laptop + PYNQ-Z2 (board = camera/sender):
   laptop:  py -m link.run_all --no-sender {s} --set link.bind_host=0.0.0.0 --set link.sender_host=<BOARD IP> --set dashboard.bind_host=0.0.0.0
-  board:   python3 -m future_work.board.board_sender --bitfile future_work/board/overlay/secure_jpeg_lanes.bit {s} --set link.host=<LAPTOP IP> --set link.bind_host=0.0.0.0
+  board:   python3 -m system.board.board_sender --bitfile system/board/overlay/secure_jpeg_lanes.bit {s} --set link.host=<LAPTOP IP> --set link.bind_host=0.0.0.0
 
 Wrong-key demo: start the receiver side with a different key (run this script again in another folder,
 or change one hex digit). Every frame is then REJECTED (tag check fails) -- the receiver never shows a

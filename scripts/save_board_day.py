@@ -10,10 +10,10 @@ What it copies (result files only: .json .md .csv .jsonl .txt):
   sim_out/board/<every run>/         first_contact, arm_baseline (copied from the board)
   sim_out/pq_kex/                    key-exchange cost on the board
   sim_out/runs/board_* and hw_tamper*  the live-link runs with the board as the sender (A6, tamper)
-  future_work/baselines/power_template.{md,json,csv}  the energy table
+  system/baselines/power_template.{md,json,csv}  the energy table
 It writes MANIFEST.md (file, bytes, SHA-256, source) next to them, skips files over 20 MB, and stops if any
 file contains the demo key (configs/demo_key.txt) or the session key: those are never committed.
-Then: git add paper/data/board/<name>, commit, push (HOW_TO_RUN.md, "Saving board results to git").
+Then: git add paper/data/board/<name>, commit, push .
 """
 import argparse
 import hashlib
@@ -43,7 +43,7 @@ def sources(root=ROOT):
         out += [(f, Path("pq_kex") / f.name) for f in sorted((sim / "pq_kex").glob("*")) if f.suffix in KEEP]
     tree(sim / "runs", "runs", lambda p: p.name.startswith(("board_", "hw_tamper")))
     for ext in (".md", ".json", ".csv"):
-        f = root / "future_work" / "baselines" / f"power_template{ext}"
+        f = root / "system" / "baselines" / f"power_template{ext}"
         if f.exists():
             out.append((f, Path("energy") / f.name))
     return out

@@ -2,13 +2,13 @@
 
 | Folder / file | Produced by | Run |
 |---|---|---|
-| `smoke/` | `python3 -m future_work.board.first_contact --bitfile future_work/board/overlay/secure_jpeg_lanes.bit --sizes 64x48 --frames 1 --timing-frames 2` | 20 Oct 2026 |
+| `smoke/` | `python3 -m system.board.first_contact --bitfile system/board/overlay/secure_jpeg_lanes.bit --sizes 64x48 --frames 1 --timing-frames 2` | 20 Oct 2026 |
 | `lanes_320x240/` (console output in `run_log.txt`) | same, `--sizes 320x240 --frames 10` (timing over 50 frames) | 20 Oct 2026 |
 | `lanes_640x480/` (console output in `run_log.txt`) | same, `--sizes 640x480 --frames 3` (timing over 50 frames) | 20 Oct 2026 |
 
 Board: PYNQ-Z2 (xc7z020), PYNQ image 3.1.1, run as root in a login shell on the board's ARM. Bitstream:
 the 2-lane lane encoder with E5 (contract v3, VERSION 0x5EC00382), FCLK0 = 100 MHz, rebuilt on 20 Oct 2026
-from commit da21bfd with `py vivado\run_vivado_day.py --steps bd_lanes --jobs 2` (Vivado 2026.1, tom's PC,
+from commit da21bfd with `py vivado\run_vivado_day.py --steps bd_lanes --jobs 2` (Vivado 2026.1,
 WNS +0.123 ns). The bitstream is not in git:
 
 | File | Bytes | SHA-256 |
@@ -30,7 +30,7 @@ How to read the numbers:
   **not** the fabric's speed (RTL simulation: 0.82 cycles/pixel, about 2.5 ms for 640x480), which has not
   been measured on the board yet.
 
-The files were copied from `sim_out/board/` on tom's PC (the `.json` / `.md` exactly as the script wrote them).
+The files were copied from `sim_out/board/` on the laptop (the `.json` / `.md` exactly as the script wrote them).
 
 ## Board day, 24 Oct 2026 (`board_day_24oct/`)
 

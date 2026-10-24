@@ -189,7 +189,7 @@ async def frame_every_mode(dut):
 async def e5_one_segment_per_mcu(dut):
     """Mode 5 (E5 in contract v3): one restart segment per MCU, E4 fields, raster order, tag over that
     order; then the ARM's permutation (model/hw.py :: arm_shuffle) and the receiver. Runs only when the
-    RTL sets VERSION bit 7; until then it logs that E5 is not in the RTL yet (docs/HW_TODO.md, H1)."""
+    RTL sets VERSION bit 7; until then it logs that E5 is not in the RTL yet."""
     enc = await init(dut)
     if not (await enc.rd(VERSION)) & E5_CAP:
         dut._log.warning("E5 not implemented in this RTL (VERSION bit 7 = 0): test not run")

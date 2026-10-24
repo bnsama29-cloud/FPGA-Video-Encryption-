@@ -3,11 +3,11 @@
     python experiments/scenario.py --scenario experiments/scenarios/quick.json --policy threshold
     python experiments/scenario.py --scenario experiments/scenarios/learning.json --policy bandit --watch
     python experiments/scenario.py --scenario experiments/scenarios/full_suite.json --external-sender <BOARD IP>
-        (GUIDE.md A6: the PYNQ-Z2 is the sender; the script prints the command to start on the board
+        (the PYNQ-Z2 is the sender; the script prints the command to start on the board
          and starts the scenario clock when the board's first report arrives)
     python experiments/scenario.py --scenario experiments/scenarios/full_suite.json --external-sender <BOARD IP> \
         --attacker <ATTACKER LAPTOP IP>
-        (two laptops, docs/BOARD_DAY.html: the channel = the attacker runs on its own laptop between the
+        (two laptops: the channel = the attacker runs on its own laptop between the
          board and this one; only the receiver runs here. Prints the commands for the attacker laptop and
          the board. Attacks are still started by this script, over the control port of the attacker node)
 
@@ -41,12 +41,12 @@ from link.buslog import BusLogger           # noqa: E402
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
-BOARD_BIT = "future_work/board/overlay/secure_jpeg_lanes.bit"
+BOARD_BIT = "system/board/overlay/secure_jpeg_lanes.bit"
 
 
 def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex=False, bus_host=None,
                   bitfile=BOARD_BIT):
-    """The board_sender command whose ports match a scenario run on base_port (GUIDE.md A6). Settings that
+    """The board_sender command whose ports match a scenario run on base_port. Settings that
     both ends must share (the pre-shared key, keys.*) are passed on, or every frame would fail its tag.
     bus_host: two-laptop setup -- video goes to `laptop` (the attacker), telemetry to bus_host (the receiver)."""
     ports = [f"link.host={laptop}", "link.bind_host=0.0.0.0", f"link.video_in={base_port}",
@@ -55,7 +55,7 @@ def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex
     if bus_host:
         ports.append(f"link.bus_host={bus_host}")
     ports += [x for x in extra_sets if x.startswith(("keys.", "link.pad", "sender."))]
-    return (f"sudo -E python3 -m future_work.board.board_sender --bitfile {bitfile} "
+    return (f"sudo -E python3 -m system.board.board_sender --bitfile {bitfile} "
             + ("--pq-kex " if pq_kex else "") + " ".join(f"--set {x}" for x in ports))
 
 
@@ -90,7 +90,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
         external_sender=None, wait_s=600, board_max_mode="E4", pq_kex=False, attacker=None,
         board_bitfile=BOARD_BIT, kex_tamper_s=0.0, hw_trigger=None):
     """external_sender = the board's IP: start only channel + receiver here, listen on the network,
-    and let the PYNQ-Z2 (future_work/board/board_sender.py) be the sender. board_max_mode = the top level
+    and let the PYNQ-Z2 (system/board/board_sender.py) be the sender. board_max_mode = the top level
     the bitstream offers: E4 for the run-6 bitstreams, E5 for a lane bitstream with VERSION bit 7.
     attacker = the attacker laptop's IP (needs external_sender): the channel runs there, only the receiver
     here; this laptop still starts the attacks (control port of the remote channel) and logs everything.
@@ -115,7 +115,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
               + attacker_command(base_port, me, external_sender, kex_tamper_s), flush=True)
     to_board = dict(laptop=attacker or "<LAPTOP IP>", bus_host=me, bitfile=board_bitfile)
     if external_sender:
-        # the top level is what the bitstream offers (future_work/board/board_sender.py caps at E4 unless
+        # the top level is what the bitstream offers (system/board/board_sender.py caps at E4 unless
         # VERSION bit 7 says the RTL has E5); 'mitigated' means reaching that level (bug #31)
         sets += ["link.bind_host='0.0.0.0'", f"link.sender_host='{external_sender}'",
                  f"defence.max_mode='{board_max_mode}'"]

@@ -32,7 +32,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "experiments"))
-from future_work.attacks.jigsaw_attack import T, edge_corr, luma   # noqa: E402
+from system.attacks.jigsaw_attack import T, edge_corr, luma   # noqa: E402
 from link.sources import open_source                               # noqa: E402
 from model.jpeg import analyse_frame                               # noqa: E402
 from restart_interval import attack_ri, decode, encode_ri          # noqa: E402

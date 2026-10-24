@@ -1,4 +1,4 @@
-"""Running the project from a fresh clone (HOW_TO_RUN.md): the native-library compiler default on Windows,
+"""Running the project from a fresh clone: the native-library compiler default on Windows,
 the energy table without a USB meter, publishing / checking the board images, and the setup check."""
 import json
 import shutil
@@ -11,7 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from future_work.baselines import energy_table as et   # noqa: E402
+from system.baselines import energy_table as et   # noqa: E402
 from link import fastrx                                # noqa: E402
 from scripts import check_setup, publish_bitstreams as pb   # noqa: E402
 
@@ -22,8 +22,8 @@ def test_native_compiler_default():
                             ("posix", {"CC": "gcc-12"}, "gcc-12"), ("nt", {"CC": ""}, "gcc")):
         got = fastrx._cc(name, env)
         assert got == want, f"os.name={name!r}, env={env}: got {got!r}, expected {want!r}"
-    from future_work.arm import sw_encoder
-    from future_work.board import fast_e5
+    from system.arm import sw_encoder
+    from system.board import fast_e5
     assert fast_e5.native_lib is fastrx.native_lib is sw_encoder.native_lib
 
 
@@ -95,7 +95,7 @@ def test_energy_table_without_meter(tmp_path):
 def test_energy_table_template_columns():
     """The shipped template has the columns the script reads, and its FPGA rows name a Vivado design."""
     import csv
-    rows = list(csv.DictReader((ROOT / "future_work" / "baselines" / "power_template.csv").open(encoding="utf-8")))
+    rows = list(csv.DictReader((ROOT / "system" / "baselines" / "power_template.csv").open(encoding="utf-8")))
     assert rows and {"fps", "power_w", "idle_power_w", "image"} <= set(rows[0])
     names = {e["name"] for e in json.loads(et.VIVADO_JSON.read_text(encoding="utf-8"))}
     for r in rows:

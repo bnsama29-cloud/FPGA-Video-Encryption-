@@ -57,7 +57,7 @@ def _machine(cc):
 
 def native_lib(src, stem, flags, timeout=120):
     """Compile `src` once into ~/.cache/sjpeg and load it with ctypes. Used by every native helper
-    (this module, future_work/board/fast_e5.py, future_work/arm/sw_encoder.py).
+    (this module, system/board/fast_e5.py, system/arm/sw_encoder.py).
 
     The cache name covers the source, the flags and the compiler's target, so a library built by another
     compiler is never reused; a library that does not load is deleted so the next run rebuilds it (bug #43:

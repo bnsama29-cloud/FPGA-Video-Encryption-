@@ -1,4 +1,4 @@
-"""BTN1..BTN3 peripheral (future_work/board/axil_buttons.v) of the tamper overlay: the ARM reads presses and
+"""BTN1..BTN3 peripheral (system/board/axil_buttons.v) of the tamper overlay: the ARM reads presses and
 changes the protection level through the sender's "mode" command (board_sender.py :: ButtonLevels).
 
 Random press sequences with contact bounce, glitches shorter than the debounce time, BTN0 activity and AXI

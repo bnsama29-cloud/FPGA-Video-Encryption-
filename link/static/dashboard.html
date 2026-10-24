@@ -678,7 +678,7 @@ window.addEventListener("resize", drawAll);
 
 // ---------------------------------------------------------------- events
 let lastMode = null, lastPolicy = null, lastFrame = 0, nOk = 0, nRej = 0, nAtk = 0, nRekey = 0, pending = null;
-let encoderName = null;     // "model", "rtl" or "board" (the FPGA, future_work/board/board_sender.py)
+let encoderName = null;     // "model", "rtl" or "board" (the FPGA, system/board/board_sender.py)
 function onEvent(ev) {
   const k = `${ev.src}.${ev.kind}`;
   if (k === "sender.start") {

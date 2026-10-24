@@ -7,5 +7,5 @@
 
 This is an **estimate** (no place and route, no timing). The paper labels it so, and
 `paper/make_assets.py` switches to the Vivado post-route numbers automatically once
-`paper/data/vivado/vivado_results.json` exists (GUIDE.md §4.1). Yosys 0.70 (yowasp build); the
+`paper/data/vivado/vivado_results.json` exists. Yosys 0.70 (yowasp build); the
 hierarchical (non-flattened) run and the `selective_enc` block crash in ABC9 under this build.

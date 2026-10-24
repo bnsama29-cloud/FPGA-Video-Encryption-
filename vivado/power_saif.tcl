@@ -1,4 +1,4 @@
-# Post-route power with SIMULATED switching activity (GUIDE B37, docs/HW_TODO.md H4).
+# Post-route power with SIMULATED switching activity .
 #
 # report_power without activity data guesses a 12.5 % toggle rate for every internal net (the
 # "vectorless" estimate in power.txt). This script reads the activity the XSim testbench recorded

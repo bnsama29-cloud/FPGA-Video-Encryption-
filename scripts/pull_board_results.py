@@ -95,8 +95,8 @@ def laptop_rows(sim=SIM):
             rows.append((f"runs/{d.name}", "done", "hw_tamper.md" if (d / "hw_tamper.md").exists() else "summary.json"))
         else:
             rows.append((f"runs/{d.name}", "unfinished", "no summary yet: run it again with the same --out"))
-    if (ROOT / "future_work" / "baselines" / "power_template.md").exists():
-        rows.append(("future_work/baselines/power_template.md", "done", "energy table"))
+    if (ROOT / "system" / "baselines" / "power_template.md").exists():
+        rows.append(("system/baselines/power_template.md", "done", "energy table"))
     return rows
 
 

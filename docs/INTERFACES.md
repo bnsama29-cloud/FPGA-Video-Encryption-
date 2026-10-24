@@ -1,6 +1,6 @@
 # Interface specification (contract v2, and contract v3 for the lane encoder)
 
-Every interface the team agreed in week 1 (project document §13.2), as actually implemented. If you change one, change the RTL, the model and this file in the same commit.
+Every interface of the design, as implemented. If you change one, change the RTL, the model and this file in the same commit.
 
 There is **one** contract. `model/jpeg.py` (frame-level golden model, used by the system simulation and the receiver) and `model/hw.py` (stage-level view, used by the RTL testbenches) are proven byte-identical by `tests/test_hw_equivalence.py`. Section 7 lists what changed from v1 and why.
 
@@ -165,7 +165,7 @@ stays as the reference of the paper's earlier measurements; both are scored by t
 
 ### 8.7 Input pixel format and line-buffer options (21 Oct 2026; golden model and RTL done)
 
-Two synthesis parameters of `secure_jpeg_lanes_top` (and `future_work/board/sjpeg_lanes_bd_top.v`). Neither
+Two synthesis parameters of `secure_jpeg_lanes_top` (and `system/board/sjpeg_lanes_bd_top.v`). Neither
 changes a byte of the output for the same YCbCr samples; the receiver needs no change.
 
 | Item | Definition |
@@ -191,8 +191,8 @@ Not part of the fabric contract; both ends must agree.
 ## 10. Test equipment overlay `secure_jpeg_lanes_tamper.bit` (board day, 22 Oct 2026)
 
 Not part of the encoder. The 2-lane image (VERSION `0x5EC00382`, same registers, same bytes) with
-`future_work/board/axis_tamper.v` between `sjpeg/m_axis` and the S2MM DMA, i.e. after the frame tag.
-Pins in `future_work/board/tamper_pynq_z2.xdc`.
+`system/board/axis_tamper.v` between `sjpeg/m_axis` and the S2MM DMA, i.e. after the frame tag.
+Pins in `system/board/tamper_pynq_z2.xdc`.
 
 | Control | Effect |
 |---|---|
@@ -200,7 +200,7 @@ Pins in `future_work/board/tamper_pynq_z2.xdc`.
 | SW0 (M20) | continuous: one bit flipped in every frame |
 | BTN0 (D19) or rising edge on PMOD A pin 1 (Y18, 3.3 V, pulled down) | one shot: one bit of the next frame |
 | LED0..3 (R14, P14, N16, M14) | enabled, shot pending, continuous, toggles per tampered frame |
-| BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `future_work/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself |
+| BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `system/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself |
 
 `axil_buttons` (AXI-Lite, block `buttons` in the `.hwh`, read-only, writes acknowledged and ignored):
 `0x0` ID `0xB7750001`; `0x4` STATE bits [2:0] = debounced BTN3..BTN1; `0x8` COUNT = 8-bit press counters

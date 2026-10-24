@@ -22,7 +22,7 @@ on command (dashboard buttons or experiments/run_scenario.py):
                channel.kex_tamper_s = N: flip a byte of every kex message for the first N s
                                                                           -> HMAC fails, no key until it stops
 
-Two laptops (docs/BOARD_DAY.html): run this node on the attacker laptop with
+Two laptops: run this node on the attacker laptop with
   --set link.host=<RECEIVER IP> --set link.sender_host=<BOARD IP> --set link.bind_host=0.0.0.0
   --set channel.kex_relay=true   (+ the ports printed by experiments/scenario.py --attacker)
 

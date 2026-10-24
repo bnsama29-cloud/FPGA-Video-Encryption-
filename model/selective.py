@@ -26,7 +26,7 @@ Modes (value sets from section 6.1 of the project document):
          2024). Amplitude/sign encryption never hides WHICH coefficients are
          non-zero, so E1-E4 all leak an edge sketch; E5 also moves every 16x16
          MCU to a secret position. Model only for now: the RTL does not emit
-         restart markers yet (see GUIDE.md, task B6).
+         restart markers yet.
 
 Keystream bits are consumed strictly in coding order, only for selected fields.
 Symbols with size 0 (EOB, ZRL, DC diff of 0) consume nothing.
