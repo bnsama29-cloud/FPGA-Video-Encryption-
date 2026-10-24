@@ -3,7 +3,7 @@
 \begin{figure*}[t]
 \centering
 \resizebox{0.95\textwidth}{!}{\input{figures/tikz/arch_system.tex}}
-\caption{System architecture. The programmable logic (PL) encodes, encrypts and tags every frame; the ARM core (PS) moves pixels and scan through DDR with an AXI DMA, adds the JPEG headers and the APP11 segment with the tag, sends E5 segments in the keyed order, and runs the key ratchet and the adaptive policy. The receiver undoes the order, verifies the tag, decrypts, and reports back over an authenticated feedback channel. Shaded red: cryptographic operations.}
+\caption{System architecture. The programmable logic (PL) encodes, encrypts and tags every frame; the ARM core (PS) moves pixels and scan through DDR with an AXI DMA, adds the JPEG headers and the APP11 segment with the tag, sends E5 segments in the keyed order, and runs the key ratchet and the adaptive policy. The receiver undoes the order, verifies the tag, decrypts, and reports back over an authenticated feedback channel. Red: cryptography; dashed: attacker.}
 \label{fig:system}
 \end{figure*}
 
