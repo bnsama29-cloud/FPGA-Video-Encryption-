@@ -6,15 +6,15 @@
 \node[pl, minimum width=31mm] (dma) at (1.6,-0.6) {AXI DMA\\MM2S 64\,b, S2MM 32\,b};
 \node[pl, minimum width=31mm, minimum height=21mm] (enc) at (1.6,-2.75) {};
 \node[align=center, font=\scriptsize] at (enc.center) {\textbf{secure JPEG encoder}\\[1pt]
-  \tiny colour 4:2:0, DCT, quantiser,\\[-1.5pt]\tiny zig-zag + RLE, \textbf{selective XOR},\\[-1.5pt]
-  \tiny Huffman, packer, segment merger,\\[-1.5pt]\tiny \textbf{Ascon keystream + tag}\\[1pt]\tiny 1, 2 or 4 lanes (Fig.~\ref{fig:pl})};
+  \tiny colour 4:2:0, DCT, quantiser,\\[-1.5pt]\tiny zig-zag + RLE, \textcolor{red}{\textbf{selective XOR}},\\[-1.5pt]
+  \tiny Huffman, packer, segment merger,\\[-1.5pt]\tiny \textcolor{red}{\textbf{Ascon keystream + tag}}\\[1pt]\tiny 1, 2 or 4 lanes (Fig.~\ref{fig:pl})};
 \node[pl, minimum width=31mm] (regs) at (1.6,-4.85) {AXI-Lite registers\\CTRL, KEY, CTR, TAG};
 \draw[bus] ([xshift=-6mm]dma.south) -- node[lbl, left]{pixels} ([xshift=-6mm]enc.north);
 \draw[bus] ([xshift=6mm]enc.north) -- node[lbl, right]{scan} ([xshift=6mm]dma.south);
 \draw[arr] ([xshift=-6mm]regs.north) -- node[lbl, left, align=right]{mode, key,\\ctr, size} ([xshift=-6mm]enc.south);
 \draw[arr] ([xshift=6mm]enc.south) -- node[lbl, right, align=left]{tag, bytes,\\done} ([xshift=6mm]regs.north);
 \begin{scope}[on background layer]
-\node[grp, fill=plfill!40, fit=(dma)(enc)(regs), label={[ttl]north:PL (fabric, 100\,MHz)}] (plg) {};
+\node[grp, fill=plfill!40, fit=(dma)(enc)(regs), label={[ttl]north:PL (fabric, 100\,/\,125\,MHz)}] (plg) {};
 \end{scope}
 % ---------------- DDR
 \node[blk, fill=netfill, minimum width=16mm] (ddr) at (4.75,-0.6) {DDR3\\512\,MB};
@@ -23,7 +23,7 @@
 \node[arm, minimum width=28mm] (drv) at (7.75,-0.6) {driver: DMA buffers,\\registers (PYNQ)};
 \node[arm, minimum width=28mm] (hdr) at (7.75,-1.6) {JPEG headers, DRI,\\APP11 (prefix + tag)};
 \node[cry, minimum width=28mm] (perm) at (7.75,-2.6) {E5: send segments in\\keyed order $\pi_t$};
-\node[arm, minimum width=28mm] (pol) at (7.75,-4.85) {adaptive policy\\(threshold / bandit)};
+\node[arm, minimum width=28mm] (pol) at (7.75,-4.85) {adaptive policy\\(\ifextended threshold / bandit\else threshold rule\fi)};
 \node[cry, minimum width=28mm] (kr) at (7.75,-5.85) {key ratchet $K_e$,\\session id $\sigma$, counter $t$};
 \begin{scope}[on background layer]
 \node[grp, fill=psfill!45, fit=(src)(kr), label={[ttl]north:PS (ARM Cortex-A9, Linux)}] (ps) {};
@@ -39,8 +39,8 @@
 \draw[arr] (pol.south) -- node[lbl, right]{rekey} (kr.north);
 % ---------------- network
 \node[blk, fill=netfill, minimum width=24mm, minimum height=8mm] (net) at (11.35,-2.6) {UDP over Ethernet};
-\node[blk, fill=cryfill!55, minimum width=24mm, align=center] (atk) at (11.35,-1.05) {\textbf{attacker}: observe,\\flip, splice, inject,\\replay, delay, drop};
-\draw[arr, dashed] (atk) -- (net);
+\node[blk, draw=red!70!black, dashed, fill=white, minimum width=24mm, align=center] (atk) at (11.35,-1.05) {\textbf{attacker}: observe,\\flip, splice, inject,\\replay, delay, drop};
+\draw[arr, dashed, red!70!black] (atk) -- (net);
 \node[blk, fill=netfill, minimum width=28mm, align=center] (fb) at (11.35,-4.85) {feedback: heartbeats,\\alerts (Ascon, $K_{\mathrm{fb}}$)};
 \draw[bus] (perm.east) -- node[lbl, above]{JPEG} (net.west);
 \draw[arr] (fb.west) -- (pol.east);
