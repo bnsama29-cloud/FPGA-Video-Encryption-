@@ -157,8 +157,13 @@ Follow **`docs/BOARD_DAY.html`** (open it in a browser and tick the steps). The 
 
 **Board with the laptop**
 
-6. The complete system (A5): the board is the camera, the laptop is the receiver and dashboard. Start the
-   laptop first:
+6. The complete system (A5): the board is the camera, the laptop is the receiver and dashboard. The board
+   boots with an old date (no battery clock, no internet on the cable), which makes the latency and the
+   reaction times wrong, so after every board power-up first copy the laptop's clock to it (passwords xilinx):
+   ```
+   py scripts\set_board_clock.py --board <BOARD>
+   ```
+   It should end with a difference left of under 1 ms. Then start the laptop:
    ```
    py -m link.run_all --no-sender --pq-kex --set keys.master=<KEY> --set link.bind_host=0.0.0.0 --set link.sender_host=<BOARD> --set dashboard.bind_host=0.0.0.0
    ```
@@ -177,6 +182,11 @@ Follow **`docs/BOARD_DAY.html`** (open it in a browser and tick the steps). The 
    with the tamper image, set SW1 up, and press BTN0. Each press should cost exactly one rejected frame.
    See BOARD_DAY phase 12.
 
+**Checkpoints.** After every board step, copy the results to the laptop:
+`py scripts\pull_board_results.py` (add `--board <BOARD>` on a router). It keeps a dated copy in
+`sim_out\board_backups\` and lists every run as done, or stopped after N levels. `first_contact` saves each
+finished bit-exact level, so a stopped run continues where it was with the same command plus `--resume`.
+
 **Windows firewall** (admin cmd, once on each laptop):
 `netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010,47200-47215`
 
@@ -186,7 +196,7 @@ Without a meter, nothing extra runs on the board. Copy the results back (BOARD_D
 laptop:
 
 ```
-py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json
+py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json --zero-copy
 ```
 
 Energy per frame = power ÷ fps:
@@ -202,8 +212,21 @@ BOARD_DAY phase 9 has the 2000-frame runs to measure under.
 
 ## 7. Results into the papers
 
-Send `board_results.zip` (BOARD_DAY phase 13) to Claude, or copy the folders into `paper/data/board/`.
-Then rebuild:
+Send `board_results.zip` (BOARD_DAY phase 13) to Claude, or save the results to git yourself (laptop,
+`(.venv)`, on the project branch):
+
+```
+git pull
+py scripts\pull_board_results.py
+py scripts\save_board_day.py --name board_day_<date>
+git add paper/data/board/board_day_<date>
+git commit -m "Board results: board day <date>"
+git pull --rebase --autostash
+git push
+```
+
+`save_board_day.py` copies only result files (no images, no checkpoints) from the git-ignored `sim_out/`,
+writes a `MANIFEST.md`, and stops if a file contains the demo or session key. Then rebuild:
 
 ```
 py paper\make_assets.py

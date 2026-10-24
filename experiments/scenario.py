@@ -286,6 +286,9 @@ def print_summary(s):
     print(f"mean time to mitigate {s['mean_time_to_mitigate_s']} s ({s['mitigated_episodes']}), "
           f"leakage under attack {s['mean_leakage_under_attack']}, cost {s['mean_cost']} "
           f"(calm {s['mean_cost_calm']}), false alarms {s['false_alarm_windows']}/{s['calm_windows']} calm windows")
+    if (s["latency_ms_median"] or 0) > 60000:
+        print("WARNING: latency over a minute means the board's clock differs from the laptop's, so the latency and "
+              "the sender-side times above are wrong. Run py scripts\\set_board_clock.py and run this again.")
 
 
 def main():

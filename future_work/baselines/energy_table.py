@@ -2,7 +2,7 @@
 
     python -m future_work.baselines.energy_table future_work/baselines/power_template.csv \\
         --fpga-json sim_out/board/lanes4_final/first_contact.json \\
-        --arm-json sim_out/board/arm_final/arm_baseline.json            [--no-meter]
+        --arm-json sim_out/board/arm_final/arm_baseline.json            [--no-meter] [--zero-copy]
 
 One CSV row per workload:  method,mode,width,height,fps,power_w,idle_power_w,image,notes
 
@@ -51,9 +51,12 @@ def vivado_power(image, path=VIVADO_JSON):
     return None, None
 
 
-def fpga_fps(js, size, mode):
-    for s in (js or {}).get("speed", []):
-        if s.get("size") == size and s.get("mode") == mode:
+def fpga_fps(js, size, mode, zero_copy=False):
+    """full_fps of that size and mode. zero_copy: the run with the frame already in the DMA buffer (what a camera
+    writing into that buffer gives; the other run includes the ARM copying the pixels in with numpy)."""
+    rows = [s for s in (js or {}).get("speed", []) if s.get("size") == size and s.get("mode") == mode]
+    for s in rows:
+        if bool(s.get("zero_copy")) == zero_copy:
             return s.get("full_fps")
     return None
 
@@ -63,7 +66,7 @@ def arm_fps(js, size, method):
     return row.get("fps") if row else None
 
 
-def build(rows, fpga_js=None, arm_js=None, no_meter=False, vivado_json=VIVADO_JSON):
+def build(rows, fpga_js=None, arm_js=None, no_meter=False, vivado_json=VIVADO_JSON, zero_copy=False):
     """Rows of the table: dicts with method, mode, size, fps, power_w, source, energy_mj, dyn_mj, ratio."""
     out = []
     for r in rows:
@@ -71,7 +74,7 @@ def build(rows, fpga_js=None, arm_js=None, no_meter=False, vivado_json=VIVADO_JS
         image = (r.get("image") or "").strip()
         fps = _num(r.get("fps"))
         if fps is None and image:
-            fps = fpga_fps(fpga_js, size, _mode_int(r.get("mode")))
+            fps = fpga_fps(fpga_js, size, _mode_int(r.get("mode")), zero_copy)
         if fps is None and not image:
             fps = arm_fps(arm_js, size, r["method"])
         meter = None if no_meter else _num(r.get("power_w"))
@@ -96,7 +99,7 @@ def build(rows, fpga_js=None, arm_js=None, no_meter=False, vivado_json=VIVADO_JS
     return out
 
 
-def markdown(table):
+def markdown(table, zero_copy=False):
     f = lambda v, fmt: "–" if v is None else format(v, fmt)
     lines = ["| Method | Mode | Size | fps | Power (W) | Power source | Energy / frame (mJ) | Above idle (mJ) | vs first row |",
              "|---|---|---|---|---|---|---|---|---|"]
@@ -108,6 +111,9 @@ def markdown(table):
     if any(o["source"].startswith("Vivado") for o in table):
         notes.append("Vivado estimate = post-route power of the whole Zynq design (PS at default activity), not a "
                      "measurement: report it as an estimate, next to the measured fps.")
+    if zero_copy:
+        notes.append("FPGA fps: first_contact's zero-copy run (the frame is already in the DMA buffer, as a camera "
+                     "writing there would leave it); the ARM rows read the frame from memory the same way.")
     if any(o["source"] == "not measured" and o["fps"] for o in table):
         notes.append("not measured = no meter reading and no Vivado model (ARM rows): fps only.")
     return "\n".join(lines) + ("\n\n" + "\n".join(f"* {n}" for n in notes) if notes else "") + "\n"
@@ -119,6 +125,8 @@ def main(argv=None):
     ap.add_argument("--fpga-json", type=Path, help="first_contact.json of the FPGA run (fills empty fps)")
     ap.add_argument("--arm-json", type=Path, help="arm_baseline.json of the ARM run (fills empty fps)")
     ap.add_argument("--no-meter", action="store_true", help="no USB meter: ignore power_w, use Vivado estimates")
+    ap.add_argument("--zero-copy", action="store_true",
+                    help="FPGA fps from first_contact's zero-copy timing rows (run it with --zero-copy)")
     ap.add_argument("--vivado-json", type=Path, default=VIVADO_JSON, help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
     load = lambda p: json.loads(p.read_text(encoding="utf-8")) if p and p.exists() else None
@@ -126,12 +134,12 @@ def main(argv=None):
         if p and not p.exists():
             print(f"warning: {p} not found, its fps stay empty")
     rows = [r for r in csv.DictReader(a.csv.open(encoding="utf-8")) if r.get("method") and not r["method"].startswith("#")]
-    table = build(rows, load(a.fpga_json), load(a.arm_json), a.no_meter, a.vivado_json)
+    table = build(rows, load(a.fpga_json), load(a.arm_json), a.no_meter, a.vivado_json, a.zero_copy)
     if not any(o["fps"] for o in table):
         sys.exit("no fps yet: give --fpga-json / --arm-json from the board runs, or fill the fps column")
-    md = markdown(table)
+    md = markdown(table, a.zero_copy)
     a.csv.with_suffix(".md").write_text(md, encoding="utf-8")
-    a.csv.with_suffix(".json").write_text(json.dumps(dict(no_meter=a.no_meter, rows=table), indent=1), encoding="utf-8")
+    a.csv.with_suffix(".json").write_text(json.dumps(dict(no_meter=a.no_meter, zero_copy=a.zero_copy, rows=table), indent=1), encoding="utf-8")
     print(md + f"\nwritten {a.csv.with_suffix('.md')} / .json")
 
 

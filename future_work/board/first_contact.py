@@ -58,11 +58,21 @@ def expected_jpeg(ip, rgb, quality, mode, ctr):
     return hw.encode_frame(rgb, quality, mode, KEY, ctr, SID)["jpeg"]
 
 
-def check(ip, sizes, n, source, quality):
-    rows, ok_all = [], True
+def check(ip, sizes, n, source, quality, done=None, save=None):
+    """Part 1. done: {(size, mode): row} already proven bit-exact by an earlier, interrupted run of the same
+    check (--resume); those levels are not repeated. save(rows) is called after every level, so a run that is
+    stopped (Ctrl+C, power, ssh dropped) loses at most the level it was on."""
+    rows, ok_all, done = [], True, done or {}
     for (w, h) in sizes:
-        imgs = frames(source, w, h, n)
+        imgs = None
         for mode in range(ip.max_mode + 1):
+            prev = done.get((f"{w}x{h}", mode))
+            if prev is not None:
+                rows.append(prev)
+                print(f"  {w}x{h} E{mode}: bit-exact (saved by the earlier run)", flush=True)
+                continue
+            if imgs is None:
+                imgs = frames(source, w, h, n)
             bad = None
             for i, rgb in enumerate(imgs):
                 ctr = 1000 * mode + i + 1
@@ -74,8 +84,49 @@ def check(ip, sizes, n, source, quality):
                     break
             rows.append(dict(size=f"{w}x{h}", mode=mode, frames=n, bit_exact=bad is None, first_mismatch=bad))
             ok_all &= bad is None
+            if save:
+                save(rows)
             print(f"  {w}x{h} E{mode}: " + ("bit-exact" if bad is None else f"MISMATCH {bad}"), flush=True)
     return ok_all, rows
+
+
+PROGRESS = "bitexact_progress.json"
+
+
+def progress_meta(a, ip):
+    """What must be the same for saved levels to count: the image, the frames checked, the input."""
+    image = "mock" if a.mock else Path(a.bitfile).name
+    return dict(bitfile=image, ip=[ip.contract, getattr(ip, "lanes", 1), getattr(ip, "e5", False),
+                                   getattr(ip, "pixfmt", "rgb")],
+                frames=a.frames, source=a.source, quality=a.quality,
+                fclk_mhz=round(getattr(ip.b, "fabric_hz", 0) / 1e6, 1) or None)   # a level proven at
+    # another clock does not count (bug #44: the 100 MHz images first ran at 62.5 MHz)
+
+
+def load_progress(out, meta, resume):
+    """{(size, mode): row} of the levels an earlier run of the same check proved bit-exact (only with
+    --resume and the same image, frames, source and quality)."""
+    p = Path(out) / PROGRESS
+    if not p.exists():
+        return {}
+    saved = json.loads(p.read_text())
+    if not resume:
+        print(f"note: {p} holds an earlier, unfinished run; add --resume to continue it instead of starting over")
+        return {}
+    if saved.get("meta") != meta:
+        print(f"--resume: {p} is from another check ({saved.get('meta')}), starting over")
+        return {}
+    done = {(r["size"], r["mode"]): r for r in saved["rows"] if r["bit_exact"]}
+    print(f"--resume: {len(done)} levels already bit-exact in {p}, continuing after them")
+    return done
+
+
+def save_progress(out, meta, rows):
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    tmp = out / (PROGRESS + ".tmp")
+    tmp.write_text(json.dumps(dict(meta=meta, rows=rows), indent=1))
+    tmp.replace(out / PROGRESS)                 # never a half-written file if the run is cut
 
 
 def timing(ip, sizes, n, source, zero_copy=False):
@@ -120,7 +171,7 @@ def timing(ip, sizes, n, source, zero_copy=False):
     return rows
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--bitfile", default=str(ROOT / "future_work" / "board" / "overlay" / "secure_jpeg.bit"))
     ap.add_argument("--mock", action="store_true", help="golden-model emulation instead of the board")
@@ -142,9 +193,12 @@ def main():
     ap.add_argument("--zero-copy", action="store_true",
                     help="Part 2 with each frame already in the DMA buffer (ip.pixel_buffer): what a camera "
                          "writing straight into that buffer would give; reported in its own column")
+    ap.add_argument("--resume", action="store_true",
+                    help="continue an interrupted run with the same --out: skip the levels it already proved "
+                         "bit-exact (saved in <out>/bitexact_progress.json after every level)")
     ap.add_argument("--full-cache-ops", action="store_true",
                     help="flush/invalidate the whole DMA buffers instead of only the frame's bytes")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
     sizes = [tuple(int(v) for v in s.split("x")) for s in a.sizes]
     a.mock = a.mock or bool(a.mock_lanes)
     if a.mock:
@@ -160,7 +214,15 @@ def main():
     print(f"IP found ({'mock' if a.mock else a.bitfile}), VERSION ok: contract v{ip.contract}"
           + (f", {ip.lanes} lanes" if ip.contract == 3 else "") + (", E5 in hardware" if ip.e5 else "")
           + ". Part 1: bit-exact check", flush=True)
-    ok, exact = check(ip, sizes, a.frames, a.source, a.quality)
+    meta = progress_meta(a, ip)
+    done = load_progress(a.out, meta, a.resume)
+    try:
+        ok, exact = check(ip, sizes, a.frames, a.source, a.quality, done,
+                          save=lambda rows: save_progress(a.out, meta, rows))
+    except KeyboardInterrupt:
+        print(f"\nstopped. Every finished level is saved in {Path(a.out) / PROGRESS}: run the same command "
+              "with --resume to continue.")
+        raise SystemExit(130)
     speed = []
     if ok:
         print("Part 2: speed", flush=True)
