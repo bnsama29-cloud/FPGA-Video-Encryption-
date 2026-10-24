@@ -1,0 +1,59 @@
+{
+ "commit": "a7ff45d58189d03e15d83844c55abb98e91ff086",
+ "images": [
+  {
+   "file": "secure_jpeg_lanes.bit",
+   "bytes": 4045769,
+   "sha256": "dacf0fd1954b5945bad4d686787b0d1bac6a1753852589730e694bcbf1c324c0",
+   "hwh_sha256": "b11f199f9cf90eff5917fd7f0372a65821a0376408430d11cc90161784790981",
+   "run": "run 12",
+   "clock_mhz": 100,
+   "version": "0x5EC00382"
+  },
+  {
+   "file": "secure_jpeg_lanes4.bit",
+   "bytes": 4045769,
+   "sha256": "7f1260af5daf72b0fcd923d8739414285a8e3bf9e705ad4d4d5f5dd0dee99344",
+   "hwh_sha256": "f11259990a16a4f36d57aadc2ab3d529eb32f214b6816f10ac358da3e6ebc2a2",
+   "run": "run 12",
+   "clock_mhz": 125,
+   "version": "0x5EC00384"
+  },
+  {
+   "file": "secure_jpeg_lanes_tamper.bit",
+   "bytes": 4045769,
+   "sha256": "c6a92ab60e8e176d0a582dcd316ebf913c46a81a4e8fe78aa73440573c3be43b",
+   "hwh_sha256": "26caca9bbd4d589628471dcdc0caa903761f9d6fc98d94e6841619f5f37d9c76",
+   "run": "run 13",
+   "clock_mhz": 100,
+   "version": "0x5EC00382"
+  },
+  {
+   "file": "secure_jpeg.bit",
+   "bytes": 4045769,
+   "sha256": "25cb8e7207096e944f5f5697f8c5265a55350124e6e0208a94a80d2c4c9b4f02",
+   "hwh_sha256": "12b6c2fba74b3fb191f81f67eaafaa6cd10958ffd29f2487d9ee5a7b5c7cea78",
+   "run": "run 12",
+   "clock_mhz": 100,
+   "version": "0x5EC00200"
+  },
+  {
+   "file": "secure_jpeg_lanes4hd.bit",
+   "bytes": 4045769,
+   "sha256": "52ecb7f66f1aac74887d473238167a0f2c0748bf69e77f38967df4dbbf1f3815",
+   "hwh_sha256": "abe91fa218006a738c6c15638322645bdd14ea6d75dba633a961d8498cc14e87",
+   "run": "run 12",
+   "clock_mhz": 125,
+   "version": "0x5EC00384"
+  },
+  {
+   "file": "secure_jpeg_lanes4yuyv.bit",
+   "bytes": 4045769,
+   "sha256": "d38adc96f662357211100cb6604ecec68c167938ab036d1f9d5c635790de7cac",
+   "hwh_sha256": "a75ca44abd3d0c555a250eee4751ae13b760d9eb89d270ddebab6bfb60139905",
+   "run": "run 12",
+   "clock_mhz": 125,
+   "version": "0x5EC003C4"
+  }
+ ]
+}
