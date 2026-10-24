@@ -1,0 +1,8 @@
+method,mode,width,height,fps,power_w,idle_power_w,image,notes
+FPGA 4 lanes,E2,640,480,,,,overlay_lanes4,secure_jpeg_lanes4.bit; fps from --fpga-json; power_w only with the meter
+FPGA 4 lanes,E5,640,480,,,,overlay_lanes4,
+"ours on the PS, E2, 2 cores",E2,640,480,,,,,arm_baseline (C on the ARM); fps from --arm-json
+"ours on the PS, E5, 2 cores",E5,640,480,,,,,
+libjpeg-turbo (no security),-,640,480,,,,,
+libjpeg-turbo + Ascon-AEAD128 whole file (C),full,640,480,,,,,
+libjpeg-turbo + AES-128-GCM whole file (OpenSSL),full,640,480,,,,,

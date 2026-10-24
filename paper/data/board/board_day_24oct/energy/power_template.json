@@ -1,0 +1,90 @@
+{
+ "no_meter": true,
+ "zero_copy": true,
+ "rows": [
+  {
+   "method": "FPGA 4 lanes",
+   "mode": "E2",
+   "size": "640x480",
+   "fps": 169.4,
+   "power_w": 2.22,
+   "source": "Vivado estimate (overlay_lanes4, confidence Medium)",
+   "energy_mj": 13.105076741440378,
+   "dyn_mj": null,
+   "image": "overlay_lanes4",
+   "ratio": 1.0
+  },
+  {
+   "method": "FPGA 4 lanes",
+   "mode": "E5",
+   "size": "640x480",
+   "fps": 118.6,
+   "power_w": 2.22,
+   "source": "Vivado estimate (overlay_lanes4, confidence Medium)",
+   "energy_mj": 18.718381112984826,
+   "dyn_mj": null,
+   "image": "overlay_lanes4",
+   "ratio": 1.428330522765599
+  },
+  {
+   "method": "ours on the PS, E2, 2 cores",
+   "mode": "E2",
+   "size": "640x480",
+   "fps": 16.23100419643789,
+   "power_w": null,
+   "source": "not measured",
+   "energy_mj": null,
+   "dyn_mj": null,
+   "image": null,
+   "ratio": null
+  },
+  {
+   "method": "ours on the PS, E5, 2 cores",
+   "mode": "E5",
+   "size": "640x480",
+   "fps": 13.36926885850133,
+   "power_w": null,
+   "source": "not measured",
+   "energy_mj": null,
+   "dyn_mj": null,
+   "image": null,
+   "ratio": null
+  },
+  {
+   "method": "libjpeg-turbo (no security)",
+   "mode": "-",
+   "size": "640x480",
+   "fps": 34.78069182557895,
+   "power_w": null,
+   "source": "not measured",
+   "energy_mj": null,
+   "dyn_mj": null,
+   "image": null,
+   "ratio": null
+  },
+  {
+   "method": "libjpeg-turbo + Ascon-AEAD128 whole file (C)",
+   "mode": "full",
+   "size": "640x480",
+   "fps": 31.52038431901692,
+   "power_w": null,
+   "source": "not measured",
+   "energy_mj": null,
+   "dyn_mj": null,
+   "image": null,
+   "ratio": null
+  },
+  {
+   "method": "libjpeg-turbo + AES-128-GCM whole file (OpenSSL)",
+   "mode": "full",
+   "size": "640x480",
+   "fps": 31.31464075789629,
+   "power_w": null,
+   "source": "not measured",
+   "energy_mj": null,
+   "dyn_mj": null,
+   "image": null,
+   "ratio": null
+  }
+ ]
+}

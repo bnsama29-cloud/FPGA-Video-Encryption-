@@ -1,0 +1,17 @@
+{
+ "machine": "armv7l",
+ "host": "pynq",
+ "python": "3.10.4",
+ "m1_bytes": 1268,
+ "m2_bytes": 1172,
+ "confirm_bytes": 20,
+ "runs": 20,
+ "backends": {
+  "kyber-py": {
+   "receiver_init": 112.84682450013861,
+   "sender_respond": 153.71450499924322,
+   "receiver_finish": 183.1734335000874,
+   "total_ms": 449.73476299946924
+  }
+ }
+}
