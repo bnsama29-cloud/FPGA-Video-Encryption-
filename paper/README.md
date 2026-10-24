@@ -8,8 +8,8 @@ Three manuscripts are built from the same data, figures and bibliography:
 | `tce.tex` + `sections/access_*.tex` | IEEEtran `[journal]` | the journal version for the IEEE Transactions on Consumer Electronics (8 pages without overlength charges): the conference paper extended with the proofs, the board evaluation, the full benchmark and the protocol analysis |
 | `access.tex` + the same sections | IEEE Access (`ieeeaccess.cls`) | the same journal text in the IEEE Access format (no page limit) |
 
-Shared: `common/preamble.tex` (packages, notation), `figures/tikz/*.tex` (architecture, datapath, block design,
-key hierarchy, E5 flow, drawn from the RTL), `figures/netlist/` (gate-level schematics generated from
+Shared: `common/preamble.tex` (packages, notation), `figures/fig_system.pdf` and `figures/fig_datapath.pdf` (architecture and
+datapath), `figures/tikz/*.tex` (block design, key hierarchy, E5 flow, drawn from the RTL), `figures/netlist/` (gate-level schematics generated from
 Verilog), `figures/fig_*.pdf` and `tables/*.tex` (generated), `refs.bib`.
 
 ## Build
@@ -38,8 +38,8 @@ Overleaf, `python paper/make_overleaf.py` writes a self-contained project of eac
 
 | Figure | File | Source of truth |
 |---|---|---|
-| System architecture | `figures/tikz/arch_system.tex` | `system/board/block_design.tcl`, `pynq_driver.py`, `link/` |
-| Fabric datapath | `figures/tikz/arch_pl.tex` | `rtl/secure_jpeg_lanes_top.v`, `rtl/encoder_lane.v` (bus widths = port widths) |
+| System architecture | `figures/fig_system.pdf` (drawn in Figma, exported as vector PDF) | `system/board/block_design.tcl`, `pynq_driver.py`, `link/` |
+| Fabric datapath | `figures/fig_datapath.pdf` (drawn in Figma, exported as vector PDF) | `rtl/secure_jpeg_lanes_top.v`, `rtl/encoder_lane.v` (bus widths = port widths) |
 | Gate-level encryption bit slice | `figures/fig_selective_enc_bitslice.pdf` (generated) | `figures/netlist/selective_enc_bitslice.v` = one bit of `rtl/selective_enc.v`; `tests/test_paper_figures.py` checks it exhaustively against the model |
 | Ascon round bit slice | `figures/fig_ascon_sbox_slice.pdf` (generated) | `figures/netlist/ascon_sbox_slice.v` = one slice of `rtl/ascon_round.v`; the same test checks 64 slices + linear layer against a model round |
 | PYNQ-Z2 block design | `figures/tikz/zynq_bd.tex` | `system/board/block_design.tcl` |
