@@ -55,7 +55,7 @@ scene; E5 removes it. The paper measures what each level leaks.
 | `link/` | System layer: sender, network channel with attacker, receiver (with a C fast path), feedback, key exchange, defence policy, web dashboard. All nodes talk UDP. |
 | `experiments/` | One script per result in the paper; each writes its numbers to `sim_out/`. |
 | `system/` | Board software for the PYNQ-Z2 (`board/`: driver, bit-exact gate, camera node, block design, board images), the encoder in C on the ARM (`arm/`), software baselines and energy table (`baselines/`), jigsaw attacks (`attacks/`), figure scripts (`figures/`), and the script that reruns the GPU experiments in one cloud session (`kaggle/`). |
-| `paper/` | Both manuscripts (6-page conference version and full-length IEEE Access version), the result snapshot they are built from (`paper/data/`), and the generator that turns it into every table, figure and number (`paper/make_assets.py`). |
+| `paper/` | The manuscripts (6-page conference version; journal version in the IEEE Transactions on Consumer Electronics and IEEE Access formats), the result snapshot they are built from (`paper/data/`), and the generator that turns it into every table, figure and number (`paper/make_assets.py`). |
 | `docs/` | Interface specification, verification method and bug log, benchmark method, research notes. |
 | `scripts/` | Setup check, demo key, end-to-end check with an emulated board, board-image check, board helpers. |
 | `tests/` | Python tests: model, contract equivalence between the model's two views, system layer, experiments, paper assets. |
@@ -81,7 +81,7 @@ python scripts/emulated_board_check.py --quick   # every board program against a
 
 ## Reproducing the results
 
-Every number in both papers comes from a script that writes it to `sim_out/`; the snapshot used for the papers
+Every number in the papers comes from a script that writes it to `sim_out/`; the snapshot used for the papers
 is in `paper/data/` (each folder has a README saying which run produced it), and
 `python paper/make_assets.py` regenerates every table, figure and number from it.
 `tests/test_paper_assets.py` fails if a table in the manuscripts no longer matches the data.

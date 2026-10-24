@@ -1,10 +1,10 @@
-"""Self-contained Overleaf projects of both papers: paper/overleaf/{conference,access}/ and a .zip of each.
+"""Self-contained Overleaf projects of the papers: paper/overleaf/{conference,access,tce}/ and a .zip of each.
 
     python paper/make_overleaf.py
 
 Follows \\documentclass, \\input, \\includegraphics, \\bibliography and the ieeeaccess class's images from each main
 file and copies exactly the files it needs, with the same folder structure, so the project compiles on Overleaf
-as it is (upload the zip: New Project -> Upload Project; the main file is conference.tex / access.tex).
+as it is (upload the zip: New Project -> Upload Project; the main file is conference.tex / access.tex / tce.tex).
 Generated: never edit the copies, edit the paper/ sources (and run paper/make_assets.py) and rerun this script.
 """
 import re
@@ -87,7 +87,7 @@ def build(main):
 
 
 def main():
-    missing = build("conference.tex") + build("access.tex")
+    missing = build("conference.tex") + build("access.tex") + build("tce.tex")
     if missing:
         print("MISSING (the project will not compile):\n  " + "\n  ".join(missing))
         sys.exit(1)

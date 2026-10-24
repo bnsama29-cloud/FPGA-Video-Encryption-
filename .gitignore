@@ -46,6 +46,7 @@ system/board/overlay/*/
 paper/overleaf/
 paper/conference.pdf
 paper/access.pdf
+paper/tce.pdf
 
 # Vivado projects and overlay reports (any design), Vivado/Java crash logs
 system/board/vivado_proj*/

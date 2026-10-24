@@ -3,7 +3,7 @@
 #   access.pdf       IEEE Access, full length (sections/access_*.tex)
 PY ?= python3
 SHARED = refs.bib tables/numbers.tex common/preamble.tex $(wildcard figures/tikz/*.tex)
-all: conference.pdf access.pdf
+all: conference.pdf tce.pdf access.pdf
 conference.pdf: conference.tex $(SHARED)
 	pdflatex -interaction=nonstopmode -halt-on-error conference.tex > build_conference.log
 	bibtex conference >> build_conference.log
@@ -11,6 +11,12 @@ conference.pdf: conference.tex $(SHARED)
 	pdflatex -interaction=nonstopmode -halt-on-error conference.tex >> build_conference.log
 	@pdfinfo conference.pdf 2>/dev/null | grep Pages || true
 	@grep -c "TODO" conference.tex | xargs -I{} echo "{} TODO markers in conference.tex"
+tce.pdf: tce.tex $(wildcard sections/access_*.tex) $(SHARED)
+	pdflatex -interaction=nonstopmode -halt-on-error tce.tex > build_tce.log
+	bibtex tce >> build_tce.log
+	pdflatex -interaction=nonstopmode -halt-on-error tce.tex >> build_tce.log
+	pdflatex -interaction=nonstopmode -halt-on-error tce.tex >> build_tce.log
+	@pdfinfo tce.pdf 2>/dev/null | grep Pages || true
 access.pdf: access.tex $(wildcard sections/access_*.tex) ieeeaccess.cls $(SHARED)
 	pdflatex -interaction=nonstopmode -halt-on-error access.tex > build_access.log
 	bibtex access >> build_access.log
@@ -21,5 +27,5 @@ tables/numbers.tex: make_assets.py $(shell find data -name '*.json' -o -name '*.
 	$(PY) make_assets.py
 tables: ; $(PY) make_assets.py
 schematics: ; sh figures/netlist/make_schematics.sh   # needs yowasp-yosys, netlistsvg, cairosvg
-clean: ; rm -f *.aux *.bbl *.blg *.log *.out conference.pdf access.pdf
+clean: ; rm -f *.aux *.bbl *.blg *.log *.out conference.pdf tce.pdf access.pdf
 .PHONY: all tables schematics clean

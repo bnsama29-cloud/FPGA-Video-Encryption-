@@ -1,0 +1,42 @@
+% Journal version in the format of the IEEE Transactions on Consumer Electronics (IEEEtran journal): the same
+% sections as access.tex (sections/access_*.tex). TCE allows 8 pages without overlength charges (2026 IEEE APC list).
+% Every number comes from tables/numbers.tex or tables/tab_*.tex (paper/make_assets.py). Never type results.
+\documentclass[journal]{IEEEtran}
+\IEEEoverridecommandlockouts
+\input{common/preamble.tex}
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{definition}\newtheorem{definition}{Definition}
+\usepackage[hidelinks]{hyperref}
+\extendedtrue
+
+\begin{document}
+\title{Playable but Private: In-Encoder Selective Encryption with Ascon-AEAD128 and Attack-Adaptive Protection for MJPEG Video on an FPGA SoC}
+\author{Aravind~R, Suhas~V~J, Rishab~H~R, Samarth~B~N, Vijaysurya~B~S, and~Chetana~G\,\TODO{order, IEEE membership}%
+\thanks{The authors are with the Department of Electronics and Communication Engineering, RV College of Engineering, Bengaluru 560059, India \TODO{e-mails}. \TODO{funding statement, or ``This work received no external funding.''}}}
+\markboth{IEEE Transactions on Consumer Electronics}{Aravind R \MakeLowercase{\textit{et al.}}: Playable but Private}
+\maketitle
+
+\begin{abstract}
+Home cameras, video doorbells and baby monitors stream over networks their owners do not control, yet encrypting the whole stream makes it unplayable without the key and spends cipher work on every byte. We present a JPEG/MJPEG encoder for a Zynq-7020 FPGA SoC that encrypts the sign and amplitude bits of selected DCT coefficients inside the entropy coder, with a keystream from the NIST standard Ascon-AEAD128. We prove that the transformation never changes a Huffman code length, so every protection level is a valid JPEG that standard players and recorders accept, and a 128-bit tag over the frame metadata and the coded scan rejects any modified, replayed or forged frame. The strongest level hides block positions with a keyed, per-frame permutation of restart segments that needs no frame buffer: the fabric codes and authenticates one segment per macroblock and the processor only reorders them. On a PYNQ-Z2 board the design is bit-exact with its golden model in all six levels and adds no cycles for encryption; four lanes at \BdFourMhz\,MHz encode \BdFourBusyMpix\,Mpixel/s, exactly the cycle count of the RTL simulation, and a complete authenticated 640$\times$480 frame takes \BdFourZcMs\,ms, \BdSpeedupFrame{} times faster than the same encoder on the board's two ARM cores. Under the same keyless attacks on \BenchSources{} sources, four re-implemented published schemes leak \BenchPubMin--\BenchPubMax{} edge correlation while our permutation level stays at or below \BenchEfiveMax{}, also against jigsaw solvers, sign recovery and trained networks. An authenticated feedback loop mitigates all \NumAttacks{} modelled network attacks, in simulation and with the board as the camera, without false alarms.
+\end{abstract}
+
+\begin{IEEEkeywords}
+consumer cameras, video privacy, selective encryption, MJPEG, Ascon, FPGA, authenticated encryption, hardware security
+\end{IEEEkeywords}
+
+\input{sections/access_01_intro.tex}
+\input{sections/access_02_design.tex}
+\input{sections/access_03_hardware.tex}
+\input{sections/access_04_results.tex}
+\input{sections/access_05_security.tex}
+\input{sections/access_06_protocol.tex}
+\input{sections/access_07_discussion.tex}
+
+\section*{Acknowledgment}
+We thank Dr.~Chetana~G for her guidance. \TODO{AI-assistance disclosure as required by IEEE: name the tools and what they were used for.}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+\end{document}

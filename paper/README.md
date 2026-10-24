@@ -1,11 +1,12 @@
 # The papers
 
-Two manuscripts are built from the same data, figures and bibliography:
+Three manuscripts are built from the same data, figures and bibliography:
 
 | File | Format | What it is |
 |---|---|---|
-| `conference.tex` | IEEEtran `[conference]`, 6 pages including references | the conference version |
-| `access.tex` + `sections/access_*.tex` | IEEE Access (`ieeeaccess.cls`) | the full-length version: every derivation, experiment and table |
+| `conference.tex` | IEEEtran `[conference]`, 6 pages including references | the conference version (IEEE ICCE 2027) |
+| `tce.tex` + `sections/access_*.tex` | IEEEtran `[journal]` | the journal version for the IEEE Transactions on Consumer Electronics (8 pages without overlength charges): the conference paper extended with the proofs, the board evaluation, the full benchmark and the protocol analysis |
+| `access.tex` + the same sections | IEEE Access (`ieeeaccess.cls`) | the same journal text in the IEEE Access format (no page limit) |
 
 Shared: `common/preamble.tex` (packages, notation), `figures/tikz/*.tex` (architecture, datapath, block design,
 key hierarchy, E5 flow, drawn from the RTL), `figures/netlist/` (gate-level schematics generated from
@@ -21,7 +22,7 @@ make schematics                  # gate-level figures from Verilog: Yosys -> net
 
 A TeX installation with `IEEEtran`, `booktabs`, `tikz`, `circuitikz` and `algorithmicx` is needed. For
 Overleaf, `python paper/make_overleaf.py` writes a self-contained project of each paper
-(`overleaf/conference.zip`, `overleaf/access.zip`; compiler pdfLaTeX).
+(`overleaf/conference.zip`, `overleaf/tce.zip`, `overleaf/access.zip`; compiler pdfLaTeX).
 
 ## How the numbers get into the papers
 
@@ -30,9 +31,8 @@ Overleaf, `python paper/make_overleaf.py` writes a self-contained project of eac
 2. `make_assets.py` turns these files into the tables in `tables/`, the figures `figures/fig_*.pdf`, and the
    macros in `tables/numbers.tex` (e.g. `\TtmMean`) that the prose uses. Derived constants of the analysis
    (`\PermBitsQVGA` = log2 300!, the lane bounds, the boot-collision bound) are computed there too.
-3. No result is typed into a `.tex` file. `tests/test_paper_assets.py` fails if either paper uses an
-   undefined number, if a committed table no longer matches the data, or if a reference is cited by neither
-   paper.
+3. No result is typed into a `.tex` file. `tests/test_paper_assets.py` fails if a paper uses an undefined
+   number, if a committed table no longer matches the data, or if a reference is cited by no paper.
 
 ## Figures drawn by hand and what they must match
 
