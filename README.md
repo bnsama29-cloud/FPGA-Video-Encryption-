@@ -111,6 +111,13 @@ magnitude without changing the field's size. The encoder repeats this small circ
 Because the size and Huffman code stay the same, the encrypted scan remains playable as JPEG.
 Decryption applies the same XOR operation again with the same keystream, restoring the original bits.
 
+Which bit is affected follows a fixed mapping, not a choice based on the image or the bit's current
+value. For a coefficient with size `s`, `ks0` controls the sign operation: if it is enabled and
+`ks0` is 1, every bit in the `s`-bit field is flipped; if it is 0, none are. For amplitude encryption,
+keystream bit `ks[k+1]` controls field bit `k` for `k = 0` through `s-2`. The top field bit is not
+changed by amplitude encryption. For example, a 3-bit field uses `ks0` for the optional whole-field
+sign flip, and `ks1` and `ks2` for its two lower bits when amplitude encryption is enabled.
+
 **Fig. 4** shows one bit slice of Ascon's round logic, which helps produce the secret keystream and
 the frame-authentication tag. Ascon has five 64-bit state words, so the slice's logic is repeated
 across all 64 bit positions. XOR gates mix bits and add the round-constant bit; AND and NOT gates
