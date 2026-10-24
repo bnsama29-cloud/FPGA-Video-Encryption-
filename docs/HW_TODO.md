@@ -29,7 +29,7 @@ Follow `docs/FPGA_HANDS_ON.md`. In short:
 1. SD card with the PYNQ-Z2 image, jumpers Boot = SD and Power = USB, network to the laptop (§2–§5).
 2. Copy the repo and `secure_jpeg_lanes.bit` + `.hwh` (run 7, E5) to `/home/xilinx/fpga` (§6).
 3. **A1 + A2:** `first_contact` on the board: every size and level E0–E5 bit-exact, then ms/frame (§8).
-4. **A3:** ARM baseline on the same chip; **A4:** USB power meter, idle and per workload (§9).
+4. **A3:** ARM baseline on the same chip; **A4:** energy per frame, with the USB meter (idle and per workload) or, without one, from Vivado's power estimate (`energy_table --no-meter`, §9).
 5. **A5 + A6:** board as camera into the laptop's receiver and dashboard; the 11-attack suite and the
    benign suite, three runs each, with `--board-max-mode E5` (§10).
 

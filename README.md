@@ -23,19 +23,17 @@ camera ─► encoder + Ascon (RTL / golden model) ─► UDP ─► channel (ne
                 adaptive defence on the ARM: protection level E2..E5, rekey, dead-man rule
 ```
 
-## Status (21 Oct 2026)
+## Status (24 Oct 2026)
 
 | Part | State |
 |---|---|
 | Golden model, RTL (single pipeline + 1/2/4 lanes, E0–E5), cocotb + XSim | done, every RTL test bit-exact with the model |
-| Vivado run 10 (21 Oct, commit dd13f55) | single pipeline **150 MHz met** (+0.074 ns); 2 lanes 125 MHz (150: -0.060 ns); 4 lanes 100 MHz in every variant (YUYV, one line buffer, 1080p lines); **4-lane PYNQ-Z2 system built for 125 MHz** (+0.433 ns, 20,097 LUT) = 227 Mpixel/s from the cycle count |
-| Vivado run 11 (22 Oct, commit d34604f) | **1, 2 and 4 lanes meet 150 MHz** out of context (4 lanes: 272 Mpixel/s from the cycle count); 166.7 MHz missed by 15 / 19 / 182 ps; board images of this commit still to build (~3.5 h) |
-| Camera-native YUYV input (4 pixels per beat) | RTL + model + driver done, bit-exact for 2 and 4 lanes: 4 lanes 230 Mpixel/s at 100 MHz in simulation, half the DDR bytes |
-| 4 lanes with 1080p lines | option done (one line-buffer set per lane: half the BRAM, under 2 % slower) |
-| Board (PYNQ-Z2) | 2-lane E5 bitstream bit-exact with the model on silicon, E0–E5 (A1); first speed numbers (A2) |
+| Vivado run 11 (22 Oct, commit d34604f) | **1, 2 and 4 lanes meet 150 MHz** out of context (4 lanes: 272 Mpixel/s from the cycle count) |
+| Vivado run 12 (22 Oct) + run 13 (23 Oct) | every PYNQ-Z2 image built from the final RTL: single pipeline and 2 lanes at 100 MHz, 4 lanes (also 1080p lines and YUYV input) at 125 MHz, and the tamper image (2 lanes + bit-flip injector + level buttons) |
+| Board (PYNQ-Z2) | **E0–E5 bit-exact with the model on silicon** (20 Oct, 2-lane E5 image, 64x48 to 640x480); Python round trip 45 fps at 320x240 |
 | ARM side (PS) | the same encoder in C, bit-exact (A3 baseline, no-bitstream camera node); post-quantum session key (ML-KEM-768 + X25519) |
-| Link | decryption in C on the laptop; frame-size padding against the size side channel (`link.pad`) |
-| Open | on the board: 4-lane image, A2 fabric-only time, A3, A4 power, A5/A6 attacks |
+| Link | decryption in C on the laptop; frame-size padding against the size side channel (`link.pad`); attacker on its own laptop |
+| Open | on the board: the run-12/13 images, A2 fabric-only time, A3, A4 energy, A5/A6 attacks, tamper run; then the board numbers in both papers |
 
 Where we beat the published designs and where we do not yet: **[docs/BENCHMARK_PLAN.md](docs/BENCHMARK_PLAN.md)**.
 
@@ -46,17 +44,18 @@ network, defence policy). See [docs/RUNBOOK.md](docs/RUNBOOK.md) §1.
 
 ## Next steps
 
-1. **Board images** (done, run 10): copy `future_work\board\overlay\secure_jpeg*.bit` + `.hwh` to the board (the 4-lane one runs at 125 MHz, or `--fclk 100`).
+1. **Board images into git** (once, on the PC that has them): `py scripts\publish_bitstreams.py`, commit, push.
 2. **Board, A1–A3** (~1.5 h): 4-lane smoke test, `first_contact` with 2 and 4 lanes (`--zero-copy`), `arm_baseline`, `pq_kex_cost`.
-3. **Board, A4–A6** (~3 h): power meter, then the attack suite with the board as sender (`--pq-kex`, `link.pad=runmax`).
+3. **Board, A4–A6** (~3 h): energy per frame (USB meter optional: without it, `energy_table --no-meter` uses Vivado's power estimate), then the attack suite and the tamper run with the board as sender (`--pq-kex`, `link.pad=runmax`).
 4. **Paper**: copy the results to `paper/data/`, `python paper/make_assets.py`, `make -C paper`, replace the red TODOs.
 
-Exact commands and order: [docs/RUNBOOK.md](docs/RUNBOOK.md) §3.
+How to run everything, in order: **[HOW_TO_RUN.md](HOW_TO_RUN.md)**. Board day step by step: [docs/BOARD_DAY.html](docs/BOARD_DAY.html).
 
 ## Start here
 
 | You want to… | Read |
 |---|---|
+| **run the project**: set up, simulate, put it on the board, measure (one page, in order) | **[HOW_TO_RUN.md](HOW_TO_RUN.md)** |
 | every program, which machine it runs on, and the order for the hardware days | **[docs/RUNBOOK.md](docs/RUNBOOK.md)** |
 | understand the whole project from the basics, every folder and program, and its status | **[docs/PROJECT_EXPLAINED.md](docs/PROJECT_EXPLAINED.md)** |
 | know what is done, what is left, and how to do each remaining task | **[GUIDE.md](GUIDE.md)** |
@@ -76,6 +75,7 @@ Exact commands and order: [docs/RUNBOOK.md](docs/RUNBOOK.md) §3.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+python scripts/check_setup.py   # is this machine ready? one line per check, with the fix
 make test                       # golden model + system + every RTL block in Icarus 12 (~6 min)
 make xsim-icarus                # the Vivado testbench, run in Icarus
 python -m link.run_all          # whole link + dashboard -> http://localhost:8000

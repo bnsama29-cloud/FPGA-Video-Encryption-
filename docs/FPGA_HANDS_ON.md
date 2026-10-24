@@ -43,7 +43,7 @@ numbers are the last missing piece** — that is what this file produces.
 | Ethernet cable | board ↔ laptop or router | any CAT5e/6 |
 | Laptop with the repo | runs the receiver, dashboard, attacker | Windows: repo at `E:\FPGA-Video-Encryption-` |
 | The bitstream pair | the hardware design | `secure_jpeg_lanes.bit` **and** `secure_jpeg_lanes.hwh` (same base name!) |
-| USB power meter (inline, ~₹500) | power and energy (A4) | sits between the USB supply and the board's cable |
+| Optional: USB power meter (inline, ~₹500) | measured power and energy (A4) | sits between the USB supply and the board's cable; without it A4 uses the Vivado estimate |
 | Optional: USB webcam | live camera demo | otherwise a video file or the synthetic scene |
 | Optional: router / switch | lets a second laptop or phone watch the dashboard | the board, the laptop and the viewer on one LAN |
 
@@ -245,14 +245,21 @@ reference only: Python is not a fair baseline.
 The same C encoder also runs the camera node without a bitstream (PS only):
 `python3 -m future_work.board.board_sender --software 2 ...` (same bytes, the receiver cannot tell).
 
-**A4 power with the USB meter.** Wiring: USB supply → **meter** → micro-USB cable → PROG/UART port.
+**A4 power. The USB meter is optional.**
+
+*Without a meter* **[laptop]**, after copying the A2/A3 results:
+`py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --no-meter --fpga-json sim_out\board\lanes4_final\first_contact.json --arm-json sim_out\board\arm_final\arm_baseline.json`
+→ energy per frame from the measured fps and Vivado's power estimate of the bitstream (labelled
+"Vivado estimate"; the ARM rows show fps only).
+
+*With a meter.* Wiring: USB supply → **meter** → micro-USB cable → PROG/UART port.
 
 1. Board booted, nothing running: read the meter's average over 30 s → **idle W**.
 2. For each row of `future_work/baselines/power_template.csv`, start that workload in a loop
-   (FPGA: `first_contact … --timing-frames 2000`; ARM: the baseline with `--frames 2000`), read the 30 s
-   average → fill `power_w`, `fps`, `idle_power_w`.
-3. **[laptop]** `py -m future_work.baselines.energy_table future_work\baselines\power_template.csv` → energy
-   per frame (total and dynamic) and the ratio to software.
+   (FPGA: `first_contact … --timing-frames 2000 --out sim_out/board/power_lanes4`; ARM: the baseline with
+   `--frames 2000 --out sim_out/board/power_arm`), read the 30 s average → fill `power_w`, `idle_power_w`.
+3. **[laptop]** `py -m future_work.baselines.energy_table future_work\baselines\power_template.csv --fpga-json sim_out\board\power_lanes4\first_contact.json --arm-json sim_out\board\power_arm\arm_baseline.json`
+   → energy per frame (total and above idle) and the ratio to the first row of the same size.
 
 Take a photo of the meter during each reading (evidence for the paper and the viva).
 
@@ -342,7 +349,7 @@ then the power switch. Pulling power while Linux writes can corrupt the SD card.
 
 **[laptop]** `scp -r xilinx@<BOARD>:/home/xilinx/fpga/sim_out/board .` and
 `scp xilinx@<BOARD>:/home/xilinx/fpga/future_work/results/baselines_*.md future_work/results/`, plus
-the filled `power_template.csv`, the meter photos, and a phone video of §10 with one attack. Commit on
+the `power_template.md` energy table (and the meter photos if you used a meter), and a phone video of §10 with one attack. Commit on
 a branch, open a pull request. In the papers they fill: `sections/access_08_hwresults.tex` (Section
 VIII-D, the red TODO), Table 1's "Ours" row, and the limitation sentence of `conference.tex`.
 
