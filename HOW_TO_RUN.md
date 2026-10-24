@@ -212,8 +212,21 @@ BOARD_DAY phase 9 has the 2000-frame runs to measure under.
 
 ## 7. Results into the papers
 
-Send `board_results.zip` (BOARD_DAY phase 13) to Claude, or copy the folders into `paper/data/board/`.
-Then rebuild:
+Send `board_results.zip` (BOARD_DAY phase 13) to Claude, or save the results to git yourself (laptop,
+`(.venv)`, on the project branch):
+
+```
+git pull
+py scripts\pull_board_results.py
+py scripts\save_board_day.py --name board_day_<date>
+git add paper/data/board/board_day_<date>
+git commit -m "Board results: board day <date>"
+git pull --rebase --autostash
+git push
+```
+
+`save_board_day.py` copies only result files (no images, no checkpoints) from the git-ignored `sim_out/`,
+writes a `MANIFEST.md`, and stops if a file contains the demo or session key. Then rebuild:
 
 ```
 py paper\make_assets.py
