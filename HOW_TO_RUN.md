@@ -177,6 +177,11 @@ Follow **`docs/BOARD_DAY.html`** (open it in a browser and tick the steps). The 
    with the tamper image, set SW1 up, and press BTN0. Each press should cost exactly one rejected frame.
    See BOARD_DAY phase 12.
 
+**Checkpoints.** After every board step, copy the results to the laptop:
+`py scripts\pull_board_results.py` (add `--board <BOARD>` on a router). It keeps a dated copy in
+`sim_out\board_backups\` and lists every run as done, or stopped after N levels. `first_contact` saves each
+finished bit-exact level, so a stopped run continues where it was with the same command plus `--resume`.
+
 **Windows firewall** (admin cmd, once on each laptop):
 `netsh advfirewall firewall add rule name="secure-link" dir=in action=allow protocol=UDP localport=47000-47010,47200-47215`
 
