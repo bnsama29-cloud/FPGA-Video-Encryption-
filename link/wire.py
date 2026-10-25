@@ -199,7 +199,15 @@ class Bus:
 
 
 def send_control(cfg, port_key, **cmd):
-    """Send one JSON control command to the channel ('control') or sender ('sender_control')."""
+    """Send one JSON control command to the channel ('control') or sender ('sender_control').
+
+    The channel runs on link.host. The sender runs on link.sender_host when that is set (the board, with
+    `run_all --no-sender --set link.sender_host=<board IP>`), the same address the channel sends feedback to
+    (config.sender_host); otherwise on link.host. Sending sender commands to link.host left the dashboard's
+    policy, protection, rekey and fps controls unheard by the board (bug #46).
+    """
+    L = cfg["link"]
+    host = (L.get("sender_host") or L["host"]) if port_key == "sender_control" else L["host"]
     s = udp_socket()
-    s.sendto(json.dumps(cmd).encode(), (cfg["link"]["host"], cfg["link"][port_key]))
+    s.sendto(json.dumps(cmd).encode(), (host, L[port_key]))
     s.close()

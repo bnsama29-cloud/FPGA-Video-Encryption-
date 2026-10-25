@@ -114,6 +114,32 @@ class ButtonLevels:
         self.log(f"buttons: BTN{b} -> " + (f"manual {new}" if new else "automatic policy"), flush=True)
 
 
+class ButtonAttacks:
+    """--buttons attacks: BTN1..BTN3 of the tamper image start a network attack instead of changing the level,
+    for a hands-on demo. Each press sends the same command as the dashboard's attack buttons, {"cmd": "attack",
+    "type": ..., "duration": ..., "rate": 1.0}, to the attack node (link/channel.py) on the laptop (link.host,
+    port link.control; the channel must listen there, i.e. run_all with link.bind_host=0.0.0.0). The board only
+    asks for the attack: the channel on the laptop carries it out, exactly as from the dashboard. BTN0 stays
+    the bit flip inside the FPGA (axis_tamper.v)."""
+
+    def __init__(self, cfg, read_count, attacks=("replay", "splice", "flood"), duration=6.0, send=None, log=print):
+        from link import channel, wire
+        bad = [a for a in attacks if a not in channel.ATTACKS]
+        if len(attacks) != 3 or bad:
+            raise ValueError(f"--button-attacks needs 3 of {', '.join(channel.ATTACKS)}; got {','.join(attacks)}")
+        self.cfg, self.read_count, self.attacks, self.duration, self.log = cfg, read_count, attacks, duration, log
+        self.send = send or wire.send_control
+        self.last = read_count()
+
+    poll = ButtonLevels.poll
+
+    def press(self, b):
+        kind = self.attacks[b - 1]
+        self.send(self.cfg, "control", cmd="attack", type=kind, duration=self.duration, rate=1.0)
+        self.log(f"buttons: BTN{b} -> {kind} attack for {self.duration:g} s "
+                 f"(sent to {self.cfg['link']['host']}:{self.cfg['link']['control']})", flush=True)
+
+
 class MockButtons:
     """Laptop rehearsal of axil_buttons.v: {"cmd":"button","n":1..3} on the sender's control port counts as a
     press of BTN<n>. Real hardware: the board's buttons, not this."""
@@ -145,22 +171,30 @@ def hw_buttons(backend):
     return lambda: mm.read(0x8)
 
 
-def start_buttons(sender, read_count, top):
+def start_buttons(sender, read_count, top, attacks=None, duration=6.0):
+    """Poll BTN1..BTN3 every 50 ms: protection level (default) or, with attacks, three network attacks."""
     import threading
     import time
-    bl = ButtonLevels(sender, read_count, top)
+    bl = (ButtonAttacks(sender.cfg, read_count, attacks, duration) if attacks
+          else ButtonLevels(sender, read_count, top))
 
     def loop():
         while True:
             time.sleep(0.05)
             bl.poll()
     threading.Thread(target=loop, daemon=True).start()
-    print(f"buttons: BTN1 level down, BTN2 level up (max {top}), BTN3 automatic policy", flush=True)
+    if attacks:
+        print("buttons: " + ", ".join(f"BTN{i + 1} {k}" for i, k in enumerate(attacks))
+              + f" attack ({duration:g} s each); BTN0 bit flip in the FPGA", flush=True)
+    else:
+        print(f"buttons: BTN1 level down, BTN2 level up (max {top}), BTN3 automatic policy", flush=True)
     return bl
 
 
 def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None, mock_e5=False, software=0, mock_tamper=False,
-                      mock_buttons=False):
+                      mock_buttons=False, button_attacks=None, attack_s=6.0):
+    """button_attacks: None = BTN1..BTN3 change the protection level; a list of 3 attack names = they start
+    those network attacks (ButtonAttacks)."""
     cfg["sender"]["encoder"] = "model"                     # placeholder, replaced below
     if software:                                           # PS only: the C encoder on the A9's cores
         from system.arm.sw_encoder import SoftwareBackend
@@ -185,7 +219,7 @@ def make_board_sender(cfg, bitfile=None, mock=False, mock_lanes=None, mock_e5=Fa
     elif not (software or mock or mock_lanes):
         read_count = hw_buttons(backend)
     if read_count is not None:
-        start_buttons(s, read_count, cfg["defence"]["max_mode"])
+        start_buttons(s, read_count, cfg["defence"]["max_mode"], button_attacks, attack_s)
     return s
 
 
@@ -205,6 +239,13 @@ def main():
     ap.add_argument("--mock-buttons", action="store_true",
                     help="rehearsal without the board: {\"cmd\":\"button\",\"n\":1..3} on the control port presses "
                          "BTN<n> (the real ones are read from secure_jpeg_lanes_tamper.bit automatically)")
+    ap.add_argument("--buttons", choices=["levels", "attacks"], default="levels",
+                    help="what BTN1..BTN3 of the tamper image do: protection level down / up / automatic (default), "
+                         "or start the three network attacks of --button-attacks on the laptop's attack node")
+    ap.add_argument("--button-attacks", default="replay,splice,flood", metavar="A1,A2,A3",
+                    help="with --buttons attacks: the attacks of BTN1,BTN2,BTN3 (names as on the dashboard: "
+                         "bitflip downgrade splice inject replay delay drop flood fb_drop fb_forge fb_replay)")
+    ap.add_argument("--attack-s", type=float, default=6.0, help="with --buttons attacks: seconds per attack")
     ap.add_argument("--pq-kex", action="store_true",
                     help="first run the post-quantum key exchange with the laptop (link/kex.py, start the laptop "
                          "with run_all --pq-kex) and encrypt with its session key")
@@ -213,8 +254,13 @@ def main():
     if a.pq_kex:
         from link import kex
         cfg["keys"]["master"] = kex.run_sender(cfg).hex()
+    attacks = tuple(x.strip() for x in a.button_attacks.split(",")) if a.buttons == "attacks" else None
+    if attacks:
+        from link import channel
+        if len(attacks) != 3 or any(x not in channel.ATTACKS for x in attacks):
+            ap.error(f"--button-attacks needs 3 names out of: {' '.join(channel.ATTACKS)}")
     make_board_sender(cfg, a.bitfile, a.mock, a.mock_lanes, a.mock_e5, a.software, a.mock_tamper,
-                      a.mock_buttons).run()
+                      a.mock_buttons, attacks, a.attack_s).run()
 
 
 if __name__ == "__main__":

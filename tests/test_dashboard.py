@@ -154,3 +154,45 @@ def test_dashboard_defaults_to_localhost_and_rejects_unknown_view(dashboard_serv
     conn, response = request(port, "GET", "/stream/not-a-view.mjpg")
     assert response.status == 404
     conn.close()
+
+
+def _listener(host):
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.bind((host, 0))
+    except OSError:
+        s.close()
+        pytest.skip(f"cannot bind {host} on this machine")
+    s.settimeout(2)
+    return s
+
+
+def test_sender_commands_go_to_sender_host_channel_commands_to_host():
+    """Bug #46: with the board as the sender (run_all --no-sender --set link.sender_host=<board>), the
+    dashboard's policy / protection / rekey / fps commands went to link.host (the laptop) and the board
+    never heard them. Sender commands must go to link.sender_host; channel commands stay on link.host."""
+    from link import wire
+    board, laptop = _listener("127.0.0.1"), _listener("127.0.0.2")
+    try:
+        cfg = config.load(overrides=["link.host=127.0.0.2", "link.sender_host=127.0.0.1",
+                                     f"link.sender_control={board.getsockname()[1]}",
+                                     f"link.control={laptop.getsockname()[1]}"])
+        wire.send_control(cfg, "sender_control", cmd="policy", policy="fixed")
+        got = json.loads(board.recvfrom(256)[0])
+        assert got == {"cmd": "policy", "policy": "fixed"}, \
+            f"sender command at sender_host: got {got}, expected the policy command"
+        wire.send_control(cfg, "control", cmd="attack", type="bitflip")
+        got = json.loads(laptop.recvfrom(256)[0])
+        assert got == {"cmd": "attack", "type": "bitflip"}, \
+            f"channel command at host: got {got}, expected the attack command"
+
+        # Without sender_host everything stays on link.host, as before.
+        cfg["link"]["sender_host"] = ""
+        cfg["link"]["sender_control"] = laptop.getsockname()[1]
+        wire.send_control(cfg, "sender_control", cmd="rekey")
+        got = json.loads(laptop.recvfrom(256)[0])
+        assert got == {"cmd": "rekey"}, f"sender command without sender_host: got {got}, expected at host"
+    finally:
+        board.close()
+        laptop.close()
