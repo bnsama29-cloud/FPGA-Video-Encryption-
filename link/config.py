@@ -19,7 +19,7 @@ DEFAULTS = {
     "link": {
         "host": "127.0.0.1",     # where to SEND (all on one PC: localhost)
         "bind_host": "",         # where to LISTEN; "" = same as host. Board + laptop: "0.0.0.0"
-        "sender_host": "",       # where the channel sends feedback (the sender / board); "" = host
+        "sender_host": "",       # where the sender runs (the board): feedback and dashboard sender commands go here; "" = host
         "video_in": 47000,       # sender -> channel
         "video_out": 47001,      # channel -> receiver
         "fb_in": 47002,          # receiver -> channel (feedback)
