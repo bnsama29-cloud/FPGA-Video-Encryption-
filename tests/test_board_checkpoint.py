@@ -1,5 +1,5 @@
 """Board-day checkpoints: first_contact saves every finished bit-exact level and --resume continues after it
-(a 640x480 level takes ~10 min on the board's ARM), and scripts/pull_board_results.py copies the board's
+(a 640x480 level takes ~10 min on the board's ARM), and software/scripts/pull_board_results.py copies the board's
 results to the laptop and lists what is done."""
 import io
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 
 from system.board import first_contact as fc          # noqa: E402
 from scripts import pull_board_results as pbr              # noqa: E402
@@ -87,7 +87,7 @@ def test_pull_unpacks_only_the_result_folders_and_lists_them(tmp_path):
                  "sim_out/board/lanes2_final_640/first_contact.json": json.dumps(timing).encode(),
                  "sim_out/board/v2_final/bitexact_progress.json": json.dumps(prog).encode(),
                  "sim_out/pq_kex/pynq.md": b"x",
-                 "../evil.txt": b"no", "model/hw.py": b"no", "/etc/passwd": b"no"})
+                 "../evil.txt": b"no", "software/model/hw.py": b"no", "/etc/passwd": b"no"})
     assert pbr.unpack(data, tmp_path) == 4
     assert not (tmp_path / "model").exists() and not (tmp_path.parent / "evil.txt").exists()
     rows = {r[0]: r for r in pbr.board_rows(tmp_path / "sim_out")}

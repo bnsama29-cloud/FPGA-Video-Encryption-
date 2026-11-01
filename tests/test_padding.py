@@ -1,4 +1,4 @@
-"""Frame-size padding (link/wire.py :: SizePadder, pad_jpeg): the side-channel defence of link.pad.
+"""Frame-size padding (software/link/wire.py :: SizePadder, pad_jpeg): the side-channel defence of link.pad.
 
 A padded frame must decode and verify exactly like the unpadded one (model receiver and the C fast
 receiver), have exactly the size the policy chose, and the policies must behave as documented."""

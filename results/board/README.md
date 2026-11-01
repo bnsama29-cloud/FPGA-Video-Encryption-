@@ -2,17 +2,17 @@
 
 Every result measured on the board, in one place. Every result file is byte-identical to the copy taken
 on the day of the run (git history up to commit 07038b9 has them in their earlier folder); only this README
-was updated. New board days are added with `scripts/save_board_day.py`.
+was updated. New board days are added with `software/scripts/save_board_day.py`.
 
 | Folder / file | Produced by | Run |
 |---|---|---|
-| `smoke/` | `python3 -m system.board.first_contact --bitfile system/board/overlay/secure_jpeg_lanes.bit --sizes 64x48 --frames 1 --timing-frames 2` | 20 Oct 2026 |
+| `smoke/` | `python3 -m system.board.first_contact --bitfile software/system/board/overlay/secure_jpeg_lanes.bit --sizes 64x48 --frames 1 --timing-frames 2` | 20 Oct 2026 |
 | `lanes_320x240/` (console output in `run_log.txt`) | same, `--sizes 320x240 --frames 10` (timing over 50 frames) | 20 Oct 2026 |
 | `lanes_640x480/` (console output in `run_log.txt`) | same, `--sizes 640x480 --frames 3` (timing over 50 frames) | 20 Oct 2026 |
 
 Board: PYNQ-Z2 (xc7z020), PYNQ image 3.1.1, run as root in a login shell on the board's ARM. Bitstream:
 the 2-lane lane encoder with E5 (contract v3, VERSION 0x5EC00382), built for FCLK0 = 100 MHz, rebuilt on 20 Oct 2026
-from commit da21bfd with `py vivado\run_vivado_day.py --steps bd_lanes --jobs 2` (Vivado 2026.1,
+from commit da21bfd with `py hardware\vivado\run_vivado_day.py --steps bd_lanes --jobs 2` (Vivado 2026.1,
 WNS +0.123 ns). The bitstream is not in git. Its FCLK0 was very likely 62.5 MHz, not 100 MHz (bug #44 in
 `docs/TESTING.md`), so do not quote the 20 Oct timings as 100 MHz; the 24 Oct runs below set the clock right.
 
@@ -27,7 +27,7 @@ unconnected (docs/TESTING.md bug #32). Every result here is from the rebuilt bit
 How to read the numbers:
 
 * **Bit-exact**: every frame was encoded on the FPGA, read back by DMA and compared byte for byte (scan and
-  tag) with the golden model (`model/hw.py :: encode_frame_v3`) running on the same board, then decrypted by
+  tag) with the golden model (`software/model/hw.py :: encode_frame_v3`) running on the same board, then decrypted by
   the receiver. Source: the synthetic scene, quality 75.
 * **Encode only / Incl. headers**: medians of the Python round trip on the ARM (pixel conversion, copy into
   the DMA buffer, cache flush, register writes, DMA both ways, polling), then the JPEG headers (and for E5 the
@@ -39,7 +39,7 @@ The files were copied from `sim_out/board/` on the laptop (the `.json` / `.md` e
 
 ## Board day, 24 Oct 2026 (`board_day_24oct/`)
 
-Copied by `scripts/save_board_day.py` (see its `MANIFEST.md` for every file and hash). The final board images of
+Copied by `software/scripts/save_board_day.py` (see its `MANIFEST.md` for every file and hash). The final board images of
 Vivado runs 12 and 13, each at the clock it was built for: `lanes4_final` (4 lanes, 125 MHz, 3 frames per level
 and size), `lanes2_final` (2 lanes, 100 MHz) and `v2_final` (single pipeline, 100 MHz), all bit-exact; the ARM
 baseline (`arm_final`), the post-quantum key on the A9 (`pq_kex`), the energy table without a meter (`energy`,

@@ -1,0 +1,18 @@
+# `pip install -e .` (done by `pip install -r requirements.txt`) makes the packages in software/
+# importable from anywhere, so `python -m link.run_all` works from the repository root.
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secure-mjpeg-ascon"
+version = "1.0.0"
+description = "In-encoder selective encryption with Ascon-AEAD128 for MJPEG on a Zynq-7020: golden model, system layer, board software"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["software"]
+include = ["model*", "link*", "system*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.html", "*.js", "*.css", "*.c", "*.h", "*.toml", "*.v", "*.xdc", "*.tcl", "*.md", "*.json"]

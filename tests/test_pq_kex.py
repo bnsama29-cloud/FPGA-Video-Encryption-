@@ -1,4 +1,4 @@
-"""Post-quantum session key (link/keys.py kex_*, link/kex.py): hybrid ML-KEM-768 (FIPS 203) + X25519,
+"""Post-quantum session key (software/link/keys.py kex_*, software/link/kex.py): hybrid ML-KEM-768 (FIPS 203) + X25519,
 authenticated by the pre-shared key.
 
 Checks: both ML-KEM implementations agree with each other (OpenSSL through `cryptography`, and the

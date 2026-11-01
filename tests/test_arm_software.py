@@ -1,6 +1,6 @@
-"""The encoder on the processing system (system/arm/native/sjpeg_sw.c) must give the same bytes as
-the golden model (model/hw.py), and therefore as the programmable logic, in every mode and contract,
-for any number of threads. Also: the full-file Ascon baseline matches model/ascon.py, the A3 script runs."""
+"""The encoder on the processing system (software/system/arm/native/sjpeg_sw.c) must give the same bytes as
+the golden model (software/model/hw.py), and therefore as the programmable logic, in every mode and contract,
+for any number of threads. Also: the full-file Ascon baseline matches software/model/ascon.py, the A3 script runs."""
 import json
 import subprocess
 import sys

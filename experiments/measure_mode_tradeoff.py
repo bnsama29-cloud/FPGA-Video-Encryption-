@@ -5,15 +5,15 @@
 
 For each mode E0..E4 and each frame it computes what an eavesdropper WITHOUT the
 key gets, two ways: (a) decoding the scrambled stream as a normal viewer would,
-(b) the replacement attack (model/jpeg.py :: replacement_attack_jpeg) -- and keeps
+(b) the replacement attack (software/model/jpeg.py :: replacement_attack_jpeg) -- and keeps
 the better of the two. (E5 also shuffles the MCUs; an attacker who solves the
-jigsaw would do better than this -- system/attacks/jigsaw_attack.py measures that.)
+jigsaw would do better than this -- software/system/attacks/jigsaw_attack.py measures that.)
   leakage   = SSIM(original, best attacker image) on luma, clipped to 0..1
   edge_leak = correlation of Sobel edge maps (sign/DC encryption leaks outlines)
   cost      = encrypted bits / payload bits (keystream needed per frame)
 Each mean comes with a 95 % percentile-bootstrap interval over the frames, so the table can
 show "0.34 [0.30, 0.38]" and a small value can be told apart from zero.
-Writes sim_out/mode_tradeoff.json and prints a [defence] snippet for configs/default.toml.
+Writes sim_out/mode_tradeoff.json and prints a [defence] snippet for software/configs/default.toml.
 """
 import argparse
 import io
@@ -27,7 +27,7 @@ from PIL import Image
 from skimage.metrics import structural_similarity
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from link.sources import open_source                     # noqa: E402
 from model.jpeg import analyse_frame, package_frame, replacement_attack_jpeg   # noqa: E402
 from model.metrics import psnr                           # noqa: E402
@@ -113,7 +113,7 @@ def main():
         print(f"{m:<5}{s['ssim']:>11.3f} ±{s['ssim_std']:.2f}{s['edge_corr']:>11.3f}{s['psnr']:>9.2f}{s['cost']:>8.3f}")
     leak = ", ".join(f'{m} = {max(0.0, min(1.0, s["ssim"])):.3f}' for m, s in summary.items())
     cost = ", ".join(f'{m} = {s["cost"]:.3f}' for m, s in summary.items())
-    print(f"\npaste into configs/default.toml:\n[defence.leakage]\n{leak.replace(', ', chr(10))}\n"
+    print(f"\npaste into software/configs/default.toml:\n[defence.leakage]\n{leak.replace(', ', chr(10))}\n"
           f"[defence.cost]\n{cost.replace(', ', chr(10))}\n\nwritten {a.out}")
 
 

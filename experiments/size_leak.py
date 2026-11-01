@@ -17,7 +17,7 @@ defences:
                      (never shrinks; leaks only when a new maximum appears)
   pad-win (E2)       deployable: padded to the largest of the last 100 frames (10 s at 10 frames/s;
                      cheaper, leaks when the window maximum changes)
-  link.pad=runmax / window:100 (E2/E5)   the padding the link ships (link/wire.py :: SizePadder), the
+  link.pad=runmax / window:100 (E2/E5)   the padding the link ships (software/link/wire.py :: SizePadder), the
                      same two deployable rules as above with the 256-byte rounding of the implementation
   FF+PI (E2)         the bitrate controller of experiments/rate_control.py holding a constant budget
                      (median E2 size); its frames are then padded to 105 % of the budget. Frames that
@@ -43,7 +43,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 sys.path.insert(0, str(ROOT / "experiments"))
 from link.sources import open_source                       # noqa: E402
 from model.jpeg import analyse_frame, package_frame        # noqa: E402
@@ -123,8 +123,8 @@ def main():
     res["E2 pad-runmax"] = dict(**leak(run, motion), bytes_vs_E2=sum(run) / base)
     win = [max(sizes["E2"][max(0, t - 99):t + 1]) for t in range(len(frames))]
     res["E2 pad-win"] = dict(**leak(win, motion), bytes_vs_E2=sum(win) / base)
-    # what the link actually ships: link/wire.py :: SizePadder (link.pad), 256-byte rounding included
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    # what the link actually ships: software/link/wire.py :: SizePadder (link.pad), 256-byte rounding included
+    sys.path[:0] = [str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parents[1] / "software")]
     from link.wire import SizePadder
     for lv in ("E2", "E5"):
         for pol in ("runmax", "window:100"):

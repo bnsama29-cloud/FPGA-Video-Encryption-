@@ -1,11 +1,11 @@
-"""scripts/video_to_frames.py: a clip becomes a folder of frames that link/sources.py :: ImageFolder plays."""
+"""software/scripts/video_to_frames.py: a clip becomes a folder of frames that software/link/sources.py :: ImageFolder plays."""
 import sys
 from pathlib import Path
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 
 from link.sources import ImageFolder               # noqa: E402
 from scripts import video_to_frames as v2f       # noqa: E402

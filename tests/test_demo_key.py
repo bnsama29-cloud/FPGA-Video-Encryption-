@@ -1,10 +1,10 @@
-"""scripts/demo_key.py: a fresh demo key that survives `--set keys.master=...` and never enters git."""
+"""software/scripts/demo_key.py: a fresh demo key that survives `--set keys.master=...` and never enters git."""
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "software" / "scripts"))
 import demo_key  # noqa: E402
 from link import config  # noqa: E402
 
@@ -23,5 +23,5 @@ def test_number_like_keys_are_never_produced():
 
 
 def test_saved_key_is_ignored_by_git():
-    r = subprocess.run(["git", "check-ignore", "configs/demo_key.txt"], cwd=ROOT, capture_output=True, text=True)
-    assert r.returncode == 0, "configs/demo_key.txt must be in .gitignore"
+    r = subprocess.run(["git", "check-ignore", "software/configs/demo_key.txt"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, "software/configs/demo_key.txt must be in .gitignore"

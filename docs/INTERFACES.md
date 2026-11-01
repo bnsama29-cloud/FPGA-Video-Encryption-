@@ -2,7 +2,7 @@
 
 Every interface of the design, as implemented. If you change one, change the RTL, the model and this file in the same commit.
 
-There is **one** contract. `model/jpeg.py` (frame-level golden model, used by the system simulation and the receiver) and `model/hw.py` (stage-level view, used by the RTL testbenches) are proven byte-identical by `tests/test_hw_equivalence.py`. Section 7 lists what changed from v1 and why.
+There is **one** contract. `software/model/jpeg.py` (frame-level golden model, used by the system simulation and the receiver) and `software/model/hw.py` (stage-level view, used by the RTL testbenches) are proven byte-identical by `tests/test_hw_equivalence.py`. Section 7 lists what changed from v1 and why.
 
 ## 1. Handshake convention (all internal streams)
 
@@ -23,7 +23,7 @@ There is **one** contract. `model/jpeg.py` (frame-level golden model, used by th
 
 Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAXW`).
 
-## 3. Registers (AXI4-Lite, 32-bit, `rtl/axil_regs.v`)
+## 3. Registers (AXI4-Lite, 32-bit, `hardware/rtl/axil_regs.v`)
 
 | Offset | Name | Access | Bits |
 |---|---|---|---|
@@ -47,16 +47,16 @@ Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAX
 
 `WSTRB` is honoured; writes to unused addresses are ignored with an OKAY response.
 
-Per-frame sequence (identical in `tb/test_top.py::Encoder` and the future PYNQ driver):
+Per-frame sequence (identical in `hardware/tb/test_top.py::Encoder` and the future PYNQ driver):
 once per session write KEY0..3, SESSION_ID, SESSION_ID_HI and the 128 QT_DATA values (QT_ADDR=0 first); per frame write WIDTH, HEIGHT, FRAME_CTR, FRAME_CTR_HI, then `CTRL = 1 | mode << 1`, start both DMA channels (receive first), wait for STATUS.DONE, read OUT_BYTES and TAG0..3 (and, for timing, CYCLES / IN_WAIT / OUT_STALL; bitstreams built before 21 Oct 2026 read 0 there).
 
 ## 4. Cryptography
 
-* Cipher: Ascon-AEAD128, NIST SP 800-232 (little-endian word loading), 1 round per clock. Checked against the official KAT file `vectors/LWC_AEAD_KAT_128_128.txt` (1089 vectors) in Python and in RTL.
-* Nonce (128-bit): bytes 0..7 = `session_id` (64-bit, little-endian), bytes 8..15 = `frame_ctr << 1 | purpose` (little-endian). So the Ascon state words are simply x3 = `session_id`, x4 = `{frame_ctr[62:0], purpose}`. Purpose 0 = keystream nonce N_enc, 1 = tag nonce N_mac. Model: `model/ascon.py :: make_nonce(session_id, frame_ctr, purpose)`.
+* Cipher: Ascon-AEAD128, NIST SP 800-232 (little-endian word loading), 1 round per clock. Checked against the official KAT file `hardware/vectors/LWC_AEAD_KAT_128_128.txt` (1089 vectors) in Python and in RTL.
+* Nonce (128-bit): bytes 0..7 = `session_id` (64-bit, little-endian), bytes 8..15 = `frame_ctr << 1 | purpose` (little-endian). So the Ascon state words are simply x3 = `session_id`, x4 = `{frame_ctr[62:0], purpose}`. Purpose 0 = keystream nonce N_enc, 1 = tag nonce N_mac. Model: `software/model/ascon.py :: make_nonce(session_id, frame_ctr, purpose)`.
 * A (key, nonce) pair must never repeat: never reuse a frame counter in a session, and use a fresh random 64-bit session id (or a new key) for every session. With 64 random bits a collision is expected only after ~2^32 sessions.
 * Keystream = Ascon-AEAD128 ciphertext of an all-zero message under (K, N_enc), no associated data. Bit *i* = bit (*i* mod 8) of byte (*i* div 8), i.e. LSB first.
-* Tag = Ascon-AEAD128 tag under (K, N_mac) with an empty message and associated data = **26-byte prefix || scan bytes (after stuffing)**. The prefix is the APP11 metadata plus the frame size (section 5); the RTL builds it from the registers at START (`rtl/secure_jpeg_top.v`, `tag_prefix`) and `tag_unit.v` absorbs it before the first scan byte.
+* Tag = Ascon-AEAD128 tag under (K, N_mac) with an empty message and associated data = **26-byte prefix || scan bytes (after stuffing)**. The prefix is the APP11 metadata plus the frame size (section 5); the RTL builds it from the registers at START (`hardware/rtl/secure_jpeg_top.v`, `tag_prefix`) and `tag_unit.v` absorbs it before the first scan byte.
 * Selective encryption per symbol of size *s* > 0, when selected by the mode: keystream bit 0 = sign (if 1, invert all *s* amplitude bits, which in JPEG's ones' complement coding is exactly v → −v); keystream bits 1..*s*−1 XOR the low *s*−1 amplitude bits (bit *k* → field bit *k*−1; E3 for AC, E4 for DC). Sizes and runs never change, so Huffman code lengths are unchanged. A sign-only symbol consumes 1 keystream bit, an all-bits symbol *s* bits.
 
 | Mode | AC sign | DC sign | AC low bits | DC low bits |
@@ -81,7 +81,7 @@ APP11 (marker 0xFFEB) payload, 38 bytes, ignored by normal viewers:
 | 14..21 | frame_ctr | 64-bit big-endian (top bit 0) |
 | 22..37 | tag | 16 bytes, Ascon-AEAD128 tag |
 
-Tag AD prefix (26 bytes) = APP11 bytes 0..21 || width (2 B big-endian) || height (2 B big-endian). Model: `model/container.py :: secure_meta(), auth_data()`, `model/hw.py :: tag_prefix()`. Always parse headers by walking segments (`model.container.parse_jpeg`), never by searching for marker bytes: 0xFF 0xC0 can occur inside APP11 (see TESTING.md, bug log).
+Tag AD prefix (26 bytes) = APP11 bytes 0..21 || width (2 B big-endian) || height (2 B big-endian). Model: `software/model/container.py :: secure_meta(), auth_data()`, `software/model/hw.py :: tag_prefix()`. Always parse headers by walking segments (`model.container.parse_jpeg`), never by searching for marker bytes: 0xFF 0xC0 can occur inside APP11 (see TESTING.md, bug log).
 
 ## 6. Arithmetic definitions (bit-exact contract)
 
@@ -106,8 +106,8 @@ The GitHub golden model and the RTL repo had drifted apart: the JPEG part was th
 
 ## 8. Contract v3: parallel lanes over restart segments (16 Oct 2026)
 
-Encoder `rtl/secure_jpeg_lanes_top.v` (parameter `LANES` = 1, 2 or 4); model
-`model/hw.py :: encode_frame_v3()` = `model/jpeg.py :: encode_frame(..., segmented=True)` (proven equal
+Encoder `hardware/rtl/secure_jpeg_lanes_top.v` (parameter `LANES` = 1, 2 or 4); model
+`software/model/hw.py :: encode_frame_v3()` = `software/model/jpeg.py :: encode_frame(..., segmented=True)` (proven equal
 by `tests/test_hw_equivalence.py`). Contract v2 and `secure_jpeg_top.v` are unchanged and remain the
 default; a receiver accepts both and tells them apart by the APP11 version byte.
 
@@ -116,14 +116,14 @@ never do better than 1.5 clocks per pixel (65 Mpx/s at 100 MHz). A JPEG restart 
 predictors and byte-aligns the stream, so the data between two markers can be coded with no knowledge
 of the rest. v3 makes every MCU row a restart segment and gives every segment its own keystream, so
 `LANES` copies of the pipeline can code segments at the same time; a merger writes them back in order.
-The bytes do not depend on `LANES` (checked on the RTL for 1, 2 and 4 lanes by `tb/test_lanes_top.py`).
+The bytes do not depend on `LANES` (checked on the RTL for 1, 2 and 4 lanes by `hardware/tb/test_lanes_top.py`).
 
 | Item | Contract v3 |
 |---|---|
 | Segments | segment *s* = MCU row *s*; restart interval = width/16 MCUs; the ARM writes a DRI segment (0xFFDD) with that value |
 | Scan | seg0 ‖ RST0 ‖ seg1 ‖ RST1 ‖ … ‖ seg(n−1), markers 0xFFD0 + (s mod 8), none after the last; each segment padded to a byte with 1s and stuffed on its own |
 | DC prediction | all three predictors reset to 0 at the start of every segment (T.81 F.1.2.3) |
-| Segment key | K_seg = Ascon-AEAD128 tag under (K, N_enc), AD = the 5 ASCII bytes `lanes`, empty message (`rtl/kseg_unit.v`, `segment_key()`). In v3, N_enc is used only for this derivation |
+| Segment key | K_seg = Ascon-AEAD128 tag under (K, N_enc), AD = the 5 ASCII bytes `lanes`, empty message (`hardware/rtl/kseg_unit.v`, `segment_key()`). In v3, N_enc is used only for this derivation |
 | Segment keystream | keystream of (K_seg, nonce(s, frame_ctr, 0)), i.e. Ascon x3 = s, x4 = {frame_ctr, 0}; restarts at every segment, same bit order and selection rules as section 4 |
 | Nonce uniqueness | K_seg is unique per (K, session_id, frame_ctr), and under one K_seg the segment index *s* is unique, so no (key, nonce) pair repeats. A session uses one contract version for all its frames |
 | Tag | as v2 (section 4), but the 26-byte prefix carries version 3, and the AD scan bytes include the RST markers |
@@ -131,8 +131,8 @@ The bytes do not depend on `LANES` (checked on the RTL for 1, 2 and 4 lanes by `
 | Modes | E0–E4, and E5 as specified in §8.6 (one segment per MCU + keyed permutation on the ARM) |
 | Pixel stream | `s_axis_tdata` 64 bits = 2 pixels per beat: `[31:0]` = left pixel `{pad, B, G, R}`, `[63:32]` = right pixel. The byte stream in memory is the same as v2's 32-bit words, so the DMA buffer does not change; only the DMA's MM2S width is 64 bits |
 | Dealer | MCU row *r* (16 lines) goes to lane *r* mod LANES; LANES is a power of two |
-| Lane | `rtl/encoder_lane.v`: `rgb2ycbcr_2px` (2 pixels per clock in, 1 sample per clock out) → the v2 DCT, quantiser, `zigzag_rle` (SEG_RESET = 1), `selective_enc` + `keystream_gen` (restarted per segment), `huffman_enc`, `bit_packer` (flushes at each segment end) → `byte_fifo` (2^LOG_FIFO bytes) |
-| Merger | `rtl/segment_merger.v`: copies segment *s* from lane *s* mod LANES, then writes 0xFF, 0xD0 + (s mod 8) |
+| Lane | `hardware/rtl/encoder_lane.v`: `rgb2ycbcr_2px` (2 pixels per clock in, 1 sample per clock out) → the v2 DCT, quantiser, `zigzag_rle` (SEG_RESET = 1), `selective_enc` + `keystream_gen` (restarted per segment), `huffman_enc`, `bit_packer` (flushes at each segment end) → `byte_fifo` (2^LOG_FIFO bytes) |
+| Merger | `hardware/rtl/segment_merger.v`: copies segment *s* from lane *s* mod LANES, then writes 0xFF, 0xD0 + (s mod 8) |
 | Receiver | decodes and decrypts each segment on its own and re-codes the clear frame without restart markers, so the clear output is byte-identical to the v2 plain JPEG |
 
 Cost: about 0.3 % more bytes (one 2-byte marker and up to 7 padding bits per MCU row; measured
@@ -152,7 +152,7 @@ split: **the fabric codes one segment per MCU, the ARM only reorders segments.**
 | Segments | segment *s* = MCU *s* in raster order (*s* = row × width/16 + column); restart interval 1 (DRI = 1); DC predictors reset per segment; keystream of (K_seg, nonce(s, frame_ctr, 0)) |
 | Lanes | unchanged dealer: MCU row *r* still goes to lane *r* mod LANES; inside a row the lane ends a segment (pad, flush, marker slot) after every MCU instead of after the row. The merger copies segments in raster order |
 | Fabric output | scan = seg0 ‖ RST0 ‖ seg1 ‖ … (raster order); tag over the 26-byte prefix (mode 5, version 3) ‖ that scan |
-| ARM (`model/hw.py :: arm_shuffle`) | splits the scan at the RST markers and sends the segments in `e5_order(K, session_id, frame_ctr, n)`: Fisher–Yates with rejection sampling on the keystream of (Ascon-MAC(K, nonce(0,0,0), AD = `E5 MCU shuffle`), nonce(session_id, frame_ctr, 0)); RST markers renumbered 0..7 in output order. Header, APP11 and tag unchanged |
+| ARM (`software/model/hw.py :: arm_shuffle`) | splits the scan at the RST markers and sends the segments in `e5_order(K, session_id, frame_ctr, n)`: Fisher–Yates with rejection sampling on the keystream of (Ascon-MAC(K, nonce(0,0,0), AD = `E5 MCU shuffle`), nonce(session_id, frame_ctr, 0)); RST markers renumbered 0..7 in output order. Header, APP11 and tag unchanged |
 | Receiver | undoes the permutation, checks the tag over the raster-order scan, then decrypts per segment. A swapped segment or an unshuffled frame fails the tag |
 | Capability | `VERSION` bit 7 = 1 when the RTL implements mode 5 (`0x5EC00380 + LANES`, the current RTL); the driver uses E5 only then |
 | RTL | `encoder_lane.v` ends a segment after the 6th block of every MCU (counted at the converter output) and keys the keystream with the raster MCU index (row × cols + col, kept as a running sum); `segment_merger.v` reads segment *s* from lane (*s* / cols) mod LANES by tracking the MCU row and column; `selective_enc.v` already selects E4's fields for mode 5 (its tests are `>=`). Cost: +50 LUT and +1 DSP (segment count = rows × cols) in Yosys for 2 lanes; 0.7–3.6 % fewer pixels per second than E2 at 320×240 (1, 2, 4 lanes: 62.7 / 115.3 / 164.8 Mpx/s at 100 MHz, `experiments/lanes_rtl_throughput.py --modes 2 5`) |
@@ -165,13 +165,13 @@ stays as the reference of the earlier measurements; both are scored by the bench
 
 ### 8.7 Input pixel format and line-buffer options (21 Oct 2026; golden model and RTL done)
 
-Two synthesis parameters of `secure_jpeg_lanes_top` (and `system/board/sjpeg_lanes_bd_top.v`). Neither
+Two synthesis parameters of `secure_jpeg_lanes_top` (and `software/system/board/sjpeg_lanes_bd_top.v`). Neither
 changes a byte of the output for the same YCbCr samples; the receiver needs no change.
 
 | Item | Definition |
 |---|---|
 | `PIXFMT = 0` (default) | RGB, 2 pixels per 64-bit beat (§8): `rgb2ycbcr_2px.v` converts with §6 |
-| `PIXFMT = 1` | camera-native YCbCr 4:2:2 (YUYV): the frame is H × 2W bytes, per pixel pair `Y0 Cb Y1 Cr`; a 64-bit beat carries 4 pixels, byte 0 first (`{Cr1, Y3, Cb1, Y2, Cr0, Y1, Cb0, Y0}`). `yuyv_4px.v` writes Y as given and 4:2:0 chroma = `(a + b + 1) >> 1` of lines 2i and 2i+1. Model: `model/hw.py :: planes_yuyv`, `blocks_in_hw_order(frame, pixfmt="yuyv")`, `encode_frame_v3(..., pixfmt="yuyv")`; `rgb_to_yuyv` makes a reproducible YUYV test frame from RGB (a real camera does its own conversion, which is not part of the contract). VERSION bit 6 = 1. The DMA moves 2 bytes per pixel instead of 4 |
+| `PIXFMT = 1` | camera-native YCbCr 4:2:2 (YUYV): the frame is H × 2W bytes, per pixel pair `Y0 Cb Y1 Cr`; a 64-bit beat carries 4 pixels, byte 0 first (`{Cr1, Y3, Cb1, Y2, Cr0, Y1, Cb0, Y0}`). `yuyv_4px.v` writes Y as given and 4:2:0 chroma = `(a + b + 1) >> 1` of lines 2i and 2i+1. Model: `software/model/hw.py :: planes_yuyv`, `blocks_in_hw_order(frame, pixfmt="yuyv")`, `encode_frame_v3(..., pixfmt="yuyv")`; `rgb_to_yuyv` makes a reproducible YUYV test frame from RGB (a real camera does its own conversion, which is not part of the contract). VERSION bit 6 = 1. The DMA moves 2 bytes per pixel instead of 4 |
 | `NBUF = 2` (default) | two line-buffer sets per lane (ping-pong) |
 | `NBUF = 1` | one set: half the converter BRAM; a lane takes its next MCU row only after reading the last one out. With 4 lanes and RGB input this costs under 2 % of throughput and lets 4 lanes take 2048-pixel lines (1080p); with 2 lanes 22–29 % (`experiments/lanes_rtl_throughput.py --nbuf 1`) |
 | Driver | `pynq_driver.SecureJpegIP.pixfmt` from VERSION bit 6; `encode()` takes an RGB frame (H × W × 3) or, for a YUYV bitstream, the camera's YUYV frame (H × 2W) as it is; RGB given to a YUYV bitstream is converted on the ARM (`hw.rgb_to_yuyv`) |
@@ -183,16 +183,16 @@ Not part of the fabric contract; both ends must agree.
 
 | Item | Definition |
 |---|---|
-| `link.pad` | frame-size padding against the size side channel (`link/wire.py :: SizePadder`): `none` (default), `bucket:<B>`, `runmax` (pad to the largest frame so far, 256-byte steps), `window:<N>`. Padding = COM segments (`FF FE len 00..`) right after SOI; decoders skip them, the tag does not cover them, the receiver ignores them |
-| `keys.exchange` (`run_all --pq-kex`, `board_sender --pq-kex`, `python -m link.kex`) | hybrid ML-KEM-768 (FIPS 203) + X25519 at session start, authenticated with HMAC-SHA256 under a key derived from the pre-shared key; K_master = HKDF-SHA256(salt = PSK, ikm = ss_mlkem ‖ ss_x25519, info = "SV session" ‖ SHA256(M1 ‖ M2)), 16 bytes. Messages: M1 1268 B (receiver → sender), M2 1172 B, confirm 20 B; UDP port `link.kex` (47006). The result is written to `configs/session_key.txt` (git-ignored) and used through `keys.master_file`. `link/keys.py :: kex_init / kex_respond / kex_finish` |
-| `link.bus_host`, `link.bus` entries `"ip:port"` | where telemetry goes (`link/config.py :: bus_addrs`): a port goes to `bus_host` (or `host` when empty), `"ip:port"` goes where it says. Two-laptop setup: the board and the attacker send video to the attacker laptop but telemetry to the receiver laptop's logger; the attacker also feeds its own dashboard (`127.0.0.1:47010`) |
+| `link.pad` | frame-size padding against the size side channel (`software/link/wire.py :: SizePadder`): `none` (default), `bucket:<B>`, `runmax` (pad to the largest frame so far, 256-byte steps), `window:<N>`. Padding = COM segments (`FF FE len 00..`) right after SOI; decoders skip them, the tag does not cover them, the receiver ignores them |
+| `keys.exchange` (`run_all --pq-kex`, `board_sender --pq-kex`, `python -m link.kex`) | hybrid ML-KEM-768 (FIPS 203) + X25519 at session start, authenticated with HMAC-SHA256 under a key derived from the pre-shared key; K_master = HKDF-SHA256(salt = PSK, ikm = ss_mlkem ‖ ss_x25519, info = "SV session" ‖ SHA256(M1 ‖ M2)), 16 bytes. Messages: M1 1268 B (receiver → sender), M2 1172 B, confirm 20 B; UDP port `link.kex` (47006). The result is written to `software/configs/session_key.txt` (git-ignored) and used through `keys.master_file`. `software/link/keys.py :: kex_init / kex_respond / kex_finish` |
+| `link.bus_host`, `link.bus` entries `"ip:port"` | where telemetry goes (`software/link/config.py :: bus_addrs`): a port goes to `bus_host` (or `host` when empty), `"ip:port"` goes where it says. Two-laptop setup: the board and the attacker send video to the attacker laptop but telemetry to the receiver laptop's logger; the attacker also feeds its own dashboard (`127.0.0.1:47010`) |
 | `channel.kex_relay`, `link.kex_rx`, `channel.kex_tamper_s` | the channel on its own laptop relays the key exchange (listens on `link.kex`, forwards to `(link.host, link.kex_rx or link.kex)` through one socket, so the receiver sees one peer); `kex_tamper_s = N` flips one byte (after the 4-byte magic) of every relayed message during the first N s: each fails its HMAC or confirmation, so no key exists until the attacker stops. `run_all --no-channel` and `experiments/scenario.py --attacker <IP>` run the laptop side without a local channel |
 
 ## 10. Test equipment overlay `secure_jpeg_lanes_tamper.bit` (board day, 22 Oct 2026)
 
 Not part of the encoder. The 2-lane image (VERSION `0x5EC00382`, same registers, same bytes) with
-`system/board/axis_tamper.v` between `sjpeg/m_axis` and the S2MM DMA, i.e. after the frame tag.
-Pins in `system/board/tamper_pynq_z2.xdc`.
+`software/system/board/axis_tamper.v` between `sjpeg/m_axis` and the S2MM DMA, i.e. after the frame tag.
+Pins in `software/system/board/tamper_pynq_z2.xdc`.
 
 | Control | Effect |
 |---|---|
@@ -200,7 +200,7 @@ Pins in `system/board/tamper_pynq_z2.xdc`.
 | SW0 (M20) | continuous: one bit flipped in every frame |
 | BTN0 (D19) or rising edge on PMOD A pin 1 (Y18, 3.3 V, pulled down) | one shot: one bit of the next frame |
 | LED0..3 (R14, P14, N16, M14) | enabled, shot pending, continuous, toggles per tampered frame |
-| BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `system/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself. With `board_sender --buttons attacks` (`ButtonAttacks`) the same presses instead send the dashboard's `{"cmd": "attack", ...}` command to the attack node on the laptop (`link.host`, port `link.control`); default BTN1 replay, BTN2 splice, BTN3 flood (`--button-attacks`), 6 s each (`--attack-s`) |
+| BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `software/system/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself. With `board_sender --buttons attacks` (`ButtonAttacks`) the same presses instead send the dashboard's `{"cmd": "attack", ...}` command to the attack node on the laptop (`link.host`, port `link.control`); default BTN1 replay, BTN2 splice, BTN3 flood (`--button-attacks`), 6 s each (`--attack-s`) |
 
 `axil_buttons` (AXI-Lite, block `buttons` in the `.hwh`, read-only, writes acknowledged and ignored):
 `0x0` ID `0xB7750001`; `0x4` STATE bits [2:0] = debounced BTN3..BTN1; `0x8` COUNT = 8-bit press counters

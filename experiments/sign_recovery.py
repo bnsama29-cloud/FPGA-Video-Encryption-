@@ -47,7 +47,7 @@ from scipy.optimize import linprog
 from skimage.metrics import structural_similarity
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 sys.path.insert(0, str(ROOT / "experiments"))
 from model.container import parse_jpeg                                   # noqa: E402
 from model.entropy import COMP_OF_BLOCK, ZIGZAG, huffman_decode          # noqa: E402

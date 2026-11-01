@@ -28,20 +28,23 @@ Scenario file (JSON):
 import argparse
 import csv
 import json
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
+# the nodes are started as `python -m link.<node>`: they find the packages in software/ through PYTHONPATH
+os.environ["PYTHONPATH"] = os.pathsep.join([str(ROOT / "software"), str(ROOT)] + ([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else []))
 from link import config, wire               # noqa: E402
 from link.buslog import BusLogger           # noqa: E402
 
 MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 
 
-BOARD_BIT = "system/board/overlay/secure_jpeg_lanes.bit"
+BOARD_BIT = "software/system/board/overlay/secure_jpeg_lanes.bit"
 
 
 def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex=False, bus_host=None,
@@ -55,7 +58,7 @@ def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex
     if bus_host:
         ports.append(f"link.bus_host={bus_host}")
     ports += [x for x in extra_sets if x.startswith(("keys.", "link.pad", "sender."))]
-    return (f"sudo -E python3 -m system.board.board_sender --bitfile {bitfile} "
+    return (f"sudo -E env PYTHONPATH=software python3 -m system.board.board_sender --bitfile {bitfile} "
             + ("--pq-kex " if pq_kex else "") + " ".join(f"--set {x}" for x in ports))
 
 
@@ -90,7 +93,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
         external_sender=None, wait_s=600, board_max_mode="E4", pq_kex=False, attacker=None,
         board_bitfile=BOARD_BIT, kex_tamper_s=0.0, hw_trigger=None):
     """external_sender = the board's IP: start only channel + receiver here, listen on the network,
-    and let the PYNQ-Z2 (system/board/board_sender.py) be the sender. board_max_mode = the top level
+    and let the PYNQ-Z2 (software/system/board/board_sender.py) be the sender. board_max_mode = the top level
     the bitstream offers: E4 for the run-6 bitstreams, E5 for a lane bitstream with VERSION bit 7.
     attacker = the attacker laptop's IP (needs external_sender): the channel runs there, only the receiver
     here; this laptop still starts the attacks (control port of the remote channel) and logs everything.
@@ -115,12 +118,12 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
               + attacker_command(base_port, me, external_sender, kex_tamper_s), flush=True)
     to_board = dict(laptop=attacker or "<LAPTOP IP>", bus_host=me, bitfile=board_bitfile)
     if external_sender:
-        # the top level is what the bitstream offers (system/board/board_sender.py caps at E4 unless
+        # the top level is what the bitstream offers (software/system/board/board_sender.py caps at E4 unless
         # VERSION bit 7 says the RTL has E5); 'mitigated' means reaching that level (bug #31)
         sets += ["link.bind_host='0.0.0.0'", f"link.sender_host='{external_sender}'",
                  f"defence.max_mode='{board_max_mode}'"]
     if pq_kex:
-        # post-quantum session key first (link/kex.py); the pre-shared key then only authenticates it
+        # post-quantum session key first (software/link/kex.py); the pre-shared key then only authenticates it
         kx = sets + (["link.bind_host='0.0.0.0'"] if external_sender else [])
         kargs = [x for s in kx for x in ("--set", s)]
         if external_sender:
@@ -135,7 +138,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
             raise RuntimeError("post-quantum key exchange failed")
         if tx is not None:
             tx.wait(timeout=30)
-        sets += ["keys.master_file='configs/session_key.txt'"]
+        sets += ["keys.master_file='software/configs/session_key.txt'"]
     args = [x for s in sets for x in ("--set", s)]
     cfg = config.load(overrides=sets)
     log = BusLogger(base_port + 10, host="0.0.0.0" if external_sender else "127.0.0.1")
@@ -288,7 +291,7 @@ def print_summary(s):
           f"(calm {s['mean_cost_calm']}), false alarms {s['false_alarm_windows']}/{s['calm_windows']} calm windows")
     if (s["latency_ms_median"] or 0) > 60000:
         print("WARNING: latency over a minute means the board's clock differs from the laptop's, so the latency and "
-              "the sender-side times above are wrong. Run py scripts\\set_board_clock.py and run this again.")
+              "the sender-side times above are wrong. Run py software\\scripts\\set_board_clock.py and run this again.")
 
 
 def main():
@@ -305,7 +308,7 @@ def main():
     ap.add_argument("--board-max-mode", default="E4", choices=["E4", "E5"],
                     help="with --external-sender: E5 when the board runs a lane bitstream with E5 (VERSION bit 7)")
     ap.add_argument("--pq-kex", action="store_true",
-                    help="start with the post-quantum session key exchange (link/kex.py) between the two ends")
+                    help="start with the post-quantum session key exchange (software/link/kex.py) between the two ends")
     ap.add_argument("--attacker", metavar="ATTACKER_IP",
                     help="two laptops: the channel (attacker) runs on this other laptop between board and receiver")
     ap.add_argument("--kex-tamper", type=float, default=0.0, metavar="S",
