@@ -1,0 +1,23 @@
+{
+ "machine": "AMD64",
+ "host": "DESKTOP-I60PED0",
+ "python": "3.14.5",
+ "m1_bytes": 1268,
+ "m2_bytes": 1172,
+ "confirm_bytes": 20,
+ "runs": 3,
+ "backends": {
+  "cryptography": {
+   "receiver_init": 0.48440000045957277,
+   "sender_respond": 0.3152999997837469,
+   "receiver_finish": 0.20679999943240546,
+   "total_ms": 1.0064999996757251
+  },
+  "kyber-py": {
+   "receiver_init": 1.9709999996848637,
+   "sender_respond": 2.5986000000557397,
+   "receiver_finish": 3.463499999270425,
+   "total_ms": 8.033099999011029
+  }
+ }
+}
