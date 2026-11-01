@@ -1,0 +1,56 @@
+{
+ "source": "challenge",
+ "frames": 40,
+ "score": 0.5,
+ "iou": 0.3,
+ "results": {
+  "plain": {
+   "recall_iou": 1.0,
+   "frame_hit": 1.0,
+   "false_alarm": 0.0,
+   "frames_with_person": 35,
+   "frames_without": 5,
+   "persons": 38
+  },
+  "E1": {
+   "recall_iou": 0.3684210526315789,
+   "frame_hit": 0.4,
+   "false_alarm": 0.0,
+   "frames_with_person": 35,
+   "frames_without": 5,
+   "persons": 38
+  },
+  "E2": {
+   "recall_iou": 0.02631578947368421,
+   "frame_hit": 0.08571428571428572,
+   "false_alarm": 0.0,
+   "frames_with_person": 35,
+   "frames_without": 5,
+   "persons": 38
+  },
+  "E4": {
+   "recall_iou": 0.02631578947368421,
+   "frame_hit": 0.05714285714285714,
+   "false_alarm": 0.0,
+   "frames_with_person": 35,
+   "frames_without": 5,
+   "persons": 38
+  },
+  "E5 (N=1)": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.05714285714285714,
+   "false_alarm": 0.0,
+   "frames_with_person": 35,
+   "frames_without": 5,
+   "persons": 38
+  },
+  "E5 (N=32)": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.08571428571428572,
+   "false_alarm": 0.0,
+   "frames_with_person": 35,
+   "frames_without": 5,
+   "persons": 38
+  }
+ }
+}

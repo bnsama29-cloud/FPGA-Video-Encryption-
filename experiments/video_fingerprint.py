@@ -1,5 +1,5 @@
 """Which video is playing? Identification from encrypted frame sizes (after Schuster et al., USENIX Security
-2017, refs.bib schuster2017), for every protection level and the padding defences.
+2017), for every protection level and the padding defences.
 
     python experiments/video_fingerprint.py --sources clips/a.mp4 clips/b.mp4 clips/c.mp4 --frames 600
     python experiments/video_fingerprint.py --demo          # three synthetic pan clips, smoke test only

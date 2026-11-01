@@ -1,4 +1,4 @@
-"""The paper's visual-security figure: what each party sees, per mode, on the same frame.
+"""The visual-security figure: what each party sees, per mode, on the same frame.
 
     python -m system.figures.visual_security_grid                         # synthetic CCTV frame
     python -m system.figures.visual_security_grid --image photo.jpg --size 320x240
@@ -7,7 +7,7 @@ Row 1 ("plays in any viewer, no key"): original | E1 | E2 | E4 | E5
 Row 2 ("eavesdropper's best effort"):  plain JPEG | replacement attack E1 | E2 | E4 | E5 + jigsaw solver
 Row 3 ("key holder"): decrypted output of every mode, with a check that it is bit-exact.
 Under each attacker image: edge correlation with the original (0 = nothing leaked).
-Writes system/results/visual_security_grid.png (and .pdf for the paper).
+Writes system/results/visual_security_grid.png (and .pdf for print).
 """
 import argparse
 import io
@@ -68,7 +68,7 @@ def main():
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(3, 5, figsize=(7.0, 4.2), facecolor=SURFACE)   # sized for 0.7\textwidth: labels stay >= 5 pt
+    fig, axes = plt.subplots(3, 5, figsize=(7.0, 4.2), facecolor=SURFACE)   # print size: labels stay >= 5 pt
     rows = [
         ("Any viewer, no key", [("original", "Original")] + [(f"wire_{m}", m) for m in MODES]),
         ("Eavesdropper", [("plain", "Unprotected")]

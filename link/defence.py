@@ -14,7 +14,7 @@ that evidence appears and lowers it again when it is gone, trading leakage
 
 Policies
 --------
-fixed      always `base` mode; no reaction (baseline for the paper)
+fixed      always `base` mode; no reaction (baseline for the comparison)
 threshold  hand-written rules: strong evidence -> max mode for hold_s, rekey on
            tag-failure bursts, dead-man -> max mode + rekey
 bandit     contextual bandit (epsilon-greedy Q-table) over a small discrete

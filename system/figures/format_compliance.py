@@ -1,4 +1,4 @@
-"""Format compliance: do standard decoders open our protected frames? (paper table)
+"""Format compliance: do standard decoders open our protected frames? (result table)
 
     python -m system.figures.format_compliance
 

@@ -29,7 +29,7 @@ system/
 ├── figures/
 │   ├── format_compliance.py      which decoders open each level
 │   ├── visual_security_grid.py   no key / eavesdropper / key holder, per level
-│   └── paper_tables.py           result tables from the result files
+│   └── results_tables.py           result tables from the result files
 ├── kaggle/kaggle_runs.py         reruns the GPU and long-CPU experiments in one cloud session
 └── clips_manifest.md             the private test clips, identified by SHA-256 (never committed)
 ```

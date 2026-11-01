@@ -30,9 +30,8 @@ Hardware JPEG/MJPEG encoder with in-loop selective encryption (Ascon-AEAD128, NI
 
 ## System layer (link/) and experiments
 - Nodes talk UDP only; never import one node from another. Shared code lives in `link/wire.py`, `keys.py`, `feedback.py`, `defence.py`.
-- Every claim in the paper must come from a script in `experiments/` that writes its numbers to `sim_out/`; never type numbers by hand.
+- Every result must come from a script in `experiments/` (or `system/`, `vivado/`) that writes its numbers to `sim_out/`; never type numbers by hand.
 
-## Paper (`paper/`)
-- `paper/data/` is the result snapshot the paper is built from; `paper/make_assets.py` turns it into `paper/tables/*.tex` and `paper/figures/`. Never edit generated tables.
-- Cite only references verified in `paper/refs.bib` (each entry says how it was checked). Never invent a reference, a page number or a result; mark unknowns `\TODO{}`.
-- State as a result only what a script reproduces from `paper/data/`; everything else is a limitation or future work.
+## Results (`results/`: board, hardware, security, simulation)
+- Snapshots of finished runs, exactly as the scripts wrote them; each folder's README names the run. Never edit a result file by hand; rerun the script and copy the output (`scripts/save_board_day.py` for board days).
+- Manuscripts are not kept in this repository.

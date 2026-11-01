@@ -1,6 +1,6 @@
 """Learned (neural-network) attack on the selective encryption -- the GPU experiment.
 
-Question for the paper: if an eavesdropper trains a network on lots of video,
+Question: if an eavesdropper trains a network on lots of video,
 how much of the picture can it recover WITHOUT the key, per mode? This is the
 strongest attacker we model (in the spirit of the deep sign-retrieval attacks,
 Suzuki et al. arXiv:2209.10712 / 2504.21632, and the optimisation-based sign

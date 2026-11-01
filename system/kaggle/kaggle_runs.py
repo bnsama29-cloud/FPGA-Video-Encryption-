@@ -13,7 +13,7 @@ are in the docstring at the start of its block.
   JOB = "benchmark"  SVE-Bench: ours and four published schemes under the same four attacks, every
                      source                                                       (17 Oct, ~30-45 min, CPU only)
 
-The first four have been run; their results are in paper/data/ (simulation, extra, research, final).
+The first four have been run; their results are in results/ (simulation, extra, research, final).
 Each block below is the original script, byte for byte apart from the indentation.
 """
 JOB = "benchmark"
@@ -42,11 +42,11 @@ TIME (Kaggle, 4 CPU cores + T4), default settings:
   QUICK = True: smoke test of every step, about 20 min. Do this first if you changed anything.
 
 OUTPUT: results.zip with sim_out/ (all runs), future_work_results/, real_video/ and
-paper_tables.md (every table of the paper, built from the files; lists anything missing).
+results_tables.md (every result table, built from the files; lists anything missing).
 """
     # ============================ SETTINGS =======================================
     QUICK = False                 # True = ~20 min smoke test of every step
-    PARALLEL = 1                  # 1 = numbers for the paper; 2 = faster
+    PARALLEL = 1                  # 1 = reported numbers; 2 = faster
     SEEDS = list(range(1, 11))    # bandit vs threshold: one learning run (7.7 min) per policy per seed
     REPEATS = 3                   # repeated full_suite / benign runs
     RUN = dict(role1=True, role2=True, role3=True, role4=True, role5=True, seeds=True, real_video=True)
@@ -125,7 +125,7 @@ paper_tables.md (every table of the paper, built from the files; lists anything 
         (out / "run_log.json").write_text(json.dumps(dict(log=LOG, minutes=round((time.time() - T_START) / 60, 1),
                                                           settings=dict(QUICK=QUICK, PARALLEL=PARALLEL, SEEDS=SEEDS,
                                                                         REPEATS=REPEATS)), indent=1))
-        subprocess.run(f"{sys.executable} -m system.figures.paper_tables --root {out} --out {out}/paper_tables.md",
+        subprocess.run(f"{sys.executable} -m system.figures.results_tables --root {out} --out {out}/results_tables.md",
                        shell=True, cwd=REPO, env=ENV, capture_output=True)
         shutil.make_archive(str(WORK / "results"), "zip", out)
         print(f"[checkpoint] results.zip {round((WORK / 'results.zip').stat().st_size / 1e6, 1)} MB, "
@@ -318,7 +318,7 @@ paper_tables.md (every table of the paper, built from the files; lists anything 
     print(f"\n{len(LOG) - len(fails)} passed, {len(fails)} failed, total {(time.time() - T_START) / 3600:.2f} h")
     if fails:
         print("FAILED:", *fails, sep="\n  ")
-    print("\nDownload results.zip from the Output tab. Open paper_tables.md inside it first.")
+    print("\nDownload results.zip from the Output tab. Open results_tables.md inside it first.")
 
 # ==================================================================================================
 # JOB = "remaining"   (was system/kaggle/kaggle_remaining.py)
@@ -327,7 +327,7 @@ elif JOB == "remaining":
     """Every remaining task that a Kaggle GPU T4 can do, in one run.
 After this, the only remaining simulation-side work is the Vivado day.
 
-RERUN = True (the default since 14 Oct 2026): the full run is done (paper/data/extra). Only two things
+RERUN = True (the default since 14 Oct 2026): the full run is done (results/security/extra). Only two things
 are repeated, with the scripts fixed after it (docs/TESTING.md bug #16):
   * restart interval on the open sources (Sintel, Tears of Steel, Kodak) and the real-frame figure: ~5 min
   * both learned attacks (L1_open, L2_all) with the new no-ciphertext control and bootstrap CI: ~60 min
@@ -359,7 +359,7 @@ Frames from the copyrighted test clips are never saved as images; only numbers a
     RERUN = True                               # only the steps listed above (see the docstring)
     REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
     BRANCHES = ["main", "results-open-data"]   # the first one that has the fixed experiments is used
-    OPEN_CLIPS = {                              # CC-BY 3.0, (c) Blender Foundation -- cite them in the paper
+    OPEN_CLIPS = {                              # CC-BY 3.0, (c) Blender Foundation -- credit them wherever a frame is shown
         # Big Buck Bunny's 320x180 file returned HTTP 404 on 14 Oct 2026, so it is no longer listed
         "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
         "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
@@ -405,7 +405,7 @@ Frames from the copyrighted test clips are never saved as images; only numbers a
             shutil.copytree(REPO / OUT, res / "extra", ignore=shutil.ignore_patterns("*.npz", "*.pt", "events.jsonl"))
         (res / "run_log.json").write_text(json.dumps(dict(log=LOG, minutes=round((time.time() - T_START) / 60, 1),
                                                           quick=QUICK, sources=SOURCES), indent=1))
-        subprocess.run(f"{sys.executable} -m system.figures.paper_tables --root {res} --out {res}/paper_tables.md",
+        subprocess.run(f"{sys.executable} -m system.figures.results_tables --root {res} --out {res}/results_tables.md",
                        shell=True, cwd=REPO, env=ENV, capture_output=True)
         shutil.make_archive(str(WORK / "remaining_results"), "zip", res)
         print(f"[checkpoint] remaining_results.zip {round((WORK / 'remaining_results.zip').stat().st_size / 1e6, 1)} MB",
@@ -497,9 +497,9 @@ Frames from the copyrighted test clips are never saved as images; only numbers a
                     sh(f"python experiments/restart_interval.py --video '{p}' --frames {max(2, (min(n_frames, 24) if img else n_frames) // 3)} "
                        f"--stride {1 if img else 150} --intervals 1 2 4 5 8 10 32 --name {name} "
                        f"--out {base}/restart_interval --save-images", name, "restart interval, fixed (B20)", tail=11)
-                    if not img:                         # the paper figure, now sized for 0.7\textwidth
+                    if not img:                         # the figure, at print size
                         sh(f"python -m system.figures.visual_security_grid --video '{p}' --frame 300 --out {base}/grid",
-                           name, "visual-security figure, paper size (B2)", tail=1)
+                           name, "visual-security figure, print size (B2)", tail=1)
                     checkpoint()
                 continue
             stride = 1 if img else (10 if p == "synthetic" else 150)
@@ -584,7 +584,7 @@ HOW TO RUN (one Kaggle account)
   most useful extra input: the size side channel (R7) and change-driven coding (R4) are about fixed
   cameras, and film clips with cuts and camera motion are a different case. Put it in the same dataset.
 
-WHAT IT RUNS (every number comes from a script in experiments/, as in the paper)
+WHAT IT RUNS (every number comes from a script in experiments/)
   R1  stall profile of the RTL (Icarus + cocotb, cycle-accurate): which link stalls, and the
       frame-size law cycles/pixel = 1.5 + a/rows, now including a 640x480 frame to test the prediction
   R2  parallel encoder lanes over restart segments: exactness checks, per-segment keystream,
@@ -769,7 +769,7 @@ WHAT IT RUNS (each step writes its numbers under sim_out/final/, zipped after ev
        (experiments/measure_mode_tradeoff.py), every source incl. Kodak
   B9   the stronger MST jigsaw solver on E5 (system/attacks/jigsaw_attack.py --solver mst), every source
   B23  person detection in the eavesdropper's pictures (experiments/recognition.py, Faster R-CNN, COCO)
-  B25  the learned attacks of the paper (L1_open, L2_all = P3/P4) again, now with the frame-statistics
+  B25  the learned attacks (L1_open, L2_all = P3/P4) again, now with the frame-statistics
        controls (true and revealed per-frame colour statistics)
   B17  P5: a learned attacker trained on a public corpus (Big Buck Bunny, Elephants Dream, Tears of Steel;
        all Blender Foundation, Creative Commons Attribution) with an adversarial (PatchGAN) loss, tested
@@ -981,10 +981,10 @@ attacks ~40-60 min each). Frames of the private clips are never saved as images;
     print("Download final_results.zip from the Output tab.")
 
 # ==================================================================================================
-# JOB = "references"   attacks taken from the reference papers (added 17 Oct 2026)
+# JOB = "references"   attacks taken from the cited literature (added 17 Oct 2026)
 # ==================================================================================================
 elif JOB == "references":
-    """Two attacks from the papers we cite, run on the same sources as the paper.
+    """Two attacks from the literature, run on the same sources as our own attacks.
 
 HOW TO RUN (one Kaggle account, NO GPU needed)
   1. Notebook settings: Internet ON, Accelerator None (CPU; 4 cores are used in parallel).

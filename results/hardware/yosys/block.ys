@@ -1,0 +1,3 @@
+read_verilog -Irtl/include rtl/ascon_round.v rtl/ascon_aead128_core.v rtl/keystream_gen.v rtl/tag_unit.v rtl/selective_enc.v
+synth_xilinx -family xc7 -top keystream_gen -flatten
+tee -o sim_build/yosys_keystream_gen.txt stat

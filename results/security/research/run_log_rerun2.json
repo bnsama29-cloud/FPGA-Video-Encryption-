@@ -1,0 +1,202 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (research-real-clips)",
+   "PASS",
+   1.3
+  ],
+  [
+   "setup",
+   "clone (main)",
+   "PASS",
+   1.2
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   7.5
+  ],
+  [
+   "synthetic",
+   "R3 bitrate regulation",
+   "PASS",
+   88.1
+  ],
+  [
+   "synthetic",
+   "R7 frame-size side channel",
+   "PASS",
+   61.7
+  ],
+  [
+   "synthetic",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   1.9
+  ],
+  [
+   "17735",
+   "R3 bitrate regulation",
+   "PASS",
+   129.2
+  ],
+  [
+   "17735",
+   "R7 frame-size side channel",
+   "PASS",
+   108.3
+  ],
+  [
+   "17735",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   7.0
+  ],
+  [
+   "avengers",
+   "R3 bitrate regulation",
+   "PASS",
+   64.2
+  ],
+  [
+   "avengers",
+   "R7 frame-size side channel",
+   "PASS",
+   39.4
+  ],
+  [
+   "avengers",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   4.0
+  ],
+  [
+   "challenge",
+   "R3 bitrate regulation",
+   "PASS",
+   90.9
+  ],
+  [
+   "challenge",
+   "R7 frame-size side channel",
+   "PASS",
+   66.8
+  ],
+  [
+   "challenge",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   5.2
+  ],
+  [
+   "denzel",
+   "R3 bitrate regulation",
+   "PASS",
+   79.2
+  ],
+  [
+   "denzel",
+   "R7 frame-size side channel",
+   "PASS",
+   61.2
+  ],
+  [
+   "denzel",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   4.2
+  ],
+  [
+   "jailer",
+   "R3 bitrate regulation",
+   "PASS",
+   60.9
+  ],
+  [
+   "jailer",
+   "R7 frame-size side channel",
+   "PASS",
+   49.7
+  ],
+  [
+   "jailer",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   3.7
+  ],
+  [
+   "sintel_trailer",
+   "R3 bitrate regulation",
+   "PASS",
+   59.8
+  ],
+  [
+   "sintel_trailer",
+   "R7 frame-size side channel",
+   "PASS",
+   37.4
+  ],
+  [
+   "sintel_trailer",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   3.8
+  ],
+  [
+   "tearsofsteel",
+   "R3 bitrate regulation",
+   "PASS",
+   57.9
+  ],
+  [
+   "tearsofsteel",
+   "R7 frame-size side channel",
+   "PASS",
+   54.6
+  ],
+  [
+   "tearsofsteel",
+   "R8 chosen-plaintext shuffle",
+   "PASS",
+   5.3
+  ]
+ ],
+ "minutes": 19.3,
+ "quick": false,
+ "sources": {
+  "synthetic": {
+   "path": "synthetic",
+   "kind": "open"
+  },
+  "17735": {
+   "path": "/kaggle/input/datasets/samarthbnsul/storm-new-video/17735.mp4",
+   "kind": "private"
+  },
+  "avengers": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/avengers.mp4",
+   "kind": "private"
+  },
+  "challenge": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/challenge .mp4",
+   "kind": "private"
+  },
+  "denzel": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/denzel.mp4",
+   "kind": "private"
+  },
+  "jailer": {
+   "path": "/kaggle/input/datasets/samarthbnsul/video-storm/jailer.mp4",
+   "kind": "private"
+  },
+  "sintel_trailer": {
+   "path": "/kaggle/working/opendata/sintel_trailer.mp4",
+   "kind": "open"
+  },
+  "tearsofsteel": {
+   "path": "/kaggle/working/opendata/tearsofsteel.mov",
+   "kind": "open"
+  }
+ }
+}

@@ -1,4 +1,4 @@
-r"""The whole Vivado day in one command: XSim check, post-route numbers, overlay, paper table.
+r"""The whole Vivado day in one command: XSim check, post-route numbers, overlay, hardware table.
 
 Open a terminal where Vivado is on the PATH, then from the repository root:
     Windows:  "C:\Xilinx\Vivado\<version>\settings64.bat"   (or open "Vivado <version> Tcl Shell")
@@ -19,7 +19,7 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
     python vivado/run_vivado_day.py --steps ooc lanes power parse   # + power from simulated activity
 If the overlay misses timing at --fclk, the block design is retried at 90 and then 80 MHz (--no-fallback
 turns this off). At the end, everything to send back is packed into vivado_results_<date>.zip in the
-repository root (summary, paper tables, timing/utilisation/power reports; no bitstream).
+repository root (summary, result tables, timing/utilisation/power reports; no bitstream).
 Run it from a normal terminal with YOUR Python (numpy + pillow), not with `exec` from the
 Vivado Tcl console: that uses Vivado's bundled Python and hides all output until the end.
 
@@ -43,7 +43,7 @@ Steps (each logs to sim_build/vivado_logs/<step>.log and is checked, not just ru
          encodes --power-size scene frames in each mode and records activity.saif, then Vivado
          re-reports the routed design's power with it -> power_saif_<v2|v3>_E<m>.txt next to power.txt
          (v2 encoder: E0, E2, E4; 2-lane encoder: E2, E5)
-  parse  every report -> sim_out/vivado/vivado_tables.md (the paper's hardware table)
+  parse  every report -> sim_out/vivado/vivado_tables.md (the hardware table)
   collect  (always, last) summary + reports -> vivado_results_<date>.zip
 At the end it prints a PASS/FAIL table with the time of every step; a FAIL names its log
 (the first "ERROR:" line there is the cause).
@@ -91,14 +91,14 @@ hardware produced, run the real receiver on them and save images to look at.
 Writes xsim_work/frame<N>_scrambled.jpg (what VLC would show) and
 xsim_work/frame<N>_decrypted.jpg (what the key holder sees).
 """
-PARSE_DOC = r"""Turn Vivado reports into the paper's hardware table (no number typed by hand).
+PARSE_DOC = r"""Turn Vivado reports into the hardware table (no number typed by hand).
 
     python vivado/run_vivado_day.py parse                       # every sim_build/vivado_*/ and both overlays
     python vivado/run_vivado_day.py parse sim_build/vivado_secure_jpeg_top system/board/overlay
 
 Reads, in each folder: utilization.txt (LUT / FF / BRAM / DSP), timing.txt (WNS, TNS, WHS),
 power.txt (total / dynamic / static W) and utilization_hier.txt (per-block LUT / FF).
-Writes sim_out/vivado/vivado_tables.md and vivado_results.json; paper_tables.py includes them.
+Writes sim_out/vivado/vivado_tables.md and vivado_results.json; results_tables.py includes them.
 
 Formats: Vivado 2019.2-2024.x text reports. If a field is missing the table shows "?" and the
 script says which file and field -- it never guesses a number.
@@ -284,7 +284,7 @@ def check_main(argv=None):
 
 
 # ==================================================================================================
-# parse: Vivado reports -> the paper's hardware table (was run_vivado_day.py parse)
+# parse: Vivado reports -> the hardware table (was run_vivado_day.py parse)
 # ==================================================================================================
 OUT = ROOT / "sim_out" / "vivado"
 DEVICE = dict(lut=53200, ff=106400, bram=140, dsp=220)        # xc7z020 totals (for the % column)
@@ -734,12 +734,12 @@ def step_bd(a, design="v2"):
 def step_parse(a):
     run("parse_reports", f"{sys.executable} vivado/run_vivado_day.py parse", dry=a.dry_run)
     if not a.dry_run:
-        run("paper_tables", f"{sys.executable} -m system.figures.paper_tables --root sim_out "
-                            f"--out sim_out/paper_tables.md")
+        run("results_tables", f"{sys.executable} -m system.figures.results_tables --root sim_out "
+                            f"--out sim_out/results_tables.md")
 
 
 def step_collect(a):
-    """Pack the results into one zip: summary, paper tables, every report (no bitstream)."""
+    """Pack the results into one zip: summary, result tables, every report (no bitstream)."""
     import zipfile
     if a.dry_run:
         RESULTS.append(("collect", "DRY", 0.0, ""))
@@ -864,7 +864,7 @@ def day_main(argv=None):
     fails = [n for n, st, *_ in RESULTS if st == "FAIL"]
     print(f"\n{len(RESULTS) - len(fails)} ok, {len(fails)} failed, {(time.time() - t0) / 60:.0f} min in total")
     if not a.dry_run and "parse" in a.steps:
-        print(f"Paper table: {ROOT / 'sim_out' / 'vivado' / 'vivado_tables.md'}")
+        print(f"Hardware table: {ROOT / 'sim_out' / 'vivado' / 'vivado_tables.md'}")
     sys.exit(1 if fails else 0)
 
 

@@ -250,7 +250,7 @@ def test_hardware_e5_gives_the_eavesdropper_the_same_replacement_picture_as_mode
     """E5 in contract v3 (one keystream per MCU segment, tag over raster order) and the model's E5 of
     contract v2 send the MCUs in the same keyed order and encrypt the same fields, so the replacement
     attack -- the picture the jigsaw, chosen-plaintext and recognition experiments start from -- is
-    pixel-identical. That is why the paper's E5 security results carry over to the hardware form."""
+    pixel-identical. That is why the E5 security results carry over to the hardware form."""
     from model.jpeg import decode_pixels, replacement_attack_jpeg
     for kind in ("scene", "noise", "bars"):
         img = make_image(96, 64, kind, seed=3)

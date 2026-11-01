@@ -160,7 +160,7 @@ split: **the fabric codes one segment per MCU, the ARM only reorders segments.**
 | Cost | one marker + padding per MCU and restarted DC prediction (+8–23 % bytes over E4 at 320×240, `experiments/restart_interval.py`), no extra Ascon core, no frame buffer; the ARM touches each output byte once |
 
 The contract-v2 E5 of the golden model (one keystream for the frame, shuffle before entropy coding)
-stays as the reference of the paper's earlier measurements; both are scored by the benchmark suite
+stays as the reference of the earlier measurements; both are scored by the benchmark suite
 (`experiments/benchmark_suite.py`).
 
 ### 8.7 Input pixel format and line-buffer options (21 Oct 2026; golden model and RTL done)

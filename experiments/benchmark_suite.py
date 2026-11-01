@@ -9,7 +9,7 @@ attacker below sees only what the network carries (Kerckhoffs: it knows the sche
 every one is scored the same way, so schemes from different papers become comparable. The method, and which
 published paper reports which number, is in docs/BENCHMARK_METHOD.md.
 
-SCHEMES (re-implemented from the papers in paper/refs.bib; randomness from our Ascon keystream, which only
+SCHEMES (re-implemented from the published papers cited in docs/BENCHMARK_METHOD.md; randomness from our Ascon keystream, which only
 helps them: the originals use AES-OFB, a 10-bit LFSR or unspecified generators)
   plain            standard JPEG (reference: what an unprotected camera leaks)
   E1 .. E4         ours, contract v2 (signs; + DC signs; + AC amplitudes; + DC amplitudes)

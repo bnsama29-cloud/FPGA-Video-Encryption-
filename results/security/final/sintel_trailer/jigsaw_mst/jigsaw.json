@@ -1,0 +1,51 @@
+{
+  "source": "/kaggle/working/opendata/sintel_trailer.mp4",
+  "size": "320x240",
+  "frames": 3,
+  "solver": "mst",
+  "summary": {
+    "position_accuracy": {
+      "mean": 0.0011111111111111111,
+      "std": 0.0015713484026367724
+    },
+    "neighbour_accuracy": {
+      "mean": 0.010619469026548672,
+      "std": 0.005780506767629918
+    },
+    "edge_corr_shuffled": {
+      "mean": 0.020401460282528247,
+      "std": 0.005863446902116622
+    },
+    "edge_corr_solved": {
+      "mean": -0.027508584983252243,
+      "std": 0.020199055792523797
+    },
+    "edge_corr_perfect_placement": {
+      "mean": 0.42091492224567756,
+      "std": 0.06932685703044596
+    }
+  },
+  "per_frame": [
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.010619469026548672,
+      "edge_corr_shuffled": 0.023669036474041175,
+      "edge_corr_solved": -0.04959490223317602,
+      "edge_corr_perfect_placement": 0.45160665178670745
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.017699115044247787,
+      "edge_corr_shuffled": 0.012167503724118355,
+      "edge_corr_solved": -0.0007762987497831394,
+      "edge_corr_perfect_placement": 0.32492891262214885
+    },
+    {
+      "position_accuracy": 0.0033333333333333335,
+      "neighbour_accuracy": 0.0035398230088495575,
+      "edge_corr_shuffled": 0.025367840649425214,
+      "edge_corr_solved": -0.03215455396679757,
+      "edge_corr_perfect_placement": 0.48620920232817644
+    }
+  ]
+}

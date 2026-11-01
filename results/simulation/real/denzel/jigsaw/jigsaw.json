@@ -1,0 +1,85 @@
+{
+  "source": "/kaggle/input/datasets/samarthbnsul/fpga-video/denzel.mp4",
+  "size": "320x240",
+  "frames": 8,
+  "summary": {
+    "position_accuracy": {
+      "mean": 0.003333333333333333,
+      "std": 0.0033333333333333335
+    },
+    "neighbour_accuracy": {
+      "mean": 0.014380530973451327,
+      "std": 0.005557458711097553
+    },
+    "edge_corr_shuffled": {
+      "mean": 0.004537076275601603,
+      "std": 0.014386420398640793
+    },
+    "edge_corr_solved": {
+      "mean": 0.005355971604978996,
+      "std": 0.042596094270761845
+    },
+    "edge_corr_perfect_placement": {
+      "mean": 0.4490771502740424,
+      "std": 0.03742882285559897
+    }
+  },
+  "per_frame": [
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.017699115044247787,
+      "edge_corr_shuffled": 0.0024661984977943953,
+      "edge_corr_solved": -0.07377237924947525,
+      "edge_corr_perfect_placement": 0.4255782643852286
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.021238938053097345,
+      "edge_corr_shuffled": 0.008127183931063072,
+      "edge_corr_solved": 0.00047331129295083137,
+      "edge_corr_perfect_placement": 0.39960215558544754
+    },
+    {
+      "position_accuracy": 0.006666666666666667,
+      "neighbour_accuracy": 0.023008849557522124,
+      "edge_corr_shuffled": 0.004638651985548229,
+      "edge_corr_solved": 0.054282039094136016,
+      "edge_corr_perfect_placement": 0.3871765010359275
+    },
+    {
+      "position_accuracy": 0.0033333333333333335,
+      "neighbour_accuracy": 0.008849557522123894,
+      "edge_corr_shuffled": -0.008691888691983667,
+      "edge_corr_solved": 0.026693769741992224,
+      "edge_corr_perfect_placement": 0.4689361929819181
+    },
+    {
+      "position_accuracy": 0.0033333333333333335,
+      "neighbour_accuracy": 0.007079646017699115,
+      "edge_corr_shuffled": -0.007943200881010436,
+      "edge_corr_solved": 0.004359472400532591,
+      "edge_corr_perfect_placement": 0.48655130977939554
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.01415929203539823,
+      "edge_corr_shuffled": 0.039778371944988525,
+      "edge_corr_solved": 0.0630111417333091,
+      "edge_corr_perfect_placement": 0.4628622977229503
+    },
+    {
+      "position_accuracy": 0.01,
+      "neighbour_accuracy": 0.01415929203539823,
+      "edge_corr_shuffled": -0.002392151099710278,
+      "edge_corr_solved": -0.03992633960382555,
+      "edge_corr_perfect_placement": 0.49426916872152077
+    },
+    {
+      "position_accuracy": 0.0033333333333333335,
+      "neighbour_accuracy": 0.008849557522123894,
+      "edge_corr_shuffled": 0.0003134445181229867,
+      "edge_corr_solved": 0.007726757430211998,
+      "edge_corr_perfect_placement": 0.46764131197995057
+    }
+  ]
+}

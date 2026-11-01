@@ -190,7 +190,7 @@ def test_learned_attack_cache_depends_on_the_source():
     assert la.cache_path("clips/a.mp4", *args) == la.cache_path("clips/a.mp4", *args)
 
 
-def test_paper_tables_from_result_files(tmp_path):
+def test_results_tables_from_result_files(tmp_path):
     """Every table number must come from result files: build a tiny result tree and check the tables."""
     import json
     ep = lambda t, ttm: dict(type=t, rx_first_rejection_s=0.1, time_to_mitigate_s=ttm)
@@ -204,9 +204,9 @@ def test_paper_tables_from_result_files(tmp_path):
     (tmp_path / "sim_out" / "real" / "clipA").mkdir(parents=True)
     (tmp_path / "sim_out" / "real" / "clipA" / "mode_tradeoff.json").write_text(
         json.dumps(dict(source="/x/clipA.mp4", modes=modes)))
-    subprocess.run([sys.executable, "-m", "system.figures.paper_tables", "--root", str(tmp_path)],
+    subprocess.run([sys.executable, "-m", "system.figures.results_tables", "--root", str(tmp_path)],
                    cwd=ROOT, check=True, capture_output=True)
-    md = (tmp_path / "paper_tables.md").read_text()
+    md = (tmp_path / "results_tables.md").read_text()
     assert "| bitflip | 2 | 2/2 | 0.10 ± 0.00 | 0.50 ± 0.14 |" in md
     assert "| E5 | 0.300 | 0.100 |" in md and "clipA" in md
     assert "Not found" in md and "jigsaw.json" in md          # missing parts are listed, never invented

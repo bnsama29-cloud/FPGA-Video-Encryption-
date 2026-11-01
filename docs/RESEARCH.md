@@ -9,13 +9,13 @@ referee; every failure gets a bug-log row and a new approach, not a workaround.
 and, on the laptop with Vivado, `python vivado\run_vivado_day.py --steps ooc parse --periods 8.0 6.667`
 (R5). Status: the sections R1-R7 below were written from the development VM (synthetic scene, RTL in
 Icarus). The Kaggle run of 15 Oct 2026 (7 sources, 47/47 steps PASS, snapshot in
-`paper/data/research/`) tested them on four film clips and the two open Blender films; the next
-section says what held and what did not. In the paper: R1 (measured VGA throughput) and R7 (frame-size
+`results/security/research/`) tested them on four film clips and the two open Blender films; the next
+section says what held and what did not. Reported results: R1 (measured VGA throughput) and R7 (frame-size
 leak, E0-E5 and padding rows).
 
 ## What the real clips changed (Kaggle, 15 Oct 2026)
 
-An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the paper until it is labelled and hashed in `system/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
+An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the pooled results until it is labelled and hashed in `system/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
 
 Important for reading the numbers: the six clips are **edited films** (shot cuts, camera motion). The
 threat model of R4 and R7 is a **fixed camera**; only the synthetic scene is one so far. A short clip
@@ -23,7 +23,7 @@ from a phone on a stand (a room, people walking in and out) is the most useful n
 
 | | Synthetic (fixed camera) | Six film clips | Verdict |
 |---|---|---|---|
-| R1 cycles/px at 640x480 (RTL) | predicted 1.541 | measured **1.534** = 65.2 Mpx/s at 100 MHz | law confirmed; in the paper |
+| R1 cycles/px at 640x480 (RTL) | predicted 1.541 | measured **1.534** = 65.2 Mpx/s at 100 MHz | law confirmed; reported |
 | R2 lanes exact | all checks OK | all checks OK on every clip | holds |
 | R2 restart cost per MCU row | 0.7 % | 0.6-2.2 % mean, up to 4.7 % on a frame | higher than estimated; still small |
 | R3 rate control (3rd rerun) | FF+PI 1.3 % error after settling, settles in 1 frame | 6 real clips after bug #26: fixed quality 33-62 % (144 % on Tears of Steel, a third of whose frames cannot meet the budget), I 5-21 %, FF+PI 5-30 %, settling <= 2 frames; no oscillation left | regulation works; I best in steady state, FF+PI after a step |
@@ -61,9 +61,9 @@ can never go below **1.5 cycles/pixel**. Everything else is overhead on top of t
 * The excess over 1.5 is a per-frame cost: the DCT waits while the first 16-line MCU-row buffer fills.
   Fit over four frame sizes: **cycles/pixel = 1.5 + 1.225 / (MCU rows)** (measured 1.924, 1.689, 1.639,
   1.570 at 64x48 ... 320x240).
-* Consequence for the paper: the 1.64 cycles/pixel of the 160x128 benchmark is pessimistic for real
+* Consequence: the 1.64 cycles/pixel of the 160x128 benchmark is pessimistic for real
   frames. Predicted: 1.541 at 640x480 (65 Mpx/s at 100 MHz), 1.527 at 1280x720. The Kaggle run measures
-  640x480 to test the prediction before the paper uses it.
+  640x480 to test the prediction before it is reported.
 * New idea from this: let the next frame fill while the previous one drains (no reset of the row
   buffers between frames) -> 1.5 at any size (+3 % at VGA).
 
@@ -136,7 +136,7 @@ last time (conditional replenishment). Synthetic corridor scene, 60 frames:
   at about half the bytes of full MJPEG and -1.1 dB.
 * **Finding that applies to today's design:** plain MJPEG frame sizes already track motion (0.93 on
   this scene), whatever the protection level. A size-padding option belongs in the threat-model
-  discussion of the paper (to be confirmed on the real clips).
+  discussion (to be confirmed on the real clips).
 * Speed: the encoder core does 25 % of the work, so with one pixel per clock at the input the core is
   no longer the limit (1.0 cycles/px, input-bound); a change-reporting camera would remove that bound.
 
@@ -232,7 +232,7 @@ chosen item into a task first.
 - Conclusion: **the gap to CAST is clock only (100 -> 166 MHz). The gap to logiJPGE is
   clock plus roughly 2x samples/clock.**
 
-### Our own projected route past 150 (R2, `parallel_lanes.py` / `fig_lanes.pdf`)
+### Our own projected route past 150 (R2, `parallel_lanes.py`)
 
 | Change                               | Cycles/px | @100 MHz | @125 MHz | @150 MHz |
 |---------------------------------------|-----------|----------|----------|----------|
@@ -243,7 +243,7 @@ chosen item into a task first.
 | 4 lanes, 2 px/clk in                  | 0.50      | **200**  | 250      | 300      |
 
 Only the "today" row is RTL-measured; the rest are the R2 event-model projections, already
-charted in `fig_lanes.pdf`. Cheapest route clearly over 150: **2 lanes + 64-bit (2 px/clk)
+charted by `experiments/parallel_lanes.py`. Cheapest route clearly over 150: **2 lanes + 64-bit (2 px/clk)
 input bus at 125 MHz** (~7,600 LUTs / 45 DSPs, projected). Widening the input bus matters as
 much as adding lanes -- with 1 px/clk in, cycles/px cannot go below 1.0 no matter how many
 lanes are added downstream.
@@ -279,13 +279,13 @@ Features others have that we don't
 
 Evidence gaps vs. published crypto/hardware papers
 12. No board measurements yet (real fps, power, energy/frame) -- power is a vectorless
-    estimate only (a SAIF-based flow exists since 17 Oct). Biggest gap for the paper's credibility.
+    estimate only (a SAIF-based flow exists since 17 Oct). Biggest gap in the hardware evidence.
 13. (Partly done 18 Oct 2026: `experiments/hw_efficiency.py` reports Mpixel/s per kLUT, input Gbit/s and
     nJ/pixel per design and mode; the Ascon core on its own is still not measured.)
     Ascon throughput never reported in Gbps or Gbps/LUT, the metric comparable NIST
     LWC hardware papers (Kurian, Khairallah, Mozaffari-Kermani et al.) use.
     21 Oct 2026: Ascon block rate measured in RTL (9 clocks per 128-bit block, `tb/test_ascon_core.py ::
-    ascon_block_rate`) → `\AsconGbps`, `\AsconGbpsPerKlut` in the papers.
+    ascon_block_rate`) → Gbit/s and Gbit/s per kLUT of the Ascon core (`sim_out/ascon_rate/ascon_rate.json`).
 14. No software (ARM/PS-side) baseline for comparison. **Code done 21 Oct 2026:** `system/arm/` -- the whole encoder in C on the PS, bit-exact with
     the model (1 and 2 cores), vs libjpeg-turbo ± whole-file Ascon / AES-GCM (`arm_baseline.py`); needs the board run.
 15. No side-channel resistance -- no masking against power analysis; physical attacks are
@@ -298,7 +298,7 @@ Evidence gaps vs. published crypto/hardware papers
     or hardware.~~ Done 21 Oct 2026: `link.pad` (none | bucket | runmax | window), COM segments after SOI,
     `tests/test_padding.py`; `size_leak.py` reports the shipped rule as `link.pad=runmax`.
 
-Security weak spots (to state honestly in the paper, not to hide)
+Security weak spots (to state honestly, not to hide)
 18. E1 is broken by a trained reconstruction network (learned_attack.py results).
 19. Every protection level leaks motion through frame sizes (R7).
 20. Restart intervals with N > 1 are not safe against the jigsaw/MST solver.
@@ -307,7 +307,7 @@ Security weak spots (to state honestly in the paper, not to hide)
 
 Items 1-3 are most of the throughput story; a 2-lane, 2px/clk, 125 MHz design is the
 cheapest change that clears 150 Mpx/s on our own model. Items 12 and 16 matter most for how
-strong the paper's claims look, independent of throughput.
+strong the claims look, independent of throughput.
 
 Pick from this list and bring back the idea -- check it against the event model
 (`experiments/parallel_lanes.py`) before touching RTL.
@@ -331,37 +331,7 @@ meet 100 MHz; the 2-lane PYNQ-Z2 overlay meets 100 MHz (WNS +0.228 ns). Run 6 (b
 (v2 at 125 MHz: -0.875 ns). Items still open from the list above: 1 (clock), 6 (BRAM: lanes multiply
 the line buffers), 9-11, 12-17.
 
-## Reference check (17 Oct 2026): every cited sentence against the full PDF
-
-The PDFs of all 30 references were collected (`references.zip`, kept outside the repository:
-copyrighted). Every sentence of the paper (then `paper/main.tex`, now `conference.tex` and `access.tex`) that carries a `\cite` was checked against the source.
-
-| Key | What the paper uses it for | Verdict | Change |
-|---|---|---|---|
-| sp800232 | the standard | ✅ | the PDF in the folder is the withdrawn draft (Nov 2024); cite the final (Aug 2025); our model passes the official KAT file |
-| ascon | Ascon v1.2, J. Cryptol. 34:33 | ✅ | – |
-| gross2017 | small hardware; S-box + linear layer | ✅ wording | "designed for small hardware" → "small and fast in hardware (about 7 kGE with one unrolled round)" (that is what the paper shows) |
-| kurian2025 | Ascon + replay on Artix-7; table numbers 3490-5335 LUT, 4285-4287 FF, 32 BRAM | ✅ | added: their Bloom filter has a 0.17 % false-positive rate (our 64-entry window has none) |
-| khairallah2023 | Ascon-PRF-192, 1 round/cycle: 1031 LUT, 391 FF, 5 ns | ✅ | – |
-| logijpge, castjpeg | comparison numbers | ✅ | – |
-| t81, wallace1992 | baseline JPEG | ✅ | – |
-| rfc3711 | replay window | ✅ | (SRTP: window "MUST be at least 64") |
-| vandroogenbroeck2002 | appended-bit encryption, compliant, constant bit rate | ✅ wording | they encrypt the appended bits of *selected* AC coefficients and keep the code words; author spelled "Benedett" as printed on the PDF |
-| puech2005 | AES on DCT coefficients of medical images | ✅ | added "AES in OFB mode, selected quantised coefficients" |
-| auer2013 | bitstream JPEG encryption in real time | ✅ wording | "AES-based keystream" → permutes code-word/value pairs and toggles value bits with an AES-OFB generator, > 25 VGA frames/s |
-| massoudi2008 | visual distortion is a poor proxy; replacement attacks | ✅ | reworded closer to the source ("visual distortion is a subjective criterion and does not allow to measure security") |
-| lin2024 | sign bits recoverable by optimisation | ✅, now also *run* | see B35 below: their setting is "the first U AC signs unknown"; E1 hides every AC sign |
-| hirose2024 | restart-marker JPEG encryption; NZCA | ⚠️ fixed | it is an **APSIPA ASC 2024** paper (bib entry changed); NZCA is Peng et al.'s attack which Hirose et al. *apply*; they also find that a large restart interval brings outlines back (matches our N = 1 choice) |
-| li2025shuffle | chosen plaintext against block shuffling | ✅ (full text now read) | reworded: a designed plaintext's per-block non-zero counts reveal the permutation |
-| boyadjis2017 | H.264/HEVC selective encryption | ✅ | pages 892-906 and DOI added from the PDF |
-| kishore2015 | FPGA JPEG + scrambling, ~1 % hardware | ✅ | added: PN-sequence block/symbol scrambling, Stratix II/IV |
-| bagbaba2015 | FPGA JPEG + TEA on DC / low AC | ✅ | made exact: DC, or DC + first five AC |
-| wampler2015, schuster2017, apthorpe2019 | traffic analysis; 18x padding for a camera | ✅ | (Apthorpe: b = 18.2 for the Nest camera at q = 1) |
-| pomeranz2011, gallagher2012 | jigsaw solvers | ✅ | – |
-| unet, isola2017, ren2015, ssim, sutton2018 | methods | ✅ | – |
-
-Still open in `refs.bib` (need the publisher page, not in the PDFs): lin2024 volume, hirose2024 pages,
-puech2005 pages, wampler2015 DOI year (GLOCOM.2014 vs .2015).
+## Attacks from the literature, run against our levels (17 Oct 2026)
 
 ### B35: Lin et al.'s sign-bit recovery against our levels (`experiments/sign_recovery.py`)
 
@@ -369,7 +339,7 @@ Their LP relaxation (method 1) re-implemented with scipy/HiGHS: unknown coeffici
 [-|c|, |c|], the LP minimises the total variation subject to the (relaxed) pixel range, and the sign of each
 LP value is the guess. Generalised to E2 (DC differences as variables), E3/E4 (size-category intervals).
 Check in their own setting (first 3 or 6 AC signs per block unknown, rest known): 91-96 % of signs
-recovered, so the implementation works. Results: see the table written by the script and the paper.
+recovered, so the implementation works. Results: see the table written by the script (`results/security/references/`).
 
 ### B36: video identification from frame sizes (`experiments/video_fingerprint.py`)
 

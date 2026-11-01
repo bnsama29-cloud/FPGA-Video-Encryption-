@@ -1,10 +1,9 @@
 # Playable but Private: in-encoder selective encryption with Ascon-AEAD128 for MJPEG video on an FPGA SoC
 
-Companion repository of the paper of the same name (Aravind R, Suhas V J, Rishab H R, Samarth B N,
-Vijaysurya B S, Chetana G; Department of Electronics and Communication Engineering, RV College of
-Engineering, Bengaluru). It contains the hardware design, the golden model it is verified against, the
-system and attack experiments, the board software for the PYNQ-Z2, and every result and script behind the
-numbers in the paper.
+Samarth B N, Vijaysurya B S, Rishab H R, Aravind R, Suhas V J and Chethana G, RV College of Engineering,
+Bengaluru. This repository contains the hardware design, the golden model it is verified against, the
+system and attack experiments, the board software for the PYNQ-Z2, and every measured result together with
+the script that produced it.
 
 ## In one paragraph
 
@@ -41,7 +40,7 @@ level when the receiver reports an attack.
 | E5 | E4 + keyed per-frame permutation of all macroblocks (restart interval 1) | + the permutation |
 
 Sign and amplitude encryption cannot hide which coefficients are non-zero, so E1–E4 leak an outline of the
-scene; E5 removes it. The paper measures what each level leaks.
+scene; E5 removes it. `results/` holds the measurements of what each level leaks.
 
 ## Repository layout
 
@@ -53,13 +52,12 @@ scene; E5 removes it. The paper measures what each level leaks.
 | `vivado/` | Vivado 2026.1 flow: XSim testbench, out-of-context place and route, PYNQ-Z2 block designs, power with simulated activity, report parser. |
 | `hls/` | Vitis HLS version of the DCT and quantiser (C simulation against the same tables). |
 | `link/` | System layer: sender, network channel with attacker, receiver (with a C fast path), feedback, key exchange, defence policy, web dashboard. All nodes talk UDP. |
-| `experiments/` | One script per result in the paper; each writes its numbers to `sim_out/`. |
+| `experiments/` | One script per result; each writes its numbers to `sim_out/`. |
 | `system/` | Board software for the PYNQ-Z2 (`board/`: driver, bit-exact gate, camera node, block design, board images), the encoder in C on the ARM (`arm/`), software baselines and energy table (`baselines/`), jigsaw attacks (`attacks/`), figure scripts (`figures/`), and the script that reruns the GPU experiments in one cloud session (`kaggle/`). |
-| `paper/` | The manuscripts (6-page conference version; journal version in the IEEE Transactions on Consumer Electronics and IEEE Access formats), the result snapshot they are built from (`paper/data/`), and the generator that turns it into every table, figure and number (`paper/make_assets.py`). |
-| `board_results/` | Every result measured on the PYNQ-Z2: bit-exact gate and timing of each board image, ARM baseline, key exchange on the A9, energy table, and the live-link runs with the board as the sender (attack suite, benign run, fault injection). Its README says which run produced each folder. |
+| `results/` | Every measured result, as the scripts wrote them, in four groups: `board/` (PYNQ-Z2: bit-exact gate and timing of each board image, ARM baseline, key exchange on the A9, energy, live-link runs with the board as the sender), `hardware/` (Vivado post-route, RTL-simulated throughput, Yosys estimate, gate-level slices, figures of merit), `security/` (leakage, attacks, benchmark against published schemes, research suite) and `simulation/` (system simulation of the link and its attacks). Each folder has a README saying which run produced it. |
 | `docs/` | Interface specification, verification method and bug log, benchmark method, research notes. |
 | `scripts/` | Setup check, demo key, end-to-end check with an emulated board, board-image check, board helpers. |
-| `tests/` | Python tests: model, contract equivalence between the model's two views, system layer, experiments, paper assets. |
+| `tests/` | Python tests: model, contract equivalence between the model's two views, system layer, experiments, result files. |
 
 ## Requirements
 
@@ -82,25 +80,26 @@ python scripts/emulated_board_check.py --quick   # every board program against a
 
 ## Reproducing the results
 
-Every number in the papers comes from a script that writes it to `sim_out/`; the snapshot used for the papers
-is in `paper/data/` (each folder has a README saying which run produced it), and
-`python paper/make_assets.py` regenerates every table, figure and number from it.
-`tests/test_paper_assets.py` fails if a table in the manuscripts no longer matches the data.
+Every number comes from a script that writes it to `sim_out/`; the snapshot of each finished run is in
+`results/`, grouped into `board/`, `hardware/`, `security/` and `simulation/`, each folder with a README
+saying which run produced it.
+No number is typed by hand. `python -m system.figures.results_tables --root results` collects the tables
+into one Markdown file; `tests/test_board_results.py` checks that every listed board file is present.
 
-| Result in the paper | Script | Data in `paper/data/` |
+| Result | Script | Data in `results/` |
 |---|---|---|
-| Format compliance in four decoders | `system/figures/format_compliance.py` | `future_work_results/` |
-| Outline leakage per level, 95 % intervals | `experiments/measure_mode_tradeoff.py` | `final/`, `extra/` |
-| Benchmark against four published schemes (SVE-Bench) | `experiments/benchmark_suite.py` (method: `docs/BENCHMARK_METHOD.md`) | `benchmark/` |
-| Jigsaw solvers, chosen-plaintext attack | `system/attacks/jigsaw_attack.py`, `experiments/chosen_plaintext.py` | `final/`, `research/` |
-| Sign-bit recovery (linear program), video identification from frame sizes | `experiments/sign_recovery.py`, `experiments/video_fingerprint.py` | `references/` |
-| Trained U-Net attacker, person recognition | `experiments/learned_attack.py`, `experiments/recognition.py` | `final/`, `extra/` |
+| Format compliance in four decoders | `system/figures/format_compliance.py` | `security/first_runs/` |
+| Outline leakage per level, 95 % intervals | `experiments/measure_mode_tradeoff.py` | `security/final/`, `security/extra/` |
+| Benchmark against four published schemes (SVE-Bench) | `experiments/benchmark_suite.py` (method: `docs/BENCHMARK_METHOD.md`) | `security/benchmark/` |
+| Jigsaw solvers, chosen-plaintext attack | `system/attacks/jigsaw_attack.py`, `experiments/chosen_plaintext.py` | `security/final/`, `security/research/` |
+| Sign-bit recovery (linear program), video identification from frame sizes | `experiments/sign_recovery.py`, `experiments/video_fingerprint.py` | `security/references/` |
+| Trained U-Net attacker, person recognition | `experiments/learned_attack.py`, `experiments/recognition.py` | `security/final/`, `security/extra/` |
 | Attack suite and benign impairments (system simulation) | `experiments/scenario.py` | `simulation/` |
-| Cycles per pixel, lane throughput (RTL simulation) | `experiments/stall_profile.py`, `experiments/lanes_rtl_throughput.py` | `research/`, `lanes_rtl*/` |
-| Post-route resources, timing, power | `vivado/run_vivado_day.py` | `vivado/` |
-| Hardware figures of merit | `experiments/hw_efficiency.py` | `hw_efficiency/` |
-| Board: bit-exact gate and timing; ARM baseline; energy | `system/board/first_contact.py`, `system/arm/arm_baseline.py`, `system/baselines/energy_table.py` | `board_results/` (repository root) |
-| Board as the sender: attack suite, fault injection after the tag | `experiments/scenario.py --external-sender`, `experiments/hw_tamper.py` | `board_results/board_day_24oct/runs/` (repository root) |
+| Cycles per pixel, lane throughput (RTL simulation) | `experiments/stall_profile.py`, `experiments/lanes_rtl_throughput.py` | `security/research/`, `hardware/lanes_rtl*/` |
+| Post-route resources, timing, power | `vivado/run_vivado_day.py` | `hardware/vivado/` |
+| Hardware figures of merit | `experiments/hw_efficiency.py` | `hardware/hw_efficiency/` |
+| Board: bit-exact gate and timing; ARM baseline; energy | `system/board/first_contact.py`, `system/arm/arm_baseline.py`, `system/baselines/energy_table.py` | `board/` |
+| Board as the sender: attack suite, fault injection after the tag | `experiments/scenario.py --external-sender`, `experiments/hw_tamper.py` | `board/board_day_24oct/runs/` |
 
 The GPU and long-CPU experiments (learned attacker, benchmark, recognition) rerun in one cloud session with
 `system/kaggle/kaggle_runs.py`.
@@ -120,7 +119,7 @@ python vivado/run_vivado_day.py --steps xsim ooc lanes parse          # XSim + o
 python vivado/run_vivado_day.py --steps bd_lanes bd_lanes4 parse      # PYNQ-Z2 board images (.bit + .hwh)
 ```
 
-The board images used in the paper are in `system/board/overlay/`; `MANIFEST.md` lists the SHA-256 of each,
+The board images that produced `results/board/` are in `system/board/overlay/`; `MANIFEST.md` lists the SHA-256 of each,
 and `python scripts/publish_bitstreams.py --check` verifies a copy.
 
 **Board.** Copy the repository to the PYNQ-Z2 and run, as root in the PYNQ Python environment:

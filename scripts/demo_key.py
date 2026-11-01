@@ -5,7 +5,7 @@
 
 Why: configs/default.toml holds a PUBLIC example key (000102...0f, it is in the repository). For a demo
 in front of judges, sender and receiver must share a key nobody else has. The design assumes a
-pre-shared key (paper, Section IV); this script is how it gets "pre-shared": you run it once, and type
+pre-shared key (docs/INTERFACES.md); this script is how it gets "pre-shared": you run it once, and type
 or paste the same key on the laptop and on the board. The key never goes through the dashboard, the
 network or git.
 """

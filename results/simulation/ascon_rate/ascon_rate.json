@@ -1,0 +1,6 @@
+{
+ "cycles_per_block": 9.0,
+ "block_bits": 128,
+ "blocks": 64,
+ "init_cycles": 13
+}

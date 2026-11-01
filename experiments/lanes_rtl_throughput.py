@@ -11,7 +11,7 @@ in Icarus for each lane count and frame size (scene image, quality 75, E2 unless
 the board images; --log-fifo 10 repeats the measurements before 21 Oct 2026), no DMA stalls; clocks
 from the internal start pulse to irq_done; every measured frame is also checked bit-exact against
 model/hw.py :: encode_frame_v3). The contract-v2 encoder (rtl/secure_jpeg_top.v) measured by R1
-(experiments/stall_profile.py, paper/data/research/stall_profile/scaling.json) is the baseline.
+(experiments/stall_profile.py, results/security/research/stall_profile/scaling.json) is the baseline.
 
 Writes sim_out/lanes_rtl/results.json and table.md. Mpx/s are given at 100 MHz (the clock the
 current design closes timing at on the PYNQ-Z2) and as clocks/pixel, so other clocks scale
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tb"))
 sys.path.insert(0, str(ROOT))
 OUT = ROOT / "sim_out" / "lanes_rtl"
-V2_SCALING = ROOT / "paper" / "data" / "research" / "stall_profile" / "scaling.json"
+V2_SCALING = ROOT / "results" / "security" / "research" / "stall_profile" / "scaling.json"
 
 
 def measure(lanes, size, log_maxw, mode=2, nbuf=2, pixfmt="rgb", log_fifo=11):

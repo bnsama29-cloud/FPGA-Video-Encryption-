@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 results*/
+# the committed result snapshots (README.md, "Reproducing the results")
+!/results/
 out_image/
 rx_frames/
 *.mp4
@@ -42,11 +44,11 @@ configs/session_key.txt
 # with scripts/publish_bitstreams.py
 system/board/overlay/*/
 
-# generated for Overleaf by paper/make_overleaf.py; built PDFs
-paper/overleaf/
-paper/conference.pdf
-paper/access.pdf
-paper/tce.pdf
+# manuscript sources are kept outside this repository
+paper/
+# outputs of results/hardware/netlist/make_schematics.sh
+results/hardware/netlist/*.json
+results/hardware/netlist/*.pdf
 
 # Vivado projects and overlay reports (any design), Vivado/Java crash logs
 system/board/vivado_proj*/
@@ -55,7 +57,7 @@ hs_err_pid*
 clockInfo.txt
 # private material kept next to the clone: clips, reference PDFs, result archives
 clips.zip
-references/
+/references/
 references.zip
 references_results.zip
 benchmark_results.zip

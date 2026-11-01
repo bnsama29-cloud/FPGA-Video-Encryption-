@@ -1,0 +1,412 @@
+{
+ "meta": {
+  "source": "/kaggle/working/opendata/tearsofsteel.mov",
+  "size": "128x96",
+  "quality": 75,
+  "method": "Lin et al. 2024 LP relaxation (method 1), luma, TV-L1 + pixel range; E2-E4 generalised (DC chain, size-category intervals)"
+ },
+ "summary": {
+  "LinU3": {
+   "ssim_lp": {
+    "mean": 0.954,
+    "lo": 0.907,
+    "hi": 1.0
+   },
+   "edge_lp": {
+    "mean": 0.47,
+    "lo": 0.0,
+    "hi": 0.94
+   },
+   "ssim_repl": {
+    "mean": 0.984,
+    "lo": 0.969,
+    "hi": 1.0
+   },
+   "edge_repl": {
+    "mean": 0.495,
+    "lo": 0.0,
+    "hi": 0.99
+   },
+   "ssim_nokey": {
+    "mean": 0.984,
+    "lo": 0.969,
+    "hi": 1.0
+   },
+   "edge_nokey": {
+    "mean": 0.495,
+    "lo": 0.0,
+    "hi": 0.99
+   },
+   "sign_acc": {
+    "mean": NaN,
+    "lo": NaN,
+    "hi": NaN
+   },
+   "frames": 2,
+   "best_attack_edge": 0.495
+  },
+  "LinU6": {
+   "ssim_lp": {
+    "mean": 0.908,
+    "lo": 0.815,
+    "hi": 1.0
+   },
+   "edge_lp": {
+    "mean": 0.425,
+    "lo": 0.0,
+    "hi": 0.85
+   },
+   "ssim_repl": {
+    "mean": 0.984,
+    "lo": 0.969,
+    "hi": 1.0
+   },
+   "edge_repl": {
+    "mean": 0.495,
+    "lo": 0.0,
+    "hi": 0.99
+   },
+   "ssim_nokey": {
+    "mean": 0.984,
+    "lo": 0.969,
+    "hi": 1.0
+   },
+   "edge_nokey": {
+    "mean": 0.495,
+    "lo": 0.0,
+    "hi": 0.99
+   },
+   "sign_acc": {
+    "mean": NaN,
+    "lo": NaN,
+    "hi": NaN
+   },
+   "frames": 2,
+   "best_attack_edge": 0.495
+  },
+  "E1": {
+   "ssim_lp": {
+    "mean": 0.633,
+    "lo": 0.266,
+    "hi": 1.0
+   },
+   "edge_lp": {
+    "mean": 0.168,
+    "lo": 0.0,
+    "hi": 0.337
+   },
+   "ssim_repl": {
+    "mean": 0.603,
+    "lo": 0.207,
+    "hi": 1.0
+   },
+   "edge_repl": {
+    "mean": 0.143,
+    "lo": 0.0,
+    "hi": 0.285
+   },
+   "ssim_nokey": {
+    "mean": 0.581,
+    "lo": 0.162,
+    "hi": 1.0
+   },
+   "edge_nokey": {
+    "mean": 0.184,
+    "lo": 0.0,
+    "hi": 0.368
+   },
+   "sign_acc": {
+    "mean": NaN,
+    "lo": NaN,
+    "hi": NaN
+   },
+   "frames": 2,
+   "best_attack_edge": 0.184
+  },
+  "E2": {
+   "ssim_lp": {
+    "mean": 0.534,
+    "lo": 0.068,
+    "hi": 1.0
+   },
+   "edge_lp": {
+    "mean": 0.182,
+    "lo": 0.0,
+    "hi": 0.365
+   },
+   "ssim_repl": {
+    "mean": 0.162,
+    "lo": 0.092,
+    "hi": 0.232
+   },
+   "edge_repl": {
+    "mean": 0.132,
+    "lo": 0.0,
+    "hi": 0.265
+   },
+   "ssim_nokey": {
+    "mean": 0.506,
+    "lo": 0.012,
+    "hi": 1.0
+   },
+   "edge_nokey": {
+    "mean": 0.066,
+    "lo": 0.0,
+    "hi": 0.133
+   },
+   "sign_acc": {
+    "mean": NaN,
+    "lo": NaN,
+    "hi": NaN
+   },
+   "frames": 2,
+   "best_attack_edge": 0.182
+  },
+  "E3": {
+   "ssim_lp": {
+    "mean": 0.546,
+    "lo": 0.093,
+    "hi": 1.0
+   },
+   "edge_lp": {
+    "mean": 0.17,
+    "lo": 0.0,
+    "hi": 0.34
+   },
+   "ssim_repl": {
+    "mean": 0.164,
+    "lo": 0.096,
+    "hi": 0.232
+   },
+   "edge_repl": {
+    "mean": 0.122,
+    "lo": 0.0,
+    "hi": 0.244
+   },
+   "ssim_nokey": {
+    "mean": 0.539,
+    "lo": 0.077,
+    "hi": 1.0
+   },
+   "edge_nokey": {
+    "mean": 0.017,
+    "lo": 0.0,
+    "hi": 0.034
+   },
+   "frames": 2,
+   "best_attack_edge": 0.17
+  },
+  "E4": {
+   "ssim_lp": {
+    "mean": 0.117,
+    "lo": 0.076,
+    "hi": 0.157
+   },
+   "edge_lp": {
+    "mean": 0.162,
+    "lo": 0.0,
+    "hi": 0.325
+   },
+   "ssim_repl": {
+    "mean": 0.164,
+    "lo": 0.096,
+    "hi": 0.232
+   },
+   "edge_repl": {
+    "mean": 0.122,
+    "lo": 0.0,
+    "hi": 0.244
+   },
+   "ssim_nokey": {
+    "mean": 0.52,
+    "lo": 0.085,
+    "hi": 0.955
+   },
+   "edge_nokey": {
+    "mean": 0.081,
+    "lo": 0.0,
+    "hi": 0.161
+   },
+   "frames": 2,
+   "best_attack_edge": 0.162
+  }
+ },
+ "rows": [
+  {
+   "frame": "tearsofsteel#0",
+   "mode": "LinU3",
+   "lp_seconds": 0.64,
+   "unknown_ac": 0,
+   "blocks": 192,
+   "solver": "highs-ipm",
+   "ssim_lp": 1.0,
+   "edge_lp": 0.0,
+   "ssim_nokey": 1.0,
+   "edge_nokey": 0.0,
+   "ssim_repl": 1.0,
+   "edge_repl": 0.0,
+   "sign_acc": NaN
+  },
+  {
+   "frame": "tearsofsteel#0",
+   "mode": "LinU6",
+   "lp_seconds": 0.55,
+   "unknown_ac": 0,
+   "blocks": 192,
+   "solver": "highs-ipm",
+   "ssim_lp": 1.0,
+   "edge_lp": 0.0,
+   "ssim_nokey": 1.0,
+   "edge_nokey": 0.0,
+   "ssim_repl": 1.0,
+   "edge_repl": 0.0,
+   "sign_acc": NaN
+  },
+  {
+   "frame": "tearsofsteel#0",
+   "mode": "E1",
+   "lp_seconds": 0.52,
+   "unknown_ac": 0,
+   "blocks": 192,
+   "solver": "highs-ipm",
+   "ssim_lp": 1.0,
+   "edge_lp": 0.0,
+   "ssim_nokey": 1.0,
+   "edge_nokey": 0.0,
+   "ssim_repl": 1.0,
+   "edge_repl": 0.0,
+   "sign_acc": NaN
+  },
+  {
+   "frame": "tearsofsteel#0",
+   "mode": "E2",
+   "lp_seconds": 0.54,
+   "unknown_ac": 0,
+   "blocks": 192,
+   "solver": "highs-ds",
+   "ssim_lp": 1.0,
+   "edge_lp": 0.0,
+   "ssim_nokey": 1.0,
+   "edge_nokey": 0.0,
+   "ssim_repl": 0.23150082280087533,
+   "edge_repl": 0.0,
+   "sign_acc": NaN
+  },
+  {
+   "frame": "tearsofsteel#0",
+   "mode": "E3",
+   "lp_seconds": 0.55,
+   "unknown_ac": 0,
+   "blocks": 192,
+   "solver": "highs-ds",
+   "ssim_lp": 1.0,
+   "edge_lp": 0.0,
+   "ssim_nokey": 1.0,
+   "edge_nokey": 0.0,
+   "ssim_repl": 0.23150082280087533,
+   "edge_repl": 0.0
+  },
+  {
+   "frame": "tearsofsteel#0",
+   "mode": "E4",
+   "lp_seconds": 0.51,
+   "unknown_ac": 0,
+   "blocks": 192,
+   "solver": "highs-ds",
+   "ssim_lp": 0.15699831184610916,
+   "edge_lp": 0.0,
+   "ssim_nokey": 0.9546102509911275,
+   "edge_nokey": 0.0,
+   "ssim_repl": 0.23150082280087533,
+   "edge_repl": 0.0
+  },
+  {
+   "frame": "tearsofsteel#600",
+   "mode": "LinU3",
+   "lp_seconds": 4.85,
+   "unknown_ac": 548,
+   "blocks": 192,
+   "solver": "highs-ipm",
+   "ssim_lp": 0.9074646997544599,
+   "edge_lp": 0.9397133612308941,
+   "ssim_nokey": 0.9688745403163813,
+   "edge_nokey": 0.9903356312852284,
+   "ssim_repl": 0.9688745403163813,
+   "edge_repl": 0.9903356312852284,
+   "sign_acc": 0.8664819041408542
+  },
+  {
+   "frame": "tearsofsteel#600",
+   "mode": "LinU6",
+   "lp_seconds": 10.62,
+   "unknown_ac": 1088,
+   "blocks": 192,
+   "solver": "highs-ipm",
+   "ssim_lp": 0.8150461082036873,
+   "edge_lp": 0.8495623747871006,
+   "ssim_nokey": 0.9688745403163813,
+   "edge_nokey": 0.9903356312852284,
+   "ssim_repl": 0.9688745403163813,
+   "edge_repl": 0.9903356312852284,
+   "sign_acc": 0.8141975876991069
+  },
+  {
+   "frame": "tearsofsteel#600",
+   "mode": "E1",
+   "lp_seconds": 25.99,
+   "unknown_ac": 4447,
+   "blocks": 192,
+   "solver": "highs-ipm",
+   "ssim_lp": 0.26636294496417334,
+   "edge_lp": 0.33686634959487927,
+   "ssim_nokey": 0.16199116318182474,
+   "edge_nokey": 0.3676593789054956,
+   "ssim_repl": 0.20670192380161287,
+   "edge_repl": 0.28512084760898515,
+   "sign_acc": 0.5502343066069314
+  },
+  {
+   "frame": "tearsofsteel#600",
+   "mode": "E2",
+   "lp_seconds": 132.69,
+   "unknown_ac": 4447,
+   "blocks": 192,
+   "solver": "highs-ds",
+   "ssim_lp": 0.06846799380188355,
+   "edge_lp": 0.36495378778040877,
+   "ssim_nokey": 0.012191852790802338,
+   "edge_nokey": 0.13269787669360594,
+   "ssim_repl": 0.09151063783490794,
+   "edge_repl": 0.26473571091562526,
+   "sign_acc": 0.4902930119985581
+  },
+  {
+   "frame": "tearsofsteel#600",
+   "mode": "E3",
+   "lp_seconds": 134.95,
+   "unknown_ac": 4447,
+   "blocks": 192,
+   "solver": "highs-ds",
+   "ssim_lp": 0.0929516353644372,
+   "edge_lp": 0.3397726586241448,
+   "ssim_nokey": 0.07728470654936354,
+   "edge_nokey": 0.03359054998089519,
+   "ssim_repl": 0.09590536013081116,
+   "edge_repl": 0.24399528259918743
+  },
+  {
+   "frame": "tearsofsteel#600",
+   "mode": "E4",
+   "lp_seconds": 119.49,
+   "unknown_ac": 4447,
+   "blocks": 192,
+   "solver": "highs-ds",
+   "ssim_lp": 0.0764840494852707,
+   "edge_lp": 0.32469452468320315,
+   "ssim_nokey": 0.08462591807954921,
+   "edge_nokey": 0.1612643426766727,
+   "ssim_repl": 0.09590536013081116,
+   "edge_repl": 0.24399528259918743
+  }
+ ]
+}

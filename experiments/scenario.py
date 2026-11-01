@@ -198,7 +198,7 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
 
 
 def analyse(events, cfg, t0):
-    """Turn the event log into the numbers for the paper."""
+    """Turn the event log into the reported numbers (detection, reaction, false alarms)."""
     d = cfg["defence"]
     leak, cost_tab = d["leakage"], d["cost"]
     top = d["max_mode"]

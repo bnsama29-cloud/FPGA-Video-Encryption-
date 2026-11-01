@@ -1,0 +1,85 @@
+{
+  "source": "/kaggle/input/datasets/samarthbnsul/video-storm/jailer.mp4",
+  "size": "320x240",
+  "frames": 8,
+  "summary": {
+    "position_accuracy": {
+      "mean": 0.0020833333333333333,
+      "std": 0.0033071891388307384
+    },
+    "neighbour_accuracy": {
+      "mean": 0.01327433628318584,
+      "std": 0.008534204213268101
+    },
+    "edge_corr_shuffled": {
+      "mean": 0.0211316823064545,
+      "std": 0.0317050111261398
+    },
+    "edge_corr_solved": {
+      "mean": -0.01099979342812739,
+      "std": 0.02393436613916454
+    },
+    "edge_corr_perfect_placement": {
+      "mean": 0.41300569225291645,
+      "std": 0.10465404258918462
+    }
+  },
+  "per_frame": [
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.012389380530973451,
+      "edge_corr_shuffled": 0.05196776700207633,
+      "edge_corr_solved": 0.008434031679504406,
+      "edge_corr_perfect_placement": 0.3488665406772778
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.01592920353982301,
+      "edge_corr_shuffled": 0.009978513785936543,
+      "edge_corr_solved": -0.014964594707690085,
+      "edge_corr_perfect_placement": 0.42631134646351054
+    },
+    {
+      "position_accuracy": 0.0033333333333333335,
+      "neighbour_accuracy": 0.005309734513274336,
+      "edge_corr_shuffled": 0.008267954023465291,
+      "edge_corr_solved": -0.041040912692988304,
+      "edge_corr_perfect_placement": 0.447822070303137
+    },
+    {
+      "position_accuracy": 0.01,
+      "neighbour_accuracy": 0.0017699115044247787,
+      "edge_corr_shuffled": -0.038426133097243007,
+      "edge_corr_solved": -0.02292308547620988,
+      "edge_corr_perfect_placement": 0.5908854550610204
+    },
+    {
+      "position_accuracy": 0.0033333333333333335,
+      "neighbour_accuracy": 0.03185840707964602,
+      "edge_corr_shuffled": 0.038193641936456725,
+      "edge_corr_solved": -0.0002649894479288216,
+      "edge_corr_perfect_placement": 0.29363818767632455
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.010619469026548672,
+      "edge_corr_shuffled": 0.01572966495351115,
+      "edge_corr_solved": -0.025240284693490427,
+      "edge_corr_perfect_placement": 0.5412653864758021
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.017699115044247787,
+      "edge_corr_shuffled": 0.07399573859198579,
+      "edge_corr_solved": -0.03047202979840572,
+      "edge_corr_perfect_placement": 0.3786073440092595
+    },
+    {
+      "position_accuracy": 0.0,
+      "neighbour_accuracy": 0.010619469026548672,
+      "edge_corr_shuffled": 0.009346311255447184,
+      "edge_corr_solved": 0.03847351771218971,
+      "edge_corr_perfect_placement": 0.27664920735699966
+    }
+  ]
+}
