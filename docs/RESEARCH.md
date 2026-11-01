@@ -5,8 +5,8 @@ for the PYNQ-Z2 is unchanged by R2-R4 (they are model-level studies), and R1 onl
 Rules as everywhere: every number comes from a script that writes `sim_out/`; the golden model is the
 referee; every failure gets a bug-log row and a new approach, not a workaround.
 
-**Run everything at once:** `system/kaggle/kaggle_runs.py (JOB = "research")` (one Kaggle cell, ~1.5 h, CPU only)
-and, on the laptop with Vivado, `python vivado\run_vivado_day.py --steps ooc parse --periods 8.0 6.667`
+**Run everything at once:** `software/system/kaggle/kaggle_runs.py (JOB = "research")` (one Kaggle cell, ~1.5 h, CPU only)
+and, on the laptop with Vivado, `python hardware\vivado\run_vivado_day.py --steps ooc parse --periods 8.0 6.667`
 (R5). Status: the sections R1-R7 below were written from the development VM (synthetic scene, RTL in
 Icarus). The Kaggle run of 15 Oct 2026 (7 sources, 47/47 steps PASS, snapshot in
 `results/security/research/`) tested them on four film clips and the two open Blender films; the next
@@ -15,7 +15,7 @@ leak, E0-E5 and padding rows).
 
 ## What the real clips changed (Kaggle, 15 Oct 2026)
 
-An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the pooled results until it is labelled and hashed in `system/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
+An extra clip `17735` (added by the user in the 2nd rerun, content not yet described) is kept out of the pooled results until it is labelled and hashed in `software/system/clips_manifest.md`: its frame sizes barely vary (12-16 kB) and no level leaks motion through them (0.50), so it is not the fixed camera with people walking that R7 needs.
 
 Important for reading the numbers: the six clips are **edited films** (shot cuts, camera motion). The
 threat model of R4 and R7 is a **fixed camera**; only the synthetic scene is one so far. A short clip
@@ -140,7 +140,7 @@ last time (conditional replenishment). Synthetic corridor scene, 60 frames:
 * Speed: the encoder core does 25 % of the work, so with one pixel per clock at the input the core is
   no longer the limit (1.0 cycles/px, input-bound); a change-reporting camera would remove that bound.
 
-## R5 -- what limits the clock (`vivado/run_vivado_day.py --periods 8.0 6.667`)
+## R5 -- what limits the clock (`hardware/vivado/run_vivado_day.py --periods 8.0 6.667`)
 
 Runs the encoder at 125 and 150 MHz and lists, for the worst paths, the block they start and end in
 (`run_vivado_day.py parse`, "Worst setup paths"). From run 3 at 100 MHz, after the colour converter (fixed in
@@ -284,17 +284,17 @@ Evidence gaps vs. published crypto/hardware papers
     nJ/pixel per design and mode; the Ascon core on its own is still not measured.)
     Ascon throughput never reported in Gbps or Gbps/LUT, the metric comparable NIST
     LWC hardware papers (Kurian, Khairallah, Mozaffari-Kermani et al.) use.
-    21 Oct 2026: Ascon block rate measured in RTL (9 clocks per 128-bit block, `tb/test_ascon_core.py ::
+    21 Oct 2026: Ascon block rate measured in RTL (9 clocks per 128-bit block, `hardware/tb/test_ascon_core.py ::
     ascon_block_rate`) → Gbit/s and Gbit/s per kLUT of the Ascon core (`sim_out/ascon_rate/ascon_rate.json`).
-14. No software (ARM/PS-side) baseline for comparison. **Code done 21 Oct 2026:** `system/arm/` -- the whole encoder in C on the PS, bit-exact with
+14. No software (ARM/PS-side) baseline for comparison. **Code done 21 Oct 2026:** `software/system/arm/` -- the whole encoder in C on the PS, bit-exact with
     the model (1 and 2 cores), vs libjpeg-turbo ± whole-file Ascon / AES-GCM (`arm_baseline.py`); needs the board run.
 15. No side-channel resistance -- no masking against power analysis; physical attacks are
     explicitly out of scope, but recent Ascon hardware papers address this.
     (Key management, 21 Oct 2026: the session key now comes from a post-quantum hybrid exchange,
-    ML-KEM-768 + X25519 authenticated by the pre-shared key, `link/kex.py`.)
+    ML-KEM-768 + X25519 authenticated by the pre-shared key, `software/link/kex.py`.)
 16. ~~E5 exists only in the Python model, not in RTL.~~ Done 17 Oct 2026: E5 is in the lane-encoder RTL
     (contract v3 mode 5), bit-exact in simulation; not yet on the board.
-17. ~~Frame-size padding exists only in `experiments/size_leak.py`, not in `link/sender.py`
+17. ~~Frame-size padding exists only in `experiments/size_leak.py`, not in `software/link/sender.py`
     or hardware.~~ Done 21 Oct 2026: `link.pad` (none | bucket | runmax | window), COM segments after SOI,
     `tests/test_padding.py`; `size_leak.py` reports the shipped rule as `link.pad=runmax`.
 
@@ -314,7 +314,7 @@ Pick from this list and bring back the idea -- check it against the event model
 
 ### Status, 16 Oct 2026 (evening): items 2 and 3 built
 
-The lane encoder is in RTL: `rtl/secure_jpeg_lanes_top.v` (contract v3, `docs/INTERFACES.md` §8).
+The lane encoder is in RTL: `hardware/rtl/secure_jpeg_lanes_top.v` (contract v3, `docs/INTERFACES.md` §8).
 Ideas behind it, and where each one came from:
 
 | Idea | Inspiration | What it became |

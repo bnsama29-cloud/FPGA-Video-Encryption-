@@ -1,4 +1,4 @@
-"""scripts/set_board_clock.py: the board takes the laptop's time over UDP (NTP's method), so the link's latency
+"""software/scripts/set_board_clock.py: the board takes the laptop's time over UDP (NTP's method), so the link's latency
 and the dashboard's reaction time are right although the board boots with an old date."""
 import socket
 import sys
@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 
 from scripts import set_board_clock as sbc          # noqa: E402
 

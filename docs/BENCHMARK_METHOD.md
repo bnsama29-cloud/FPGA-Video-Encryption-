@@ -95,7 +95,7 @@ python experiments/lanes_rtl_throughput.py --sizes 320x240 640x480 --modes 2 5
 python experiments/hw_efficiency.py
 ```
 
-The full set of sources runs on Kaggle with `JOB = "benchmark"` in `system/kaggle/kaggle_runs.py`
+The full set of sources runs on Kaggle with `JOB = "benchmark"` in `software/system/kaggle/kaggle_runs.py`
 (it now also runs `standard_metrics.py` on every source and packs both into `benchmark_results.zip`).
 Result files exist in two formats: the old one (`cross_frame`) and the new one (`known_plaintext`);
 `results/security/benchmark/` holds the new one.

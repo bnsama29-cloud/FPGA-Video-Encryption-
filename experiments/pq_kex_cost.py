@@ -1,4 +1,4 @@
-"""Cost of the post-quantum session key (link/keys.py, link/kex.py) on this machine.
+"""Cost of the post-quantum session key (software/link/keys.py, software/link/kex.py) on this machine.
 
     python experiments/pq_kex_cost.py                 # laptop
     python3 experiments/pq_kex_cost.py --runs 20      # on the PYNQ-Z2 (ARM Cortex-A9): the reported number
@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from link import keys  # noqa: E402
 
 PSK = bytes(range(16))

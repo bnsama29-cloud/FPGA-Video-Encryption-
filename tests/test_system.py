@@ -1,4 +1,4 @@
-"""Tests for system/: board driver (mock), board sender, jigsaw attack, figures, baselines."""
+"""Tests for software/system/: board driver (mock), board sender, jigsaw attack, figures, baselines."""
 import shutil
 import subprocess
 import sys
@@ -35,7 +35,7 @@ def test_driver_on_mock_is_bit_exact_with_the_model():
 
 def test_driver_on_mock_v3_lane_overlay_is_bit_exact_with_the_model():
     """secure_jpeg_lanes.bit (contract v3): the driver detects it from VERSION and frames match
-    model/hw.py :: encode_frame_v3 and pass the receiver."""
+    software/model/hw.py :: encode_frame_v3 and pass the receiver."""
     ip = SecureJpegIP(MockBackend(contract=3, lanes=2))
     assert (ip.contract, ip.lanes) == (3, 2)
     sid, img = 0xABCD_1234_5678, make_image(64, 80, "scene")
@@ -140,10 +140,10 @@ def test_energy_table(tmp_path):
 
 @pytest.mark.skipif(not shutil.which("iverilog"), reason="needs Icarus Verilog")
 def test_block_design_wrapper_compiles(tmp_path):
-    srcs = [ROOT / l.split()[2].replace("../../", "") for l in (ROOT / "vivado" / "xsim.prj").read_text().splitlines()
+    srcs = [ROOT / l.split()[2].replace("../../", "hardware/") for l in (ROOT / "hardware" / "vivado" / "xsim.prj").read_text().splitlines()
             if l.startswith("verilog") and "tb_secure" not in l]
-    r = subprocess.run(["iverilog", "-g2005", "-o", str(tmp_path / "a.vvp"), "-I", str(ROOT / "rtl" / "include"),
-                        "-s", "sjpeg_bd_top", *map(str, srcs), str(ROOT / "system" / "board" / "sjpeg_bd_top.v")],
+    r = subprocess.run(["iverilog", "-g2005", "-o", str(tmp_path / "a.vvp"), "-I", str(ROOT / "hardware" / "rtl" / "include"),
+                        "-s", "sjpeg_bd_top", *map(str, srcs), str(ROOT / "software" / "system" / "board" / "sjpeg_bd_top.v")],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
 
@@ -151,7 +151,7 @@ def test_block_design_wrapper_compiles(tmp_path):
 def test_block_design_connects_both_dma_masters_to_ddr():
     """Bug #32: the second AXI automation call targeted ps7/S_AXI_HP0, which the first call had already
     connected, so M_AXI_S2MM stayed unconnected; on the board the receive DMA never wrote and hung."""
-    tcl = (ROOT / "system" / "board" / "block_design.tcl").read_text()
+    tcl = (ROOT / "software" / "system" / "board" / "block_design.tcl").read_text()
     calls = [l.split() for l in tcl.splitlines() if l.startswith("axi_auto ")]
     targets = [c[3] for c in calls]
     assert len(targets) == len(set(targets)), f"two automation calls share a target: {targets}"
@@ -244,7 +244,7 @@ def test_board_e5_path_on_an_emulated_e5_bitstream(tmp_path):
     """E5 on the board (INTERFACES.md §8.6): a lane bitstream that reports VERSION bit 7 runs mode 5; the
     gate compares the fabric output + the ARM's shuffle with the model; without bit 7 the driver refuses
     mode 5 and the board sender caps the policy at E4. The fast ARM shuffle (C order, bytes.find) must give
-    the same bytes as model/hw.py."""
+    the same bytes as software/model/hw.py."""
     import json
     from system.board import fast_e5
     from system.board.board_sender import make_board_sender
@@ -306,7 +306,7 @@ def test_driver_reports_time_breakdown_and_no_counter_on_mock():
 
 
 def test_native_e5_shuffle_matches_model_on_adversarial_scans():
-    """The one-call C shuffle (native/e5_order.c :: e5_shuffle) splits exactly like model/hw.py ::
+    """The one-call C shuffle (native/e5_order.c :: e5_shuffle) splits exactly like software/model/hw.py ::
     split_segments, also for scans full of 0xFF, stuffed 0xFF00, 0xFF 0xFF 0xD0 and a trailing 0xFF."""
     import random
     from system.board import fast_e5
@@ -324,23 +324,23 @@ def test_native_e5_shuffle_matches_model_on_adversarial_scans():
 
 
 def test_vivado_driver_dry_run():
-    r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--dry-run", "--blocks"], cwd=ROOT,
+    r = subprocess.run([sys.executable, "hardware/vivado/run_vivado_day.py", "--dry-run", "--blocks"], cwd=ROOT,
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     for step in ("xsim_run", "ooc_secure_jpeg_top", "ooc_keystream_gen", "block_design", "parse_reports"):
         assert step in r.stdout
-    assert "vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0" in r.stdout
+    assert "hardware/vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0" in r.stdout
     assert "collect" in r.stdout
 
 
 def test_vivado_overlay_fallback_and_collect(tmp_path, monkeypatch):
     """Run 3's overlay missed 100 MHz by 0.24 ns: the driver now retries at 90 and 80 MHz and stops at
     the first clock that meets timing; collect packs reports and summary but never the bitstream."""
-    sys.path.insert(0, str(ROOT / "vivado"))
+    sys.path.insert(0, str(ROOT / "hardware" / "vivado"))
     import importlib
     import run_vivado_day as RV
     importlib.reload(RV)
-    overlay = tmp_path / "system" / "board" / "overlay"
+    overlay = tmp_path / "software" / "system" / "board" / "overlay"
     overlay.mkdir(parents=True)
     monkeypatch.setattr(RV, "ROOT", tmp_path)
     monkeypatch.setattr(RV, "LOGS", tmp_path / "sim_build" / "vivado_logs")
@@ -381,7 +381,7 @@ def test_scenario_board_command_matches_the_run_ports():
 
 
 def test_scenario_board_command_carries_the_demo_key():
-    """A run with a fresh key (scripts/demo_key.py, --set keys.master=...) must print a board command with
+    """A run with a fresh key (software/scripts/demo_key.py, --set keys.master=...) must print a board command with
     the same key, or every frame from the board fails its tag; other overrides stay on the laptop."""
     sys.path.insert(0, str(ROOT / "experiments"))
     import scenario

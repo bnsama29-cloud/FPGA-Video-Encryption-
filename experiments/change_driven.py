@@ -42,7 +42,7 @@ from PIL import Image
 from skimage.metrics import structural_similarity
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from link.sources import open_source                                  # noqa: E402
 from model.entropy import huffman_encode, run_length_encode            # noqa: E402
 from model.jpeg import analyse_frame, package_frame                    # noqa: E402

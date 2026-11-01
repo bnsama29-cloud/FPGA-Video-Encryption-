@@ -26,6 +26,6 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y iverilog   # 12.0 on Ubuntu 24.04
       - run: pip install -r requirements.txt
       - name: Every RTL block + top level in Icarus (cocotb)
-        run: python -m pytest -q tb/
+        run: python -m pytest -q hardware/tb/
       - name: Vivado testbench run in Icarus
         run: make xsim-icarus

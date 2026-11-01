@@ -1,8 +1,8 @@
 """The gate-level slices drawn from the RTL (results/hardware/netlist/*.v, schematics *.svg) must show the real logic:
 each one-bit slice is simulated exhaustively in Icarus Verilog and compared with the golden model.
   * ascon_sbox_slice.v, applied to all 64 bit slices and followed by the linear layer, must reproduce
-    one round of model/ascon.py :: permutation (which passes the 1089 official KATs);
-  * selective_enc_bitslice.v must reproduce bit k of model/hw.py :: encrypt_symbol for every mode,
+    one round of software/model/ascon.py :: permutation (which passes the 1089 official KATs);
+  * selective_enc_bitslice.v must reproduce bit k of software/model/hw.py :: encrypt_symbol for every mode,
     DC/AC, size and keystream."""
 import random
 import shutil
@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from model import ascon, hw  # noqa: E402
 
 NET = ROOT / "results" / "hardware" / "netlist"
@@ -74,7 +74,7 @@ def test_ascon_slice_figure_is_one_round_of_the_model(tmp_path):
         R = [c ^ ascon._rotr(c, r1) ^ ascon._rotr(c, r2) for c, (r1, r2) in zip(C, rotations)]
         ref = list(S)
         ascon.permutation(ref, 1)
-        assert R == ref, f"trial {trial}: slice + linear layer differs from model/ascon.py round 11, state {S}"
+        assert R == ref, f"trial {trial}: slice + linear layer differs from software/model/ascon.py round 11, state {S}"
 
 
 def test_selective_enc_slice_figure_matches_encrypt_symbol(tmp_path):

@@ -1,6 +1,6 @@
 """Hardware tamper experiment: bits flipped INSIDE the camera.
 
-The overlay secure_jpeg_lanes_tamper.bit has a tamper injector (system/board/axis_tamper.v) between
+The overlay secure_jpeg_lanes_tamper.bit has a tamper injector (software/system/board/axis_tamper.v) between
 the encoder and the receive DMA, i.e. after the Ascon tag is computed. Each shot flips one bit of one
 frame's scan on its way through DMA, DDR, the ARM and the network. The claim to check: the receiver
 rejects exactly the tampered frames (one per shot, within one frame time) and nothing else.
@@ -28,12 +28,12 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 sys.path.insert(0, str(ROOT / "experiments"))
 import scenario  # noqa: E402
 
 REJECT = {"tag-mismatch", "malformed"}
-TAMPER_BIT = "system/board/overlay/secure_jpeg_lanes_tamper.bit"
+TAMPER_BIT = "software/system/board/overlay/secure_jpeg_lanes_tamper.bit"
 
 
 def make_trigger(spec, sender_control_port):

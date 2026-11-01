@@ -1,4 +1,4 @@
-"""R2b -- MEASURED throughput of the contract-v3 lane encoder (rtl/secure_jpeg_lanes_top.v).
+"""R2b -- MEASURED throughput of the contract-v3 lane encoder (hardware/rtl/secure_jpeg_lanes_top.v).
 
     python experiments/lanes_rtl_throughput.py                    # 128x96, 320x240, 640x480; L = 1, 2, 4
     python experiments/lanes_rtl_throughput.py --sizes 640x480 --lanes 2 4
@@ -6,11 +6,11 @@
     python experiments/lanes_rtl_throughput.py --sizes 320x240 --modes 2 5   # E5 cost (one segment per MCU)
 
 R2 (experiments/parallel_lanes.py) PROJECTED the lane architecture with an event model. This script
-replaces the projection with a cycle-accurate measurement: it runs tb/test_lanes_top.py::throughput
+replaces the projection with a cycle-accurate measurement: it runs hardware/tb/test_lanes_top.py::throughput
 in Icarus for each lane count and frame size (scene image, quality 75, E2 unless --modes, per-lane output FIFO 2 KB (LOG_FIFO = 11, as the Vivado runs and
 the board images; --log-fifo 10 repeats the measurements before 21 Oct 2026), no DMA stalls; clocks
 from the internal start pulse to irq_done; every measured frame is also checked bit-exact against
-model/hw.py :: encode_frame_v3). The contract-v2 encoder (rtl/secure_jpeg_top.v) measured by R1
+software/model/hw.py :: encode_frame_v3). The contract-v2 encoder (hardware/rtl/secure_jpeg_top.v) measured by R1
 (experiments/stall_profile.py, results/security/research/stall_profile/scaling.json) is the baseline.
 
 Writes sim_out/lanes_rtl/results.json and table.md. Mpx/s are given at 100 MHz (the clock the
@@ -24,8 +24,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tb"))
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "hardware" / "tb"))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 OUT = ROOT / "sim_out" / "lanes_rtl"
 V2_SCALING = ROOT / "results" / "security" / "research" / "stall_profile" / "scaling.json"
 
@@ -64,7 +64,7 @@ def main():
                     help="converter line-buffer sets per lane (rgb2ycbcr_2px.v NBUF): 2 = the RTL default, "
                          "1 = half the block RAM (the 1080p 4-lane option)")
     ap.add_argument("--pixfmt", default="rgb", choices=["rgb", "yuyv"],
-                    help="input format: rgb (2 pixels per beat) or camera-native yuyv (4 per beat, rtl/yuyv_4px.v)")
+                    help="input format: rgb (2 pixels per beat) or camera-native yuyv (4 per beat, hardware/rtl/yuyv_4px.v)")
     ap.add_argument("--log-fifo", type=int, default=11,
                     help="per-lane output FIFO 2^n bytes: 11 (2 KB) = what the Vivado runs and the board images build "
                          "(secure_jpeg_lanes_top default); the measurements before 21 Oct 2026 used 10")

@@ -40,7 +40,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 sys.path.insert(0, str(ROOT / "experiments"))
 from system.attacks.jigsaw_attack import T, edge_corr, luma                # noqa: E402
 from link.sources import open_source                                         # noqa: E402

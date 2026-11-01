@@ -1,4 +1,4 @@
-"""scripts/save_board_day.py: board-day results go from sim_out/ (git-ignored) to results/board/<name>/,
+"""software/scripts/save_board_day.py: board-day results go from sim_out/ (git-ignored) to results/board/<name>/,
 only result files, with a manifest, and never a file that holds the demo or session key."""
 import sys
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 
 from scripts import save_board_day as sbd       # noqa: E402
 
@@ -27,8 +27,8 @@ def test_copies_only_board_results_with_a_manifest(tmp_path):
         "sim_out/runs/hw_tamper_rep1/events.jsonl": "{}\n",
         "sim_out/runs/quick_threshold/summary.json": "{}",                # laptop simulation: not board day
         "sim_out/board_backups/x.json": "{}",                             # checkpoints stay out
-        "system/baselines/power_template.md": "| |",
-        "configs/demo_key.txt": "167ae045648ba4c22af59f4c743abc38"})
+        "software/system/baselines/power_template.md": "| |",
+        "software/configs/demo_key.txt": "167ae045648ba4c22af59f4c743abc38"})
     dest = tmp_path / "results/board/day"
     rows, skipped = sbd.save(dest, root=tmp_path)
     got = sorted(r[1].as_posix() for r in rows)
@@ -41,7 +41,7 @@ def test_copies_only_board_results_with_a_manifest(tmp_path):
 
 def test_stops_before_copying_a_file_with_the_key(tmp_path):
     key = "167ae045648ba4c22af59f4c743abc38"
-    _tree(tmp_path, {"configs/demo_key.txt": key + "\n",
+    _tree(tmp_path, {"software/configs/demo_key.txt": key + "\n",
                      "sim_out/board/a/first_contact.json": "{}",
                      "sim_out/runs/board_x/summary.json": '{"cmd": "--set keys.master=%s"}' % key})
     dest = tmp_path / "out"

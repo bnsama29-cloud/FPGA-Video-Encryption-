@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 
 from system.baselines import energy_table as et   # noqa: E402
 from link import fastrx                                # noqa: E402
@@ -95,7 +95,7 @@ def test_energy_table_without_meter(tmp_path):
 def test_energy_table_template_columns():
     """The shipped template has the columns the script reads, and its FPGA rows name a Vivado design."""
     import csv
-    rows = list(csv.DictReader((ROOT / "system" / "baselines" / "power_template.csv").open(encoding="utf-8")))
+    rows = list(csv.DictReader((ROOT / "software" / "system" / "baselines" / "power_template.csv").open(encoding="utf-8")))
     assert rows and {"fps", "power_w", "idle_power_w", "image"} <= set(rows[0])
     names = {e["name"] for e in json.loads(et.VIVADO_JSON.read_text(encoding="utf-8"))}
     for r in rows:
@@ -147,7 +147,7 @@ def test_publish_bitstreams_manifest(tmp_path):
 
 def test_bitstream_list_matches_vivado_flow():
     """Every listed image is one run_vivado_day.py builds, and its design name is in the Vivado results."""
-    src = (ROOT / "vivado" / "run_vivado_day.py").read_text(encoding="utf-8")
+    src = (ROOT / "hardware" / "vivado" / "run_vivado_day.py").read_text(encoding="utf-8")
     names = {e["name"] for e in json.loads(et.VIVADO_JSON.read_text(encoding="utf-8"))}
     ims = pb.images()
     assert len(ims) == len({i["file"] for i in ims}) == 6
@@ -171,7 +171,7 @@ def test_check_setup_runs(capsys):
 
 
 def test_check_setup_cli():
-    r = subprocess.run([sys.executable, "scripts/check_setup.py", "--vivado"], cwd=ROOT, capture_output=True, text=True)
+    r = subprocess.run([sys.executable, "software/scripts/check_setup.py", "--vivado"], cwd=ROOT, capture_output=True, text=True)
     assert "Setup check (vivado)" in r.stdout and "Vivado" in r.stdout, r.stdout + r.stderr
 
 

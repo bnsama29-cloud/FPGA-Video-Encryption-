@@ -1,4 +1,4 @@
-"""link/fastrx.py (receiver with the heavy work in C) must return exactly what the golden model's
+"""software/link/fastrx.py (receiver with the heavy work in C) must return exactly what the golden model's
 receive_frame / verify_frame return: same reason, mode, session, counter, plain JPEG and plain scan,
 for valid frames of every level and both contracts (incl. the board's E5 frames after the ARM shuffle),
 and for tampered, truncated, wrong-key and replayed frames."""

@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from link.sources import open_source                                         # noqa: E402
 from model import ascon                                                       # noqa: E402
 from model.jpeg import analyse_frame, full_stream_encrypt, package_frame, selective_encrypt_jpeg  # noqa: E402
@@ -46,16 +46,16 @@ def rtl_cycles(size, modes):
     """Encode one frame per mode in the RTL (Icarus) and return cycles per frame."""
     w, h = size
     work = OUT / f"rtl_{w}x{h}"
-    cmd = [sys.executable, str(ROOT / "vivado" / "run_vivado_day.py"), "vectors", "--image", str(work / "frame.png"),
+    cmd = [sys.executable, str(ROOT / "hardware" / "vivado" / "run_vivado_day.py"), "vectors", "--image", str(work / "frame.png"),
            "--size", f"{w}x{h}", "--modes", *map(str, modes), "--out", str(work)]
     import cv2
     work.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(work / "frame.png"), cv2.cvtColor(open_source("synthetic", w, h).read(), cv2.COLOR_RGB2BGR))
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-    srcs = [l.split()[2].replace("../../", "").replace("../", "vivado/")
-            for l in (ROOT / "vivado" / "xsim.prj").read_text().splitlines() if l.startswith("verilog")]
+    srcs = [l.split()[2].replace("../../", "hardware/").replace("../", "hardware/vivado/")
+            for l in (ROOT / "hardware" / "vivado" / "xsim.prj").read_text().splitlines() if l.startswith("verilog")]
     vvp = work / "tb.vvp"
-    subprocess.run(["iverilog", "-g2005", "-o", str(vvp), "-I", str(ROOT / "rtl" / "include")]
+    subprocess.run(["iverilog", "-g2005", "-o", str(vvp), "-I", str(ROOT / "hardware" / "rtl" / "include")]
                    + [str(ROOT / s) for s in srcs], check=True)
     r = subprocess.run(["vvp", "-n", str(vvp), f"+VEC_DIR={work}"], capture_output=True, text=True, timeout=3600)
     if "XSIM RESULT: PASS" not in r.stdout:

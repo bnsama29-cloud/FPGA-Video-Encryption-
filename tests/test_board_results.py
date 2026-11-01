@@ -1,5 +1,5 @@
 """results/board/ holds every result measured on the PYNQ-Z2. Each file listed in a board day's MANIFEST.md
-(written by scripts/save_board_day.py) must be in the repository, so the board results cannot go missing again."""
+(written by software/scripts/save_board_day.py) must be in the repository, so the board results cannot go missing again."""
 import re
 from pathlib import Path
 

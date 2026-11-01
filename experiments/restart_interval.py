@@ -48,7 +48,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from system.attacks.jigsaw_attack import (T, _normalised, accuracies, assemble, dissimilarities,  # noqa: E402
                                                edge_corr, solve, tiles_of)
 from link.sources import open_source                               # noqa: E402

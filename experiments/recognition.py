@@ -33,7 +33,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 sys.path.insert(0, str(ROOT / "experiments"))
 from link.sources import open_source                                           # noqa: E402
 from model.jpeg import analyse_frame, package_frame, replacement_attack_jpeg   # noqa: E402

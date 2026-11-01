@@ -44,7 +44,7 @@ from PIL import Image
 from skimage.metrics import structural_similarity
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from link.sources import open_source                       # noqa: E402
 from model.jpeg import analyse_frame, package_frame        # noqa: E402
 
@@ -62,7 +62,7 @@ DU_MAX = 0.4                            # slew limit of the feedback loops (bug 
 
 
 def u_of(q):
-    """ln of the IJG quantiser scale for quality q (model/dct_quant.py, continuous)."""
+    """ln of the IJG quantiser scale for quality q (software/model/dct_quant.py, continuous)."""
     return math.log(5000.0 / q if q < 50 else 200.0 - 2.0 * q)
 
 

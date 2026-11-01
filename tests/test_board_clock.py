@@ -9,11 +9,11 @@ import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 
 from system.board import pynq_driver as pd       # noqa: E402
 
-OVERLAY = ROOT / "system" / "board" / "overlay"
+OVERLAY = ROOT / "software" / "system" / "board" / "overlay"
 
 
 @pytest.mark.parametrize("image, mhz", [("secure_jpeg.bit", 100), ("secure_jpeg_lanes.bit", 100),

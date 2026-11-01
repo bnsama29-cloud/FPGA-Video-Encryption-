@@ -1,9 +1,9 @@
-"""vivado/run_vivado_day.py parse on report text in Vivado's format (we have no Vivado here)."""
+"""hardware/vivado/run_vivado_day.py parse on report text in Vivado's format (we have no Vivado here)."""
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "vivado"))
+sys.path.insert(0, str(ROOT / "hardware" / "vivado"))
 import run_vivado_day as pr  # noqa: E402
 
 UTIL = """
@@ -149,11 +149,11 @@ def test_power_with_simulated_activity(tmp_path):
 
 def test_power_step_dry_run():
     import subprocess
-    r = subprocess.run([sys.executable, "vivado/run_vivado_day.py", "--steps", "power", "--dry-run"], cwd=ROOT,
+    r = subprocess.run([sys.executable, "hardware/vivado/run_vivado_day.py", "--steps", "power", "--dry-run"], cwd=ROOT,
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-    assert "vectors --v3 --scene 320x240 --modes 5 --out vivado/xsim_power_v3_E5" in r.stdout
+    assert "vectors --v3 --scene 320x240 --modes 5 --out hardware/vivado/xsim_power_v3_E5" in r.stdout
     assert "run_xsim.sh saif xsim_power_v2_E4" in r.stdout or "run_xsim.bat saif xsim_power_v2_E4" in r.stdout
     assert ("power_saif.tcl -tclargs sim_build/vivado_secure_jpeg_top/routed.dcp "
-            "vivado/xsim_power_v2_E0/activity.saif tb_secure_jpeg_top/dut "
+            "hardware/vivado/xsim_power_v2_E0/activity.saif tb_secure_jpeg_top/dut "
             "sim_build/vivado_secure_jpeg_top/power_saif_v2_E0.txt") in r.stdout

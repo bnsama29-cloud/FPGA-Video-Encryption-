@@ -1,6 +1,6 @@
 """Milestone M0: Ascon-AEAD128 must pass all 1089 NIST SP 800-232 known-answer vectors.
 
-vectors/LWC_AEAD_KAT_128_128.txt is the official SP 800-232 KAT file
+hardware/vectors/LWC_AEAD_KAT_128_128.txt is the official SP 800-232 KAT file
 (Key 00..0F, Nonce 10..1F, AD/PT lengths 0..32), as published with the
 reference implementations (ascon-c / pyascon genkat, Ascon-AEAD128).
 The same file is used later to test the RTL core in cocotb and on the board.
@@ -10,7 +10,7 @@ from pathlib import Path
 
 from model import ascon
 
-KAT = Path(__file__).resolve().parents[1] / "vectors" / "LWC_AEAD_KAT_128_128.txt"
+KAT = Path(__file__).resolve().parents[1] / "hardware" / "vectors" / "LWC_AEAD_KAT_128_128.txt"
 
 
 def load_kats():

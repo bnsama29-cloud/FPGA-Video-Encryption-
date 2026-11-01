@@ -19,7 +19,7 @@ Accuracy over many random queries per window length W (frames; at 10 frames/s, W
 against chance = 1/#videos. Schemes:
   E2, E5                 plain protected sizes (E1-E4 give the same sizes as E2)
   pad-1KB                every frame padded to a multiple of 1024 bytes
-  pad-runmax             padded to the largest frame seen so far (deployable, link/ option)
+  pad-runmax             padded to the largest frame seen so far (deployable, software/link/ option)
   pad-win                padded to the largest of the last 100 frames (deployable)
   pad-const              every frame padded to one size for the whole session (the reference)
 Writes sim_out/video_fingerprint/<name>.json and .md.
@@ -32,7 +32,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path[:0] = [str(ROOT), str(ROOT / "software")]
 from link.sources import open_source                  # noqa: E402
 from model.jpeg import analyse_frame, package_frame   # noqa: E402
 
