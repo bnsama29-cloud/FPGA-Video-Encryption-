@@ -1,6 +1,6 @@
 """Is this machine ready to run the project? Prints one line per check, with the fix for anything missing.
 
-    py scripts\\check_setup.py                 laptop (simulation, dashboard, receiver, experiments, paper)
+    py scripts\\check_setup.py                 laptop (simulation, dashboard, receiver, experiments, result tables)
     python3 scripts/check_setup.py --board     on the PYNQ-Z2 (as root, in the PYNQ venv)
     py scripts\\check_setup.py --vivado        the PC that builds the bitstreams
 
@@ -25,7 +25,7 @@ PIP = "py -m pip" if WIN else "python3 -m pip"
 # (module, pip name, what needs it)
 CORE = [("numpy", "numpy", "everything"), ("PIL", "pillow", "golden model"),
         ("skimage", "scikit-image", "experiments"), ("scipy", "scipy", "experiments"),
-        ("cv2", "opencv-python", "video sources, dashboard"), ("matplotlib", "matplotlib", "paper figures"),
+        ("cv2", "opencv-python", "video sources, dashboard"), ("matplotlib", "matplotlib", "result figures"),
         ("cryptography", "cryptography", "key exchange, baselines"), ("pytest", "pytest", "tests")]
 RTL = [("cocotb", "cocotb==2.1.0"), ("cocotbext.axi", "cocotbext-axi==0.1.28")]
 TCP_PORTS = [8000]

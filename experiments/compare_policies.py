@@ -1,4 +1,4 @@
-"""Run one scenario under several defence policies and make the paper table + figures.
+"""Run one scenario under several defence policies and make the comparison table + figures.
 
     python experiments/compare_policies.py                                   # quick.json, ~6 min
     python experiments/compare_policies.py --scenario experiments/scenarios/learning.json \\

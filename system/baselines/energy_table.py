@@ -13,7 +13,7 @@ One CSV row per workload:  method,mode,width,height,fps,power_w,idle_power_w,ima
   idle_power_w  the same board booted and idle (meter). Optional; gives the energy above idle.
   image         Vivado design of the bitstream the row ran (overlay_lanes4, overlay_lanes, overlay, ...).
                 With no meter reading, that row uses Vivado's post-route power estimate of the design
-                (paper/data/vivado/vivado_results.json) and is marked "Vivado estimate".
+                (results/hardware/vivado/vivado_results.json) and is marked "Vivado estimate".
 
 Without a meter (--no-meter, or power_w left empty) the FPGA rows get the Vivado estimate and the ARM rows
 show their fps only: Vivado has no model of the ARM's load, so their energy stays "not measured".
@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-VIVADO_JSON = ROOT / "paper" / "data" / "vivado" / "vivado_results.json"
+VIVADO_JSON = ROOT / "results" / "hardware" / "vivado" / "vivado_results.json"
 
 
 def _num(s):

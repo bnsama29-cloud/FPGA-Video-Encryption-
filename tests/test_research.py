@@ -300,7 +300,7 @@ def test_fingerprint_identifies_by_shape_and_guesses_on_constant_size():
 def test_benchmark_schemes_decode_invert_and_rank():
     """Every re-implemented scheme must stay a decodable JPEG with the same coefficient count per block;
     undoing a scheme's own permutation must give back the clear block order (so A4 measures the scheme,
-    not a bug); and the ranking that the paper states must hold on a small scene, with A4 now a real
+    not a bug); and the reported ranking must hold on a small scene, with A4 now a real
     known-plaintext attacker (permutation and keystream recovered from frame 0, nothing handed over)."""
     import benchmark_suite as B
     frames = [make_image(160, 128, "scene", seed=s) for s in (1, 2, 3)]   # 80 MCUs: enough blocks for a stable correlation
@@ -375,8 +375,8 @@ def test_hw_efficiency_table_runs_on_the_snapshot(tmp_path):
     import sys as _sys
     root = Path(__file__).resolve().parents[1]
     subprocess.run([_sys.executable, str(root / "experiments" / "hw_efficiency.py"), "--out", str(tmp_path),
-                    "--vivado", str(root / "paper/data/vivado/vivado_results.json"),
-                    "--throughput", str(root / "paper/data/lanes_rtl/results.json")], check=True, capture_output=True)
+                    "--vivado", str(root / "results/hardware/vivado/vivado_results.json"),
+                    "--throughput", str(root / "results/hardware/lanes_rtl/results.json")], check=True, capture_output=True)
     d = json.loads((tmp_path / "hw_efficiency.json").read_text())
     assert {r["design"] for r in d["ours"]} >= {"ours, contract v2 (1 pipeline)", "ours, 2 lanes", "ours, 4 lanes"}
     for r in d["ours"]:

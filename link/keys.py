@@ -87,7 +87,7 @@ class Ratchet:
 #   K_master = HKDF-SHA256(salt = K_psk, ikm = ss_mlkem || ss_x25519, info = "SV session" || SHA256(M1 || M2))
 #   K_a      = HMAC(K_psk, "SV kex auth")          (authenticates both messages: no man in the middle)
 #
-# Why: a pre-shared key used for every session is the single point of failure (paper, limitations).
+# Why: a pre-shared key used for every session is the single point of failure (see the limitations in README.md).
 # With the exchange, a recorded session can only be decrypted by someone who breaks ML-KEM AND X25519
 # for that session's ephemeral keys, even if K_psk leaks later (forward secrecy) and even with a
 # quantum computer (ML-KEM is post-quantum; X25519 keeps the classical guarantee if ML-KEM falls).

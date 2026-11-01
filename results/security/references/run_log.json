@@ -1,0 +1,113 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (refs-verify)",
+   "PASS",
+   0.9
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   4.3
+  ],
+  [
+   "avengers",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   121.6
+  ],
+  [
+   "challenge",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   305.6
+  ],
+  [
+   "jailer",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   19.5
+  ],
+  [
+   "sintel_trailer",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   109.3
+  ],
+  [
+   "denzel",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   357.4
+  ],
+  [
+   "17735",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   776.7
+  ],
+  [
+   "tearsofsteel",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   441.7
+  ],
+  [
+   "skimage",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   1553.4
+  ],
+  [
+   "kodak",
+   "B35 sign-bit recovery (Lin et al.)",
+   "PASS",
+   2491.1
+  ],
+  [
+   "fingerprint",
+   "B36 video identification (Schuster et al.)",
+   "PASS",
+   1474.2
+  ]
+ ],
+ "minutes": 74.2,
+ "quick": false,
+ "sources": {
+  "17735": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/17735.mp4",
+   "kind": "private"
+  },
+  "avengers": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/avengers.mp4",
+   "kind": "private"
+  },
+  "challenge": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/challenge.mp4",
+   "kind": "private"
+  },
+  "denzel": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/denzel.mp4",
+   "kind": "private"
+  },
+  "jailer": {
+   "path": "/kaggle/input/datasets/samarthium/fpga-video-5/jailer.mp4",
+   "kind": "private"
+  },
+  "sintel_trailer": {
+   "path": "/kaggle/working/opendata/sintel_trailer.mp4",
+   "kind": "open"
+  },
+  "tearsofsteel": {
+   "path": "/kaggle/working/opendata/tearsofsteel.mov",
+   "kind": "open"
+  },
+  "kodak": {
+   "path": "/kaggle/working/opendata/kodak",
+   "kind": "open",
+   "images": true
+  }
+ }
+}

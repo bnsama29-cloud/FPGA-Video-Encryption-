@@ -1,0 +1,56 @@
+{
+ "source": "sintel_trailer",
+ "frames": 40,
+ "score": 0.5,
+ "iou": 0.3,
+ "results": {
+  "plain": {
+   "recall_iou": 0.6764705882352942,
+   "frame_hit": 0.8095238095238095,
+   "false_alarm": 0.05263157894736842,
+   "frames_with_person": 21,
+   "frames_without": 19,
+   "persons": 34
+  },
+  "E1": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.09523809523809523,
+   "false_alarm": 0.0,
+   "frames_with_person": 21,
+   "frames_without": 19,
+   "persons": 34
+  },
+  "E2": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.0,
+   "frames_with_person": 21,
+   "frames_without": 19,
+   "persons": 34
+  },
+  "E4": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.047619047619047616,
+   "false_alarm": 0.0,
+   "frames_with_person": 21,
+   "frames_without": 19,
+   "persons": 34
+  },
+  "E5 (N=1)": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.0,
+   "frames_with_person": 21,
+   "frames_without": 19,
+   "persons": 34
+  },
+  "E5 (N=32)": {
+   "recall_iou": 0.0,
+   "frame_hit": 0.0,
+   "false_alarm": 0.05263157894736842,
+   "frames_with_person": 21,
+   "frames_without": 19,
+   "persons": 34
+  }
+ }
+}

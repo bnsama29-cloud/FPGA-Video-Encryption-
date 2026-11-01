@@ -1,6 +1,6 @@
 {
   "name": "full_suite",
-  "about": "~5 minutes: every attack once, 25 s apart (detection + reaction table for the paper).",
+  "about": "~5 minutes: every attack once, 25 s apart (detection + reaction table).",
   "end_s": 300,
   "steps": [
     {"at": 12,  "attack": "bitflip",   "duration": 6},

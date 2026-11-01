@@ -1,0 +1,28 @@
+
+7. Printing statistics.
+
+=== keystream_gen ===
+
+        +----------Local Count, excluding submodules.
+        | 
+     1119 wires
+     4230 wire bits
+       30 public wires
+     1400 public wire bits
+        9 ports
+      286 port bits
+     2540 cells
+        2   $scopeinfo
+        1   BUFG
+        5   CARRY4
+      845   FDRE
+        6   FDSE
+      265   IBUF
+        8   INV
+       35   LUT2
+      316   LUT3
+      146   LUT4
+      754   LUT5
+      136   LUT6
+       21   OBUF
+

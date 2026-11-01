@@ -1,7 +1,7 @@
 # Test clips (not in the repo)
 
 The clips are copyrighted videos used only for private testing, so they are **not distributed** (`*.mp4` is git-ignored).
-This table identifies them by SHA-256; the papers report numbers only and show no frame of them.
+This table identifies them by SHA-256; the results report numbers only and show no frame of them.
 
 | File | Content | Size | FPS | Frames | sha256 (first 16) |
 |---|---|---|---|---|---|
@@ -13,7 +13,7 @@ This table identifies them by SHA-256; the papers report numbers only and show n
 
 ## Open clips (used from 14 Oct, citable)
 
-Downloaded by `system/kaggle/kaggle_runs.py (JOB = "remaining")`. All CC-BY 3.0, credit as below in the paper:
+Downloaded by `system/kaggle/kaggle_runs.py (JOB = "remaining")`. All CC-BY 3.0, credit as below wherever a frame is shown:
 
 * Big Buck Bunny, (c) copyright 2008 Blender Foundation, www.bigbuckbunny.org
 * Elephants Dream, (c) Blender Foundation / orange.blender.org (CC BY; P5 training corpus, 16 Oct 2026)
@@ -21,4 +21,4 @@ Downloaded by `system/kaggle/kaggle_runs.py (JOB = "remaining")`. All CC-BY 3.0,
 * Tears of Steel, (CC) Blender Foundation, mango.blender.org (live action)
 * Kodak Lossless True Color Image Suite (24 images), released by Eastman Kodak for unrestricted use
 
-Frames from these may appear in the paper's figures; frames from the private clips above may not.
+Frames from these may appear in figures; frames from the private clips above may not.

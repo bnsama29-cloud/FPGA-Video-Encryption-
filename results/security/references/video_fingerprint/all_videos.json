@@ -1,0 +1,63 @@
+{
+ "meta": {
+  "sources": [
+   "17735",
+   "avengers",
+   "challenge",
+   "denzel",
+   "jailer",
+   "sintel_trailer",
+   "tearsofsteel"
+  ],
+  "frames": 600,
+  "stride": 3,
+  "size": "320x240",
+  "queries": 300,
+  "chance": 0.143,
+  "attack": "max Pearson correlation over library videos and offsets (Schuster et al. style, frame sizes instead of bursts); attacker library encoded with a different key"
+ },
+ "results": {
+  "E2": {
+   "overhead": 0.0,
+   "W5": 0.76,
+   "W10": 0.98,
+   "W30": 1.0,
+   "W100": 1.0
+  },
+  "E5": {
+   "overhead": 0.116,
+   "W5": 0.693,
+   "W10": 0.99,
+   "W30": 1.0,
+   "W100": 1.0
+  },
+  "pad-1KB": {
+   "overhead": 0.0558,
+   "W5": 0.213,
+   "W10": 0.4,
+   "W30": 0.847,
+   "W100": 0.97
+  },
+  "pad-runmax": {
+   "overhead": 0.5458,
+   "W5": 0.183,
+   "W10": 0.233,
+   "W30": 0.31,
+   "W100": 0.46
+  },
+  "pad-win": {
+   "overhead": 0.4117,
+   "W5": 0.177,
+   "W10": 0.313,
+   "W30": 0.52,
+   "W100": 0.953
+  },
+  "pad-const": {
+   "overhead": 0.8103,
+   "W5": 0.14,
+   "W10": 0.13,
+   "W30": 0.193,
+   "W100": 0.14
+  }
+ }
+}

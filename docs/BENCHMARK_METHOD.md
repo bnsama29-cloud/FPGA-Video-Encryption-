@@ -2,7 +2,7 @@
 
 This note says how the security and hardware numbers for E5 are produced, so a reviewer can line them up
 with the papers we compare against. Every number comes from a script in `experiments/` that writes to
-`sim_out/`. The paper only states results that a script reproduces.
+`sim_out/`. Only results that a script reproduces are reported.
 
 ## 1. What changed on 18 Oct 2026, and why
 
@@ -12,12 +12,12 @@ with the papers we compare against. Every number comes from a script in `experim
 | Security tables reported only edge correlation | Each scheme also gets PSNR, SSIM, entropy, adjacent-pixel correlation (h/v/d) and NPCR/UACI (key and one-pixel) | These are what selective-encryption papers print (Hirose et al. [hirose2024]: PSNR/SSIM, key sensitivity, histograms; Kishore et al. [kishore2015], Auer et al. [auer2013]: PSNR and visual) |
 | Means over frames only | Every mean has a 95 % percentile-bootstrap interval over frames | Lets a reader see whether two schemes differ |
 | One quality factor (75), 320x240 for every source | `--quality 50 75 90` sweep, and `--size native` / `768x512` for Kodak | Image papers report Kodak at its own size and several quality factors |
-| Standard metrics measured E5 only in the model's v2 form | They also measure **E5 (v3, hw)**, the form the lane-encoder RTL produces | The paper's claims are about the hardware |
+| Standard metrics measured E5 only in the model's v2 form | They also measure **E5 (v3, hw)**, the form the lane-encoder RTL produces | The claims are about the hardware |
 | Hardware compared by raw LUT and Mpixel/s | `experiments/hw_efficiency.py` adds Mpixel/s per kLUT, input Gbit/s and nJ per pixel, per mode (E5 has its own rows) | Hardware papers compare throughput per area and energy per unit of work |
 
 E5 itself is unchanged: the RTL, the model and contract v3 are exactly as in commit b41c733. Only the
 way it is measured changed. The Kaggle re-run with this method (18 Oct 2026, after the known-frame fix
-below) is in `paper/data/benchmark/` and builds `tab_bench.tex` and `tab_bench_metrics.tex`; the first run
+below) is in `results/security/benchmark/`; the first run
 with the old A4 is in git history (commit 3588feb).
 
 ## 2. Threat model of each attack (SVE-Bench, `experiments/benchmark_suite.py`)
@@ -65,13 +65,13 @@ non-zero AC coefficients, the realistic worst case for the defender. E5's result
 | NPCR / UACI (1 pixel) | no-key pictures of two frames one pixel apart, same key and counter | 99.6 % / 33.5 % | no diffusion step. In contract v2 a size change shifts every later keystream bit, so the rest of the frame changes; in contract v3 (E5 hardware form) each segment has its own keystream, so only that segment changes (0.3 % NPCR on the synthetic scene, 53 % in v2). This is by design (the nonce never repeats, so two real frames never share a keystream), and must be explained, not hidden |
 
 `experiments/standard_metrics.py` reports the same family per level, now including **E5 (v3, hw)**, plus the
-wrong-key decryption (SSIM to the original, share of pixels that differ). As stated in the paper, standard
+wrong-key decryption (SSIM to the original, share of pixels that differ). As stated with the results, standard
 metrics are "for comparability only": they assume full-image ciphers.
 
 ## 4. Hardware figures of merit (`experiments/hw_efficiency.py`)
 
 Joins measured throughput (`experiments/lanes_rtl_throughput.py --modes 2 5`, R1 for the contract-v2
-encoder) with the post-route Vivado results and the published rows of `paper/data/related/compare.json`:
+encoder) with the post-route Vivado results and the published rows of `results/hardware/related/compare.json`:
 
 * **Mpixel/s per kLUT**: the efficiency number hardware papers compare. Kishore et al. report 11.1 Mpixel/s
   on 2250 Stratix IV ALUTs; ALUTs and 7-series LUTs are not the same unit, so the table says so.
@@ -97,5 +97,23 @@ python experiments/hw_efficiency.py
 
 The full set of sources runs on Kaggle with `JOB = "benchmark"` in `system/kaggle/kaggle_runs.py`
 (it now also runs `standard_metrics.py` on every source and packs both into `benchmark_results.zip`).
-`paper/make_assets.py` reads either the old (`cross_frame`) or the new (`known_plaintext`) format; with new
-data it also writes `tab_bench_metrics.tex`.
+Result files exist in two formats: the old one (`cross_frame`) and the new one (`known_plaintext`);
+`results/security/benchmark/` holds the new one.
+
+## References (keys used above and in the scripts)
+
+* [vandroogenbroeck2002] M. Van Droogenbroeck and R. Benedett, "Techniques for a selective encryption of
+  uncompressed and compressed images," Proc. ACIVS, Ghent, 2002, pp. 90-97.
+* [auer2013] S. Auer, A. Bliem, D. Engel and A. Unterweger, "Bitstream-based JPEG encryption in real-time,"
+  Int. J. Digital Crime and Forensics, vol. 5, no. 3, pp. 1-14, 2013.
+* [kishore2015] B. Kishore, B. K. Shreyamsha Kumar and C. R. Patil, "FPGA based simple and fast JPEG
+  encryptor," J. Real-Time Image Processing, vol. 10, no. 3, pp. 551-559, 2015.
+* [hirose2024] M. Hirose, S. Imaizumi and H. Kiya, "On the security of bitstream-level JPEG encryption with
+  restart markers," Proc. APSIPA ASC, 2024, arXiv:2410.06522.
+* [li2025shuffle] S. Li, Y. Guo, J. Huang and R. Gao, "Fast attack algorithm for JPEG image encryption with
+  block position shuffle," J. Shanghai Jiaotong Univ. (Science), vol. 30, no. 5, pp. 976-987, 2025.
+* [lin2024] R. Lin, S. Liu, J. Jiang, S. Li, C. Li and C.-C. J. Kuo, "Recovering sign bits of DCT
+  coefficients in digital images as an optimization problem," J. Visual Communication and Image
+  Representation, vol. 98, 104045, 2024.
+* [schuster2017] R. Schuster, V. Shmatikov and E. Tromer, "Beauty and the burst: Remote identification of
+  encrypted video streams," Proc. USENIX Security, 2017, pp. 1357-1374.

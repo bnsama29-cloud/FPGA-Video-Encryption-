@@ -17,7 +17,7 @@ Part 2 -- speed (only after Part 1 passed)
     over --timing-frames frames per size and mode -> fps and ms/frame, split into: load (ARM writes the
     pixels into the DMA buffer + cache flush), DMA (both channels + invalidate), ARM after (headers, E5
     shuffle) and the fabric-only time from the CYCLES register (bitstreams from 21 Oct 2026).
-Writes sim_out/board/first_contact.json and .md (paper_tables.py picks the .md up).
+Writes sim_out/board/first_contact.json and .md (results_tables.py picks the .md up).
 """
 import argparse
 import json

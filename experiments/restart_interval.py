@@ -5,7 +5,7 @@
     python experiments/restart_interval.py --video data/kodak --frames 24 --stride 1   # image folder
 
 E5 cuts the scan into segments with restart markers and permutes the segments with a key.
-The golden model and the paper use one MCU per segment (restart interval N = 1). Larger N
+The golden model and the hardware use one MCU per segment (restart interval N = 1). Larger N
 costs fewer marker bytes, but each segment carries more of the picture intact. Hirose et al.
 (arXiv:2410.06522) found that large intervals let outlines reappear under a non-zero
 counting attack. This script measures that trade-off for N = 1, 2, 4, 8, 32:

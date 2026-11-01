@@ -1,0 +1,12 @@
+{
+  "name": "benign",
+  "about": "~2.5 minutes, NO attacks: rising packet loss, delay, jitter and reordering. Every escalation here is a false alarm.",
+  "end_s": 150,
+  "steps": [
+    {"at": 10,  "impair": {"loss": 0.01}},
+    {"at": 35,  "impair": {"loss": 0.03}},
+    {"at": 60,  "impair": {"loss": 0.06, "delay_ms": 60, "jitter_ms": 20}},
+    {"at": 85,  "impair": {"loss": 0.02, "delay_ms": 120, "jitter_ms": 40, "reorder": 0.05}},
+    {"at": 115, "impair": {"loss": 0.0, "delay_ms": 5, "jitter_ms": 2, "reorder": 0.0}}
+  ]
+}

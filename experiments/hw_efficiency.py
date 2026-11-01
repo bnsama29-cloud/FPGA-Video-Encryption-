@@ -10,7 +10,7 @@ by hand:
                per mode, so E5 has its own row) and R1 (stall_profile.py, contract-v2 encoder)
   area, power  post-route Vivado results (run_vivado_day.py parse): LUT/FF/BRAM/DSP; power from the
                SAIF-annotated report of that mode when the run has one (step power), else the vectorless total
-  published    paper/data/related/compare.json (numbers copied from each cited source)
+  published    results/hardware/related/compare.json (numbers copied from each cited source)
 Derived columns:
   fps 1080p        Mpixel/s / (1920 x 1080)
   Mpx/s per kLUT   throughput / area, the efficiency metric of hardware papers
@@ -72,14 +72,14 @@ def power_of(res, tag):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--vivado", help="vivado_results.json (default: sim_out/vivado, else paper/data/vivado)")
-    ap.add_argument("--throughput", nargs="+", help="lanes results.json files (default: paper/data/lanes_rtl and "
+    ap.add_argument("--vivado", help="vivado_results.json (default: sim_out/vivado, else results/hardware/vivado)")
+    ap.add_argument("--throughput", nargs="+", help="lanes results.json files (default: results/hardware/lanes_rtl and "
                                                     "sim_out/lanes_rtl, the largest frame per lane count and mode)")
     ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args()
     viv_path = first(a.vivado, ROOT / "sim_out" / "vivado" / "vivado_results.json",
-                     ROOT / "paper" / "data" / "vivado" / "vivado_results.json")
-    tp_paths = [Path(p) for p in (a.throughput or [ROOT / "paper" / "data" / "lanes_rtl" / "results.json",
+                     ROOT / "results" / "hardware" / "vivado" / "vivado_results.json")
+    tp_paths = [Path(p) for p in (a.throughput or [ROOT / "results" / "hardware" / "lanes_rtl" / "results.json",
                                                      ROOT / "sim_out" / "lanes_rtl" / "results.json"]) if Path(p).exists()]
     if viv_path is None or not tp_paths:
         raise SystemExit("need a Vivado results json and a lanes throughput json (see the docstring)")
@@ -102,7 +102,7 @@ def main():
                          power_w=watts, power_source=psrc,
                          nj_per_px=(watts / (mpx * 1e6) * 1e9) if watts else None,
                          throughput_from=tp_src, area_from=str(viv_path.resolve().relative_to(ROOT))))
-    rel_path = ROOT / "paper" / "data" / "related" / "compare.json"
+    rel_path = ROOT / "results" / "hardware" / "related" / "compare.json"
     published = []
     if rel_path.exists():
         for r in json.loads(rel_path.read_text())["rows"]:
@@ -122,7 +122,7 @@ def main():
         md.append(f"| {r['design']} | {r['mode']} | {r['size']} | {f(r['lut'], 0)} | {f(r['bram'])} | {f(r['dsp'], 0)} | "
                   f"{r['mhz']} | {f(r['mpix_s'])} | {f(r['fps_1080p'])} | {f(r['mpix_s_per_klut'], 2)} | "
                   f"{f(r['gbit_s_in'], 2)} | {f(r['power_w'], 3)} {r['power_source']} | {f(r['nj_per_px'], 2)} |")
-    md += ["", "Published (copied from each source, paper/data/related/compare.json; different devices and functions):", "",
+    md += ["", "Published (copied from each source, results/hardware/related/compare.json; different devices and functions):", "",
            "| Work | Device | Function | LUT (Stratix: ALUT) | DSP (Stratix: 18-bit mult.) | MHz | Mpx/s | Mpx/s per kLUT | Crypto |",
            "|---|---|---|---|---|---|---|---|---|"]
     for r in published:

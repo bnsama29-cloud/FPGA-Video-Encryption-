@@ -181,7 +181,7 @@ elif CMD == "video-eval":
 
 Outputs in --out:
     frames.csv            one row per (frame, quality, mode) with every metric
-    summary.csv/.json     mean and std per (quality, mode)  -> paper tables
+    summary.csv/.json     mean and std per (quality, mode)  -> result tables
     integrity.csv         tamper / replay / reorder / drop / insert detection
     plots/*.png           RQ1 security-vs-cost, visual security, attack, timing
     samples/              first frame: original, plain, scrambled, decrypted, attack images
@@ -191,7 +191,7 @@ Outputs in --out:
     modes_grid.mp4           original + the no-key view of every mode
 
 Timings are pure-Python on the PC. They are useful for relative comparisons and
-for checking the scripts; the paper's speed/energy numbers must come from the board.
+for checking the scripts; the reported speed/energy numbers must come from the board.
 """
     import argparse
     import csv

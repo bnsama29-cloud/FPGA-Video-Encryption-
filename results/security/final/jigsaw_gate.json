@@ -1,0 +1,78 @@
+{
+ "size": "320x240",
+ "tile": 16,
+ "photos": {
+  "astronaut": {
+   "greedy": {
+    "neighbours": 0.8477876106194691,
+    "positions": 0.8466666666666667,
+    "seconds": 0.13272333145141602
+   },
+   "mst": {
+    "neighbours": 0.8424778761061947,
+    "positions": 0.8366666666666667,
+    "seconds": 2.1687686443328857
+   }
+  },
+  "chelsea": {
+   "greedy": {
+    "neighbours": 1.0,
+    "positions": 1.0,
+    "seconds": 0.12419629096984863
+   },
+   "mst": {
+    "neighbours": 1.0,
+    "positions": 1.0,
+    "seconds": 0.5333178043365479
+   }
+  },
+  "coffee": {
+   "greedy": {
+    "neighbours": 0.8141592920353983,
+    "positions": 0.11666666666666667,
+    "seconds": 0.13324689865112305
+   },
+   "mst": {
+    "neighbours": 1.0,
+    "positions": 1.0,
+    "seconds": 0.5494797229766846
+   }
+  },
+  "rocket": {
+   "greedy": {
+    "neighbours": 0.6247787610619469,
+    "positions": 0.0,
+    "seconds": 0.11362981796264648
+   },
+   "mst": {
+    "neighbours": 0.9238938053097345,
+    "positions": 0.94,
+    "seconds": 0.9433937072753906
+   }
+  },
+  "cat": {
+   "greedy": {
+    "neighbours": 1.0,
+    "positions": 1.0,
+    "seconds": 0.10427689552307129
+   },
+   "mst": {
+    "neighbours": 1.0,
+    "positions": 1.0,
+    "seconds": 0.5239019393920898
+   }
+  },
+  "immunohistochemistry": {
+   "greedy": {
+    "neighbours": 0.6654867256637168,
+    "positions": 0.0,
+    "seconds": 0.1347179412841797
+   },
+   "mst": {
+    "neighbours": 1.0,
+    "positions": 1.0,
+    "seconds": 0.5364189147949219
+   }
+  }
+ }
+}

@@ -1,5 +1,5 @@
 # Out-of-context synthesis + implementation in Vivado (no board needed).
-# Gives the real LUT/FF/BRAM/DSP use, timing slack and a power estimate for the paper.
+# Gives the real LUT/FF/BRAM/DSP use, timing slack and a power estimate.
 # Run from the repository root (or let vivado/run_vivado_day.py do it):
 #   vivado -mode batch -source vivado/vivado_ooc.tcl                              (whole design, 100 MHz)
 #   vivado -mode batch -source vivado/vivado_ooc.tcl -tclargs ascon_aead128_core  (one block)
@@ -11,7 +11,7 @@
 #                                                      parameter/value pairs after the period)
 # Reports in sim_build/vivado_<top>[_<period>ns]/: utilization.txt, utilization_hier.txt,
 # timing.txt (WNS), power.txt (vectorless estimate). python vivado/run_vivado_day.py parse turns
-# them into the paper table.
+# them into the hardware table.
 #
 # The clock is declared in an XDC that is read BEFORE synthesis, so synthesis is
 # timing-driven (declaring it only after synth_design would leave synthesis blind).

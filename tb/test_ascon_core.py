@@ -100,7 +100,7 @@ async def ascon_random_vs_model(dut):
 @cocotb.test()
 async def ascon_block_rate(dut):
     """Throughput: plaintext blocks offered every clock; clocks per 128-bit block once running (the figure
-    behind the Gbps of the core, paper/make_assets.py). Writes sim_out/ascon_rate/ascon_rate.json."""
+    behind the Gbps of the core). Writes sim_out/ascon_rate/ascon_rate.json."""
     import json
     rng = rng_for(dut)
     dut.init.value = 0

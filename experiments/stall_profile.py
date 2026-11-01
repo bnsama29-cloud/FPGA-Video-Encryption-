@@ -1,7 +1,7 @@
 """R1 -- where do the encoder's cycles go? (research suite)
 
     python experiments/stall_profile.py                      # 128x96, scene/noise/bars, E0/E2/E4 (~2 min)
-    python experiments/stall_profile.py --size 320x240       # slower, closer to the paper's frames
+    python experiments/stall_profile.py --size 320x240       # slower, closer to the evaluated frame size
     python experiments/stall_profile.py --scaling 64x48 128x96 160x128 320x240   # fit the frame-size law
 
 Finding (14 Oct 2026): cycles/pixel do not depend on the image or the protection level (the entropy
