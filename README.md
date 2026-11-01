@@ -56,6 +56,7 @@ scene; E5 removes it. The paper measures what each level leaks.
 | `experiments/` | One script per result in the paper; each writes its numbers to `sim_out/`. |
 | `system/` | Board software for the PYNQ-Z2 (`board/`: driver, bit-exact gate, camera node, block design, board images), the encoder in C on the ARM (`arm/`), software baselines and energy table (`baselines/`), jigsaw attacks (`attacks/`), figure scripts (`figures/`), and the script that reruns the GPU experiments in one cloud session (`kaggle/`). |
 | `paper/` | The manuscripts (6-page conference version; journal version in the IEEE Transactions on Consumer Electronics and IEEE Access formats), the result snapshot they are built from (`paper/data/`), and the generator that turns it into every table, figure and number (`paper/make_assets.py`). |
+| `board_results/` | Every result measured on the PYNQ-Z2: bit-exact gate and timing of each board image, ARM baseline, key exchange on the A9, energy table, and the live-link runs with the board as the sender (attack suite, benign run, fault injection). Its README says which run produced each folder. |
 | `docs/` | Interface specification, verification method and bug log, benchmark method, research notes. |
 | `scripts/` | Setup check, demo key, end-to-end check with an emulated board, board-image check, board helpers. |
 | `tests/` | Python tests: model, contract equivalence between the model's two views, system layer, experiments, paper assets. |
@@ -98,8 +99,8 @@ is in `paper/data/` (each folder has a README saying which run produced it), and
 | Cycles per pixel, lane throughput (RTL simulation) | `experiments/stall_profile.py`, `experiments/lanes_rtl_throughput.py` | `research/`, `lanes_rtl*/` |
 | Post-route resources, timing, power | `vivado/run_vivado_day.py` | `vivado/` |
 | Hardware figures of merit | `experiments/hw_efficiency.py` | `hw_efficiency/` |
-| Board: bit-exact gate and timing; ARM baseline; energy | `system/board/first_contact.py`, `system/arm/arm_baseline.py`, `system/baselines/energy_table.py` | `board/` |
-| Board as the sender: attack suite, fault injection after the tag | `experiments/scenario.py --external-sender`, `experiments/hw_tamper.py` | `board/board_day_24oct/runs/` |
+| Board: bit-exact gate and timing; ARM baseline; energy | `system/board/first_contact.py`, `system/arm/arm_baseline.py`, `system/baselines/energy_table.py` | `board_results/` (repository root) |
+| Board as the sender: attack suite, fault injection after the tag | `experiments/scenario.py --external-sender`, `experiments/hw_tamper.py` | `board_results/board_day_24oct/runs/` (repository root) |
 
 The GPU and long-CPU experiments (learned attacker, benchmark, recognition) rerun in one cloud session with
 `system/kaggle/kaggle_runs.py`.

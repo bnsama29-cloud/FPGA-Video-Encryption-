@@ -1,8 +1,8 @@
-"""Copy the board-day results from sim_out/ (git-ignored) into paper/data/board/<name>/ so they can be committed.
+"""Copy the board-day results from sim_out/ (git-ignored) into board_results/<name>/ so they can be committed.
 
 Run on the laptop, from the repo folder, after `py scripts\\pull_board_results.py`:
 
-    py scripts\\save_board_day.py                          -> paper/data/board/board_day_24oct/
+    py scripts\\save_board_day.py                          -> board_results/board_day_24oct/
     py scripts\\save_board_day.py --name board_day_12nov   another day
     py scripts\\save_board_day.py --dry-run                only list what would be copied
 
@@ -13,7 +13,7 @@ What it copies (result files only: .json .md .csv .jsonl .txt):
   system/baselines/power_template.{md,json,csv}  the energy table
 It writes MANIFEST.md (file, bytes, SHA-256, source) next to them, skips files over 20 MB, and stops if any
 file contains the demo key (configs/demo_key.txt) or the session key: those are never committed.
-Then: git add paper/data/board/<name>, commit, push .
+Then: git add board_results/<name>, commit, push .
 """
 import argparse
 import hashlib
@@ -88,10 +88,10 @@ def save(dest, root=ROOT, dry_run=False):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--name", default="board_day_24oct", help="folder under paper/data/board/")
+    ap.add_argument("--name", default="board_day_24oct", help="folder under board_results/")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
-    dest = ROOT / "paper" / "data" / "board" / a.name
+    dest = ROOT / "board_results" / a.name
     rows, skipped = save(dest, dry_run=a.dry_run)
     if not rows:
         print("nothing found in sim_out/: run py scripts\\pull_board_results.py first")
@@ -105,7 +105,7 @@ def main(argv=None):
     for s in skipped:
         print("  skipped " + s)
     if not a.dry_run:
-        print(f"\nnext:  git add paper/data/board/{a.name}")
+        print(f"\nnext:  git add board_results/{a.name}")
     return 0
 
 

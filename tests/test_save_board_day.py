@@ -1,4 +1,4 @@
-"""scripts/save_board_day.py: board-day results go from sim_out/ (git-ignored) to paper/data/board/<name>/,
+"""scripts/save_board_day.py: board-day results go from sim_out/ (git-ignored) to board_results/<name>/,
 only result files, with a manifest, and never a file that holds the demo or session key."""
 import sys
 from pathlib import Path
@@ -29,7 +29,7 @@ def test_copies_only_board_results_with_a_manifest(tmp_path):
         "sim_out/board_backups/x.json": "{}",                             # checkpoints stay out
         "system/baselines/power_template.md": "| |",
         "configs/demo_key.txt": "167ae045648ba4c22af59f4c743abc38"})
-    dest = tmp_path / "paper/data/board/day"
+    dest = tmp_path / "board_results/day"
     rows, skipped = sbd.save(dest, root=tmp_path)
     got = sorted(r[1].as_posix() for r in rows)
     assert got == ["board/lanes4_final/first_contact.json", "energy/power_template.md", "pq_kex/pynq.md",
