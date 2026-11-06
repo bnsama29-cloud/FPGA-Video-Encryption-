@@ -71,3 +71,19 @@ build/
 
 # Clawness (local Claude tooling state): never part of the project
 /.clawness/
+
+# personal files next to the clone (reports, slides, proceedings, editor settings); never part of the project
+/.claude/
+/.vscode/
+/*.pdf
+/*.pptx
+/*.docx
+/*.zip
+/ICEE past proceedings*/
+/ncc past proceedings/
+/hackathon/
+# folders left over from the layout before 1 Nov 2026 (now under hardware/ and software/)
+/configs/
+/system/
+/tb/
+/vivado/

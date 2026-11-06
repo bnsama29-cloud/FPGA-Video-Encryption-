@@ -654,8 +654,9 @@ def part_jobs(names, periods=()):
 
 def step_parts(a):
     """The encoders on other FPGAs (--parts): utilisation and slack per device, for the portability table.
-    The percentages in the parse table refer to the xc7z020; each run's utilization.txt has the device's own."""
-    vivado_many(a, part_jobs(a.parts or list(PARTS), a.periods))
+    The percentages in the parse table refer to the xc7z020; each run's utilization.txt has the device's own.
+    Only at 100 MHz, so that one command can also carry a --periods sweep of the xc7z020 runs."""
+    vivado_many(a, part_jobs(a.parts or list(PARTS)))
 
 
 def step_lanes(a):

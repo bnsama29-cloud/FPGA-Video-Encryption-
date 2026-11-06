@@ -31,9 +31,10 @@ pip install -e . && pip install lpips yowasp-yosys     # lpips: LPIPS column; yo
 | X22 | Several cameras on one receiver | `python experiments/multi_camera.py --cameras 1 2 4 8` | `sim_out/multi_camera/` |
 | X3 | Repeated attack suite, 95 % intervals | `python experiments/repeat_runs.py --reps 5` | `sim_out/repeat_runs/full_suite/` |
 | X12 | ASIC area (sky130, Nangate 45 nm) | `python experiments/asic_estimate.py` | `sim_out/asic_estimate/` |
-| X8 | Other FPGAs (Vivado) | `python hardware/vivado/run_vivado_day.py --steps parts parse` | `sim_build/vivado_*_part_*` |
-| X9, X10 | Clock and memory sweep (Vivado) | `python hardware/vivado/run_vivado_day.py --steps ooc lanes parse --periods 8.0 7.0 6.667 --maxw 9 10` | `sim_out/vivado/` |
+| X8–X10, X13 | Everything in Vivado, one command (laptop, ~4–6 h): other FPGAs, clock and memory sweep, power, tamper bitstream | `python hardware/vivado/run_vivado_day.py --steps xsim ooc lanes power parts bd_tamper parse --periods 8.0 7.0 6.667 --maxw 9 10 --parallel 2` | `vivado_results_<date>.zip` |
 | X13 | Tamper debounce (simulation) | `make one T=hardware/tb/test_axis_tamper.py` | — |
+
+**On Kaggle in one run:** everything above except Vivado is `JOB = "journal"` in `software/system/kaggle/kaggle_runs.py` (GPU T4, ~6–7 h, `journal_results.zip`).
 
 Get the YuNet face model (X17) once from `github.com/opencv/opencv_zoo`, at `models/face_detection_yunet/face_detection_yunet_2023mar.onnx`. OpenCV 5 no longer ships the Haar cascades.
 

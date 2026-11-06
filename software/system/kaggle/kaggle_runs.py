@@ -12,11 +12,13 @@ are in the docstring at the start of its block.
                      video identification from frame sizes                       (17 Oct, ~2-3 h, CPU only)
   JOB = "benchmark"  SVE-Bench: ours and four published schemes under the same four attacks, every
                      source                                                       (17 Oct, ~30-45 min, CPU only)
+  JOB = "journal"    the journal's software phase on branch journal-version: Xiph, privacy, size, faults,
+                     EtC/Tang, containers, ASIC, rekey, cameras, repeats, learned attacker (6 Nov, ~6-7 h, GPU)
 
 The first four have been run; their results are in results/ (simulation, extra, research, final).
 Each block below is the original script, byte for byte apart from the indentation.
 """
-JOB = "benchmark"
+JOB = "journal"
 
 # ==================================================================================================
 # JOB = "complete"   (was software/system/kaggle/kaggle_complete.py)
@@ -1278,5 +1280,216 @@ QUICK = True: 3-minute smoke test.
     print(f"\n{len(LOG) - len(fails)} passed, {len(fails)} failed, {(time.time() - T_START) / 3600:.2f} h")
     print("Download benchmark_results.zip from the Output tab.")
 
+# ==================================================================================================
+# JOB = "journal"   every journal experiment that needs no board and no Vivado, GPU included (6 Nov 2026)
+# ==================================================================================================
+elif JOB == "journal":
+    """The software phase of docs/JOURNAL_RUNBOOK.md in ONE Kaggle run (GPU T4), branch journal-version.
+
+HOW TO RUN
+  1. Notebook settings: Internet ON (phone-verified account), Accelerator GPU T4 (x1 is enough).
+  2. Optional: + Add Input -> your private clips dataset (more training video for the learned attacker;
+     frames of private clips are never saved, only numbers).
+  3. Paste this whole file into ONE code cell, JOB = "journal" -> Save Version -> "Save & Run All (Commit)".
+     The commit runs in the background (browser can be closed) up to Kaggle's 12 h limit.
+  4. Download journal_results.zip from the version's Output tab. It is rewritten after every step, so a
+     crash or the time limit still leaves everything finished before it.
+  QUICK = True first: a ~20 min smoke test of every step (tiny sizes; its numbers mean nothing).
+
+WHAT IT RUNS (X = experiment number in docs/JOURNAL_RUNBOOK.md), estimated time on 4 CPU cores + T4:
+  setup     clone, pip, Xiph sequences (X6), open Blender clips, YuNet face model       ~10 min
+  X6/X13    standard metrics on the six Xiph CIF sequences                               ~30 min
+  X17       privacy metrics (SSIM, LPIPS on the GPU, edges, face recall) on four of them ~60 min
+  X7        size overhead and padding, q 50/75/90, three sequences                       ~30 min
+  X16       faults before / after the tag (300 per site)                                 ~20 min
+  X19       SVE-Bench with EtC and Tang, Foreman and Hall Monitor                        ~40 min
+  X20/X24   decoders + containers; SRTP/DTLS/ChaCha/Ascon cost                           ~10 min
+  X12       ASIC area, sky130 and Nangate 45 nm (Yosys from pip)                         ~10 min
+  X25/X22/X3  rekey under load; 1/2/4 cameras; attack suite 5 times                      ~60 min
+  X18       learned attacker (GPU): open clips + Xiph -> Foreman / Hall Monitor          ~2-3 h
+  total about 6-7 h; the GPU part runs last so the CPU results are safe first.
+NOT HERE: Vivado (not installable on Kaggle: run hardware/vivado/run_vivado_day.py on the laptop) and the
+board phase.
+"""
+    # ============================ SETTINGS =======================================
+    QUICK = False
+    REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
+    BRANCH = "journal-version"
+    XIPH = ["akiyo_cif", "foreman_cif", "news_cif", "hall_monitor_cif", "mobile_cif", "mother_daughter_cif"]
+    FACES = ["foreman_cif", "akiyo_cif", "mother_daughter_cif", "hall_monitor_cif"]     # X17 (people in view)
+    OPEN_CLIPS = {
+        "sintel_trailer": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
+        "tearsofsteel": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+    }
+    YUNET = ("https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/"
+             "face_detection_yunet_2023mar.onnx")
+    RUN = dict(metrics=True, privacy=True, size=True, faults=True, bench=True, compliance=True, asic=True,
+               link=True, learned=True)
+    # =============================================================================
+
+    import glob, json, os, pathlib, re, shutil, subprocess, sys, time, urllib.request
+
+    T_START = time.time()
+    ON_KAGGLE = os.path.exists("/kaggle")
+    WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "/tmp/kjwork"))
+    WORK.mkdir(parents=True, exist_ok=True)
+    QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
+    REPO, OUT = WORK / "repo", "sim_out/journal"
+    ENV = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONPATH": f"{REPO}/software:{REPO}"}
+    LOG = []
+
+    def sh(cmd, sec, step, tail=12, cwd=None):
+        t0 = time.time()
+        print(f"\n=== [{sec}] {step}   (t = {(t0 - T_START) / 60:.0f} min)\n$ {cmd}", flush=True)
+        p = subprocess.run(cmd, shell=True, cwd=cwd or REPO, env=ENV, capture_output=True, text=True)
+        print("\n".join((p.stdout + p.stderr).strip().splitlines()[-tail:]))
+        LOG.append((sec, step, "PASS" if p.returncode == 0 else "FAIL", round(time.time() - t0, 1)))
+        print(f"--> {LOG[-1][2]} in {LOG[-1][3]:.0f} s", flush=True)
+        return p.returncode == 0
+
+    def checkpoint():
+        res = WORK / "journal_results"
+        if res.exists():
+            shutil.rmtree(res)
+        res.mkdir()
+        if (REPO / OUT).exists():
+            shutil.copytree(REPO / OUT, res / "journal",
+                            ignore=shutil.ignore_patterns("*.npz", "*.pt", "events.jsonl", "lib", "*.lib"))
+        fc = REPO / "software" / "system" / "results" / "format_compliance.md"
+        if fc.exists():
+            shutil.copy(fc, res / "format_compliance.md")
+        for f in glob.glob(f"{DATA}/*/manifest.md"):
+            shutil.copy(f, res / "xiph_manifest.md")
+        (res / "run_log.json").write_text(json.dumps(dict(log=LOG, minutes=round((time.time() - T_START) / 60, 1),
+                                                          quick=QUICK, branch=BRANCH), indent=1))
+        shutil.make_archive(str(WORK / "journal_results"), "zip", res)
+        print(f"[checkpoint] journal_results.zip {round((WORK / 'journal_results.zip').stat().st_size / 1e6, 1)} MB",
+              flush=True)
+
+    def fetch(url, dest):
+        if dest.exists() and dest.stat().st_size > 0:
+            return True
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=120) as r, open(dest, "wb") as f:
+                shutil.copyfileobj(r, f)
+            return dest.stat().st_size > 1000
+        except Exception as e:
+            print(f"  download failed: {url}: {e}")
+            if dest.exists():
+                dest.unlink()
+            return False
+
+    # ============================ 0. SETUP =======================================
+    if REPO.exists():
+        shutil.rmtree(REPO)
+    if not sh(f"git clone --depth 1 -b {BRANCH} {REPO_URL} {REPO}", "setup", f"clone ({BRANCH})", cwd=WORK, tail=2):
+        raise SystemExit(f"could not clone branch {BRANCH}")
+    sh("python -m pip install -q -e . cryptography scikit-image opencv-python-headless pillow matplotlib tomli "
+       "numpy scipy kyber-py lpips yowasp-yosys", "setup", "pip install", tail=2)
+    try:
+        import torch
+        HAVE_GPU = torch.cuda.is_available()
+        print("GPU:", torch.cuda.get_device_name(0) if HAVE_GPU else "none")
+    except Exception:
+        HAVE_GPU = False
+    DATA = WORK / "data"
+    DATA.mkdir(exist_ok=True)
+    xiph = XIPH[:2] if QUICK else XIPH
+    sh(f"python software/scripts/get_xiph.py {' '.join(xiph)} --out {DATA}/xiph" + (" --frames 30" if QUICK else ""),
+       "setup", "Xiph test sequences (X6)", tail=10)
+    SEQ = {n: str(DATA / "xiph" / f"{n}.mp4") for n in xiph if (DATA / "xiph" / f"{n}.mp4").exists()}
+    yunet = DATA / "face_detection_yunet_2023mar.onnx"
+    FACE = f"--face-model {yunet}" if fetch(YUNET, yunet) else ""
+    OPEN = {}
+    if not QUICK:
+        for name, url in OPEN_CLIPS.items():
+            dest = DATA / (name + pathlib.Path(url).suffix)
+            if fetch(url, dest):
+                OPEN[name] = str(dest)
+    found = sorted({f for e in ("mp4", "mkv", "avi", "mov", "webm")
+                    for f in glob.glob(f"/kaggle/input/**/*.{e}", recursive=True)}) if ON_KAGGLE else []
+    PRIVATE = {re.sub(r"[^A-Za-z0-9_-]+", "_", pathlib.Path(f).stem): f for f in found}
+    print("Xiph:", list(SEQ), "| open:", list(OPEN), "| private:", list(PRIVATE), flush=True)
+    checkpoint()
+    CIF = "--size 352x288"
+
+    # ============================ 1. CPU EXPERIMENTS ==============================
+    if RUN["metrics"]:
+        for n, v in SEQ.items():
+            sh(f"python experiments/standard_metrics.py --video '{v}' {CIF} --frames {2 if QUICK else 24} "
+               f"--stride {5 if QUICK else 12} --name {n} --out {OUT}/standard_metrics", "X6", f"standard metrics {n}")
+        checkpoint()
+    if RUN["privacy"]:
+        for n in [f for f in FACES if f in SEQ]:
+            sh(f"python experiments/privacy_metrics.py --video '{SEQ[n]}' {CIF} --frames {2 if QUICK else 40} "
+               f"--stride {5 if QUICK else 7} {FACE} --name {n} --out {OUT}/privacy_metrics", "X17", f"privacy {n}")
+            checkpoint()
+    if RUN["size"]:
+        for n in [f for f in ("foreman_cif", "akiyo_cif", "mobile_cif") if f in SEQ]:
+            sh(f"python experiments/size_overhead.py --source '{SEQ[n]}' {CIF} --frames {2 if QUICK else 50} "
+               f"--stride 5 --quality 50 75 90 --name {n} --out {OUT}/size_overhead", "X7", f"size overhead {n}")
+        checkpoint()
+    if RUN["faults"]:
+        src = SEQ.get("foreman_cif", "synthetic")
+        sh(f"python experiments/fault_pre_tag.py --source '{src}' {CIF} --frames {2 if QUICK else 10} "
+           f"--faults {5 if QUICK else 300} --name foreman --out {OUT}/fault_pre_tag", "X16", "faults around the tag")
+        checkpoint()
+    if RUN["bench"]:
+        for n in [f for f in ("foreman_cif", "hall_monitor_cif") if f in SEQ]:
+            sh(f"python experiments/benchmark_suite.py --video '{SEQ[n]}' --frames {2 if QUICK else 6} --name {n} "
+               f"--out {OUT}/benchmark_suite", "X19", f"SVE-Bench with EtC and Tang, {n}", tail=20)
+            checkpoint()
+    if RUN["compliance"]:
+        sh("python -m system.figures.format_compliance", "X20", "decoders and containers", tail=10)
+        sh(f"python -m system.baselines.stream_protection --source '{SEQ.get('foreman_cif', 'synthetic')}' --sizes 352x288 "
+           f"--frames {3 if QUICK else 30} --out {OUT}/stream_protection", "X24", "SRTP / DTLS / ChaCha / Ascon", tail=12)
+        checkpoint()
+    if RUN["asic"]:
+        sh(f"python experiments/asic_estimate.py --out {OUT}/asic_estimate" + (" --blocks ascon_round" if QUICK else ""),
+           "X12", "ASIC area (sky130, Nangate 45)", tail=16)
+        checkpoint()
+    if RUN["link"]:
+        sc = "experiments/scenarios/quick.json" if QUICK else "experiments/scenarios/full_suite.json"
+        sh(f"python experiments/rekey_load.py --out {OUT}/rekey_load", "X25", "rekey under load", tail=14)
+        checkpoint()
+        sh(f"python experiments/multi_camera.py --cameras 1 2 {'' if QUICK else '4'} --out {OUT}/multi_camera",
+           "X22", "several cameras", tail=8)
+        checkpoint()
+        sh(f"python experiments/repeat_runs.py --scenario {sc} --reps {1 if QUICK else 5} --out {OUT}/repeat_runs",
+           "X3", "attack suite repeated", tail=20)
+        checkpoint()
+
+    # ============================ 2. GPU: STRONGER LEARNED ATTACKER ===============
+    if RUN["learned"] and (HAVE_GPU or QUICK):
+        test = [SEQ[n] for n in ("foreman_cif", "hall_monitor_cif") if n in SEQ]
+        train = list(OPEN.values()) + [SEQ[n] for n in SEQ if SEQ[n] not in test]
+        args = ("--modes E2 E5 --size 96x64 --frames 60 --test-frames 40 --stride 6 --epochs 1" if QUICK else
+                "--modes E1 E2 E4 E5 --size 160x128 --frames 6000 --test-frames 400 --stride 2 --epochs 35 --width 48")
+        if train and test:
+            sh(f"python experiments/learned_attack.py --train-source '{','.join(train)}' --test-source '{','.join(test)}' "
+               f"{args} --out {OUT}/learned_open_xiph", "X18", "learned attacker: open clips + Xiph -> Foreman/Hall",
+               tail=14)
+            checkpoint()
+        if PRIVATE and not QUICK:                       # more training video; examples (private frames) removed
+            sh(f"python experiments/learned_attack.py --train-source '{','.join(train + list(PRIVATE.values()))}' "
+               f"--test-source '{','.join(test)}' {args} --out {OUT}/learned_all", "X18", "learned attacker: + private clips",
+               tail=14)
+            for f in glob.glob(f"{REPO}/{OUT}/learned_all/examples_*.png"):
+                os.remove(f)
+            checkpoint()
+    elif RUN["learned"]:
+        print("No GPU: learned attacker skipped (Accelerator: GPU T4).")
+
+    # ============================ SUMMARY ========================================
+    checkpoint()
+    w = max(len(s) for _, s, _, _ in LOG)
+    print("\n" + "\n".join(f"{sec:<10}{s:<{w + 2}}{st:<6}{t:>7.0f} s" for sec, s, st, t in LOG))
+    fails = [f"{sec}: {s}" for sec, s, st, _ in LOG if st != "PASS"]
+    print(f"\n{len(LOG) - len(fails)} passed, {len(fails)} failed, {(time.time() - T_START) / 3600:.2f} h")
+    if fails:
+        print("FAILED:", *fails, sep="\n  ")
+    print("Download journal_results.zip from the Output tab.")
+
 else:
-    raise SystemExit(f"unknown JOB {JOB!r}: complete | remaining | research | final | references | benchmark")
+    raise SystemExit(f"unknown JOB {JOB!r}: complete | remaining | research | final | references | benchmark | journal")
