@@ -305,6 +305,8 @@ def test_benchmark_schemes_decode_invert_and_rank():
     import benchmark_suite as B
     frames = [make_image(160, 128, "scene", seed=s) for s in (1, 2, 3)]   # 80 MCUs: enough blocks for a stable correlation
     ans = [analyse_frame(f) for f in frames]
+    for an, f in zip(ans, frames):
+        an.rgb = f                     # pixel-domain schemes (EtC) scramble the picture itself, as evaluate() does
     for name, sc in B.SCHEMES.items():
         for ctr, an in enumerate(ans):
             jpeg, perm = sc["fn"](an, ctr)

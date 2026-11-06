@@ -17,6 +17,8 @@ Open a terminal where Vivado is on the PATH, then from the repository root:
                                          # run 5: + the contract-v3 lane encoder (OOC at 100/125/150 MHz,
                                          #   4 lanes at 100 MHz) and its overlay (64-bit pixel DMA)
     python hardware/vivado/run_vivado_day.py --steps ooc lanes power parse   # + power from simulated activity
+    python hardware/vivado/run_vivado_day.py --steps parts --parts artix7_100t zynqmp_zu3eg --periods 6.667
+                                         # journal X8: the encoders on other devices (portability table)
 If the overlay misses timing at --fclk, the block design is retried at 90 and then 80 MHz (--no-fallback
 turns this off). At the end, everything to send back is packed into vivado_results_<date>.zip in the
 repository root (summary, result tables, timing/utilisation/power reports; no bitstream).
@@ -632,6 +634,30 @@ def step_ooc(a):
                 print("fmax run skipped: slack at 100 MHz is too small to suggest a faster clock")
 
 
+# Other devices for the portability table (journal experiment X8): all are in the free Vivado edition.
+PARTS = {"artix7_35t": "xc7a35tcpg236-1", "artix7_100t": "xc7a100tcsg324-1", "spartan7_50": "xc7s50csga324-1",
+         "zynq7010": "xc7z010clg400-1", "zynqmp_zu3eg": "xczu3eg-sbva484-1-e"}
+
+
+def part_jobs(names, periods=()):
+    """OOC jobs of the v2 encoder and the 4-lane v3 encoder on other devices, at 100 MHz and each period."""
+    jobs = []
+    for n in names:
+        dev = PARTS.get(n, n)
+        for per in ["10.0"] + [str(p) for p in periods]:
+            sfx = "" if per == "10.0" else f"_{per}ns"
+            jobs.append((f"ooc_part_{n}{sfx}", "hardware/vivado/vivado_ooc.tcl", f"secure_jpeg_top {per} PART {dev}"))
+            jobs.append((f"ooc_part_{n}_lanes4{sfx}", "hardware/vivado/vivado_ooc.tcl",
+                         f"secure_jpeg_lanes_top {per} LANES 4 LOG_L 2 LOG_MAXW 10 PART {dev}"))
+    return jobs
+
+
+def step_parts(a):
+    """The encoders on other FPGAs (--parts): utilisation and slack per device, for the portability table.
+    The percentages in the parse table refer to the xc7z020; each run's utilization.txt has the device's own."""
+    vivado_many(a, part_jobs(a.parts or list(PARTS), a.periods))
+
+
 def step_lanes(a):
     """Contract-v3 lane encoder: area and timing (OOC). 2 lanes with 2048-pixel lines (720p) and 4 lanes
     with 1024-pixel lines (640x480, the PYNQ-Z2 image), each at 100 MHz and at every --periods clock."""
@@ -825,7 +851,7 @@ def day_main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["xsim", "ooc", "bd", "parse"],
                     choices=["xsim", "ooc", "lanes", "bd", "bd_lanes", "bd_lanes4", "bd_lanes4hd", "bd_lanes4yuyv",
-                             "bd_tamper", "power", "parse"])
+                             "bd_tamper", "power", "parts", "parse"])
     ap.add_argument("--power-size", default="320x240",
                     help="WxH of the scene frame whose switching activity the power step records")
     ap.add_argument("--blocks", action="store_true", help="also implement each main block on its own")
@@ -835,6 +861,9 @@ def day_main(argv=None):
                     help="also run the encoder at these clock periods in ns (clock sweep, e.g. 8.0 6.667)")
     ap.add_argument("--maxw", type=int, nargs="*", default=[],
                     help="also run the encoder with LOG_MAXW = these values (memory sweep, e.g. 9 10)")
+    ap.add_argument("--parts", nargs="*", default=[],
+                    help=f"with --steps parts: devices to try (names {', '.join(PARTS)} or part numbers; "
+                         "default all)")
     ap.add_argument("--jobs", type=int, default=2, help="parallel runs in the block design (each ~2 GB RAM)")
     ap.add_argument("--only", nargs="+", default=[],
                     help="only the out-of-context runs / power runs whose name contains one of these words, "

@@ -8,6 +8,9 @@ that is available on this machine:
   OpenCV (libjpeg-turbo)    cv2.imdecode
   scikit-image / imageio    if installed
   ffmpeg / ffprobe          decode the MJPEG clip (what VLC uses underneath), if on PATH
+  containers                the clip stream-copied (no re-encoding) into AVI, Matroska and QuickTime/MP4 by
+                            ffmpeg, then decoded by ffmpeg and read by OpenCV's VideoCapture (all frames, right
+                            size); this is how recorders and NVRs store MJPEG (journal experiment X20)
   Chromium                  loads the JPEG in a real browser via Playwright, if installed
 "yes" = decoded to the right size without error. Writes software/system/results/format_compliance.md.
 """
@@ -55,6 +58,43 @@ def ffmpeg_mjpeg(clip, w, h):
         r = subprocess.run(["ffmpeg", "-v", "error", "-f", "mjpeg", "-i", f.name, "-f", "null", "-"],
                            capture_output=True, text=True, timeout=60)
         return r.returncode == 0 and not r.stderr.strip()
+
+
+CONTAINERS = {"AVI": ".avi", "MKV": ".mkv", "MOV": ".mov"}
+
+
+def mux(clip, ext, tmpdir):
+    """Stream-copy an MJPEG clip into a container; returns the file path or None if ffmpeg refuses."""
+    src, dst = Path(tmpdir) / "clip.mjpeg", Path(tmpdir) / f"clip{ext}"
+    src.write_bytes(clip)
+    r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "mjpeg", "-framerate", "25", "-i", str(src),
+                        "-c:v", "copy", str(dst)], capture_output=True, text=True, timeout=60)
+    return dst if r.returncode == 0 and dst.exists() else None
+
+
+def container_checks(clip, n, w, h):
+    """{column: ok} for every container: ffmpeg decodes it without error, OpenCV reads n frames of w x h."""
+    import cv2
+    res = {}
+    with tempfile.TemporaryDirectory() as d:
+        for name, ext in CONTAINERS.items():
+            f = mux(clip, ext, d)
+            if f is None:
+                res[f"ffmpeg ({name})"] = res[f"OpenCV ({name})"] = False
+                continue
+            r = subprocess.run(["ffmpeg", "-v", "error", "-i", str(f), "-f", "null", "-"],
+                               capture_output=True, text=True, timeout=60)
+            res[f"ffmpeg ({name})"] = r.returncode == 0 and not r.stderr.strip()
+            cap, k, ok = cv2.VideoCapture(str(f)), 0, True
+            while True:
+                got, fr = cap.read()
+                if not got:
+                    break
+                k += 1
+                ok &= fr.shape[:2] == (h, w)
+            cap.release()
+            res[f"OpenCV ({name})"] = ok and k == n
+    return res
 
 
 def chromium(jpgs):
@@ -105,6 +145,11 @@ def main():
     if shutil.which("ffmpeg"):
         for m in MODES:
             table[m]["ffmpeg (MJPEG clip)"] = ffmpeg_mjpeg(clips[m], w, h)
+        for m in MODES:
+            try:
+                table[m].update(container_checks(clips[m], len(frames), w, h))
+            except Exception as e:                               # report, never hide
+                table[m]["containers"] = f"error: {type(e).__name__}"
     try:
         for m, ok in chromium({m: (jpgs[m], w, h) for m in MODES}).items():
             table[m]["Chromium"] = ok

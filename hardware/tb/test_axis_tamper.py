@@ -4,6 +4,9 @@ Random scan-like frames (with 0xFF00 stuffing and RST markers), random valid gap
 Checks: nothing changes while SW1 (enable) is off; a trigger pulse changes exactly one bit of the next
 frame that has a safe beat; continuous mode changes one bit of every such frame; marker bytes are never
 touched; valid / ready / last / keep pass through; the counter equals the number of changed frames.
+Debounce (journal X13, test `bounce`): a second trigger edge inside the lockout window (a bouncing button
+after the shot was used) changes nothing; an edge after the window fires again. Both tests build with a short
+lockout (LOCK_BITS 4 / 7) instead of the board's 10 ms.
 """
 import cocotb
 from cocotb.triggers import FallingEdge, RisingEdge, ClockCycles
@@ -134,5 +137,44 @@ async def tamper_injector(dut):
     assert int(dut.led.value) & 0b0101 == 0b0101, "LED0 (enabled) and LED2 (continuous) must be on"
 
 
+async def pulse_btn(dut):
+    await FallingEdge(dut.clk)
+    dut.btn.value = 1
+    await FallingEdge(dut.clk)
+    dut.btn.value = 0
+
+
+@cocotb.test()
+async def bounce(dut):
+    """LOCK_BITS = 7: edges less than 127 clocks after an accepted one are ignored."""
+    rng = rng_for(dut)
+    for s in ("s_axis_tvalid", "s_axis_tdata", "s_axis_tkeep", "s_axis_tlast", "m_axis_tready", "pmod_trig"):
+        getattr(dut, s).value = 0
+    dut.btn.value = 0
+    dut.sw.value = 0b10
+    await start(dut)
+    # bytes below 0x7F: every beat is safe whatever bit is chosen, so a shot always lands in its frame
+    frame = lambda: bytes(rng.randrange(0x7F) for _ in range(40))
+    await pulse_btn(dut)                                   # accepted: tampers frame A
+    await ClockCycles(dut.clk, 4)                          # synchroniser + edge detector, then the decision
+    f = frame()
+    assert diff(f, await send_frame(dut, rng, f), 0) == 1, "frame A: the accepted shot did nothing"
+    await pulse_btn(dut)                                   # a bounce (well inside 127 clocks): ignored
+    await ClockCycles(dut.clk, 4)
+    f = frame()
+    assert diff(f, await send_frame(dut, rng, f), 1) == 0, "frame B changed: a bounce fired a second shot"
+    await ClockCycles(dut.clk, 160)                        # lockout over
+    await pulse_btn(dut)
+    await ClockCycles(dut.clk, 4)
+    f = frame()
+    assert diff(f, await send_frame(dut, rng, f), 2) == 1, "frame C: an edge after the lockout did nothing"
+    await ClockCycles(dut.clk, 2)
+    assert int(dut.tampered_frames.value) == 2
+
+
 def test_axis_tamper():
-    run_sim("axis_tamper", "test_axis_tamper", testcase="tamper_injector")
+    run_sim("axis_tamper", "test_axis_tamper", parameters={"LOCK_BITS": 4}, testcase="tamper_injector")
+
+
+def test_axis_tamper_bounce():
+    run_sim("axis_tamper", "test_axis_tamper", parameters={"LOCK_BITS": 7}, testcase="bounce", build_tag="_lock7")

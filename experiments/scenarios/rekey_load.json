@@ -1,0 +1,17 @@
+{
+  "name": "rekey_load",
+  "about": "~100 s, no attack: an operator rekey every 10 s, first on a clean link, then with 3 % loss. Each rekey ratchets the video key forward; the receiver follows from the epoch in the next valid frame. Measures frames lost around each rekey (experiments/rekey_load.py).",
+  "end_s": 100,
+  "steps": [
+    {"at": 10, "sender": {"cmd": "rekey"}},
+    {"at": 20, "sender": {"cmd": "rekey"}},
+    {"at": 30, "sender": {"cmd": "rekey"}},
+    {"at": 40, "sender": {"cmd": "rekey"}},
+    {"at": 45, "impair": {"loss": 0.03}},
+    {"at": 50, "sender": {"cmd": "rekey"}},
+    {"at": 60, "sender": {"cmd": "rekey"}},
+    {"at": 70, "sender": {"cmd": "rekey"}},
+    {"at": 80, "sender": {"cmd": "rekey"}},
+    {"at": 85, "impair": {"loss": 0.0}}
+  ]
+}

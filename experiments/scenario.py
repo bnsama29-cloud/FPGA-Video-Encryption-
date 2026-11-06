@@ -23,7 +23,10 @@ event, and writes to the run folder:
 Scenario file (JSON):
     {"name": "...", "end_s": 120,
      "steps": [{"at": 15, "attack": "bitflip", "duration": 8, "rate": 1.0},
-               {"at": 40, "impair": {"loss": 0.05}}, ...]}
+               {"at": 40, "impair": {"loss": 0.05}},
+               {"at": 50, "sender": {"cmd": "rekey"}}, ...]}
+    step kinds: attack (channel), impair (channel), sender (an operator command to the sender's control
+    port: rekey, mode, policy, fps, pause), hw (experiments/hw_tamper.py)
 """
 import argparse
 import csv
@@ -173,6 +176,8 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
                                   duration=step.get("duration", 10), rate=step.get("rate", 1.0))
             if "impair" in step:
                 wire.send_control(cfg, "control", cmd="impair", **step["impair"])
+            if "sender" in step:                         # an operator command to the sender, e.g. {"cmd": "rekey"}
+                wire.send_control(cfg, "sender_control", **step["sender"])
             if "hw" in step:
                 if hw_trigger is None:
                     raise RuntimeError("the scenario has hardware steps: run it with experiments/hw_tamper.py")

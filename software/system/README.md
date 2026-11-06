@@ -21,13 +21,14 @@ software/system/
 │   └── arm_baseline.py           timing against libjpeg-turbo alone and with whole-file Ascon / AES-GCM
 ├── baselines/
 │   ├── bench_software_codecs.py  software codecs and ciphers per frame on the host
-│   └── energy_table.py           energy per frame from measured fps and power (or Vivado's estimate)
+│   ├── energy_table.py           energy per frame from measured fps and power (or Vivado's estimate)
+│   └── stream_protection.py      SRTP, DTLS, ChaCha20-Poly1305 and whole-frame Ascon next to ours (journal X24)
 ├── attacks/
 │   ├── jigsaw_attack.py          greedy jigsaw solver against E5
 │   ├── mst_jigsaw.py             minimum-spanning-tree solver with gradient compatibility
 │   └── jigsaw_gate.py            check that the solvers work on unencrypted tiles before scoring E5
 ├── figures/
-│   ├── format_compliance.py      which decoders open each level
+│   ├── format_compliance.py      which decoders and containers (AVI, MKV, MOV) open each level
 │   ├── visual_security_grid.py   no key / eavesdropper / key holder, per level
 │   └── results_tables.py           result tables from the result files
 ├── kaggle/kaggle_runs.py         reruns the GPU and long-CPU experiments in one cloud session

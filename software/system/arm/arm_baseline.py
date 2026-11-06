@@ -12,8 +12,9 @@ What is timed, per size, median over --frames frames (wall clock on the PS, Pyth
   libjpeg-turbo                       cv2.imencode q75 4:2:0: the best software JPEG, no security
   + Ascon-AEAD128, whole file (C)     the obvious secure alternative: unplayable without the key
   + AES-128-GCM, whole file           OpenSSL via `cryptography` if installed (the A9 has no AES unit)
-and, from --pl-json, the PL round trip and the fabric-only time (CYCLES register) of the same sizes, so
-the speed-ups are like for like. Before timing, a gate checks that the PS encoder is bit-exact with the
+and, from --pl-json, the PL round trip, the zero-copy round trip (first_contact.py --zero-copy: the frame
+is already in the DMA buffer, as a camera driver would leave it) and the fabric-only time (CYCLES register)
+of the same sizes, so the speed-ups are like for like. Before timing, a gate checks that the PS encoder is bit-exact with the
 golden model on a small frame in every mode (a fast wrong baseline is as worthless as a fast wrong FPGA).
 Writes sim_out/board/arm_baseline.json and .md.
 """
@@ -81,8 +82,9 @@ def med_ms(fn, frames):
     return 1000 * statistics.median(t)
 
 
-def pl_rows(path):
-    """{size: {mode: row}} from a first_contact.json measured on the board (never the mock)."""
+def pl_rows(path, zero_copy=False):
+    """{size: {mode: row}} from a first_contact.json measured on the board (never the mock). zero_copy=True
+    takes the rows of `first_contact.py --zero-copy` (frame already in the DMA buffer, as a camera writes it)."""
     if not path or not Path(path).exists():
         return {}
     d = json.loads(Path(path).read_text())
@@ -90,7 +92,7 @@ def pl_rows(path):
         return {}
     out = {}
     for r in d.get("speed", []):
-        if not r.get("zero_copy"):
+        if bool(r.get("zero_copy")) == zero_copy:
             out.setdefault(r["size"], {})[r["mode"]] = r
     return out
 
@@ -124,6 +126,7 @@ def main():
         aes = None
     on_arm = info["machine"].lower().startswith(("arm", "aarch"))
     pl = pl_rows(a.pl_json) if on_arm else {}          # never set laptop numbers against the board's
+    plz = pl_rows(a.pl_json, zero_copy=True) if on_arm else {}
     res = dict(cpu=info, quality=a.quality, frames=a.frames, sizes={}, pl_json=a.pl_json if pl else None)
     md = [f"# A3: ARM baseline on `{info['host']}` ({info.get('cpu')}, {info.get('cores')} cores, "
           f"{info['machine']})", "", f"Compiler flags: `{info['cflags']}`. Median of {a.frames} frames, "
@@ -168,6 +171,11 @@ def main():
                 if p[mode].get("fabric_ms"):
                     rows[f"PL fabric only, E{mode}"] = dict(kind="pl_fabric", mode=mode, ms=p[mode]["fabric_ms"],
                                                             playable=True, authenticated=True)
+        pz = plz.get(sz, {})                # journal X4: without the copy into the DMA buffer
+        for mode in a.modes:
+            if mode in pz:
+                rows[f"PL (FPGA) round trip, zero-copy, E{mode}"] = dict(
+                    kind="pl_zero_copy", mode=mode, ms=pz[mode]["full_ms"], playable=True, authenticated=True)
         for r in rows.values():
             r["fps"] = 1000 / r["ms"] if r["ms"] else None
         res["sizes"][sz] = rows
@@ -176,7 +184,8 @@ def main():
         md += [f"| {k} | {r['ms']:.2f} | {r['fps']:.1f} | {'yes' if r['playable'] else 'no'} | "
                f"{'yes' if r['authenticated'] else 'no'} |" for k, r in rows.items()]
         ps2 = rows.get(f"ours on the PS, E2, {max(a.threads)} cores") or rows.get("ours on the PS, E2, 1 core")
-        for kind, label in (("pl_round_trip", "round trip"), ("pl_fabric", "fabric only")):
+        for kind, label in (("pl_round_trip", "round trip"), ("pl_zero_copy", "zero-copy round trip"),
+                            ("pl_fabric", "fabric only")):
             plr = next((r for r in rows.values() if r["kind"] == kind and r["mode"] == 2), None)
             if ps2 and plr:
                 md.append(f"\nSpeed-up of the PL ({label}) over our encoder on the PS ({ps2['threads']} cores), "

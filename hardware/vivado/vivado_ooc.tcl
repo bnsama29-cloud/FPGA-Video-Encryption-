@@ -9,6 +9,8 @@
 #   vivado -mode batch -source hardware/vivado/vivado_ooc.tcl -tclargs secure_jpeg_lanes_top 8.0 LANES 2 LOG_L 1
 #                                                     (contract-v3 lane encoder, any number of
 #                                                      parameter/value pairs after the period)
+#   vivado -mode batch -source hardware/vivado/vivado_ooc.tcl -tclargs secure_jpeg_top 10.0 PART xc7a100tcsg324-1
+#                                                     (another device: Artix-7, Spartan-7, Zynq UltraScale+)
 # Reports in sim_build/vivado_<top>[_<period>ns]/: utilization.txt, utilization_hier.txt,
 # timing.txt (WNS), power.txt (vectorless estimate). python hardware/vivado/run_vivado_day.py parse turns
 # them into the hardware table.
@@ -20,14 +22,19 @@ set period [expr {[llength $argv] > 1 ? [lindex $argv 1] : "10.0"}]
 # optional 3rd + 4th arguments: a top-level parameter and its value, e.g. LOG_MAXW 10 (memory sweep,
 # ). Two arguments, not LOG_MAXW=10: Windows cmd splits arguments at '=' (bug #19).
 # More pairs may follow (LANES 2 LOG_L 1 ...).
+# The pair PART <device> is not a parameter: it selects another FPGA (journal experiment X8, e.g.
+# PART xc7a100tcsg324-1); the reports then go to a folder ending in _part_<device>.
+set part xc7z020clg400-1
 set gens {}
 for {set i 2} {$i + 1 < [llength $argv]} {incr i 2} {
+    if {[lindex $argv $i] eq "PART"} { set part [lindex $argv [expr {$i + 1}]]; continue }
     lappend gens "[lindex $argv $i]=[lindex $argv [expr {$i + 1}]]"
 }
 set gen [join $gens " "]
 set out    sim_build/vivado_$top
 if {$period != 10.0} { set out ${out}_${period}ns }
 foreach g $gens { set out ${out}_[string tolower [string map {= ""} $g]] }
+if {$part ne "xc7z020clg400-1"} { set out ${out}_part_$part }
 file mkdir $out
 
 read_verilog [glob hardware/rtl/*.v]
@@ -55,7 +62,7 @@ foreach g $gens { lappend gopt -generic $g }
 # (EXCEPTION_ACCESS_VIOLATION) inside phys_opt_design on the 4-lane encoder at 150 and 166 MHz, twice
 # each (TESTING bug #38). run_vivado_day.py retries a job that crashed with SJPEG_IMPL=safe.
 set impl [expr {[info exists ::env(SJPEG_IMPL)] ? $::env(SJPEG_IMPL) : "perf"}]
-set sargs [list -top $top -part xc7z020clg400-1 -mode out_of_context -flatten_hierarchy rebuilt \
+set sargs [list -top $top -part $part -mode out_of_context -flatten_hierarchy rebuilt \
            -include_dirs hardware/rtl/include {*}$gopt]
 if {$impl eq "perf" || $impl eq "safe"} {
     if {[catch {synth_design {*}$sargs -retiming} err]} {

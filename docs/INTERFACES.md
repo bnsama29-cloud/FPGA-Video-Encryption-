@@ -198,7 +198,7 @@ Pins in `software/system/board/tamper_pynq_z2.xdc`.
 |---|---|
 | SW1 (M19) | enable; while down, the stream passes unchanged (every bit, valid, ready, last, keep) |
 | SW0 (M20) | continuous: one bit flipped in every frame |
-| BTN0 (D19) or rising edge on PMOD A pin 1 (Y18, 3.3 V, pulled down) | one shot: one bit of the next frame |
+| BTN0 (D19) or rising edge on PMOD A pin 1 (Y18, 3.3 V, pulled down) | one shot: one bit of the next frame. Edges within 2^`LOCK_BITS` - 1 clocks of an accepted one are ignored (parameter `LOCK_BITS`, default 20 = 10.5 ms at 100 MHz; journal branch, X13), so a bouncing button gives one shot; a trigger source faster than ~95 Hz loses shots |
 | LED0..3 (R14, P14, N16, M14) | enabled, shot pending, continuous, toggles per tampered frame |
 | BTN1 (D20) / BTN2 (L20) / BTN3 (L19) | protection level one down / one up (up to `defence.max_mode`) / back to the automatic policy. Read by the ARM through `software/system/board/axil_buttons.v`; `board_sender.py :: ButtonLevels` sends the sender's `mode` command (same as the dashboard), so the level reaches MODE and the authenticated APP11 header together, at the next defence window. The fabric never changes the mode itself. With `board_sender --buttons attacks` (`ButtonAttacks`) the same presses instead send the dashboard's `{"cmd": "attack", ...}` command to the attack node on the laptop (`link.host`, port `link.control`); default BTN1 replay, BTN2 splice, BTN3 flood (`--button-attacks`), 6 s each (`--attack-s`) |
 

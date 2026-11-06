@@ -9,6 +9,9 @@
 // Controls (PYNQ-Z2):  SW1 = enable (nothing is ever changed while SW1 is down)
 //                      SW0 = continuous: every frame is tampered
 //                      BTN0 or a rising edge on PMOD A pin 1 (JA1, 3.3 V only) = one shot: the next frame
+//                      Debounce (journal X13): after an accepted trigger edge, further edges are ignored for
+//                      2^LOCK_BITS - 1 clocks (default 20 bits: 10.5 ms at 100 MHz), so a bouncing button
+//                      gives one shot, not one per bounce that lands after the previous shot was used.
 //                      LED0 = enabled, LED1 = shot pending, LED2 = continuous, LED3 toggles per tampered frame
 // Which bit: byte 0 of the first safe beat from a pseudo-random beat 1..15 of the frame on (or the
 // last beat of a shorter frame), bit chosen by the same LFSR. Marker bytes are never touched (byte 0 = 0xFF, a flip
@@ -18,7 +21,9 @@
 // Everything else (valid, ready, last, keep, every other bit) passes through unchanged, combinationally.
 // Golden model: none (test equipment, not part of the encoder); hardware/tb/test_axis_tamper.py checks it.
 `default_nettype none
-module axis_tamper (
+module axis_tamper #(
+    parameter integer LOCK_BITS = 20    // trigger lockout 2^LOCK_BITS - 1 clocks (>= 1)
+) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 clk CLK" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF s_axis:m_axis, ASSOCIATED_RESET rst" *)
     input  wire        clk,
@@ -61,7 +66,13 @@ module axis_tamper (
     end
     wire en    = s_sw1[1];
     wire cont  = s_sw0[1];
-    wire shot  = (s_btn[1] && !btn_d) || (s_trg[1] && !trg_d);   // a bouncing button just re-arms
+    wire trig_edge = (s_btn[1] && !btn_d) || (s_trg[1] && !trg_d);
+    reg  [LOCK_BITS-1:0] lock;          // > 0: edges are bounces of the last accepted one
+    wire shot  = trig_edge && (lock == {LOCK_BITS{1'b0}});
+    always @(posedge clk)
+        if (rst)       lock <= {LOCK_BITS{1'b0}};
+        else if (shot) lock <= {LOCK_BITS{1'b1}};
+        else if (lock != {LOCK_BITS{1'b0}}) lock <= lock - 1'b1;
 
     // ---- free-running LFSR (x^16 + x^14 + x^13 + x^11 + 1)
     reg [15:0] lfsr;

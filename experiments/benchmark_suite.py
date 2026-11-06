@@ -22,6 +22,10 @@ helps them: the originals use AES-OFB, a 10-bit LFSR or unspecified generators)
                    Huffman table permuted inside each MCU; file-dependent IV = per frame [auer2013]
   Hirose RI=r      restart-marker extended blocks of r MCUs permuted + additional bits XORed (we XOR all of
                    them, an upper bound on their byte-pattern subset); keys K1, K2 fixed [hirose2024]
+  EtC              encryption-then-compression: 16x16 pixel blocks permuted, rotated/mirrored, negative-positive
+                   and RGB-shuffled before a standard JPEG coder; keys per frame [kurihara2015, chuman2018]
+  Tang             one secret permutation of the 64 coefficient positions replaces the zig-zag order, the same
+                   for every block and frame (DC splitting of the original not reproduced) [tang1996]
 
 ATTACKS (each gives the edge correlation of its picture or sketch with the original, 0 = nothing)
   A1 decode        the stream in a normal viewer
@@ -67,7 +71,7 @@ sys.path.insert(0, str(ROOT / "experiments"))
 from link.sources import open_source                                         # noqa: E402
 from model import ascon, hw                                                  # noqa: E402
 from model.container import build_jpeg, parse_jpeg                           # noqa: E402
-from model.entropy import (COMP_OF_BLOCK, Symbol, huffman_decode, huffman_encode, join_restart,  # noqa: E402
+from model.entropy import (COMP_OF_BLOCK, ZIGZAG, Symbol, huffman_decode, huffman_encode, join_restart,  # noqa: E402
                            run_length_encode, split_restart)
 from model.dct_quant import DEFAULT_QUALITY                                  # noqa: E402
 from model.jpeg import _shuffle_order, analyse_frame, package_frame         # noqa: E402
@@ -231,6 +235,56 @@ def s_hirose(ri):
     return fn
 
 
+def s_etc(an, ctr, key=KEY):
+    """Encryption-then-compression (Kurihara et al. 2015; steps as evaluated by Chuman and Kiya 2018): before
+    compression, 16x16 blocks (one MCU, so the JPEG grid does not split them) are permuted, each block is
+    rotated by 0/90/180/270 degrees and optionally mirrored, optionally negative-positive transformed
+    (255 - x), and its RGB components are shuffled; then a standard JPEG is coded. Keys per frame here
+    (the most favourable reading for the scheme)."""
+    if getattr(an, "rgb", None) is None:
+        raise ValueError("EtC needs the frame's pixels: set an.rgb before calling (evaluate() does)")
+    h, w = an.height, an.width
+    ks = stream_ks(6, ctr, key)
+    ph, pw = -(-h // 16) * 16, -(-w // 16) * 16
+    img = np.zeros((ph, pw, 3), np.uint8)
+    img[:h, :w] = an.rgb
+    img[h:, :w] = an.rgb[h - 1:h, :]
+    img[:, w:] = img[:, w - 1:w]
+    tiles = [img[r:r + 16, c:c + 16] for r in range(0, ph, 16) for c in range(0, pw, 16)]
+    order = keyed_perm(len(tiles), ks)
+    out = []
+    for i in order:
+        t = np.rot90(tiles[i], keyed_perm(4, ks)[0])
+        if ks.take(1):
+            t = t[:, ::-1]
+        if ks.take(1):
+            t = 255 - t
+        t = t[:, :, keyed_perm(3, ks)]
+        out.append(t)
+    cols = pw // 16
+    rows = [np.concatenate(out[r * cols:(r + 1) * cols], axis=1) for r in range(ph // 16)]
+    scrambled = np.ascontiguousarray(np.concatenate(rows, axis=0)[:h, :w])
+    an2 = analyse_frame(scrambled, quality=an.quality)
+    return jpeg_of(an2, an2.symbols), ("pixel_blocks", order)
+
+
+TANG_POSITIONS = 64
+
+
+def s_tang(an, ctr, key=KEY):
+    """Zig-zag permutation (Tang 1996): every 8x8 block is serialised with one secret permutation of the 64
+    coefficient positions instead of the zig-zag order, the same for every block and frame. (The original
+    also splits the DC value before permuting; that detail is not reproduced.)"""
+    perm = np.array(keyed_perm(TANG_POSITIONS, stream_ks(7, key=key)))
+    zz = np.asarray(ZIGZAG)
+    flat = an.quant.reshape(an.quant.shape[0], an.quant.shape[1], 64)
+    v = flat[:, :, zz]                                  # coefficients in zig-zag order
+    new = np.zeros_like(flat)
+    new[:, :, zz] = v[:, :, perm]                       # the coder now emits v[perm] in its zig-zag walk
+    q2 = new.reshape(an.quant.shape)
+    return jpeg_of(an, run_length_encode(q2)), ("coefficients", perm.tolist())
+
+
 E4F = dict(ac_all=True, dc_all=True)
 SCHEMES = {
     "plain":            dict(fn=s_plain, fields={}, stream=None, per_frame="-", auth=False, cite="-"),
@@ -245,6 +299,8 @@ SCHEMES = {
     "Auer":             dict(fn=s_auer, fields=dict(ac_all=True), stream=None, per_frame="yes", auth=False, cite="auer2013"),
     "Hirose RI=1":      dict(fn=s_hirose(1), fields=E4F, stream="frame", per_frame="no", auth=False, cite="hirose2024"),
     "Hirose RI=4":      dict(fn=s_hirose(4), fields=E4F, stream="frame", per_frame="no", auth=False, cite="hirose2024"),
+    "EtC":              dict(fn=s_etc, fields={}, stream=None, per_frame="yes", auth=False, cite="kurihara2015"),
+    "Tang":             dict(fn=s_tang, fields={}, stream=None, per_frame="no", auth=False, cite="tang1996"),
 }
 PERM_KIND = {"E5 (v2)": "segments", "E5 (v3, hw)": "segments", "Kishore": "blocks", "Auer": "mcu_inner",
              "Hirose RI=1": "segments", "Hirose RI=4": "segments"}   # public: part of each scheme's description
@@ -687,6 +743,8 @@ def main():
     for q in a.quality:
         ans = [analyse_frame(f, quality=q) for f in frames]
         ans_px = [analyse_frame(f, quality=q) for f in frames_px]
+        for an, f in zip(ans + ans_px, frames + frames_px):
+            an.rgb = f                                   # EtC works on pixels, before the encoder
         plain_bytes = [len(jpeg_of(an, an.symbols)) for an in ans]
         energies = [block_energy(y, (an.height // 8, an.width // 8)) for y, an in zip(y0s, ans)]
         k = known_frame(ans)

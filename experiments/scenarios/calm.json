@@ -1,0 +1,6 @@
+{
+  "name": "calm",
+  "about": "60 s with no attack and no impairment: the clean baseline for latency and load (experiments/multi_camera.py).",
+  "end_s": 60,
+  "steps": []
+}

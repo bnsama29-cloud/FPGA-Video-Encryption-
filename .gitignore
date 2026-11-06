@@ -8,6 +8,7 @@ results*/
 out_image/
 rx_frames/
 *.mp4
+*.y4m
 *.mjpeg
 receiver_log.csv
 sim_build/
