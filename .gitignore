@@ -68,3 +68,6 @@ docs/claude_chrome.txt
 # pip install -e . metadata
 *.egg-info/
 build/
+
+# Clawness (local Claude tooling state): never part of the project
+/.clawness/
