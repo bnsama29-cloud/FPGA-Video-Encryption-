@@ -1396,7 +1396,7 @@ board phase.
     DATA = WORK / "data"
     DATA.mkdir(exist_ok=True)
     xiph = XIPH[:2] if QUICK else XIPH
-    sh(f"python software/scripts/get_xiph.py {' '.join(xiph)} --out {DATA}/xiph" + (" --frames 30" if QUICK else ""),
+    sh(f"python software/scripts/get_xiph.py {' '.join(xiph)} --out {DATA}/xiph" + (" --frames 60" if QUICK else ""),
        "setup", "Xiph test sequences (X6)", tail=10)
     SEQ = {n: str(DATA / "xiph" / f"{n}.mp4") for n in xiph if (DATA / "xiph" / f"{n}.mp4").exists()}
     yunet = DATA / "face_detection_yunet_2023mar.onnx"
@@ -1464,7 +1464,7 @@ board phase.
     if RUN["learned"] and (HAVE_GPU or QUICK):
         test = [SEQ[n] for n in ("foreman_cif", "hall_monitor_cif") if n in SEQ]
         train = list(OPEN.values()) + [SEQ[n] for n in SEQ if SEQ[n] not in test]
-        args = ("--modes E2 E5 --size 96x64 --frames 60 --test-frames 40 --stride 6 --epochs 1" if QUICK else
+        args = ("--modes E2 E5 --size 96x64 --frames 60 --test-frames 40 --stride 1 --epochs 1" if QUICK else
                 "--modes E1 E2 E4 E5 --size 160x128 --frames 6000 --test-frames 400 --stride 2 --epochs 35 --width 48")
         if train and test:
             sh(f"python experiments/learned_attack.py --train-source '{','.join(train)}' --test-source '{','.join(test)}' "
