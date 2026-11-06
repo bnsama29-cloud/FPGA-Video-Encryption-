@@ -8,3 +8,4 @@
 | `JOURNAL_RUNBOOK.md` | The journal experiments X1–X30 in order: the software phase (laptop, Vivado, simulation), then the board phase, then the paper phase, each with its command and output folder. |
 | `LITERATURE.md` | The papers each journal experiment is measured against, each checked at its source (DOI), and the gaps still open. |
 | `RESEARCH.md` | Research notes R1-R8: throughput, lanes, rate control, change-driven coding, clock limits, size side channel, chosen plaintext; what held and what did not. |
+| `neuro/` | Paper 2 (event-camera encryption, branch `neuromorphic`): `README.md` (overview), `DESIGN.md` (contract n1), `LITERATURE.md` (verified references), `notes/` (source notes). |
