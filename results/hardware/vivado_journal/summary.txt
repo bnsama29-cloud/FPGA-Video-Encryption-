@@ -1,0 +1,537 @@
+git commit b45a23f11ac8943622076652f3a85ca8703d013d (with uncommitted changes), branch journal-version, implementation strategy perf
+bitstream secure_jpeg.bit  sha256 25cb8e7207096e944f5f5697f8c5265a55350124e6e0208a94a80d2c4c9b4f02  4045769 bytes
+bitstream secure_jpeg_lanes.bit  sha256 dacf0fd1954b5945bad4d686787b0d1bac6a1753852589730e694bcbf1c324c0  4045769 bytes
+bitstream secure_jpeg_lanes4.bit  sha256 7f1260af5daf72b0fcd923d8739414285a8e3bf9e705ad4d4d5f5dd0dee99344  4045769 bytes
+bitstream secure_jpeg_lanes4hd.bit  sha256 52ecb7f66f1aac74887d473238167a0f2c0748bf69e77f38967df4dbbf1f3815  4045769 bytes
+bitstream secure_jpeg_lanes4yuyv.bit  sha256 d38adc96f662357211100cb6604ecec68c167938ab036d1f9d5c635790de7cac  4045769 bytes
+bitstream secure_jpeg_lanes_tamper.bit  sha256 3d3154be762c0e1bc547870797142b91e371bc64d06fe8852f15f57ce852802f  4045769 bytes
+bitstream secure_jpeg.hwh  sha256 12b6c2fba74b3fb191f81f67eaafaa6cd10958ffd29f2487d9ee5a7b5c7cea78  319456 bytes
+bitstream secure_jpeg_lanes.hwh  sha256 b11f199f9cf90eff5917fd7f0372a65821a0376408430d11cc90161784790981  319699 bytes
+bitstream secure_jpeg_lanes4.hwh  sha256 f11259990a16a4f36d57aadc2ab3d529eb32f214b6816f10ac358da3e6ebc2a2  319699 bytes
+bitstream secure_jpeg_lanes4hd.hwh  sha256 abe91fa218006a738c6c15638322645bdd14ea6d75dba633a961d8498cc14e87  319699 bytes
+bitstream secure_jpeg_lanes4yuyv.hwh  sha256 a75ca44abd3d0c555a250eee4751ae13b760d9eb89d270ddebab6bfb60139905  319699 bytes
+bitstream secure_jpeg_lanes_tamper.hwh  sha256 50d912f18f62cc33f3247f1e2cbc301e2a67f00088e6947751f915029a462345  343599 bytes
+
+xsim_vectors                PASS     0.0 min   xsim_vectors.log
+xsim_run                    PASS     0.7 min   xsim_run.log
+xsim_check                  PASS     0.0 min   xsim_check.log
+xsim_vectors_v3             PASS     0.0 min   xsim_vectors_v3.log
+xsim_run_v3                 PASS     0.7 min   xsim_run_v3.log
+xsim_check_v3               PASS     0.0 min   xsim_check_v3.log
+xsim_vectors_v3l4           PASS     0.0 min   xsim_vectors_v3l4.log
+xsim_run_v3l4               PASS     0.3 min   xsim_run_v3l4.log
+xsim_check_v3l4             PASS     0.0 min   xsim_check_v3l4.log
+ooc_secure_jpeg_top         PASS     4.8 min   ooc_secure_jpeg_top.log
+ooc_period_8.0ns            PASS     9.3 min   ooc_period_8.0ns.log
+ooc_period_7.0ns            PASS    11.9 min   ooc_period_7.0ns.log
+ooc_period_6.667ns          PASS     7.6 min   ooc_period_6.667ns.log
+ooc_maxw9                   PASS     6.0 min   ooc_maxw9.log
+ooc_maxw10                  PASS     4.8 min   ooc_maxw10.log
+ooc_lanes2                  PASS     7.4 min   ooc_lanes2.log
+ooc_lanes2_8.0ns            PASS     7.6 min   ooc_lanes2_8.0ns.log
+ooc_lanes2_7.0ns            PASS    14.8 min   ooc_lanes2_7.0ns.log
+ooc_lanes2_6.667ns          FAIL    13.9 min   ooc_lanes2_6.667ns.log
+ooc_lanes4                  PASS    19.3 min   ooc_lanes4.log
+ooc_lanes4_8.0ns            PASS    18.7 min   ooc_lanes4_8.0ns.log
+ooc_lanes4_7.0ns            PASS    40.4 min   ooc_lanes4_7.0ns.log
+ooc_lanes4_6.667ns          PASS    29.8 min   ooc_lanes4_6.667ns.log
+ooc_lanes4_hd               PASS    19.8 min   ooc_lanes4_hd.log
+ooc_lanes4_nbuf1            PASS    14.0 min   ooc_lanes4_nbuf1.log
+ooc_lanes4_yuyv             PASS    12.3 min   ooc_lanes4_yuyv.log
+power_vectors_v2_E0         PASS     0.1 min   power_vectors_v2_E0.log
+power_xsim_v2_E0            PASS     8.0 min   power_xsim_v2_E0.log
+power_report_v2_E0          PASS     4.7 min   power_report_v2_E0.log
+power_vectors_v2_E2         PASS     0.1 min   power_vectors_v2_E2.log
+power_xsim_v2_E2            PASS     7.7 min   power_xsim_v2_E2.log
+power_report_v2_E2          PASS     5.4 min   power_report_v2_E2.log
+power_vectors_v2_E4         PASS     0.1 min   power_vectors_v2_E4.log
+power_xsim_v2_E4            PASS     7.7 min   power_xsim_v2_E4.log
+power_report_v2_E4          PASS     5.4 min   power_report_v2_E4.log
+power_vectors_v3_E2         PASS     0.1 min   power_vectors_v3_E2.log
+power_xsim_v3_E2            PASS     3.9 min   power_xsim_v3_E2.log
+power_report_v3_E2          PASS     5.7 min   power_report_v3_E2.log
+power_vectors_v3_E5         PASS     0.1 min   power_vectors_v3_E5.log
+power_xsim_v3_E5            PASS     4.4 min   power_xsim_v3_E5.log
+power_report_v3_E5          PASS     5.8 min   power_report_v3_E5.log
+power_vectors_v3l4_E2       PASS     0.1 min   power_vectors_v3l4_E2.log
+power_xsim_v3l4_E2          PASS     4.5 min   power_xsim_v3l4_E2.log
+power_report_v3l4_E2        PASS     4.4 min   power_report_v3l4_E2.log
+power_vectors_v3l4_E5       PASS     0.1 min   power_vectors_v3l4_E5.log
+power_xsim_v3l4_E5          PASS     3.3 min   power_xsim_v3l4_E5.log
+power_report_v3l4_E5        PASS     3.1 min   power_report_v3l4_E5.log
+ooc_part_artix7_35t         PASS     7.4 min   ooc_part_artix7_35t.log
+ooc_part_artix7_35t_lanes4  PASS    14.4 min   ooc_part_artix7_35t_lanes4.log
+ooc_part_artix7_100t        PASS     7.8 min   ooc_part_artix7_100t.log
+ooc_part_artix7_100t_lanes4 PASS    13.9 min   ooc_part_artix7_100t_lanes4.log
+ooc_part_spartan7_50        RETRY    1.3 min   ooc_part_spartan7_50.log
+ooc_part_spartan7_50_lanes4 RETRY    0.4 min   ooc_part_spartan7_50_lanes4.log
+ooc_part_zynq7010           PASS     6.7 min   ooc_part_zynq7010.log
+ooc_part_zynq7010_lanes4    RETRY    8.5 min   ooc_part_zynq7010_lanes4.log
+ooc_part_zynqmp_zu3eg       RETRY    2.4 min   ooc_part_zynqmp_zu3eg.log
+ooc_part_zynqmp_zu3eg_lanes4RETRY    3.9 min   ooc_part_zynqmp_zu3eg_lanes4.log
+ooc_part_spartan7_50        FAIL     1.4 min   ooc_part_spartan7_50.log
+ooc_part_spartan7_50_lanes4 FAIL     1.2 min   ooc_part_spartan7_50_lanes4.log
+ooc_part_zynq7010_lanes4    FAIL    11.8 min   ooc_part_zynq7010_lanes4.log
+ooc_part_zynqmp_zu3eg       FAIL     3.3 min   ooc_part_zynqmp_zu3eg.log
+ooc_part_zynqmp_zu3eg_lanes4FAIL     1.3 min   ooc_part_zynqmp_zu3eg_lanes4.log
+block_design_lanestamper    PASS    74.5 min   block_design_lanestamper.log
+parse_reports               PASS     0.1 min   parse_reports.log
+results_tables              PASS     0.0 min   results_tables.log
+
+--- block_design.log
+RESULT overlay design=v2 fclk=100MHz WNS=1.309ns
+
+--- block_design_lanes.log
+RESULT overlay design=lanes fclk=100MHz WNS=1.082ns
+
+--- block_design_lanes4.log
+RESULT overlay design=lanes4 fclk=142MHz WNS=-0.228ns
+
+--- block_design_lanes4_125MHz.log
+RESULT overlay design=lanes4 fclk=125MHz WNS=0.141ns
+
+--- block_design_lanes4_125MHz_vivado.log
+RESULT overlay design=lanes4 fclk=125MHz WNS=0.141ns
+
+--- block_design_lanes4_vivado.log
+RESULT overlay design=lanes4 fclk=142MHz WNS=-0.228ns
+
+--- block_design_lanes4hd.log
+ERROR: [Common 17-39] 'wait_on_runs' failed due to earlier errors.
+ERROR: [Vivado 12-13638] Failed runs(s) : 'system_axi_mem_intercon_imp_auto_us_0_synth_1'
+
+--- block_design_lanes4hd_125MHz.log
+RESULT overlay design=lanes4hd fclk=125MHz WNS=0.032ns
+
+--- block_design_lanes4hd_125MHz_vivado.log
+RESULT overlay design=lanes4hd fclk=125MHz WNS=0.032ns
+
+--- block_design_lanes4hd_vivado.log
+ERROR: [Vivado 12-13638] Failed runs(s) : 'system_axi_mem_intercon_imp_auto_us_0_synth_1'
+ERROR: [Common 17-39] 'wait_on_runs' failed due to earlier errors.
+
+--- block_design_lanes4yuyv.log
+RESULT overlay design=lanes4yuyv fclk=142MHz WNS=-0.237ns
+
+--- block_design_lanes4yuyv_125MHz.log
+RESULT overlay design=lanes4yuyv fclk=125MHz WNS=0.197ns
+
+--- block_design_lanes4yuyv_125MHz_vivado.log
+RESULT overlay design=lanes4yuyv fclk=125MHz WNS=0.197ns
+
+--- block_design_lanes4yuyv_vivado.log
+RESULT overlay design=lanes4yuyv fclk=142MHz WNS=-0.237ns
+
+--- block_design_lanes_vivado.log
+RESULT overlay design=lanes fclk=100MHz WNS=1.082ns
+
+--- block_design_lanestamper.log
+RESULT overlay design=lanestamper fclk=100MHz WNS=0.902ns
+
+--- block_design_lanestamper_vivado.log
+RESULT overlay design=lanestamper fclk=100MHz WNS=0.902ns
+
+--- block_design_lanestamper_vivado_27528.backup.log
+RESULT overlay design=lanestamper fclk=100MHz WNS=1.021ns
+
+--- block_design_vivado.log
+RESULT overlay design=v2 fclk=100MHz WNS=1.309ns
+
+--- ooc_lanes2.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=2 LOG_L=1 WNS=1.056ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_6.0ns.log
+RESULT top=secure_jpeg_lanes_top period=6.0ns LANES=2 LOG_L=1 WNS=-0.019ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_6.0ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=6.0ns LANES=2 LOG_L=1 WNS=-0.019ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_6.667ns.log
+RESULT top=secure_jpeg_lanes_top period=6.667ns LANES=2 LOG_L=1 WNS=0.003ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes2_log_l1/
+
+--- ooc_lanes2_6.667ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=6.667ns LANES=2 LOG_L=1 WNS=0.003ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes2_log_l1/
+
+--- ooc_lanes2_6.667ns_vivado_22920.backup.log
+RESULT top=secure_jpeg_lanes_top period=6.667ns LANES=2 LOG_L=1 WNS=0.003ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_7.0ns.log
+RESULT top=secure_jpeg_lanes_top period=7.0ns LANES=2 LOG_L=1 WNS=-0.181ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_7.0ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=7.0ns LANES=2 LOG_L=1 WNS=-0.181ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_8.0ns.log
+RESULT top=secure_jpeg_lanes_top period=8.0ns LANES=2 LOG_L=1 WNS=0.353ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_8.0ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=8.0ns LANES=2 LOG_L=1 WNS=0.353ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=2 LOG_L=1 WNS=1.056ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes2_vivado_7552.backup.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=2 LOG_L=1 WNS=1.056ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/routed.dcp
+
+--- ooc_lanes4.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=1.020ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_6.0ns.log
+RESULT top=secure_jpeg_lanes_top period=6.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=-0.182ns impl=safe -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_6.0ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=6.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=-0.182ns impl=safe -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.0ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_6.667ns.log
+RESULT top=secure_jpeg_lanes_top period=6.667ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.011ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_6.667ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=6.667ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.011ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_6.667ns_vivado_24440.backup.log
+RESULT top=secure_jpeg_lanes_top period=6.667ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.011ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_6.667ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_7.0ns.log
+RESULT top=secure_jpeg_lanes_top period=7.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=-0.274ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_7.0ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=7.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=-0.274ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_7.0ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_8.0ns.log
+RESULT top=secure_jpeg_lanes_top period=8.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.309ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_8.0ns_vivado.log
+RESULT top=secure_jpeg_lanes_top period=8.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.309ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_8.0ns_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_hd.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=11 NBUF=1 WNS=1.011ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/routed.dcp
+
+--- ooc_lanes4_hd_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=11 NBUF=1 WNS=1.011ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/routed.dcp
+
+--- ooc_lanes4_hd_vivado_17676.backup.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=11 NBUF=1 WNS=1.011ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/routed.dcp
+
+--- ooc_lanes4_nbuf1.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 NBUF=1 WNS=0.414ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1/routed.dcp
+
+--- ooc_lanes4_nbuf1_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 NBUF=1 WNS=0.414ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1/routed.dcp
+
+--- ooc_lanes4_nbuf1_vivado_19016.backup.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 NBUF=1 WNS=0.414ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_nbuf1/routed.dcp
+
+--- ooc_lanes4_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=1.020ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_vivado_18152.backup.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=1.020ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/routed.dcp
+
+--- ooc_lanes4_yuyv.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 PIXFMT=1 WNS=0.985ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1/routed.dcp
+
+--- ooc_lanes4_yuyv_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 PIXFMT=1 WNS=0.985ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1/routed.dcp
+
+--- ooc_lanes4_yuyv_vivado_22904.backup.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 PIXFMT=1 WNS=0.985ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_pixfmt1/routed.dcp
+
+--- ooc_maxw10.log
+RESULT top=secure_jpeg_top period=10.0ns LOG_MAXW=10 WNS=1.153ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_log_maxw10/routed.dcp
+
+--- ooc_maxw10_vivado.log
+RESULT top=secure_jpeg_top period=10.0ns LOG_MAXW=10 WNS=1.153ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_log_maxw10/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_log_maxw10/routed.dcp
+
+--- ooc_maxw9.log
+RESULT top=secure_jpeg_top period=10.0ns LOG_MAXW=9 WNS=1.803ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_log_maxw9/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_log_maxw9/routed.dcp
+
+--- ooc_maxw9_vivado.log
+RESULT top=secure_jpeg_top period=10.0ns LOG_MAXW=9 WNS=1.803ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_log_maxw9/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_log_maxw9/routed.dcp
+
+--- ooc_part_artix7_100t.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.488ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_part_xc7a100tcsg324-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_part_xc7a100tcsg324-1/routed.dcp
+
+--- ooc_part_artix7_100t_lanes4.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=1.418ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a100tcsg324-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a100tcsg324-1/routed.dcp
+
+--- ooc_part_artix7_100t_lanes4_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=1.418ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a100tcsg324-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a100tcsg324-1/routed.dcp
+
+--- ooc_part_artix7_100t_vivado.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.488ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_part_xc7a100tcsg324-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_part_xc7a100tcsg324-1/routed.dcp
+
+--- ooc_part_artix7_35t.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.853ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_part_xc7a35tcpg236-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_part_xc7a35tcpg236-1/routed.dcp
+
+--- ooc_part_artix7_35t_lanes4.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.701ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a35tcpg236-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a35tcpg236-1/routed.dcp
+
+--- ooc_part_artix7_35t_lanes4_vivado.log
+RESULT top=secure_jpeg_lanes_top period=10.0ns LANES=4 LOG_L=2 LOG_MAXW=10 WNS=0.701ns impl=perf -> reports in sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a35tcpg236-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7a35tcpg236-1/routed.dcp
+
+--- ooc_part_artix7_35t_vivado.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.853ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_part_xc7a35tcpg236-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_part_xc7a35tcpg236-1/routed.dcp
+
+--- ooc_part_spartan7_50.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_spartan7_50_lanes4.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_spartan7_50_lanes4_vivado.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_spartan7_50_lanes4_vivado_7508.backup.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_spartan7_50_vivado.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_spartan7_50_vivado_13932.backup.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_zynq7010.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.951ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_part_xc7z010clg400-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_part_xc7z010clg400-1/routed.dcp
+
+--- ooc_part_zynq7010_lanes4.log
+ERROR: [Common 17-39] 'place_design' failed due to earlier errors.
+ERROR: [DRC UTLZ-1] Resource utilization: LUT as Logic over-utilized in Top Level Design (This design requires more LUT as Logic cells than are available in the target device. This design requires 17974 of such cell types but only 17600 compatible sites are available in the target device. Please analyze your synthesis results and constraints to ensure the design is mapped to Xilinx primitives as expected. If so, please consider targeting a larger device. Please set tcl parameter "drc.disableLUTOverUtilError" to 1 to change this error to warning.)
+ERROR: [Vivado_Tcl 4-23] Error(s) found during DRC. Placer not run.
+
+--- ooc_part_zynq7010_lanes4_vivado.log
+ERROR: [DRC UTLZ-1] Resource utilization: LUT as Logic over-utilized in Top Level Design (This design requires more LUT as Logic cells than are available in the target device. This design requires 17974 of such cell types but only 17600 compatible sites are available in the target device. Please analyze your synthesis results and constraints to ensure the design is mapped to Xilinx primitives as expected. If so, please consider targeting a larger device. Please set tcl parameter "drc.disableLUTOverUtilError" to 1 to change this error to warning.)
+ERROR: [Vivado_Tcl 4-23] Error(s) found during DRC. Placer not run.
+ERROR: [Common 17-39] 'place_design' failed due to earlier errors.
+
+--- ooc_part_zynq7010_lanes4_vivado_28300.backup.log
+ERROR: [DRC UTLZ-1] Resource utilization: LUT as Logic over-utilized in Top Level Design (This design requires more LUT as Logic cells than are available in the target device. This design requires 17974 of such cell types but only 17600 compatible sites are available in the target device. Please analyze your synthesis results and constraints to ensure the design is mapped to Xilinx primitives as expected. If so, please consider targeting a larger device. Please set tcl parameter "drc.disableLUTOverUtilError" to 1 to change this error to warning.)
+ERROR: [Vivado_Tcl 4-23] Error(s) found during DRC. Placer not run.
+ERROR: [Common 17-39] 'place_design' failed due to earlier errors.
+
+--- ooc_part_zynq7010_vivado.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.951ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_part_xc7z010clg400-1/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_part_xc7z010clg400-1/routed.dcp
+
+--- ooc_part_zynqmp_zu3eg.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_zynqmp_zu3eg_lanes4.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_zynqmp_zu3eg_lanes4_vivado.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_zynqmp_zu3eg_lanes4_vivado_17440.backup.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_zynqmp_zu3eg_vivado.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_part_zynqmp_zu3eg_vivado_16808.backup.log
+WARNING: synth_design -retiming not accepted (ERROR: [Common 17-162] Invalid option value specified for '-part'.
+ERROR: [Common 17-162] Invalid option value specified for '-part'.
+
+--- ooc_period_6.0ns.log
+RESULT top=secure_jpeg_top period=6.0ns  WNS=-0.015ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_6.0ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_6.0ns/routed.dcp
+
+--- ooc_period_6.0ns_vivado.log
+RESULT top=secure_jpeg_top period=6.0ns  WNS=-0.015ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_6.0ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_6.0ns/routed.dcp
+
+--- ooc_period_6.667ns.log
+RESULT top=secure_jpeg_top period=6.667ns  WNS=0.270ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_6.667ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_6.667ns/routed.dcp
+
+--- ooc_period_6.667ns_vivado.log
+RESULT top=secure_jpeg_top period=6.667ns  WNS=0.270ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_6.667ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_6.667ns/routed.dcp
+
+--- ooc_period_6.667ns_vivado_17300.backup.log
+RESULT top=secure_jpeg_top period=6.667ns  WNS=0.270ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_6.667ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_6.667ns/routed.dcp
+
+--- ooc_period_7.0ns.log
+RESULT top=secure_jpeg_top period=7.0ns  WNS=-0.181ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_7.0ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_7.0ns/routed.dcp
+
+--- ooc_period_7.0ns_vivado.log
+RESULT top=secure_jpeg_top period=7.0ns  WNS=-0.181ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_7.0ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_7.0ns/routed.dcp
+
+--- ooc_period_8.0ns.log
+RESULT top=secure_jpeg_top period=8.0ns  WNS=0.336ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_8.0ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_8.0ns/routed.dcp
+
+--- ooc_period_8.0ns_vivado.log
+RESULT top=secure_jpeg_top period=8.0ns  WNS=0.336ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top_8.0ns/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top_8.0ns/routed.dcp
+
+--- ooc_secure_jpeg_top.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.524ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top/routed.dcp
+
+--- ooc_secure_jpeg_top_vivado.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.524ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top/routed.dcp
+
+--- ooc_secure_jpeg_top_vivado_23000.backup.log
+RESULT top=secure_jpeg_top period=10.0ns  WNS=1.524ns impl=perf -> reports in sim_build/vivado_secure_jpeg_top/
+CHECKPOINT written sim_build/vivado_secure_jpeg_top/routed.dcp
+
+--- power_report_v2_E0.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E0.txt
+
+--- power_report_v2_E0_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E0.txt
+
+--- power_report_v2_E0_vivado_30480.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E0.txt
+
+--- power_report_v2_E2.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E2.txt
+
+--- power_report_v2_E2_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E2.txt
+
+--- power_report_v2_E2_vivado_26828.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E2.txt
+
+--- power_report_v2_E4.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E4.txt
+
+--- power_report_v2_E4_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E4.txt
+
+--- power_report_v2_E4_vivado_19700.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_top/power_saif_v2_E4.txt
+
+--- power_report_v3_E2.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/power_saif_v3_E2.txt
+
+--- power_report_v3_E2_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/power_saif_v3_E2.txt
+
+--- power_report_v3_E2_vivado_5452.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/power_saif_v3_E2.txt
+
+--- power_report_v3_E5.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/power_saif_v3_E5.txt
+
+--- power_report_v3_E5_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/power_saif_v3_E5.txt
+
+--- power_report_v3_E5_vivado_15504.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes2_log_l1/power_saif_v3_E5.txt
+
+--- power_report_v3l4_E2.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/power_saif_v3l4_E2.txt
+
+--- power_report_v3l4_E2_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/power_saif_v3l4_E2.txt
+
+--- power_report_v3l4_E2_vivado_3116.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/power_saif_v3l4_E2.txt
+
+--- power_report_v3l4_E5.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/power_saif_v3l4_E5.txt
+
+--- power_report_v3l4_E5_vivado.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/power_saif_v3l4_E5.txt
+
+--- power_report_v3l4_E5_vivado_6568.backup.log
+RESULT power_saif report=sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10/power_saif_v3l4_E5.txt
+
+--- power_xsim_v2_E0.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- power_xsim_v2_E2.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- power_xsim_v2_E4.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- power_xsim_v3_E2.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- power_xsim_v3_E5.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- power_xsim_v3l4_E2.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- power_xsim_v3l4_E5.log
+XSIM RESULT: PASS (1 frames bit-exact with the golden model)
+
+--- xsim_check.log
+CHECK RESULT: PASS
+
+--- xsim_check_v3.log
+CHECK RESULT: PASS
+
+--- xsim_check_v3l4.log
+CHECK RESULT: PASS
+
+--- xsim_run.log
+XSIM RESULT: PASS (5 frames bit-exact with the golden model)
+
+--- xsim_run_v3.log
+XSIM RESULT: PASS (5 frames bit-exact with the golden model)
+
+--- xsim_run_v3l4.log
+XSIM RESULT: PASS (5 frames bit-exact with the golden model)

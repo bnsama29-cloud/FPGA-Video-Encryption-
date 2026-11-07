@@ -1,0 +1,198 @@
+{
+  "E1": {
+    "replacement_attack": {
+      "psnr": 16.533781800189274,
+      "ssim": 0.362549177378738,
+      "edge_corr": 0.42851287629553675
+    },
+    "learned_attack": {
+      "psnr": 20.546676915370643,
+      "ssim": 0.6650613924988705,
+      "edge_corr": 0.6011873221603014
+    },
+    "no_ciphertext_prior": {
+      "psnr": 7.682396271296575,
+      "ssim": 0.18007480571160683,
+      "edge_corr": -0.012807960838916782
+    },
+    "flat_true_mean_colour": {
+      "psnr": 13.07470086008927,
+      "ssim": 0.36661422588233794,
+      "edge_corr": 0.0
+    },
+    "prior_with_true_frame_stats": {
+      "psnr": 9.789000437589213,
+      "ssim": 0.1406394909193274,
+      "edge_corr": -0.011591836870886803
+    },
+    "prior_with_revealed_frame_stats": {
+      "psnr": 9.991061180374679,
+      "ssim": 0.14695456379783337,
+      "edge_corr": -0.011617474634614674
+    },
+    "learned_ssim_ci95": [
+      0.6603984681311996,
+      0.6691223757130884
+    ],
+    "oracle_ssim_ci95": [
+      0.13630980688712283,
+      0.14510053135913076
+    ],
+    "adv_weight": 0.0,
+    "learned_edge_corr_ci95": [
+      0.5976128420518543,
+      0.6045926392049644
+    ],
+    "train_frames": 2226,
+    "test_frames": 300,
+    "epochs": 35,
+    "device": "cuda"
+  },
+  "E2": {
+    "replacement_attack": {
+      "psnr": 11.238364583945918,
+      "ssim": 0.22308979468045198,
+      "edge_corr": 0.42933994440543394
+    },
+    "learned_attack": {
+      "psnr": 10.13605500005103,
+      "ssim": 0.1869640852192342,
+      "edge_corr": 0.204879736098698
+    },
+    "no_ciphertext_prior": {
+      "psnr": 7.682396271296575,
+      "ssim": 0.18007480571160683,
+      "edge_corr": -0.012807960838916782
+    },
+    "flat_true_mean_colour": {
+      "psnr": 13.07470086008927,
+      "ssim": 0.36661422588233794,
+      "edge_corr": 0.0
+    },
+    "prior_with_true_frame_stats": {
+      "psnr": 9.789000437589213,
+      "ssim": 0.1406394909193274,
+      "edge_corr": -0.011591836870886803
+    },
+    "prior_with_revealed_frame_stats": {
+      "psnr": 11.044110723371187,
+      "ssim": 0.23505705277429711,
+      "edge_corr": -0.012166114124431164
+    },
+    "learned_ssim_ci95": [
+      0.1829797282130407,
+      0.19126742412020187
+    ],
+    "oracle_ssim_ci95": [
+      0.13630980688712283,
+      0.14510053135913076
+    ],
+    "adv_weight": 0.0,
+    "learned_edge_corr_ci95": [
+      0.1984023392941688,
+      0.2116904862506303
+    ],
+    "train_frames": 2226,
+    "test_frames": 300,
+    "epochs": 35,
+    "device": "cuda"
+  },
+  "E4": {
+    "replacement_attack": {
+      "psnr": 11.47368873746836,
+      "ssim": 0.24150182035176807,
+      "edge_corr": 0.4151739743486539
+    },
+    "learned_attack": {
+      "psnr": 9.617627463011678,
+      "ssim": 0.16828606368545607,
+      "edge_corr": 0.13033860031857458
+    },
+    "no_ciphertext_prior": {
+      "psnr": 7.682396271296575,
+      "ssim": 0.18007480571160683,
+      "edge_corr": -0.012807960838916782
+    },
+    "flat_true_mean_colour": {
+      "psnr": 13.07470086008927,
+      "ssim": 0.36661422588233794,
+      "edge_corr": 0.0
+    },
+    "prior_with_true_frame_stats": {
+      "psnr": 9.789000437589213,
+      "ssim": 0.1406394909193274,
+      "edge_corr": -0.011591836870886803
+    },
+    "prior_with_revealed_frame_stats": {
+      "psnr": 11.302264284789857,
+      "ssim": 0.2592783848796437,
+      "edge_corr": -0.011807043378188395
+    },
+    "learned_ssim_ci95": [
+      0.1632213581847617,
+      0.17363915810573927
+    ],
+    "oracle_ssim_ci95": [
+      0.13630980688712283,
+      0.14510053135913076
+    ],
+    "adv_weight": 0.0,
+    "learned_edge_corr_ci95": [
+      0.12235277265600498,
+      0.13829086937620028
+    ],
+    "train_frames": 2226,
+    "test_frames": 300,
+    "epochs": 35,
+    "device": "cuda"
+  },
+  "E5": {
+    "replacement_attack": {
+      "psnr": 11.531883336102728,
+      "ssim": 0.14119113774883688,
+      "edge_corr": 0.016205707303511327
+    },
+    "learned_attack": {
+      "psnr": 10.38671345904838,
+      "ssim": 0.24254718273362005,
+      "edge_corr": -0.0508391490946944
+    },
+    "no_ciphertext_prior": {
+      "psnr": 7.682396271296575,
+      "ssim": 0.18007480571160683,
+      "edge_corr": -0.012807960838916782
+    },
+    "flat_true_mean_colour": {
+      "psnr": 13.07470086008927,
+      "ssim": 0.36661422588233794,
+      "edge_corr": 0.0
+    },
+    "prior_with_true_frame_stats": {
+      "psnr": 9.789000437589213,
+      "ssim": 0.1406394909193274,
+      "edge_corr": -0.011591836870886803
+    },
+    "prior_with_revealed_frame_stats": {
+      "psnr": 11.302492936076987,
+      "ssim": 0.2592668195431197,
+      "edge_corr": -0.011802389878899311
+    },
+    "learned_ssim_ci95": [
+      0.23634438451934967,
+      0.24865938906332402
+    ],
+    "oracle_ssim_ci95": [
+      0.13630980688712283,
+      0.14510053135913076
+    ],
+    "adv_weight": 0.0,
+    "learned_edge_corr_ci95": [
+      -0.05848316854359873,
+      -0.0428106493632161
+    ],
+    "train_frames": 2226,
+    "test_frames": 300,
+    "epochs": 35,
+    "device": "cuda"
+  }
+}

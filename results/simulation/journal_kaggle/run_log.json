@@ -1,0 +1,169 @@
+{
+ "log": [
+  [
+   "setup",
+   "clone (journal-version)",
+   "PASS",
+   1.8
+  ],
+  [
+   "setup",
+   "pip install",
+   "PASS",
+   9.7
+  ],
+  [
+   "setup",
+   "Xiph test sequences (X6)",
+   "PASS",
+   21.0
+  ],
+  [
+   "X6",
+   "standard metrics akiyo_cif",
+   "PASS",
+   100.4
+  ],
+  [
+   "X6",
+   "standard metrics foreman_cif",
+   "PASS",
+   144.4
+  ],
+  [
+   "X6",
+   "standard metrics news_cif",
+   "PASS",
+   123.1
+  ],
+  [
+   "X6",
+   "standard metrics hall_monitor_cif",
+   "PASS",
+   119.5
+  ],
+  [
+   "X6",
+   "standard metrics mobile_cif",
+   "PASS",
+   256.2
+  ],
+  [
+   "X6",
+   "standard metrics mother_daughter_cif",
+   "PASS",
+   100.5
+  ],
+  [
+   "X17",
+   "privacy foreman_cif",
+   "PASS",
+   107.6
+  ],
+  [
+   "X17",
+   "privacy akiyo_cif",
+   "PASS",
+   76.1
+  ],
+  [
+   "X17",
+   "privacy mother_daughter_cif",
+   "PASS",
+   77.9
+  ],
+  [
+   "X17",
+   "privacy hall_monitor_cif",
+   "PASS",
+   89.2
+  ],
+  [
+   "X7",
+   "size overhead foreman_cif",
+   "PASS",
+   262.5
+  ],
+  [
+   "X7",
+   "size overhead akiyo_cif",
+   "PASS",
+   186.7
+  ],
+  [
+   "X7",
+   "size overhead mobile_cif",
+   "PASS",
+   502.0
+  ],
+  [
+   "X16",
+   "faults around the tag",
+   "PASS",
+   387.3
+  ],
+  [
+   "X19",
+   "SVE-Bench with EtC and Tang, foreman_cif",
+   "PASS",
+   33.3
+  ],
+  [
+   "X19",
+   "SVE-Bench with EtC and Tang, hall_monitor_cif",
+   "PASS",
+   31.5
+  ],
+  [
+   "X20",
+   "decoders and containers",
+   "PASS",
+   7.2
+  ],
+  [
+   "X24",
+   "SRTP / DTLS / ChaCha / Ascon",
+   "PASS",
+   15.2
+  ],
+  [
+   "X12",
+   "ASIC area (sky130, Nangate 45)",
+   "PASS",
+   89.8
+  ],
+  [
+   "X25",
+   "rekey under load",
+   "PASS",
+   100.6
+  ],
+  [
+   "X22",
+   "several cameras",
+   "PASS",
+   187.5
+  ],
+  [
+   "X3",
+   "attack suite repeated",
+   "PASS",
+   1502.5
+  ],
+  [
+   "X18",
+   "learned attacker: open clips + Xiph -> Foreman/Hall",
+   "PASS",
+   2432.6
+  ],
+  [
+   "X18",
+   "learned attacker: + private clips",
+   "PASS",
+   4636.9
+  ]
+ ],
+ "minutes": 193.6,
+ "quick": false,
+ "branch": "journal-version"
+}

@@ -1,0 +1,21 @@
+[
+ {
+  "cameras": 1,
+  "frames_ok_per_camera": 528,
+  "latency_ms_median": 11,
+  "latency_ms_p95_worst": 95,
+  "false_alarms": 0,
+  "calm_windows": 59,
+  "cpu_load": null,
+  "per_camera": [
+   {
+    "frames_ok": 528,
+    "frames_rejected": 0,
+    "latency_ms_median": 11,
+    "latency_ms_p95": 95,
+    "false_alarms": 0,
+    "calm_windows": 59
+   }
+  ]
+ }
+]

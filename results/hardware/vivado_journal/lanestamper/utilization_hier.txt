@@ -1,0 +1,46 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (win64) Build 6511674 Tue Jun 16 11:02:23 MDT 2026
+| Date         : Sat Nov  7 05:10:12 2026
+| Host         : Samarth-Lenovo-Laptop running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 3 -file E:/FPGA-Video-Encryption-/software/system/board/overlay/lanestamper/utilization_hier.txt
+| Design       : system_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Physopt postRoute
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++----------------------+------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|       Instance       |               Module               | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++----------------------+------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| system_wrapper       |                              (top) |      12843 |      11453 |    1170 |  220 | 10362 |     50 |      9 |         46 |
+|   (system_wrapper)   |                              (top) |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   system_i           |                             system |      12843 |      11453 |    1170 |  220 | 10362 |     50 |      9 |         46 |
+|     tamper           |                    system_tamper_0 |         82 |         82 |       0 |    0 |    67 |      0 |      0 |          0 |
+|       inst           |        system_tamper_0_axis_tamper |         82 |         82 |       0 |    0 |    67 |      0 |      0 |          0 |
+|     axi_mem_intercon |          system_axi_mem_intercon_0 |        657 |        624 |      10 |   23 |   781 |      0 |      0 |          0 |
+|       s00_couplers   |           s00_couplers_imp_1P403ZT |         43 |         41 |       2 |    0 |    89 |      0 |      0 |          0 |
+|       s01_couplers   |            s01_couplers_imp_VQ497S |        339 |        311 |       8 |   20 |   371 |      0 |      0 |          0 |
+|       xbar           | system_axi_mem_intercon_imp_xbar_0 |        278 |        275 |       0 |    3 |   321 |      0 |      0 |          0 |
+|     buttons          |                   system_buttons_0 |         61 |         61 |       0 |    0 |   123 |      0 |      0 |          0 |
+|       inst           |      system_buttons_0_axil_buttons |         61 |         61 |       0 |    0 |   123 |      0 |      0 |          0 |
+|     dma              |                       system_dma_0 |       1396 |       1290 |       8 |   98 |  2033 |      2 |      1 |          0 |
+|       U0             |               system_dma_0_axi_dma |       1396 |       1290 |       8 |   98 |  2033 |      2 |      1 |          0 |
+|     ps7_axi_periph   |            system_ps7_axi_periph_0 |        538 |        477 |       0 |   61 |   676 |      0 |      0 |          0 |
+|       s00_couplers   |           s00_couplers_imp_1C0N0JZ |        403 |        342 |       0 |   61 |   550 |      0 |      0 |          0 |
+|       xbar           |   system_ps7_axi_periph_imp_xbar_0 |        135 |        135 |       0 |    0 |   126 |      0 |      0 |          0 |
+|     sjpeg            |                     system_sjpeg_0 |      10092 |       8903 |    1152 |   37 |  6648 |     48 |      8 |         46 |
+|       inst           |  system_sjpeg_0_sjpeg_lanes_bd_top |      10092 |       8903 |    1152 |   37 |  6648 |     48 |      8 |         46 |
++----------------------+------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+
