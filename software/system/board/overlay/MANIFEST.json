@@ -1,5 +1,5 @@
 {
- "commit": "a7ff45d58189d03e15d83844c55abb98e91ff086",
+ "commit": "a7a928db616337a71a18f348ba8f20abcf78f80d",
  "images": [
   {
    "file": "secure_jpeg_lanes.bit",
@@ -22,9 +22,9 @@
   {
    "file": "secure_jpeg_lanes_tamper.bit",
    "bytes": 4045769,
-   "sha256": "c6a92ab60e8e176d0a582dcd316ebf913c46a81a4e8fe78aa73440573c3be43b",
-   "hwh_sha256": "26caca9bbd4d589628471dcdc0caa903761f9d6fc98d94e6841619f5f37d9c76",
-   "run": "run 13",
+   "sha256": "3d3154be762c0e1bc547870797142b91e371bc64d06fe8852f15f57ce852802f",
+   "hwh_sha256": "50d912f18f62cc33f3247f1e2cbc301e2a67f00088e6947751f915029a462345",
+   "run": "journal X13 (7 Nov 2026)",
    "clock_mhz": 100,
    "version": "0x5EC00382"
   },

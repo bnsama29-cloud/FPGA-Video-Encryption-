@@ -80,20 +80,17 @@ Every command below runs in `D:\FPGA-journal`, with its `.venv` active.
    cd ..
    ```
    **Expect:** `Same bytes` = yes in every row. The times are the Python emulation: never report them.
-4. **Gate:** the software-phase results from your teammates (Kaggle `journal_results.zip`) pass the four
-   checks in `docs/JOURNAL_RUNBOOK.md` ("Gate before the board phase"). How to add them to git: part 5.2.
+4. **Gate:** the software-phase results pass the four checks in `docs/JOURNAL_RUNBOOK.md` ("Gate before
+   the board phase"). They are already in git: `results/simulation/journal_kaggle/` (Kaggle, 6 Nov, 27 of 27
+   steps), `results/hardware/vivado_journal/` (Vivado, 7 Nov) and `results/simulation/multi_camera_laptop/`.
+   Part 5.2 is only for later reruns.
 
-## 2. Optional: rebuild the tamper image with the BTN0 debounce (Vivado PC, about 1 h)
+## 2. Tamper image with the BTN0 debounce (done)
 
-Only needed for 4.8 (X13). The tamper image in `software/system/board/overlay/` is run 13, built before the
-debounce was added to `axis_tamper.v`. In a Windows Command Prompt with Vivado 2026.1 on the PATH:
-```
-py hardware\vivado\run_vivado_day.py --steps bd_tamper parse
-py software\scripts\publish_bitstreams.py --force
-git commit -m "Tamper board image with the BTN0 debounce (X13)"
-git push origin journal-version
-```
-`--force` is needed because the new image has a different hash from run 13. Say so in the commit message.
+Samarth rebuilt it in the 7 Nov Vivado run (`bd_tamper`, X13). It is
+`software/system/board/overlay/secure_jpeg_lanes_tamper.bit`, recorded in `bitstreams.json` as
+"journal X13 (7 Nov 2026)" (SHA-256 `3d3154be762c0e1b...`). It replaces run 13, which had no debounce.
+Nothing to do here.
 
 ## 3. Start the board (about 10 min)
 
@@ -221,7 +218,7 @@ py experiments\rekey_load.py --external-sender 192.168.2.99 --board-max-mode E5 
 ```
 Paste the printed board command as in 4.7.
 
-### 4.9 Tamper button with debounce (X13, only after part 2)
+### 4.9 Tamper button with debounce (X13)
 On the board, set SW1 so that **LD0** is on, and **SW0 down**. Laptop window:
 ```
 py experiments\hw_tamper.py --external-sender 192.168.2.99 --trigger manual --set keys.master=%KEY% --out sim_out\runs\hw_tamper_journal
