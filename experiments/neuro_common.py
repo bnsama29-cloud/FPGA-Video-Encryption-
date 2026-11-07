@@ -170,7 +170,8 @@ def load_samples(name, root=None, split="test", limit=None, seed=0):
     loader = {"nmnist": datasets.load_nmnist, "dvsgesture": datasets.load_dvsgesture,
               "eventreid": datasets.load_eventreid}[name]
     out = []
-    for i, (ev, label, group, geom) in enumerate(loader(root, split)):
+    # Event-ReId has no train/test folders of its own: all files, split later by person (group)
+    for i, (ev, label, group, geom) in enumerate(loader(root, None if name == "eventreid" else split)):
         if limit and i >= limit:
             break
         out.append((ev, label, group, geom, None))

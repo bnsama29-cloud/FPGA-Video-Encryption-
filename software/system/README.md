@@ -7,6 +7,7 @@ Everything beyond the encoder RTL and the network layer. Run each script from th
 software/system/
 ├── board/                        PYNQ-Z2
 │   ├── pynq_driver.py            driver for the encoder IP: register sequence, DMA, cycle counters
+│   ├── neuro/                    paper 2: nv_bd_top.v, block_design_neuro.tcl, nv_driver.py, nv_first_contact.py, nv_replay.py
 │   ├── first_contact.py          bit-exact gate on the board (every level vs the golden model), then timing
 │   ├── board_sender.py           the board as the camera node of software/link/ (key exchange, policy, padding)
 │   ├── fast_e5.py, native/       E5 segment order in C (falls back to the model)
@@ -32,6 +33,7 @@ software/system/
 │   ├── visual_security_grid.py   no key / eavesdropper / key holder, per level
 │   └── results_tables.py           result tables from the result files
 ├── kaggle/kaggle_runs.py         reruns the GPU and long-CPU experiments in one cloud session
+├── kaggle/kaggle_neuro.py        paper 2: data, N5 cache, N3, N6, N4 and the CPU experiments on real data
 └── clips_manifest.md             the private test clips, identified by SHA-256 (never committed)
 ```
 

@@ -33,3 +33,21 @@ Journal-version experiments (plan and commands: `docs/JOURNAL_RUNBOOK.md`; refer
 | `benchmark_suite.py` | X19: now also the EtC (Kurihara 2015) and Tang (1996) schemes |
 
 Which folder of `results/` holds each result: `README.md` in the repository root, "Reproducing the results".
+
+Paper 2 (event-camera encryption, branch `neuromorphic`; design `docs/neuro/DESIGN.md` §8, shared helpers in
+`neuro_common.py`; every script writes `sim_out/neuro/<exp>/`):
+
+| Script | Result |
+|---|---|
+| `neuro_rtl_exact.py` | N1: RTL bit-exact against the model (every cocotb test, per seed) and RTL clocks vs the cycle model |
+| `neuro_hw_tables.py` | N2: area, Fmax, power, authenticated rate from the Vivado runs (`hardware/vivado/neuro/run_vivado_neuro.py`) |
+| `neuro_recon_attack.py` | N3: reconstruction attacks (classical; E2VID/FireNet on Kaggle) per level, controls, validity gate, P1 |
+| `neuro_learned_attack.py` | N4: network trained on (ciphertext, plaintext) pairs vs the count-series control (PyTorch) |
+| `neuro_adjacency_attack.py` | N4b: layout recovered from co-activation of permuted addresses, vs an ideal permutation |
+| `neuro_leakage.py` | N5: MI and classifiers on the visible counts per level and padding policy, dummy distinguisher, padding cost |
+| `neuro_task_accuracy.py` | N6: task accuracy with the key and without it (PyTorch) |
+| `neuro_active_attacks.py` | N7: receiver status for every active attack, gap latency, flood cost, benign loss |
+| `neuro_perm_strength.py` | N8: permutation exactness, bias, independence, known plaintext per packet, readers (N8-R) |
+| `neuro_overhead.py` | N9: event rates, bytes per event, latency and FIFO from the cycle model, software cost |
+| `neuro_board_tables.py` | N10: board replay table (`software/system/board/neuro/nv_replay.py`) |
+| `neuro_fpe_utility.py` | N11: bandwidth of FPE vs V4, keyless activity detection, reader compatibility |

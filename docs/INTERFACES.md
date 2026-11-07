@@ -213,3 +213,43 @@ is safe when it is not 0xFF, would not become 0xFF and does not follow 0xFF, so 
 stay intact and only the Ascon tag can reveal the change. A shot with no safe beat waits for the next
 frame. Frames must be separated by at least one idle clock (the DMA always does this).
 `board_sender --mock-tamper` emulates it for rehearsals (`tamper_shot` on the sender control port).
+
+## 11. Paper 2: event-stream encryptor `nv_top` (contract n1, branch `neuromorphic`, 7 Nov 2026)
+
+The contract is `docs/neuro/DESIGN.md`; this section records the interfaces as built in `hardware/rtl/neuro/`.
+
+**Streams.** `s_axis` (32-bit EVT 2.0 words, little-endian as in RAW files; `TLAST` ignored) → `m_axis` (32-bit
+packet words: header, payload, trailer, 4 tag words; word j = packet bytes 4j..4j+3, byte 4j in `[7:0]`; `TLAST`
+on the last tag word of every packet). Internal in-band stream: packetizer → trailer carries `kind` (0 header,
+1 payload, 3 EOP marker) and the side band `xor` / `perm` / `bank`; trailer → XOR → Feistel → FIFO carries
+`kind` (0 header, 1 payload, 2 trailer) and `last`. Per-packet parameters (sid, ctr, level, ts_bits, PAD,
+geometry, t_start) are read by each stage from the packet's own header words.
+
+**Registers** (AXI4-Lite, 32-bit, `nv_axil_regs.v`; DESIGN §6.7):
+
+| Off | Name | Access | Bits |
+|---|---|---|---|
+| 0x00 | VERSION | RO | `{8'h4E, 8'h56, 8'h01, build}`, build = `{0, PAD, log2 U[1:0], L[3:0]}` (L = 1) |
+| 0x04 | CTRL | RW | [0] ENABLE, [1] SOFT_RST, [2] FLUSH, [3] COMMIT, [4] SNAP (bits 1-4 act on write, read 0) |
+| 0x08 | STATUS | RO | [0] BUSY, [1] COMMIT_PENDING, [2] TABLE_READY, [3] OPEN_PACKET, [4] KEYS_VALID, [5] COMMIT_LATE, [6] JUMP_HALT, [7] CFG_ERR |
+| 0x0C | MODE | RW shadow | [2:0] LEVEL, [6:4] TS_BITS, [8] PAD, [10:9] PAD_POLICY, [12] JUMP_MODE |
+| 0x10 | GEOM | RW shadow | [10:0] W, [26:16] H |
+| 0x14 | T_US | RW shadow | packet duration, multiple of 64, 64..65 472 |
+| 0x18 / 0x1C | SID_LO / HI | RW shadow | session id |
+| 0x20 / 0x24 | CTR0_LO / HI | RW shadow | first counter of a new SID (bit 63 forced 0) |
+| 0x28 / 0x2C | PAD_MIN / PAD_CAP | RW shadow | padding policy parameters |
+| 0x30 | MAX_GAP_US | RW shadow | time-jump threshold, default 1 000 000 |
+| 0x34 / 0x38 | COMMIT_AT_LO / HI | RW | counter at which a commit applies |
+| 0x3C | CFG_CODE | RO | last commit: 0 ok, 1 LATE, 2 GEOM, 3 LEVEL/TS/PAD, 4 T_US, 5 REWIND |
+| 0x40-0x8C | K_TAG, K_POL, K_PERM, K_DUM, K_AEAD (4 words each) | WO shadow | key bytes 0..3 in word 0 (little-endian) |
+| 0x90 / 0x94 | CUR_CTR | RO | counter of the open packet |
+| 0x98-0xA4 | LAST_SID, LAST_CTR | RO | last emitted packet; cleared only by power-on reset |
+| 0xA8-0xC4 | PKTS, WORDS_IN, WORDS_OUT, CYCLES (64-bit pairs) | RO snapshot | counted while ENABLE and KEYS_VALID |
+| 0xC8-0xEC | IN_WAIT, OUT_STALL, TABLE_WAIT, KS_WAIT, ERR_RANGE, ERR_ORDER, ERR_PRE_TH, ERR_JUMP, ERR_PADOVF, ERR_CFG | RO snapshot | 32-bit, saturating |
+
+**Commit as built.** COMMIT with ENABLE = 0 makes the shadow set active at once (fresh start at CTR0, FIRST with
+link 2^64 − 1; the counterpart of the model's `Encryptor` constructor; REWIND is checked against LAST_SID). While
+JUMP_HALT, a commit with a new SID resumes at once (`CTRL.CLEAR_HALT` of the draft is not needed). Otherwise the
+set is pending until packet COMMIT_AT − 1 has closed; the pipeline is then drained before the set becomes active,
+because the downstream stages read the active keys. This costs one pipeline drain per commit and changes no output
+word (checked by `test_nv_top.py`: `commit_level_change`, `commit_new_epoch`).

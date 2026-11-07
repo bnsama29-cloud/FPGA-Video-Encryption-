@@ -36,8 +36,8 @@ read_xdc -mode out_of_context $xdc
 set gopt {}
 foreach g $gens { lappend gopt -generic $g }
 set sargs [list -top $top -part $part -mode out_of_context -flatten_hierarchy rebuilt {*}$gopt]
-if {[catch {synth_design {*}$sargs -retiming} err]} {
-    puts "WARNING: synth_design -retiming not accepted ($err); synthesising without retiming"
+if {[catch {synth_design {*}$sargs -global_retiming on} err]} {
+    puts "WARNING: synth_design -global_retiming not accepted ($err); synthesising without retiming"
     synth_design {*}$sargs
 }
 report_utilization -file $out/utilization_synth.txt

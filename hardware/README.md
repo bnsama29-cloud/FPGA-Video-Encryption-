@@ -8,6 +8,7 @@ Every block is bit-exact with the golden model in `software/model/`.
 | `rtl/` | The encoder in Verilog-2001: single pipeline (`secure_jpeg_top.v`, contract v2) and the lane encoder for 1, 2 or 4 lanes with E5 (`secure_jpeg_lanes_top.v`, contract v3). Ascon core, keystream generator, tag unit, colour conversion, DCT, quantiser, zig-zag/RLE, selective encryption, Huffman, packer, AXI4-Lite registers. `include/*.vh` are generated from the model (`make tables`); never edit them. |
 | `tb/` | cocotb testbenches (Icarus Verilog 12) for every block and both top levels, with random back-pressure; each reports the first mismatch against the model. `common.py` holds the source lists. |
 | `vivado/` | Vivado 2026.1 flow driven by `run_vivado_day.py`: XSim testbench (`tb_secure_jpeg_top.v`, `xsim.prj`), out-of-context place and route (`vivado_ooc.tcl`), power with simulated activity (`power_saif.tcl`), PYNQ-Z2 board images (via `software/system/board/block_design.tcl`), report parser. |
+| `rtl/neuro/`, `tb/neuro/`, `vivado/neuro/` | Paper 2 (branch `neuromorphic`): the event-stream encryptor `nv_top` and its blocks, their cocotb tests against `software/neuro/` (`common_nv.py` holds the source lists), and the N2 Vivado flow. See `docs/neuro/README.md`. |
 | `hls/` | Vitis HLS version of the DCT and quantiser, C simulation against the same tables (`dct_coeffs.h` is generated). |
 | `vectors/` | The official NIST Ascon-AEAD128 known-answer file; per-stage golden vectors are written here by `make vectors` (git-ignored). |
 
