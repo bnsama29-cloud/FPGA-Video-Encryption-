@@ -1,5 +1,6 @@
 """Small runs sample every class / person (neuro.datasets.Strided, load_eventreid(every=...))."""
 import numpy as np
+import pytest
 
 from neuro import datasets
 
@@ -45,21 +46,36 @@ def test_eventreid_every_reads_spread_files(tmp_path):
     assert got == [0, 1, 2, 3, 4, 5]
 
 
+def _write_eventreid(root, rows_by_file):
+    for (pid, cam), rows in rows_by_file.items():
+        d = root / "Event_ReId" / pid / cam
+        (d / "labels").mkdir(parents=True)
+        (d / "labels" / "label.json").write_text("{}")
+        (d / "events.txt").write_text("640 480\n" + "".join(f"{t} {x} {y} {p}\n" for t, x, y, p in rows))
+
+
+# rows as in Event_ReId/001/cam01/events.txt (t in ms with a fraction; the file spans 3229.9 ms)
+_ROWS = [("66626956.4031432", 213, 291, 1), ("66626956.40523866", 186, 230, 1), ("66630186.29694171", 205, 215, 0)]
+
+
 def test_eventreid_text_layout_from_its_readme(tmp_path):
-    """<id>/<camera>/events.txt; first row 'width height', then 't x y p' (µs with a fraction)."""
-    for pid in ("001", "010"):
-        for cam in ("cam01", "cam04"):
-            d = tmp_path / "Event_ReId" / pid / cam
-            (d / "labels").mkdir(parents=True)
-            (d / "labels" / "label.json").write_text("{}")
-            (d / "events.txt").write_text("640 480\n5636037.609375 327 322 1\n5636037.61875 330 278 0\n"
-                                          "5636037.628125001 332 249 1\n")
+    """<id>/<camera>/events.txt; first row 'width height', then 't x y p' with t in ms (TESTING bug #51)."""
+    _write_eventreid(tmp_path, {(pid, cam): _ROWS for pid in ("001", "010") for cam in ("cam01", "cam04")})
     got = list(datasets.load_eventreid(tmp_path))
     assert [(lab, grp) for _, lab, grp, _ in got] == [(1, "1"), (1, "1"), (10, "10"), (10, "10")]
     ev, _, _, geom = got[0]
     assert (geom.W, geom.H) == (640, 480)
-    assert ev["t"].tolist() == [5636038, 5636038, 5636038] and ev["x"].tolist() == [327, 330, 332]
-    assert ev["p"].tolist() == [1, 0, 1]
+    assert ev["t"].tolist() == [66626956403, 66626956405, 66630186297], ev["t"].tolist()   # ms -> µs
+    assert ev["x"].tolist() == [213, 186, 205] and ev["p"].tolist() == [1, 1, 0]
+    span_s = (int(ev["t"][-1]) - int(ev["t"][0])) / 1e6
+    assert abs(span_s - 3.2299) < 1e-3, f"span {span_s} s, expected 3.2299 s (README: 3-4 s per recording)"
+
+
+def test_eventreid_wrong_unit_is_refused(tmp_path):
+    """Read as µs (t_scale=1) the same file would span 3.2 ms: the reader must raise, not run on it."""
+    _write_eventreid(tmp_path, {("001", "cam01"): _ROWS})
+    with pytest.raises(ValueError, match="wrong timestamp unit"):
+        list(datasets.load_eventreid(tmp_path, t_scale=1.0))
 
 
 def test_bucket_targets_equals_the_scalar_rule():

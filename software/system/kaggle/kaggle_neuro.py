@@ -58,19 +58,35 @@ def free_gb(p=WORK):
     return shutil.disk_usage(p).free / 1e9
 
 
-def sh(cmd, step, cwd=None, check=False):
+STEP_S = 900 if QUICK else 7200     # per-step limit (paper 1's kaggle_runs.py gives every step one too)
+DEADLINE_S = 11.3 * 3600             # stop starting steps before Kaggle's 12-hour limit; checkpoint() keeps the rest
+
+
+def sh(cmd, step, cwd=None, check=False, limit=None, want=None):
+    """Run one step with a time limit; ok only if rc 0 and, when given, `want` appears in the output
+    (experiments print "wrote <file>"). The first QUICK run had no limit: part A's N9 took 58 min (TESTING bug #53)."""
     t0 = time.time()
-    print(f"\n=== {step}: {cmd}", flush=True)
-    p = subprocess.run(cmd, shell=True, cwd=cwd or REPO, env=ENV, capture_output=True, text=True)
-    out = (p.stdout + p.stderr)[-4000:]
-    print(out, flush=True)
-    st = "ok" if p.returncode == 0 else f"FAILED rc={p.returncode}"
+    left = DEADLINE_S - (t0 - T0)
+    lim = min(limit or STEP_S, left - 600)
+    print(f"\n=== {step} (limit {lim / 60:.0f} min): {cmd}", flush=True)
+    if lim <= 0:
+        out, st = "", "SKIPPED: Kaggle 12-hour budget used up"
+    else:
+        try:
+            p = subprocess.run(cmd, shell=True, cwd=cwd or REPO, env=ENV, capture_output=True, text=True, timeout=lim)
+            out = (p.stdout + p.stderr)[-4000:]
+            st = ("ok" if (want is None or want in p.stdout + p.stderr) else f"FAILED: no '{want}' in the output") \
+                if p.returncode == 0 else f"FAILED rc={p.returncode}"
+        except subprocess.TimeoutExpired as e:
+            out = ((e.stdout or b"").decode(errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or ""))[-4000:]
+            st = f"TIMEOUT after {lim / 60:.0f} min"
+    print(out, st, flush=True)
     LOG.append((step, st, round(time.time() - t0, 1), out[-600:]))
-    BUDGET[step] = {"seconds": round(time.time() - t0, 1), "free_gb_after": round(free_gb(), 2)}
-    if check and p.returncode:
+    BUDGET[step] = {"seconds": round(time.time() - t0, 1), "free_gb_after": round(free_gb(), 2), "status": st}
+    if check and st != "ok":
         checkpoint()
         raise SystemExit(f"{step} failed: stop (QUICK assertion)")
-    return p.returncode == 0
+    return st == "ok"
 
 
 def checkpoint():
@@ -96,8 +112,11 @@ def fetch(url, dst, name):
     if not dst.exists():
         if os.path.exists(url):                      # a file of an attached Kaggle dataset
             shutil.copy(url, dst)
-        else:
+        elif url.startswith(("http://", "https://")):
             urllib.request.urlretrieve(url, dst)
+        else:
+            raise FileNotFoundError(f"{name}: {url} does not exist; attached inputs are under /kaggle/input "
+                                    f"(add the dataset with the checkpoint as input)")
     h = hashlib.sha256(dst.read_bytes()).hexdigest()
     want = CKPT_SHA256.get(name)
     if want and h != want:
@@ -145,18 +164,18 @@ if "cpu" in RUN:
     lim_s = "--limit 20" if QUICK else ""
     for ds in ("nmnist", "dvsgesture", "eventreid"):
         sh(f"{sys.executable} experiments/neuro_leakage.py --counts {OUT}/n5/{ds}_counts.npz --dataset {ds} "
-           f"--data {DATA}/{ds} {lim_s} --out {OUT}/n5/{ds}", f"N5 {ds}")
+           f"--data {DATA}/{ds} {lim_s} --out {OUT}/n5/{ds}", f"N5 {ds}", want="wrote ")
     for ds in ("eventreid", "dvsgesture", "nmnist"):
         sh(f"{sys.executable} experiments/neuro_adjacency_attack.py --dataset {ds} --data {DATA}/{ds} {lim_s} {q} "
-           f"--out {OUT}/n4b/{ds}", f"N4b {ds}")
+           f"--out {OUT}/n4b/{ds}", f"N4b {ds}", want="wrote ")
         sh(f"{sys.executable} experiments/neuro_overhead.py --dataset {ds} --data {DATA}/{ds} {lim_s} {q} "
-           f"--out {OUT}/n9/{ds}", f"N9 {ds}")
+           f"--out {OUT}/n9/{ds}", f"N9 {ds}", want="wrote ")
     sh(f"{sys.executable} experiments/neuro_perm_strength.py --dataset dvsgesture --data {DATA}/dvsgesture {lim_s} {q} "
-       f"--out {OUT}/n8", "N8")
+       f"--out {OUT}/n8", "N8", want="wrote ")
     sh(f"{sys.executable} experiments/neuro_active_attacks.py --dataset nmnist --data {DATA}/nmnist {q} "
-       f"--out {OUT}/n7", "N7")
+       f"--out {OUT}/n7", "N7", want="wrote ")
     sh(f"{sys.executable} experiments/neuro_fpe_utility.py --dataset eventreid --data {DATA}/eventreid {lim_s} {q} "
-       f"--out {OUT}/n11", "N11")
+       f"--out {OUT}/n11", "N11", want="wrote ")
     checkpoint()
 
 q = "--quick" if QUICK else ""
@@ -180,7 +199,11 @@ if "n3" in RUN:
         ck = []
         if FIRENET_CKPT and not FIRENET_CKPT.startswith("http") and not os.path.exists(FIRENET_CKPT):
             # Kaggle mounts an attached dataset under /kaggle/input/<name>/ or /kaggle/input/datasets/<owner>/<name>/
-            hits = sorted(pathlib.Path("/kaggle/input").rglob(pathlib.Path(FIRENET_CKPT).name)) if ON_KAGGLE else []
+            # os.walk(followlinks=True): Kaggle mounts inputs through symbolic links, which Path.rglob does not
+            # enter (the first part-B run found nothing and FireNet was skipped, TESTING bug #52)
+            want = pathlib.Path(FIRENET_CKPT).name
+            hits = sorted(pathlib.Path(d) / want for d, _, fs in os.walk("/kaggle/input", followlinks=True)
+                          if want in fs) if ON_KAGGLE else []
             print(f"FIRENET_CKPT {FIRENET_CKPT} not found; search under /kaggle/input: {[str(h) for h in hits]}", flush=True)
             if hits:
                 FIRENET_CKPT = str(hits[0])
@@ -198,9 +221,9 @@ if "n3" in RUN:
         # under weights_only=True. They are loaded only after the SHA-256 check above, from the pinned files.
         ENV["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
     sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset eventreid --data {DATA}/eventreid --keys {KEYS} "
-       f"{lim_s} {q} {recon} --out {OUT}/n3/eventreid", "N3 eventreid", check=False)
+       f"{lim_s} {q} {recon} --out {OUT}/n3/eventreid", "N3 eventreid", check=False, want="wrote ")
     sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset synthetic --keys {KEYS} {q} {recon} "
-       f"--out {OUT}/n3/synthetic", "N3 synthetic (v2e-lite, exact ground truth)")
+       f"--out {OUT}/n3/synthetic", "N3 synthetic (v2e-lite, exact ground truth)", want="wrote ")
     checkpoint()
 
 # ---------------------------------------------------------------- N6 task accuracy (GPU)
@@ -208,14 +231,14 @@ if "n6" in RUN:
     seeds = "0" if QUICK else " ".join(map(str, SEEDS))
     for ds in ("nmnist", "dvsgesture"):
         sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} --seeds {seeds} "
-           f"{'--limit 300 --epochs 2' if QUICK else ''} --out {OUT}/n6/{ds}", f"N6 {ds}")
+           f"{'--limit 300 --epochs 2' if QUICK else ''} --out {OUT}/n6/{ds}", f"N6 {ds}", want="wrote ")
     checkpoint()
 
 # ---------------------------------------------------------------- N4 learned attacker (GPU, last)
 if "n4" in RUN:
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset eventreid --data {DATA}/eventreid "
-       f"--keys {KEYS} {lim_s} {q} --out {OUT}/n4/eventreid", "N4 eventreid")
+       f"--keys {KEYS} {lim_s} {q} --out {OUT}/n4/eventreid", "N4 eventreid", want="wrote ")
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset synthetic --keys {KEYS} {q} "
-       f"--out {OUT}/n4/synthetic", "N4 synthetic")
+       f"--out {OUT}/n4/synthetic", "N4 synthetic", want="wrote ")
     checkpoint()
 print(f"done in {(time.time() - T0) / 60:.0f} min; download {WORK / f'neuro_results_{PART}.zip'}")

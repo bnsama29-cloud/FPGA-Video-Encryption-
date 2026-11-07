@@ -20,7 +20,7 @@ for p in (str(ROOT / "software"), str(ROOT)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from neuro import evt2, keys                                   # noqa: E402
+from neuro import evt2, feistel, keys                          # noqa: E402
 from neuro.geometry import Geometry, SENSORS                   # noqa: E402
 from neuro.packet import from_bytes                            # noqa: E402
 from neuro.sender import Config, Encryptor                     # noqa: E402
@@ -28,6 +28,36 @@ from neuro.v2e_lite import frames_to_events                    # noqa: E402
 
 OUT = ROOT / "sim_out" / "neuro"
 CAM, BOOT = 1, 1
+
+# ---------------------------------------------------------------- Feistel table cache (experiments only)
+# feistel.make_tables(k_perm, sid, ctr, W, H) is a pure function of its arguments, and it is ~95 % of the
+# V2/V3 sealing time (8 tables of Ascon keystream per packet, ~6.5 ms in Python). Every protect() call below
+# reuses the same key, session id and counters 0, 1, 2, ..., so the tables of packet ctr are identical across
+# samples, pad policies and T values. The first Kaggle run (7 Nov 2026, QUICK) spent 58 min in N9 on DVS
+# Gesture regenerating them. Caching changes no output (tests/test_neuro_table_cache.py). Low counters are hit
+# by every sample, so the cache keeps the first entries and stops inserting at the byte budget (an LRU would
+# thrash on the sequential counter sweep). Tables are made read-only so a shared entry cannot be modified.
+_make_tables_uncached = feistel.make_tables
+TABLE_CACHE_BYTES = int(2e9)
+_table_cache, _table_cache_bytes = {}, 0
+
+
+def _make_tables_cached(k_perm, sid, ctr, W, H, r=feistel.ROUNDS):
+    global _table_cache_bytes
+    key = (k_perm, sid, ctr, W, H, r)           # k_perm is 16 bytes (hashable), sid and ctr ints
+    t = _table_cache.get(key)
+    if t is None:
+        t = _make_tables_uncached(k_perm, sid, ctr, W, H, r)
+        for a in t.t:
+            a.setflags(write=False)
+        size = sum(a.nbytes for a in t.t)
+        if _table_cache_bytes + size <= TABLE_CACHE_BYTES:
+            _table_cache[key] = t
+            _table_cache_bytes += size
+    return t
+
+
+feistel.make_tables = _make_tables_cached
 
 
 # ------------------------------------------------------------------ bookkeeping

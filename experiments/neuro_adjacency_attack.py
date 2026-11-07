@@ -71,7 +71,7 @@ def main():
     if a.quick:
         a.T, a.dt, a.packets = [1024], [20], 3
     samples = C.load_samples(a.dataset, a.data, limit=a.limit or (3 if a.quick else 40), seed=a.seed)
-    rows, res = [], []
+    rows, res, skipped = [], [], []
     for T in a.T:
         for dt in a.dt:
             vals = {"plain": [], "V2": [], "shuffle": []}
@@ -89,6 +89,7 @@ def main():
                             groups[name].append(grp)
             for name in vals:
                 if not vals[name]:
+                    skipped.append(f"T {T} µs, dt {dt} µs, {name}")
                     continue
                 v = np.asarray(vals[name])
                 nr = cluster_bootstrap_ci(v[:, 0], groups[name], n=500, seed=a.seed)
@@ -96,12 +97,15 @@ def main():
                 res.append({"T_us": T, "dt_us": dt, "view": name, "packets": len(v),
                             "clusters": n_clusters(groups[name]), "neighbour_recovery": nr, "procrustes": pe})
                 rows.append((T, dt, name, len(v), n_clusters(groups[name]), nr, pe))
-    data = {"results": res,
+    data = {"results": res, "skipped": skipped,
             "meta": C.meta(a, dataset=a.dataset, synthetic=a.data is None, n_keys=1,
                            ci="cluster bootstrap 95 % over recordings, 500 resamples")}
     md = ["# N4b adjacency attack" + (" (synthetic smoke data)" if a.data is None else ""), "",
           "neighbour recovery: fraction of true 4-neighbour pairs found; Procrustes: 0 = layout recovered.", "",
           C.table(["T µs", "dt µs", "view", "packets", "clusters", "neighbour recovery", "Procrustes error"], rows)]
+    if skipped:     # e.g. N-MNIST (34 x 34, ~13 events per 1 ms packet): no packet reaches --min-addr addresses
+        md += ["", f"No packet with at least {a.min_addr} distinct addresses (--min-addr), so no row for: "
+               + "; ".join(skipped) + "."]
     C.write("n4b", "adjacency", data, "\n".join(md), a.out)
 
 

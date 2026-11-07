@@ -160,6 +160,10 @@ def main():
     g = np.array([grp for _, _, grp in sl])
     groups = np.unique(g)
     test_groups = groups[len(groups) // 2:] if len(groups) > 1 else groups
+    # Event-ReId: label = person = group, so no test label is ever seen in training and a classifier scores 0 by
+    # construction (first Kaggle QUICK run, TESTING bug #54). Classifiers then report n/a; MI is still valid.
+    tr_labels = set(y[~np.isin(g, test_groups)].tolist())
+    clf_ok = bool(set(y[np.isin(g, test_groups)].tolist()) & tr_labels)
     views = ["V2", "V3", "V3 + pad floor 4", "V3 + pad floor 16", "V3 + pad ladder 2..64", "V4", "V4 + pad floor 4",
              "V4 + pad ladder 2..64"]
     res, rows = {}, []
@@ -168,10 +172,13 @@ def main():
         tot = quantize([x.sum() for x in vis], 8)
         mi, null, p = mi_perm_null(tot, y, n=40 if a.quick else 200, seed=a.seed)
         X = np.stack([features(x) for x in vis])
-        te, preds = classify(X, y, g, test_groups)
         r = {"mi_bits": mi, "mi_null_mean": null, "mi_p": p}
-        for name, pred in preds.items():
-            r[name] = cluster_bootstrap_ci(balanced_correct(pred, y[te]), g[te], n=500, seed=a.seed)
+        if clf_ok:
+            te, preds = classify(X, y, g, test_groups)
+            for name, pred in preds.items():
+                r[name] = cluster_bootstrap_ci(balanced_correct(pred, y[te]), g[te], n=500, seed=a.seed)
+        else:
+            r["nearest-centroid"] = r["5-NN"] = "n/a"
         res[v] = r
         rows.append((v, mi, p, r["nearest-centroid"], r["5-NN"]))
     chance = 1 / len(np.unique(y))
@@ -182,7 +189,9 @@ def main():
                           split="by group (half of the groups for test)", ci="cluster bootstrap 95 % over test groups",
                           classifiers="nearest-centroid, 5-NN (GBT / 1-D CNN only on Kaggle)")
     md = ["# N5 leakage" + (" (synthetic smoke data)" if a.data is None and not a.counts else ""), "",
-          f"Chance level {chance:.3f}; {data['test_clusters']} test clusters.", "",
+          f"Chance level {chance:.3f}; {data['test_clusters']} test clusters."
+          + ("" if clf_ok else " Classifiers n/a: every test label is a group never seen in training "
+             "(label = group, e.g. Event-ReId persons), so only MI is reported."), "",
           C.table(["view", "MI bits (total count)", "p (perm.)", "bal. acc. nearest-centroid", "bal. acc. 5-NN"], rows),
           "", "Dummy distinguisher AUC (0.5 = indistinguishable):", "",
           C.table(["policy", "multiplicity", "position", "both", "CD words"],

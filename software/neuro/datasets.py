@@ -25,8 +25,12 @@ Readers and what each one assumes (an assumption that a file contradicts raises 
   (DESIGN.md §2.3), so this reader is tolerant: it accepts `.npy` and `.npz` (structured arrays with named
   fields, or plain numeric arrays with `columns=` given), `.h5`/`.hdf5` (h5py, lazily; datasets named
   t/x/y/p or aliases, or one (N, 4) dataset with `columns=`), and `.txt`/`.csv` (numeric columns; `columns=`
-  required). Field aliases: t <- t, ts, timestamp, timestamps; p <- p, pol, polarity. Timestamps are taken
-  as µs unless `t_scale` says otherwise (e.g. 1e6 for seconds). `describe_eventreid(root)` prints what the
+  required). Field aliases: t <- t, ts, timestamp, timestamps; p <- p, pol, polarity. Event-ReId timestamps
+  are in **milliseconds** with a fractional part, so `t_scale` defaults to 1e3 (µs = t * t_scale). Evidence
+  (001/cam01, Zenodo 8256439, 7 Nov 2026): the file spans 3229.9 units and its label.json has 95 frames of
+  33.3 ms = 3163 ms, and the README gives 3-4 s per recording; read as µs the same file would span 3.2 ms at
+  3e8 events/s (the first Kaggle QUICK run, TESTING bug #51). Every file's span must lie in
+  [EVENTREID_SPAN_S] after scaling, else the reader raises, so a unit error cannot pass silently. `describe_eventreid(root)` prints what the
   files hold, for the QUICK run. label = the first integer in the parent directory's name (else in the
   file stem); group = label (person id, the identity cluster) or, without a label, the parent directory.
   Geometry: `W`, `H` when given, else max(x) + 1, max(y) + 1 of the sample (named "eventreid").
@@ -218,8 +222,8 @@ def read_event_file(path, columns=None):
             return _from_matrix(next(iter(dsets.values())), columns, path)
         raise ValueError(f"{path}: datasets {sorted(dsets)} do not name t/x/y/p")
     if ext in (".txt", ".csv"):
-        # Event-ReId (its README, read 7 Nov 2026): first row "width height", then "t x y p" per row, t in µs
-        # with a fractional part. A first row of two numbers is taken as the resolution; four columns without
+        # Event-ReId (its README, read 7 Nov 2026): first row "width height", then "t x y p" per row, t in ms
+        # with a fractional part (unit measured, module docstring; the README does not state it). A first row of two numbers is taken as the resolution; four columns without
         # names default to (t, x, y, p).
         sep = "," if ext == ".csv" else None
         with open(path, encoding="utf-8", errors="replace") as fh:
@@ -254,7 +258,10 @@ def _first_int(text):
     return int(m.group(0)) if m else None
 
 
-def load_eventreid(root, split=None, columns=None, t_scale=1.0, W=None, H=None, every=1):
+EVENTREID_SPAN_S = (0.1, 60.0)      # plausible span of one recording in seconds (README: 3-4 s)
+
+
+def load_eventreid(root, split=None, columns=None, t_scale=1e3, W=None, H=None, every=1):
     """Event-ReId samples, one per event file (tolerant reader; rules in the module docstring).
 
     every > 1 reads every `every`-th file only (spread over all persons, for a small smoke run)."""
@@ -265,6 +272,12 @@ def load_eventreid(root, split=None, columns=None, t_scale=1.0, W=None, H=None, 
         c = read_event_file(f, columns)
         res = c.pop("_resolution", None)
         ev = _to_events(c["t"], c["x"], c["y"], c["p"], t_scale)
+        if ev.size > 1:
+            span_s = (int(ev["t"][-1]) - int(ev["t"][0])) / 1e6
+            lo, hi = EVENTREID_SPAN_S
+            if not lo <= span_s <= hi:
+                raise ValueError(f"{f}: {ev.size} events span {span_s:.4g} s with t_scale={t_scale}, outside "
+                                 f"{lo}-{hi} s: wrong timestamp unit?")
         if ev.size and (ev["x"].astype(np.int64).min() < 0):
             raise ValueError(f"{f}: negative x")
         gw = W if W is not None else (res[0] if res else (int(ev["x"].max()) + 1 if ev.size else 1))
