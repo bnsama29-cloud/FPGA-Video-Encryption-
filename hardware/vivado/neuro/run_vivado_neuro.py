@@ -1,6 +1,6 @@
 """N2: Vivado runs for the paper-2 encryptor (area, Fmax, power), one command (DESIGN §8.2 N2).
 
-    python hardware/vivado/neuro/run_vivado_neuro.py --steps ooc usweep blocks bd parse [--jobs 2] [--dry]
+    python hardware/vivado/neuro/run_vivado_neuro.py --steps ooc usweep blocks bd parse [--jobs 2] [--dry] [--resume]
 
 Steps (run only when the PC is free of paper-1 runs):
   ooc      nv_top, plan of record U = 2, PAD = 1, at 100 MHz for MAXW x MAXH in {34x34, 128x128, 346x260, 1280x720}
@@ -52,6 +52,12 @@ def vivado():
     return exe
 
 
+def done(name):
+    """True when this job's log already holds its RESULT line (a finished build)."""
+    log = LOGS / f"{name}.log"
+    return log.exists() and "RESULT top=" in log.read_text(errors="replace")
+
+
 def run_job(name, cmd, dry):
     LOGS.mkdir(parents=True, exist_ok=True)
     log = LOGS / f"{name}.log"
@@ -83,11 +89,16 @@ def main():
                     choices=["ooc", "usweep", "blocks", "bd", "power", "parse"])
     ap.add_argument("--jobs", type=int, default=2, help="parallel Vivado runs (each needs ~6 GB RAM)")
     ap.add_argument("--dry", action="store_true", help="print the commands only")
+    ap.add_argument("--resume", action="store_true",
+                    help="skip jobs whose log already has a RESULT line (continue an interrupted run)")
     a = ap.parse_args()
     exe = "vivado" if a.dry else None
     todo = []
     for s in a.steps:
         for name, args in jobs_for(s):
+            if a.resume and done(name):
+                print(f"{name}: already built (RESULT line in {LOGS / (name + '.log')}), skipped")
+                continue
             todo.append((name, [exe or vivado(), "-mode", "batch", "-nojournal", "-nolog", "-source", TCL,
                                 "-tclargs", *args]))
     results = []
