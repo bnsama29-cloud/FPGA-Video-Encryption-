@@ -140,23 +140,43 @@ module nv_packetizer (
     wire [3:0]  typ    = s_tdata[31:28];
     wire [27:0] v      = s_tdata[27:0];
     wire [39:0] v64    = {6'd0, v, 6'd0};
-    wire signed [40:0] diff = $signed({1'b0, v64}) - $signed({1'b0, t_start});
-    wire        is_jump  = (diff > $signed({9'd0, a_maxgap}));
-    wire        closes   = (v64 >= t_start + {24'd0, a_T});
+    // Timing (Vivado, 7 Nov 2026: WNS -1.99 ns at 100 MHz through s_tready): the adders and the 64-bit counter
+    // compares are precomputed into registers from registered values, so the input decision is one compare deep.
+    // `settle` holds the decision for 2 clocks after any of their sources changes (t_start, open_ctr, the tables,
+    // an applied commit), so a stale precompute is never used.
+    //   64 v - t_start > MAX_GAP  <=>  64 v > t_start + MAX_GAP   (t_start + MAX_GAP >= 0)
+    reg  [40:0] gap_lim_r;
+    reg  [40:0] t_end_r;
+    reg  [63:0] next_ctr_r;
+    reg         hit0_r, hit1_r, fillhit_r, pnext_r, prehit0_r, prehit1_r;
+    reg  [1:0]  settle;
+    always @(posedge clk) begin
+        gap_lim_r  <= {1'b0, t_start} + {9'd0, a_maxgap};
+        t_end_r    <= {1'b0, t_start} + {25'd0, a_T};
+        next_ctr_r <= open_ctr + 64'd1;
+        hit0_r     <= bank_ok[0] && (bank_ctr[0] == open_ctr);
+        hit1_r     <= bank_ok[1] && (bank_ctr[1] == open_ctr);
+        fillhit_r  <= filling && (fill_ctr == open_ctr);
+        pnext_r    <= p_valid && (p_at == next_ctr_r);
+        prehit0_r  <= bank_ok[0] && (bank_ctr[0] == next_ctr_r);
+        prehit1_r  <= bank_ok[1] && (bank_ctr[1] == next_ctr_r);
+    end
+    wire        is_jump  = ({1'b0, v64} > gap_lim_r);
+    wire        closes   = ({1'b0, v64} >= t_end_r);
     wire        is_cd    = (typ[3:1] == 3'b000);
     wire        in_range = (s_tdata[21:11] < a_W) && (s_tdata[10:0] < a_H);
     wire        lv_xor   = (a_level == 3'd1) || (a_level == 3'd3);
     wire        lv_perm  = (a_level == 3'd2) || (a_level == 3'd3);
     wire        o_free   = !o_valid || o_ready;
-    wire        tab0     = bank_ok[0] && (bank_ctr[0] == open_ctr);
-    wire        tab1     = bank_ok[1] && (bank_ctr[1] == open_ctr);
+    wire        tab0     = hit0_r;
+    wire        tab1     = hit1_r;
     wire        tab_rdy  = tab0 || tab1;
     wire        tab_bank = tab1;
 
     reg [2:0] act;
     always @* begin
         act = A_NONE;
-        if (st == S_RUN && enable && !halted && !flush_req && s_tvalid) begin
+        if (st == S_RUN && enable && !halted && !flush_req && s_tvalid && settle == 2'd0) begin
             if (!started)
                 act = (typ == 4'h8) ? A_START : A_DROP;
             else if (typ == 4'h8) begin
@@ -180,12 +200,12 @@ module nv_packetizer (
     assign idle = (st == S_RUN) && !o_valid && !flush_req;
 
     // table fill decisions
-    wire        need_fill = table_wait && !(filling && fill_ctr == open_ctr) && (inflight[!last_used] == 16'd0);
+    wire        need_fill = table_wait && !fillhit_r && (inflight[!last_used] == 16'd0);
     wire        pre_bank  = !tab_bank;
-    wire [63:0] next_ctr  = open_ctr + 64'd1;
+    wire [63:0] next_ctr  = next_ctr_r;
     wire        prefetch  = !need_fill && !filling && started && lv_perm && tab_rdy && (st == S_RUN) &&
-                            !(p_valid && p_at == next_ctr) && (inflight[pre_bank] == 16'd0) &&
-                            !(bank_ok[pre_bank] && bank_ctr[pre_bank] == next_ctr);
+                            settle == 2'd0 && !pnext_r && (inflight[pre_bank] == 16'd0) &&
+                            !(pre_bank ? prehit1_r : prehit0_r);
     wire        emit_perm = (act == A_EMIT) && is_cd && lv_perm;
 
     always @(posedge clk) begin
@@ -194,12 +214,16 @@ module nv_packetizer (
         tg_start <= 1'b0;
         e_pre <= 1'b0; e_order <= 1'b0; e_range <= 1'b0; e_jump <= 1'b0;
         if (o_valid && o_ready) o_valid <= 1'b0;
+        if (settle != 2'd0) settle <= settle - 2'd1;
+        if (tg_done || need_fill || prefetch || st == S_POST || st == S_DRAIN || act == A_START || resume || load ||
+            apply)
+            settle <= 2'd2;
         if (rst) begin
             st <= S_RUN; o_valid <= 1'b0; started <= 1'b0; halted <= 1'b0; dropping <= 1'b0;
             hdr_sent <= 1'b0; hdr_ret <= 1'b0; in_loop <= 1'b0; close_final <= 1'b0; after_final <= 1'b0; after_halt <= 1'b0; flush_req <= 1'b0;
             open_ctr <= 64'd0; t_start <= 40'd0; cur_th <= 28'd0; hw <= 4'd0;
             bank_ok[0] <= 1'b0; bank_ok[1] <= 1'b0; inflight[0] <= 16'd0; inflight[1] <= 16'd0;
-            filling <= 1'b0; last_used <= 1'b1;
+            filling <= 1'b0; last_used <= 1'b1; settle <= 2'd2;
         end else begin
             // -------------------------------------------- tables
             inflight[0] <= inflight[0] + ((emit_perm && !tab_bank) ? 16'd1 : 16'd0)

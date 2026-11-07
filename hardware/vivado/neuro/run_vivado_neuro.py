@@ -4,8 +4,8 @@
 
 Steps (run only when the PC is free of paper-1 runs):
   ooc      nv_top, plan of record U = 2, PAD = 1, at 100 MHz for MAXW x MAXH in {34x34, 128x128, 346x260, 1280x720}
-  usweep   nv_top at 1280 x 720 for U in {1, 2, 4} (L = 1: lane builds L >= 2 are not in contract n1's RTL; §6.4)
-           and U = 4 at 125 MHz (stretch goal)
+  usweep   nv_top at 1280 x 720 for U in {1, 2, 4} (L = 1: lane builds L >= 2 are not in contract n1's RTL; §6.4).
+           Every run is at 100 MHz (the board's clock); Fmax is reported from the slack, no faster-clock builds
   blocks   nv_ascon_core_u (U = 1, 2, 4), nv_feistel, nv_table_gen, nv_tag32 alone
   bd       PYNQ-Z2 block design + bitstream (software/system/board/neuro/block_design_neuro.tcl) -> overlay/neuro/
   power    report_power with a SAIF (set NV_SAIF to an XSim SAIF of the N1 run); without it the vectorless
@@ -37,7 +37,6 @@ def jobs_for(step):
     elif step == "usweep":
         for U in (1, 2, 4):
             j.append((f"top_u{U}_1280x720", ["nv_top", "10.0", "U", str(U)]))
-        j.append(("top_u4_1280x720_125MHz", ["nv_top", "8.0", "U", "4"]))
     elif step == "blocks":
         for U in (1, 2, 4):
             j.append((f"core_u{U}", ["nv_ascon_core_u", "10.0", "U", str(U)]))

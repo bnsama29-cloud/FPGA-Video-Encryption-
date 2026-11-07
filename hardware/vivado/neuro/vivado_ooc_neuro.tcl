@@ -45,9 +45,8 @@ opt_design -directive Explore
 place_design -directive ExtraTimingOpt
 phys_opt_design -directive Explore
 route_design -directive AggressiveExplore
-if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] < 0} {
-    phys_opt_design -directive AggressiveExplore
-}
+# No post-route phys_opt_design -directive AggressiveExplore: Vivado 2026.1 crashed there on nv_top
+# (EXCEPTION_ACCESS_VIOLATION, 7 Nov 2026), as on paper 1's lane encoder (TESTING bug #38).
 report_utilization    -file $out/utilization.txt
 report_utilization    -hierarchical -hierarchical_depth 4 -file $out/utilization_hier.txt
 report_timing_summary -max_paths 10 -file $out/timing.txt

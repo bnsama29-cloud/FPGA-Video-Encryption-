@@ -83,4 +83,4 @@ def test_board_mock_first_contact_and_replay(tmp_path):
 
 def test_vivado_runner_dry():
     out = run(["hardware/vivado/neuro/run_vivado_neuro.py", "--steps", "ooc", "usweep", "blocks", "--dry"])
-    assert out.count("DRY") == 4 + 4 + 6 and "MAXW 1280 MAXH 720" in out
+    assert out.count("DRY") == 4 + 3 + 6 and "MAXW 1280 MAXH 720" in out
