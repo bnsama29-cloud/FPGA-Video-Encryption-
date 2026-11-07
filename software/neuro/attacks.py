@@ -4,8 +4,6 @@ Active attacks work on lists of packet byte strings (ours) and return a new list
 to the Du/Zhang baselines, which carry no tag. Passive helpers turn (possibly protected) events into the
 pictures an eavesdropper would look at.
 """
-import struct
-
 import numpy as np
 
 from .packet import HEADER_LEN, PacketHeader
@@ -105,6 +103,9 @@ def time_surface(events, geom, tau_us=50_000.0):
     return np.exp((ts - t.max()) / tau_us)
 
 
+DENSE_MAX = 1500        # above this many addresses the graph is built sparse
+
+
 def adjacency_embed(events, dt_us=20, k=8, geom=None):
     """N4b: k-NN co-activation graph over (permuted) addresses + 2-D Laplacian eigenmap.
 
@@ -123,21 +124,41 @@ def adjacency_embed(events, dt_us=20, k=8, geom=None):
     order = np.argsort(ev["t"], kind="stable")
     t = ev["t"][order].astype(np.int64)
     a = inv[order]
-    Wm = np.zeros((n, n))
-    j0 = 0
-    for i in range(len(t)):
-        while t[i] - t[j0] > dt_us:
-            j0 += 1
-        for j in range(max(j0, i - k), i):
-            if a[i] != a[j]:
-                Wm[a[i], a[j]] += 1
-                Wm[a[j], a[i]] += 1
-    d = Wm.sum(1)
+    # event i links to each of its k predecessors j with t[i] - t[j] <= dt_us (t is sorted), other pixel only
+    rows, cols = [], []
+    for lag in range(1, k + 1):
+        ok = (t[lag:] - t[:-lag] <= dt_us) & (a[lag:] != a[:-lag])
+        rows.append(a[lag:][ok])
+        cols.append(a[:-lag][ok])
+    r = np.concatenate(rows) if rows else np.zeros(0, np.int64)
+    c = np.concatenate(cols) if cols else np.zeros(0, np.int64)
+    if n <= DENSE_MAX:
+        Wm = np.zeros((n, n))
+        np.add.at(Wm, (r, c), 1.0)
+        Wm = Wm + Wm.T
+        d = Wm.sum(1)
+        d[d == 0] = 1
+        Dm = 1 / np.sqrt(d)
+        vals, vecs = np.linalg.eigh(np.eye(n) - (Dm[:, None] * Wm * Dm[None, :]))
+        return uniq, vecs[:, 1:3] * Dm[:, None]
+    # large packets (e.g. Event-ReId at 640 x 480): sparse graph; the 2nd and 3rd smallest eigenvectors of the
+    # normalised Laplacian are the 2nd and 3rd largest of the normalised adjacency D^-1/2 W D^-1/2
+    from scipy import sparse
+    from scipy.sparse.linalg import ArpackNoConvergence, eigsh
+    Wm = sparse.coo_matrix((np.ones(len(r)), (r, c)), shape=(n, n)).tocsr()
+    Wm = (Wm + Wm.T).tocsr()
+    d = np.asarray(Wm.sum(1)).ravel()
     d[d == 0] = 1
     Dm = 1 / np.sqrt(d)
-    Lsym = np.eye(n) - (Dm[:, None] * Wm * Dm[None, :])
-    vals, vecs = np.linalg.eigh(Lsym)
-    return uniq, vecs[:, 1:3] * Dm[:, None]
+    A = sparse.diags(Dm) @ Wm @ sparse.diags(Dm)
+    try:
+        vals, vecs = eigsh(A, k=3, which="LA", tol=1e-6, maxiter=20 * n)
+    except ArpackNoConvergence as e:
+        vals, vecs = e.eigenvalues, e.eigenvectors
+        if vecs.shape[1] < 3:
+            return uniq, np.zeros((n, 2))
+    o = np.argsort(vals)[::-1]
+    return uniq, vecs[:, o[1:3]] * Dm[:, None]
 
 
 def procrustes_error(true_xy, emb):
@@ -165,9 +186,11 @@ def neighbour_recovery(true_xy, emb):
     pairs += [(i, idx[(x, y + 1)]) for i, (x, y) in enumerate(A.tolist()) if (x, y + 1) in idx]
     if not pairs:
         return 0.0
+    from scipy.spatial import cKDTree
     E = np.asarray(emb, float)
-    d = ((E[:, None, :] - E[None, :, :]) ** 2).sum(-1)
-    np.fill_diagonal(d, np.inf)
-    nn = d.argsort(1)[:, :4]
-    hit = sum(1 for i, j in pairs if j in nn[i] or i in nn[j])
+    m = min(5, n)
+    _, nn = cKDTree(E).query(E, k=m)          # self + 4 nearest neighbours, O(n log n) memory
+    nn = np.asarray(nn).reshape(n, m)
+    sets = [set(row[row != i].tolist()) for i, row in enumerate(nn)]
+    hit = sum(1 for i, j in pairs if j in sets[i] or i in sets[j])
     return hit / len(pairs)

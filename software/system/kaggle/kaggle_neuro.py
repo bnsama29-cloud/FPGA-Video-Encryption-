@@ -1,8 +1,8 @@
 """Paper 2 (event-camera encryption) on Kaggle: data, N5 count cache, N3, N6, N4 and the CPU experiments (DESIGN §8.4).
 
-HOW TO RUN (three Kaggle accounts, one PART each, in parallel)
-  1. In each account: New Notebook, Internet ON. Accelerator: None for PART "A" (CPU only, saves GPU quota),
-     GPU T4 for "B" and "C". For "B" add the private dataset with firenet_1000.pth.tar as input (FIRENET_CKPT).
+HOW TO RUN (two Kaggle accounts, one PART each, in parallel)
+  1. In each account: New Notebook, Internet ON, Accelerator GPU T4. For "B" add the private dataset with
+     firenet_1000.pth.tar as input (FIRENET_CKPT). ("C" alone = N6 only, if a third account is ever free.)
   2. Paste this whole file into ONE code cell, set PART, run QUICK = True first (about 20-30 min; the assertions of
      DESIGN §8.4 fail fast), then QUICK = False with "Save Version -> Save & Run All (Commit)".
   3. Output: neuro_results_<PART>.zip (sim_out/neuro/ of every step, data manifests, meta_budget.json with the
@@ -16,11 +16,11 @@ Paper 1's Kaggle quota comes first: start this only when paper 1 has no pending 
 """
 # ============================ SETTINGS ===========================================================
 QUICK = True                     # True: ~20 min smoke run with the §8.4 assertions; False: the paper run
-PART = "A"                       # one part per Kaggle account, run in parallel:
-                                 #   "A"  CPU only (no GPU quota): N-MNIST + DVS Gesture + Event-ReId, N5 caches and
-                                 #        analysis, N4b, N7, N8, N9, N11                         (~3-5 h)
-                                 #   "B"  GPU: Event-ReId only: N3 (E2VID, FireNet), then N4     (~4-6 h)
-                                 #   "C"  GPU: N-MNIST + DVS Gesture only: N6 (frame CNN, 3 seeds) (~3-4 h)
+PART = "A"                       # one part per Kaggle account, run in parallel (both GPU T4):
+                                 #   "A"  N-MNIST + DVS Gesture + Event-ReId: N5 caches and analysis, N4b, N7, N8,
+                                 #        N9, N11 (CPU), then N6 (GPU, frame CNN, 3 seeds)          (~6-9 h)
+                                 #   "B"  Event-ReId only: N3 (E2VID, FireNet), then N4            (~4-6 h)
+                                 #   "C"  N6 only (optional third account)                         (~3-4 h)
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
 BRANCH = "neuromorphic"
 KEYS = 5                         # independent master keys (N3, N4)
@@ -116,6 +116,7 @@ sh(f"{sys.executable} -c \"import tonic, torch; print('tonic', tonic.__version__
 print(f"free disk after setup: {free_gb():.1f} GB")
 
 # ---------------------------------------------------------------- data
+RUN = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[PART]
 NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid", "C": "nmnist dvsgesture"}[PART]
 sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED}", "data", check=True)   # never run hours on missing data
 if "eventreid" in NEED:
@@ -126,7 +127,7 @@ print(f"free disk after data: {free_gb():.1f} GB")
 checkpoint()
 
 # ---------------------------------------------------------------- N5 count caches (Tonic needed only here)
-if PART == "A":
+if "cpu" in RUN:
     lim = 200 if QUICK else 0
     for ds in ("nmnist", "dvsgesture", "eventreid"):
         # QUICK: samples spread over every class / person (neuro_common.load_samples strides), not the first ones
@@ -139,7 +140,7 @@ if PART == "A":
     checkpoint()
 
 # ---------------------------------------------------------------- CPU experiments on real data
-if PART == "A":
+if "cpu" in RUN:
     q = "--quick" if QUICK else ""
     lim_s = "--limit 20" if QUICK else ""
     for ds in ("nmnist", "dvsgesture", "eventreid"):
@@ -162,7 +163,7 @@ q = "--quick" if QUICK else ""
 lim_s = "--limit 20" if QUICK else ""
 
 # ---------------------------------------------------------------- N3 reconstruction (GPU)
-if PART == "B":
+if "n3" in RUN:
     ext = WORK / "ext"
     ext.mkdir(exist_ok=True)
     recon = ""
@@ -197,7 +198,7 @@ if PART == "B":
     checkpoint()
 
 # ---------------------------------------------------------------- N6 task accuracy (GPU)
-if PART == "C":
+if "n6" in RUN:
     seeds = "0" if QUICK else " ".join(map(str, SEEDS))
     for ds in ("nmnist", "dvsgesture"):
         sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} --seeds {seeds} "
@@ -205,7 +206,7 @@ if PART == "C":
     checkpoint()
 
 # ---------------------------------------------------------------- N4 learned attacker (GPU, last)
-if PART == "B":
+if "n4" in RUN:
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset eventreid --data {DATA}/eventreid "
        f"--keys {KEYS} {lim_s} {q} --out {OUT}/n4/eventreid", "N4 eventreid")
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset synthetic --keys {KEYS} {q} "
