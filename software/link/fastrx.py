@@ -77,12 +77,31 @@ def native_lib(src, stem, flags, timeout=120):
             raise RuntimeError(f"cannot compile {src.name} with {cc}: {r.stderr.strip()[-600:]}")
     _dll_dir(cc)
     try:
-        return ctypes.CDLL(str(so))
+        return _load_quietly(so)
     except OSError as e:
         so.unlink(missing_ok=True)
         hint = (" A 32-bit gcc cannot build for 64-bit Python: install a 64-bit gcc (x86_64-w64-mingw32)."
                 if os.name == "nt" and not machine.startswith("x86_64") else "")
         raise RuntimeError(f"cannot load {src.name} built by {cc} (target {machine or 'unknown'}): {e}.{hint}") from e
+
+
+
+def _load_quietly(so):
+    """ctypes.CDLL, but on Windows a library that is not a valid DLL for this Python (wrong architecture,
+    a broken file) raises OSError instead of first showing a modal "Bad Image" box (0xc000012f) that stops
+    the program until someone clicks OK. The error mode is set for this thread only and restored after."""
+    if os.name != "nt":
+        return ctypes.CDLL(str(so))
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    old = ctypes.c_uint()
+    quiet = 0x0001 | 0x8000                # SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX
+    set_mode = getattr(k32, "SetThreadErrorMode", None)
+    if not set_mode or not set_mode(quiet, ctypes.byref(old)):
+        return ctypes.CDLL(str(so))
+    try:
+        return ctypes.CDLL(str(so))
+    finally:
+        set_mode(old.value, None)
 
 
 _error = None
