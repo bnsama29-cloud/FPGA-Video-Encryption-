@@ -1,0 +1,101 @@
+{
+ "meta": {
+  "bitfile": "secure_jpeg_lanes4yuyv.bit",
+  "ip": [
+   3,
+   4,
+   true,
+   "yuyv"
+  ],
+  "frames": 3,
+  "source": "synthetic",
+  "quality": 75,
+  "fclk_mhz": 125.0
+ },
+ "rows": [
+  {
+   "size": "640x480",
+   "mode": 0,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "640x480",
+   "mode": 1,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "640x480",
+   "mode": 2,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "640x480",
+   "mode": 3,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "640x480",
+   "mode": 4,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "640x480",
+   "mode": 5,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1024x768",
+   "mode": 0,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1024x768",
+   "mode": 1,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1024x768",
+   "mode": 2,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1024x768",
+   "mode": 3,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1024x768",
+   "mode": 4,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1024x768",
+   "mode": 5,
+   "frames": 3,
+   "bit_exact": true,
+   "first_mismatch": null
+  }
+ ]
+}

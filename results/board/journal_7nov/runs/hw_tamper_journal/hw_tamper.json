@@ -1,0 +1,26 @@
+{
+  "shots": 25,
+  "detected": 16,
+  "missed": 9,
+  "frames_rejected_per_shot": {
+    "0": 9,
+    "1": 6,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "6": 1,
+    "7": 1,
+    "8": 1,
+    "16": 1
+  },
+  "frames_ok": 2112,
+  "frames_rejected": 100,
+  "rejected_verdicts": {
+    "malformed": 0,
+    "tag-mismatch": 100
+  },
+  "unexplained_rejections": 39,
+  "latency_ms_median": 1031.7,
+  "latency_ms_max": 3126.8,
+  "window_s": 4.0
+}

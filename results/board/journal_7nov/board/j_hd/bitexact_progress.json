@@ -1,0 +1,101 @@
+{
+ "meta": {
+  "bitfile": "secure_jpeg_lanes4hd.bit",
+  "ip": [
+   3,
+   4,
+   true,
+   "rgb"
+  ],
+  "frames": 2,
+  "source": "synthetic",
+  "quality": 75,
+  "fclk_mhz": 125.0
+ },
+ "rows": [
+  {
+   "size": "1280x720",
+   "mode": 0,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1280x720",
+   "mode": 1,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1280x720",
+   "mode": 2,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1280x720",
+   "mode": 3,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1280x720",
+   "mode": 4,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1280x720",
+   "mode": 5,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1920x1088",
+   "mode": 0,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1920x1088",
+   "mode": 1,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1920x1088",
+   "mode": 2,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1920x1088",
+   "mode": 3,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1920x1088",
+   "mode": 4,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  },
+  {
+   "size": "1920x1088",
+   "mode": 5,
+   "frames": 2,
+   "bit_exact": true,
+   "first_mismatch": null
+  }
+ ]
+}

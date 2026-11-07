@@ -1,0 +1,57 @@
+# Board-day results (copied by software/scripts/save_board_day.py)
+
+| File | Bytes | SHA-256 | Copied from |
+|---|---|---|---|
+| `board/j_arm/arm_baseline.json` | 9,060 | `143a8c4818ab3062…` | `sim_out/board/j_arm/arm_baseline.json` |
+| `board/j_arm/arm_baseline.md` | 3,712 | `42a24955ec9a0751…` | `sim_out/board/j_arm/arm_baseline.md` |
+| `board/j_hd/bitexact_progress.json` | 1,520 | `933ff98d3726b027…` | `sim_out/board/j_hd/bitexact_progress.json` |
+| `board/j_hd/first_contact.json` | 11,565 | `3ee5ee7d945d34eb…` | `sim_out/board/j_hd/first_contact.json` |
+| `board/j_hd/first_contact.md` | 4,333 | `832b25a6bdacc29b…` | `sim_out/board/j_hd/first_contact.md` |
+| `board/j_lanes2/bitexact_progress.json` | 1,499 | `c910b0c9b297dffd…` | `sim_out/board/j_lanes2/bitexact_progress.json` |
+| `board/j_lanes2/first_contact.json` | 11,486 | `f749efe20469e6a7…` | `sim_out/board/j_lanes2/first_contact.json` |
+| `board/j_lanes2/first_contact.md` | 4,225 | `6d0f5798eca688f6…` | `sim_out/board/j_lanes2/first_contact.md` |
+| `board/j_lanes4/bitexact_progress.json` | 1,500 | `091b086f280f9a3c…` | `sim_out/board/j_lanes4/bitexact_progress.json` |
+| `board/j_lanes4/first_contact.json` | 11,499 | `883223248ed08b8f…` | `sim_out/board/j_lanes4/first_contact.json` |
+| `board/j_lanes4/first_contact.md` | 4,237 | `e1e0167f42543fed…` | `sim_out/board/j_lanes4/first_contact.md` |
+| `board/j_webcam/bitexact_progress.json` | 1,499 | `3e1123de17d4557b…` | `sim_out/board/j_webcam/bitexact_progress.json` |
+| `board/j_webcam/first_contact.json` | 6,532 | `7593b6d4aa36815b…` | `sim_out/board/j_webcam/first_contact.json` |
+| `board/j_webcam/first_contact.md` | 2,452 | `3c92777123d83e1a…` | `sim_out/board/j_webcam/first_contact.md` |
+| `board/j_yuyv/bitexact_progress.json` | 1,511 | `712c8edb1a2af227…` | `sim_out/board/j_yuyv/bitexact_progress.json` |
+| `board/j_yuyv/first_contact.json` | 11,491 | `55b73cc38d6e2e15…` | `sim_out/board/j_yuyv/first_contact.json` |
+| `board/j_yuyv/first_contact.md` | 4,232 | `70caf5b0abf1682b…` | `sim_out/board/j_yuyv/first_contact.md` |
+| `pq_kex/AMD64_DESKTOP-I60PED0.json` | 545 | `a23ad0d4f509a632…` | `sim_out/pq_kex/AMD64_DESKTOP-I60PED0.json` |
+| `pq_kex/AMD64_DESKTOP-I60PED0.md` | 436 | `74fa12b314b7b87c…` | `sim_out/pq_kex/AMD64_DESKTOP-I60PED0.md` |
+| `runs/board_rekey_load/rekey_load.json` | 1,963 | `ebc8293f64c94ac8…` | `sim_out/runs/board_rekey_load/rekey_load.json` |
+| `runs/board_rekey_load/rekey_load.md` | 824 | `b789b7ef594db10a…` | `sim_out/runs/board_rekey_load/rekey_load.md` |
+| `runs/board_rekey_load/run/events.jsonl` | 608,650 | `f4889d1abf1f8500…` | `sim_out/runs/board_rekey_load/run/events.jsonl` |
+| `runs/board_rekey_load/run/summary.json` | 33,998 | `c570f84180aeaf8d…` | `sim_out/runs/board_rekey_load/run/summary.json` |
+| `runs/board_rekey_load/run/windows.csv` | 3,205 | `53bf86fe98afc1f9…` | `sim_out/runs/board_rekey_load/run/windows.csv` |
+| `runs/board_repeat_runs/rep1/episodes.csv` | 1,190 | `ab5d931717718c84…` | `sim_out/runs/board_repeat_runs/rep1/episodes.csv` |
+| `runs/board_repeat_runs/rep1/events.jsonl` | 963,997 | `36195db827ad4a53…` | `sim_out/runs/board_repeat_runs/rep1/events.jsonl` |
+| `runs/board_repeat_runs/rep1/summary.json` | 106,034 | `818aab5b8a8f237b…` | `sim_out/runs/board_repeat_runs/rep1/summary.json` |
+| `runs/board_repeat_runs/rep1/windows.csv` | 9,601 | `adaa90c66cbac545…` | `sim_out/runs/board_repeat_runs/rep1/windows.csv` |
+| `runs/board_repeat_runs/rep2/episodes.csv` | 1,178 | `d60b0dd2e387240d…` | `sim_out/runs/board_repeat_runs/rep2/episodes.csv` |
+| `runs/board_repeat_runs/rep2/events.jsonl` | 1,209,735 | `e7d846eabf53bdee…` | `sim_out/runs/board_repeat_runs/rep2/events.jsonl` |
+| `runs/board_repeat_runs/rep2/summary.json` | 106,014 | `04362a22fe22c0a8…` | `sim_out/runs/board_repeat_runs/rep2/summary.json` |
+| `runs/board_repeat_runs/rep2/windows.csv` | 9,594 | `ba684b891d46f6d2…` | `sim_out/runs/board_repeat_runs/rep2/windows.csv` |
+| `runs/board_repeat_runs/rep3/episodes.csv` | 1,184 | `adccbe134f69de48…` | `sim_out/runs/board_repeat_runs/rep3/episodes.csv` |
+| `runs/board_repeat_runs/rep3/events.jsonl` | 1,405,476 | `305f19d168d952bb…` | `sim_out/runs/board_repeat_runs/rep3/events.jsonl` |
+| `runs/board_repeat_runs/rep3/summary.json` | 106,020 | `c1e90f931a0bb5dc…` | `sim_out/runs/board_repeat_runs/rep3/summary.json` |
+| `runs/board_repeat_runs/rep3/windows.csv` | 9,594 | `eefdf70b18f6ce6e…` | `sim_out/runs/board_repeat_runs/rep3/windows.csv` |
+| `runs/board_repeat_runs/rep4/episodes.csv` | 1,197 | `4e26bc46a396da95…` | `sim_out/runs/board_repeat_runs/rep4/episodes.csv` |
+| `runs/board_repeat_runs/rep4/events.jsonl` | 1,621,711 | `8e8d6fbf609f25a3…` | `sim_out/runs/board_repeat_runs/rep4/events.jsonl` |
+| `runs/board_repeat_runs/rep4/summary.json` | 106,044 | `7016567177dcb3e1…` | `sim_out/runs/board_repeat_runs/rep4/summary.json` |
+| `runs/board_repeat_runs/rep4/windows.csv` | 9,598 | `5816c2ce3dbe6e38…` | `sim_out/runs/board_repeat_runs/rep4/windows.csv` |
+| `runs/board_repeat_runs/rep5/episodes.csv` | 1,193 | `30db2de78a9b9761…` | `sim_out/runs/board_repeat_runs/rep5/episodes.csv` |
+| `runs/board_repeat_runs/rep5/events.jsonl` | 1,110,666 | `860ac6f423359724…` | `sim_out/runs/board_repeat_runs/rep5/events.jsonl` |
+| `runs/board_repeat_runs/rep5/summary.json` | 106,036 | `5d5bf9e3d54da976…` | `sim_out/runs/board_repeat_runs/rep5/summary.json` |
+| `runs/board_repeat_runs/rep5/windows.csv` | 9,596 | `60a1c89910cf9f00…` | `sim_out/runs/board_repeat_runs/rep5/windows.csv` |
+| `runs/board_repeat_runs/runs.json` | 2,392 | `d7a0c0ccbc656351…` | `sim_out/runs/board_repeat_runs/runs.json` |
+| `runs/board_repeat_runs/table.csv` | 708 | `7703ebcb2fba90fb…` | `sim_out/runs/board_repeat_runs/table.csv` |
+| `runs/board_repeat_runs/table.md` | 901 | `08329b58a8e87dd5…` | `sim_out/runs/board_repeat_runs/table.md` |
+| `runs/hw_tamper_journal/events.jsonl` | 752,522 | `ca3cd4ad1ab57972…` | `sim_out/runs/hw_tamper_journal/events.jsonl` |
+| `runs/hw_tamper_journal/hw_tamper.json` | 451 | `1b3ba9b6228af5da…` | `sim_out/runs/hw_tamper_journal/hw_tamper.json` |
+| `runs/hw_tamper_journal/hw_tamper.md` | 275 | `79f80191db169364…` | `sim_out/runs/hw_tamper_journal/hw_tamper.md` |
+| `runs/hw_tamper_journal/summary.json` | 73,929 | `d3c0ff210496d95b…` | `sim_out/runs/hw_tamper_journal/summary.json` |
+| `runs/hw_tamper_journal/windows.csv` | 6,999 | `289152597b9d78cf…` | `sim_out/runs/hw_tamper_journal/windows.csv` |
+| `energy/power_template.csv` | 542 | `e4a2d14442000d9e…` | `software/system/baselines/power_template.csv` |
