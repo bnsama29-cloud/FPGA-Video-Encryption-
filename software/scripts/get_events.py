@@ -16,6 +16,7 @@ Each dataset is fetched on its own: a failure is reported and the others still r
 Writes <out>/<name>/MANIFEST.json (neuro.datasets.manifest: SHA-256 and size per file) and prints the totals.
 """
 import argparse
+import os
 import hashlib
 import json
 import shutil
@@ -102,6 +103,31 @@ def md5(path):
     return h.hexdigest()
 
 
+def _walk(root):
+    """(dirpath, dirnames, filenames) under root, following symbolic links: Kaggle mounts attached datasets under
+    /kaggle/input through links, which Path.rglob does not enter (first Kaggle run with the dataset, 7 Nov 2026)."""
+    if not Path(root).exists():
+        return []
+    return list(os.walk(root, followlinks=True))
+
+
+def _has_npy(d):
+    return any(f.endswith(".npy") for _, _, fs in os.walk(d, followlinks=True) for f in fs)
+
+
+def describe_inputs(root, depth=4, limit=60):
+    """Short listing of what is attached under root (printed when DVS Gesture is not found)."""
+    lines = []
+    for dp, dn, fn in _walk(root):
+        rel = Path(dp).relative_to(root)
+        if len(rel.parts) > depth:
+            continue
+        lines.append(f"  {rel.as_posix() or '.'}/  ({len(dn)} dirs, {len(fn)} files: {', '.join(sorted(fn)[:4])})")
+        if len(lines) >= limit:
+            break
+    return "\n".join(lines) or f"  (nothing under {root})"
+
+
 def stage_gesture(out, inputs):
     """Put both DVS Gesture archives, MD5-checked, into <out>/dvsgesture/DVSGesture/ (Tonic's location)."""
     dst_dir = out / "dvsgesture" / "DVSGesture"
@@ -110,10 +136,13 @@ def stage_gesture(out, inputs):
         dst = dst_dir / fname
         if dst.exists() and md5(dst) == want:
             continue
-        found = [f for f in (sorted(Path(inputs).rglob(fname)) if Path(inputs).exists() else []) if f.is_file()]
+        walk = _walk(inputs)
+        found = sorted(Path(dp) / fname for dp, _, fn in walk if fname in fn)
         folder = fname.replace(".tar.gz", "")
-        unpacked = [d for d in (sorted(Path(inputs).rglob(folder)) if Path(inputs).exists() else [])
-                    if d.is_dir() and next(d.rglob("*.npy"), None) is not None]
+        # Kaggle unpacks an uploaded .tar.gz, often as <archive name>/<folder>/user../*.npy: take the deepest folder
+        # of that name that holds .npy files (its children are the userNN_<lighting> folders Tonic walks)
+        unpacked = sorted((Path(dp) / d for dp, dn, _ in walk for d in dn if d == folder and _has_npy(Path(dp) / d)),
+                          key=lambda p: len(p.parts), reverse=True)
         if not found and unpacked:
             # Kaggle can unpack an uploaded .tar.gz: link the unpacked folder where Tonic looks and leave an empty
             # file under the archive's name (Tonic only checks that the archive file exists, then uses the folder)
@@ -130,8 +159,12 @@ def stage_gesture(out, inputs):
             print(f"DVS Gesture: using {found[0]}")
             shutil.copy(found[0], dst)
         else:
-            print(f"DVS Gesture: {fname} not under {inputs}; downloading {url}")
-            download(url, dst)
+            print(f"DVS Gesture: neither {fname} nor an unpacked {folder}/ with .npy files under {inputs}. "
+                  f"Attached inputs:\n{describe_inputs(inputs)}\nTrying the download {url}")
+            try:
+                download(url, dst)
+            except OSError as e:
+                raise RuntimeError(f"{fname}: not attached and the download failed ({e})") from e
         got = md5(dst)
         if got != want:
             dst.unlink()
@@ -169,7 +202,7 @@ def main():
                 get_tonic(n, a.out, a.inputs)
         except (OSError, RuntimeError, ValueError, SystemExit) as e:   # report, go on with the next dataset
             print(f"FAILED {n}: {type(e).__name__}: {e}")
-            failed.append(n)
+            failed.append(f"{n} ({type(e).__name__}: {e})")
             continue
         man = datasets.manifest(a.out / n)
         (a.out / n / "MANIFEST.json").write_text(json.dumps(man, indent=1), encoding="utf-8")
