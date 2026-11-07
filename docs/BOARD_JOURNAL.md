@@ -11,7 +11,7 @@ before part 3. A board day spent on a design that the simulation already rejects
 | Machine | Address | Window |
 |---|---|---|
 | Board (PYNQ-Z2) | `192.168.2.99` | **Board window**: ssh; the line starts with `root@pynq:/home/xilinx/fpga_journal#` |
-| Laptop | `192.168.2.1` | **Laptop window**: Command Prompt in the repository folder; the line starts with `(.venv)` |
+| Laptop | `192.168.2.1` | **Laptop window**: Command Prompt in `D:\FPGA-journal`; the line starts with `(.venv)` |
 
 Board commands (`python3`, `sudo`, `export`) only work in the board window. Laptop commands (`py`, `git`,
 `scp`) only work in the laptop window.
@@ -30,35 +30,36 @@ Board commands (`python3`, `sudo`, `export`) only work in the board window. Lapt
 
 ---
 
-## 0. Get the journal branch (laptop window, once)
+## 0. A separate copy for the journal work (laptop window, once)
+
+The journal work lives in its own folder, with its own `.venv` and `sim_out`, on the laptop and on the board.
+The folder you present from (the non-journal version) is never switched to this branch, and nothing
+here changes it.
+
+| | Presentation version | Journal version |
+|---|---|---|
+| Laptop folder | your existing clone | `D:\FPGA-journal` |
+| Git branch | `main` | `journal-version` |
+| Board folder | `/home/xilinx/fpga` | `/home/xilinx/fpga_journal` |
 
 ```
-cd /d D:\FPGA-Video-Encryption-\FPGA-Video-Encryption-
+cd /d D:\
+git clone -b journal-version https://github.com/vij-ship-it/FPGA-Video-Encryption- FPGA-journal
+cd FPGA-journal
+py -m venv .venv
 .venv\Scripts\activate
-git remote -v
-```
-If `origin` is `vij-ship-it/FPGA-Video-Encryption-` (your fork):
-```
-git fetch origin
-git checkout journal-version
-git pull
-```
-If `origin` is `bnsama29-cloud/...` (the team repository), add the fork once and take its branch:
-```
-git remote add fork https://github.com/vij-ship-it/FPGA-Video-Encryption-
-git fetch fork
-git checkout -b journal-version fork/journal-version
-```
-Then install the packages again (the repository now has six top-level folders, and the Python packages
-live in `software/`):
-```
 pip install -r requirements.txt
 py software\scripts\check_setup.py
 ```
-**Expect:** 0 FAIL.
+**Expect:** 0 FAIL. Each folder needs its own `.venv`: `requirements.txt` installs the packages in editable
+mode, so one `.venv` always runs the code of the folder it was installed from. Always activate the `.venv` of
+the folder you are in.
 
-If a `sim_out` folder from an earlier board day is in the repository folder, rename it once
-(`ren sim_out sim_out_before_journal`). Otherwise part 5 would copy those old results into the journal folder.
+The demo key is not in git. Copy it from the presentation folder, using that folder's path:
+`copy <presentation folder>\software\configs\demo_key.txt software\configs\` (older layouts keep it in
+`configs\demo_key.txt`). You can also make a new key with `py software\scripts\demo_key.py`.
+
+Every command below runs in `D:\FPGA-journal`, with its `.venv` active.
 
 ## 1. Checks without the board (laptop window)
 
