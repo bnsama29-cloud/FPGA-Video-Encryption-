@@ -384,8 +384,11 @@ def cache_counts(dataset, out_npz):
 
 def load_counts(npz):
     """Inverse of cache_counts: list of (series, label or None, group, (W, H), bucket0)."""
-    z = np.load(npz, allow_pickle=False)
-    off = z["offsets"]
-    return [(z["counts"][off[i]:off[i + 1]], None if z["label"][i] < 0 else int(z["label"][i]),
-             str(z["group"][i]), (int(z["W"][i]), int(z["H"][i])), int(z["bucket0"][i]))
+    # Every z[...] on an NpzFile decompresses the whole array again: read each array once (indexing z["counts"]
+    # inside the loop made N5 on 400 DVS Gesture samples allocate 400 x 166 MB and get Killed on Kaggle).
+    with np.load(npz, allow_pickle=False) as z:
+        a = {k: z[k] for k in ("offsets", "counts", "label", "group", "W", "H", "bucket0")}
+    off, counts, label = a["offsets"], a["counts"], a["label"]
+    return [(counts[off[i]:off[i + 1]], None if label[i] < 0 else int(label[i]),
+             str(a["group"][i]), (int(a["W"][i]), int(a["H"][i])), int(a["bucket0"][i]))
             for i in range(off.size - 1)]

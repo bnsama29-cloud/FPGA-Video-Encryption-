@@ -67,3 +67,18 @@ def test_bucket_targets_equals_the_scalar_rule():
     n = np.arange(0, 300)
     for pol in (PadPolicy(FLOOR, 4), PadPolicy(LADDER, 2, 64), PadPolicy(LADDER, 3, 100), PadPolicy(LADDER, 1, 0)):
         assert bucket_targets(n, pol).tolist() == [bucket_target(int(v), pol) for v in n]
+
+
+def test_count_cache_round_trip(tmp_path):
+    from neuro.geometry import SENSORS
+    rng = np.random.default_rng(0)
+    items = []
+    for i in range(30):
+        ev = np.zeros(50, dtype=[("t", "<u8"), ("x", "<u2"), ("y", "<u2"), ("p", "u1")])
+        ev["t"] = np.sort(rng.integers(1000, 100000, 50))
+        items.append((ev, i % 3, f"g{i}", SENSORS["nmnist"]))
+    assert datasets.cache_counts(iter(items), tmp_path / "c.npz") == 30
+    back = datasets.load_counts(tmp_path / "c.npz")
+    for (ev, lab, grp, _), (series, lab2, grp2, wh, b0) in zip(items, back):
+        _, want = datasets.bucket_counts(ev)
+        assert series.tolist() == want.tolist() and (lab2, grp2, wh) == (lab, grp, (34, 34))
