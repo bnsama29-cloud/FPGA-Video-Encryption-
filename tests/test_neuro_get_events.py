@@ -47,5 +47,5 @@ def test_archives_unpacked_by_kaggle_are_linked(tmp_path, monkeypatch):
     ge.stage_gesture(tmp_path / "out", tmp_path / "input")
     d = tmp_path / "out" / "dvsgesture" / "DVSGesture"
     assert (d / "ibmGestureTrain.tar.gz").is_file()
-    assert (d / "ibmGestureTrain").is_symlink()
+    assert (d / "ibmGestureTrain").is_dir()          # a symlink (Linux, Kaggle) or a copy (Windows without privilege)
     assert [p.name for p in (d / "ibmGestureTrain").rglob("*.npy")] == ["0.npy"]
