@@ -226,11 +226,13 @@ py experiments\rekey_load.py --external-sender 192.168.2.99 --board-max-mode E5 
 Paste the printed board command as in 4.7.
 
 ### 4.9 Tamper button with debounce (X13)
-On the board, set SW1 so that **LD0** is on, and **SW0 down**. Laptop window:
+On the board, set **SW1 up** and **SW0 down**, and Ctrl+C any sender still running. LD0 shows SW1 only
+while the tamper image is loaded, so it stays dark until the board command below has started. Laptop window:
 ```
 py experiments\hw_tamper.py --external-sender 192.168.2.99 --trigger manual --set keys.master=%KEY% --out sim_out\runs\hw_tamper_journal
 ```
-Paste the printed board command. At each beep, give BTN0 **one** tap. The debounce ignores the contact
+Paste the printed board command. Once it has loaded the tamper image, **LD0 must be on**; if it is off,
+flip SW1. At each beep, give BTN0 **one** tap. The debounce ignores the contact
 bounce for about 10 ms after a press, so every shot must now give exactly one rejected frame. On 24 Oct,
 without the debounce, 9 of 25 shots gave 2 frames. It does not merge deliberate presses: two taps are
 two shots.
@@ -287,3 +289,4 @@ power readings into `results/board/journal_<date>/README.md` with the date, the 
 | `kex: no answer from the receiver` | The board started more than 2 min after the laptop. Ctrl+C both, start the laptop, then the board |
 | Latency 0 ms, negative or huge | Board clock drifted. Run 3.4 again right before the run |
 | Tamper run: 0 of 25 detected | SW1 is the wrong way round (LD0 off) |
+| LD0 off before the tamper run | Normal until the board command has loaded the tamper image (4.9) |
