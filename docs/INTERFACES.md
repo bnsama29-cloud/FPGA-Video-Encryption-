@@ -48,7 +48,7 @@ Frame size: width and height multiples of 16, width ≤ 2048 (parameter `LOG_MAX
 `WSTRB` is honoured; writes to unused addresses are ignored with an OKAY response.
 
 Per-frame sequence (identical in `hardware/tb/test_top.py::Encoder` and the future PYNQ driver):
-once per session write KEY0..3, SESSION_ID, SESSION_ID_HI and the 128 QT_DATA values (QT_ADDR=0 first); per frame write WIDTH, HEIGHT, FRAME_CTR, FRAME_CTR_HI, then `CTRL = 1 | mode << 1`, start both DMA channels (receive first), wait for STATUS.DONE, read OUT_BYTES and TAG0..3 (and, for timing, CYCLES / IN_WAIT / OUT_STALL; bitstreams built before 21 Oct 2026 read 0 there).
+once per session write KEY0..3, SESSION_ID, SESSION_ID_HI and the 128 QT_DATA values (QT_ADDR=0 first); per frame write WIDTH, HEIGHT, FRAME_CTR, FRAME_CTR_HI, arm the receive DMA channel (S2MM), write `CTRL = 1 | mode << 1`, then start the send channel (MM2S; never before START: the lane dealer takes pixels whenever a lane is ready and START resets its position), wait for STATUS.DONE, read OUT_BYTES and TAG0..3 (and, for timing, CYCLES / IN_WAIT / OUT_STALL; bitstreams built before 21 Oct 2026 read 0 there).
 
 ## 4. Cryptography
 

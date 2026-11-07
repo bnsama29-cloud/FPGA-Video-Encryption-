@@ -100,8 +100,8 @@ def run_sender(cfg, timeout=120.0, keyfile=KEYFILE, log=print):
             s.sendto(m2 if m2 else b"SVK0", addr)
             try:
                 d, _ = s.recvfrom(4096)
-            except (socket.timeout, ConnectionRefusedError):
-                continue
+            except (socket.timeout, ConnectionRefusedError, ConnectionResetError):
+                continue        # receiver not listening yet: Linux reports ICMP as refused, Windows as reset (10054)
             if d[:4] == keys.KEX_MAGIC1 and m2 is None:
                 try:
                     k, m2 = keys.kex_respond(psk, d)

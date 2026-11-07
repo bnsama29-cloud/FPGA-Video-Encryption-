@@ -104,3 +104,30 @@ def test_over_udp_slow_first_keygen(tmp_path, monkeypatch):
     rx.join(10)
     assert got.get("rx") == got["tx"], f"keys differ: receiver {got.get('rx')}, sender {got['tx']}"
     assert len(calls) == 1, f"the receiver started {len(calls)} exchanges for one sender"
+
+
+def test_sender_survives_windows_udp_reset(tmp_path, monkeypatch):
+    """Bug #47: on Windows a UDP recvfrom after a send to a port nobody listens on yet raises
+    ConnectionResetError (WinError 10054), not ConnectionRefusedError as on Linux. run_sender stopped with it
+    when it sent SVK0 before the receiver was bound. It must treat it like a timeout and keep resending."""
+    import socket as socket_mod
+    real = socket_mod.socket
+
+    class FirstRecvResets(real):
+        resets = 0
+
+        def recvfrom(self, *a):
+            if FirstRecvResets.resets < 2:
+                FirstRecvResets.resets += 1
+                raise ConnectionResetError(10054, "An existing connection was forcibly closed by the remote host")
+            return super().recvfrom(*a)
+
+    cfg = config.load(None, [f"keys.master={PSK.hex()}", "link.host=127.0.0.1", "link.kex=47097"])
+    got = {}
+    rx = threading.Thread(target=lambda: got.update(rx=kex.run_receiver(cfg, 20, tmp_path / "rx.txt", log=lambda *_: None)))
+    rx.start()
+    monkeypatch.setattr(kex.socket, "socket", FirstRecvResets)
+    got["tx"] = kex.run_sender(cfg, 20, tmp_path / "tx.txt", log=lambda *_: None)
+    rx.join(10)
+    assert FirstRecvResets.resets >= 1, "the fake reset never fired, so the test proves nothing"
+    assert got.get("rx") == got["tx"], f"keys differ: receiver {got.get('rx')}, sender {got['tx']}"
