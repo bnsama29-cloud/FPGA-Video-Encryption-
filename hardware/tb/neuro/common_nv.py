@@ -16,6 +16,12 @@ SOURCES_NV = {
     "nv_feistel": [NV / "nv_sdp_ram.v", NV / "nv_feistel.v"],
     "nv_table_gen": KS + [NV / "nv_table_gen.v"],
     "nv_xor": KS + [NV / "nv_xor.v"],
+    "nv_top": [RTL / "ascon_round.v", RTL / "ascon_aead128_core.v", RTL / "keystream_gen.v", RTL / "skid_buf.v"]
+              + [NV / f for f in ("nv_sdp_ram.v", "nv_ascon_core_u.v", "nv_feistel.v", "nv_table_gen.v", "nv_xor.v",
+                                  "nv_word_fifo.v", "nv_tag32.v", "nv_out_mux.v", "nv_trailer.v", "nv_packetizer.v",
+                                  "nv_axil_regs.v", "nv_top.v")],
+    "tb_nv_tag_chain": [RTL / "ascon_round.v", NV / "nv_ascon_core_u.v", NV / "nv_word_fifo.v", NV / "nv_tag32.v",
+                        NV / "nv_out_mux.v", Path(__file__).resolve().parent / "tb_nv_tag_chain.v"],
 }
 
 

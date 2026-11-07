@@ -1062,7 +1062,7 @@ recording trigger. (c) Reader compatibility (from N8-R). If no keyless utility s
   optional. All are downloaded on Kaggle by `software/scripts/get_events.py` with a SHA-256 manifest. v2e-lite
   events are generated from the Xiph clips that `get_xiph.py` already fetches.
 - **Baselines (`docs/neuro/BASELINES.md`, written before any baseline code).** It must contain, read from the
-  PDFs with section numbers: Du 2021 §3 in full (2D-SIMM iteration and parameters, the mapping from the six
+  PDFs with section numbers: Du 2021 §4 in full (§3 is its threat model; corrected 7 Nov 2026) (2D-SIMM iteration and parameters, the mapping from the six
   sequences to the position permutation, the polarity flip, the updating score rule) and the target number to
   reproduce (Ahmad 2023 Table 3: Du on Event-ReId, SSIM 0.451, tolerance ±0.03); Zhang 2024's noise-mask
   construction (neighbourhood, recursion stop, timestamp assignment, polarity rule) and its N-MNIST recognition
@@ -1203,6 +1203,7 @@ over every paper-2 step.
 |---|---|---|
 | 2026-11-06 | n1 draft | From notes. Changes from the draft plan: T = 1024 µs (multiple of 64); event count moved to the trailer; mixed-radix Feistel instead of cycle walking; subkeys for domain separation; padding only at V3/V4 |
 | 2026-11-07 | n1 revision 2 (review) | Receiver state moves only after the tag (read-only replay check, bounded epoch peek, `EventRatchet` rooted at `nv1-events`); keys bound to the boot (kex profile; ctx table with distinct ctx per key); header 48 B with FIRST/FINAL flags and `link` (tail and epoch-boundary deletion detectable); trailer fixed fields last (unique parse); exact receiver profile instead of a minimum level; PAD only at V3 with b = 6 or V4, empty packets padded, mask bits interleaved in the same K_dum stream (1 per CD word, before each dummy's 39 content bits), MAX_CD_PAD; time-jump rule; one shadow set with COMMIT_AT and counter-rewind refusal; pipeline reordered (stalling units before the Feistel, in-band header/trailer, credit gate, 35-bit FIFO); tag32 look-ahead and ENC backpressure; SDP RAM template; 64-bit counters with SNAP; VERSION build byte; register map renumbered; W, H ≥ 16 at V2/V3; lanes limited to V0/V2; claims narrowed ((iii) payload, (iv) measured throughput) with pass criteria; experiments reworked (Event-ReId mandatory, N4b, N11, cluster statistics, Kaggle budget) |
+| 2026-11-07 | implementation notes | RTL cases use a 1280 x 16 domain for the §7.2 "16 x 1280" case (H = 1280 exceeds MAXH = 720); `nv_table_bank` is folded into `nv_feistel` (the 16 `nv_sdp_ram` instances are its generate loop); a commit is applied with the pipeline drained (the downstream stages read the active keys), which costs one pipeline flush per commit and changes no output word; `CTRL.CLEAR_HALT` is not needed (a commit with a new SID resumes, as in the model); Du's construction is in its §4 (BASELINES.md) |
 
 ---
 

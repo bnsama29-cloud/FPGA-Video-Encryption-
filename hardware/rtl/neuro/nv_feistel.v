@@ -28,6 +28,8 @@ module nv_feistel #(
     output wire [31:0] out_word,
     output wire [1:0]  out_kind,
     output wire        out_last,
+    output wire        out_perm,    // the word was permuted (its table bank is free once it has left)
+    output wire        out_bank,
     // table write port (from nv_table_gen)
     input  wire        tw_en,
     input  wire        tw_bank,
@@ -92,6 +94,8 @@ module nv_feistel #(
     assign out_valid = a_m[8][15];
     assign out_kind  = a_m[8][12:11];
     assign out_last  = a_m[8][10];
+    assign out_perm  = a_m[8][14];
+    assign out_bank  = a_m[8][13];
     assign out_word  = {a_m[8][9:0], a_x[8], a_y[8]};
 endmodule
 `default_nettype wire
