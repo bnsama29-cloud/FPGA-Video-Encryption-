@@ -690,6 +690,7 @@ function onEvent(ev) {
   }
   if (k === "sender.window") {
     lastFrame = Date.now();
+    if (ev.encoder) encoderName = ev.encoder;   // the page may have missed sender.start (opened or reloaded later)
     $("conn").className = "live"; $("conn").textContent = "Link live";
     $("f-session").textContent = ev.session; $("f-epoch").textContent = ev.epoch; $("f-policy").textContent = ev.policy;
     $("f-fps").textContent = ev.fps.toFixed(1);
