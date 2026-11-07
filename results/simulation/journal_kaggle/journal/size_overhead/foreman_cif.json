@@ -1,0 +1,398 @@
+{
+  "source": "/kaggle/working/data/xiph/foreman_cif.mp4",
+  "name": "foreman_cif",
+  "size": "352x288",
+  "frames": 50,
+  "qualities": {
+    "50": {
+      "modes": {
+        "plain": {
+          "frame_mean": 11783.6,
+          "scan_mean": 11174.6,
+          "frame_over_pct": 0.0,
+          "scan_over_pct": 0.0,
+          "frame_over_bytes": 0,
+          "payload_equal_share": 1.0
+        },
+        "v2 E0": {
+          "frame_mean": 11825.6,
+          "scan_mean": 11174.6,
+          "frame_over_pct": 0.3623539646646472,
+          "scan_over_pct": 0.0,
+          "frame_over_bytes": 42,
+          "payload_equal_share": 1.0
+        },
+        "v2 E1": {
+          "frame_mean": 11825.46,
+          "scan_mean": 11174.46,
+          "frame_over_pct": 0.3609091916003832,
+          "scan_over_pct": -0.0015287476658403163,
+          "frame_over_bytes": 41.86,
+          "payload_equal_share": 1.0
+        },
+        "v2 E2": {
+          "frame_mean": 11824.92,
+          "scan_mean": 11173.92,
+          "frame_over_pct": 0.35587578205270964,
+          "scan_over_pct": -0.006863850788971155,
+          "frame_over_bytes": 41.32,
+          "payload_equal_share": 1.0
+        },
+        "v2 E3": {
+          "frame_mean": 11830.6,
+          "scan_mean": 11179.6,
+          "frame_over_pct": 0.404341610768402,
+          "scan_over_pct": 0.04432097002986493,
+          "frame_over_bytes": 47,
+          "payload_equal_share": 1.0
+        },
+        "v2 E4": {
+          "frame_mean": 11829.66,
+          "scan_mean": 11178.66,
+          "frame_over_pct": 0.39608555277417257,
+          "scan_over_pct": 0.03557504146307676,
+          "frame_over_bytes": 46.06,
+          "payload_equal_share": 1.0
+        },
+        "v2 E5": {
+          "frame_mean": 13082.4,
+          "scan_mean": 12425.4,
+          "frame_over_pct": 11.213544169785344,
+          "scan_over_pct": 11.410077076281455,
+          "frame_over_bytes": 1298.8,
+          "payload_equal_share": 0.0
+        },
+        "v3 E0": {
+          "frame_mean": 11862.78,
+          "scan_mean": 11205.78,
+          "frame_over_pct": 0.6827725375284708,
+          "scan_over_pct": 0.2838208410763383,
+          "frame_over_bytes": 79.18,
+          "payload_equal_share": 1.0
+        },
+        "v3 E1": {
+          "frame_mean": 11862.78,
+          "scan_mean": 11205.78,
+          "frame_over_pct": 0.6824801281097429,
+          "scan_over_pct": 0.2834998104406513,
+          "frame_over_bytes": 79.18,
+          "payload_equal_share": 1.0
+        },
+        "v3 E2": {
+          "frame_mean": 11861.82,
+          "scan_mean": 11204.82,
+          "frame_over_pct": 0.6742029726405421,
+          "scan_over_pct": 0.27475807290196486,
+          "frame_over_bytes": 78.22,
+          "payload_equal_share": 1.0
+        },
+        "v3 E3": {
+          "frame_mean": 11865.36,
+          "scan_mean": 11208.36,
+          "frame_over_pct": 0.7030942771787578,
+          "scan_over_pct": 0.3051983650711055,
+          "frame_over_bytes": 81.76,
+          "payload_equal_share": 1.0
+        },
+        "v3 E4": {
+          "frame_mean": 11867.22,
+          "scan_mean": 11210.22,
+          "frame_over_pct": 0.7209185495287861,
+          "scan_over_pct": 0.3241237265734018,
+          "frame_over_bytes": 83.62,
+          "payload_equal_share": 1.0
+        },
+        "v3 E5": {
+          "frame_mean": 13082.12,
+          "scan_mean": 12425.12,
+          "frame_over_pct": 11.21190515043544,
+          "scan_over_pct": 11.408394717333328,
+          "frame_over_bytes": 1298.52,
+          "payload_equal_share": 0.0
+        }
+      },
+      "padding_v3_E5": {
+        "none": {
+          "mean_bytes": 13082.12,
+          "over_pct": 0.0,
+          "distinct_sizes": 50
+        },
+        "bucket:1024": {
+          "mean_bytes": 13557.76,
+          "over_pct": 3.635802148275662,
+          "distinct_sizes": 8
+        },
+        "window:100": {
+          "mean_bytes": 14192.64,
+          "over_pct": 8.488838200536305,
+          "distinct_sizes": 10
+        },
+        "runmax": {
+          "mean_bytes": 14192.64,
+          "over_pct": 8.488838200536305,
+          "distinct_sizes": 10
+        }
+      }
+    },
+    "75": {
+      "modes": {
+        "plain": {
+          "frame_mean": 17539.5,
+          "scan_mean": 16930.5,
+          "frame_over_pct": 0.0,
+          "scan_over_pct": 0.0,
+          "frame_over_bytes": 0,
+          "payload_equal_share": 1.0
+        },
+        "v2 E0": {
+          "frame_mean": 17581.5,
+          "scan_mean": 16930.5,
+          "frame_over_pct": 0.24372415506132686,
+          "scan_over_pct": 0.0,
+          "frame_over_bytes": 42,
+          "payload_equal_share": 1.0
+        },
+        "v2 E1": {
+          "frame_mean": 17581.44,
+          "scan_mean": 16930.44,
+          "frame_over_pct": 0.2439952096425919,
+          "scan_over_pct": 0.0003031543583515774,
+          "frame_over_bytes": 41.94,
+          "payload_equal_share": 1.0
+        },
+        "v2 E2": {
+          "frame_mean": 17580.94,
+          "scan_mean": 16929.94,
+          "frame_over_pct": 0.24168991637295018,
+          "scan_over_pct": -0.002055966015205926,
+          "frame_over_bytes": 41.44,
+          "payload_equal_share": 1.0
+        },
+        "v2 E3": {
+          "frame_mean": 17588.82,
+          "scan_mean": 16937.82,
+          "frame_over_pct": 0.2870766771980896,
+          "scan_over_pct": 0.045013809497539484,
+          "frame_over_bytes": 49.32,
+          "payload_equal_share": 1.0
+        },
+        "v2 E4": {
+          "frame_mean": 17587.8,
+          "scan_mean": 16936.8,
+          "frame_over_pct": 0.2802074628455442,
+          "scan_over_pct": 0.037838363711697215,
+          "frame_over_bytes": 48.3,
+          "payload_equal_share": 1.0
+        },
+        "v2 E5": {
+          "frame_mean": 18949.7,
+          "scan_mean": 18292.7,
+          "frame_over_pct": 8.195761193365003,
+          "scan_over_pct": 8.213321225577646,
+          "frame_over_bytes": 1410.2,
+          "payload_equal_share": 0.0
+        },
+        "v3 E0": {
+          "frame_mean": 17619.18,
+          "scan_mean": 16962.18,
+          "frame_over_pct": 0.4620269196246276,
+          "scan_over_pct": 0.1903127370168366,
+          "frame_over_bytes": 79.68,
+          "payload_equal_share": 1.0
+        },
+        "v3 E1": {
+          "frame_mean": 17616.98,
+          "scan_mean": 16959.98,
+          "frame_over_pct": 0.4507532657255421,
+          "scan_over_pct": 0.17868408060605048,
+          "frame_over_bytes": 77.48,
+          "payload_equal_share": 1.0
+        },
+        "v3 E2": {
+          "frame_mean": 17618.36,
+          "scan_mean": 16961.36,
+          "frame_over_pct": 0.45770988099405946,
+          "scan_over_pct": 0.18585367228238336,
+          "frame_over_bytes": 78.86,
+          "payload_equal_share": 1.0
+        },
+        "v3 E3": {
+          "frame_mean": 17625.24,
+          "scan_mean": 16968.24,
+          "frame_over_pct": 0.4980049246194312,
+          "scan_over_pct": 0.2276678436427875,
+          "frame_over_bytes": 85.74,
+          "payload_equal_share": 1.0
+        },
+        "v3 E4": {
+          "frame_mean": 17625.2,
+          "scan_mean": 16968.2,
+          "frame_over_pct": 0.4970284580198152,
+          "scan_over_pct": 0.2266347635811504,
+          "frame_over_bytes": 85.7,
+          "payload_equal_share": 1.0
+        },
+        "v3 E5": {
+          "frame_mean": 18949.54,
+          "scan_mean": 18292.54,
+          "frame_over_pct": 8.19612228973192,
+          "scan_over_pct": 8.213766390872207,
+          "frame_over_bytes": 1410.04,
+          "payload_equal_share": 0.0
+        }
+      },
+      "padding_v3_E5": {
+        "none": {
+          "mean_bytes": 18949.54,
+          "over_pct": 0.0,
+          "distinct_sizes": 50
+        },
+        "bucket:1024": {
+          "mean_bytes": 19517.44,
+          "over_pct": 2.9969065212137074,
+          "distinct_sizes": 11
+        },
+        "window:100": {
+          "mean_bytes": 20577.28,
+          "over_pct": 8.589865505970065,
+          "distinct_sizes": 12
+        },
+        "runmax": {
+          "mean_bytes": 20577.28,
+          "over_pct": 8.589865505970065,
+          "distinct_sizes": 12
+        }
+      }
+    },
+    "90": {
+      "modes": {
+        "plain": {
+          "frame_mean": 29901.18,
+          "scan_mean": 29292.18,
+          "frame_over_pct": 0.0,
+          "scan_over_pct": 0.0,
+          "frame_over_bytes": 0,
+          "payload_equal_share": 1.0
+        },
+        "v2 E0": {
+          "frame_mean": 29943.18,
+          "scan_mean": 29292.18,
+          "frame_over_pct": 0.1426434364282335,
+          "scan_over_pct": 0.0,
+          "frame_over_bytes": 42,
+          "payload_equal_share": 1.0
+        },
+        "v2 E1": {
+          "frame_mean": 29941.34,
+          "scan_mean": 29290.34,
+          "frame_over_pct": 0.13735506990029972,
+          "scan_over_pct": -0.005383167577616317,
+          "frame_over_bytes": 40.16,
+          "payload_equal_share": 1.0
+        },
+        "v2 E2": {
+          "frame_mean": 29943.14,
+          "scan_mean": 29292.14,
+          "frame_over_pct": 0.14308545091764702,
+          "scan_over_pct": 0.0004661136799401261,
+          "frame_over_bytes": 41.96,
+          "payload_equal_share": 1.0
+        },
+        "v2 E3": {
+          "frame_mean": 29953.42,
+          "scan_mean": 29302.42,
+          "frame_over_pct": 0.17667216712259975,
+          "scan_over_pct": 0.03474308240883102,
+          "frame_over_bytes": 52.24,
+          "payload_equal_share": 1.0
+        },
+        "v2 E4": {
+          "frame_mean": 29953.24,
+          "scan_mean": 29302.24,
+          "frame_over_pct": 0.1768710772795177,
+          "scan_over_pct": 0.03496086204649451,
+          "frame_over_bytes": 52.06,
+          "payload_equal_share": 1.0
+        },
+        "v2 E5": {
+          "frame_mean": 31451.9,
+          "scan_mean": 30794.9,
+          "frame_over_pct": 5.28352788696898,
+          "scan_over_pct": 5.230759329036145,
+          "frame_over_bytes": 1550.72,
+          "payload_equal_share": 0.0
+        },
+        "v3 E0": {
+          "frame_mean": 29978.3,
+          "scan_mean": 29321.3,
+          "frame_over_pct": 0.26191318869867053,
+          "scan_over_pct": 0.1010222740233656,
+          "frame_over_bytes": 77.12,
+          "payload_equal_share": 1.0
+        },
+        "v3 E1": {
+          "frame_mean": 29979.72,
+          "scan_mean": 29322.72,
+          "frame_over_pct": 0.2664049222752275,
+          "scan_over_pct": 0.10560714356607266,
+          "frame_over_bytes": 78.54,
+          "payload_equal_share": 1.0
+        },
+        "v3 E2": {
+          "frame_mean": 29977.8,
+          "scan_mean": 29320.8,
+          "frame_over_pct": 0.26053402058430747,
+          "scan_over_pct": 0.0996215989944642,
+          "frame_over_bytes": 76.62,
+          "payload_equal_share": 1.0
+        },
+        "v3 E3": {
+          "frame_mean": 29986.96,
+          "scan_mean": 29329.96,
+          "frame_over_pct": 0.2898993579840026,
+          "scan_over_pct": 0.1295827018004346,
+          "frame_over_bytes": 85.78,
+          "payload_equal_share": 1.0
+        },
+        "v3 E4": {
+          "frame_mean": 29988.16,
+          "scan_mean": 29331.16,
+          "frame_over_pct": 0.2951081350475945,
+          "scan_over_pct": 0.13492043742448712,
+          "frame_over_bytes": 86.98,
+          "payload_equal_share": 1.0
+        },
+        "v3 E5": {
+          "frame_mean": 31451.26,
+          "scan_mean": 30794.26,
+          "frame_over_pct": 5.280197304720065,
+          "scan_over_pct": 5.22732980620593,
+          "frame_over_bytes": 1550.08,
+          "payload_equal_share": 0.0
+        }
+      },
+      "padding_v3_E5": {
+        "none": {
+          "mean_bytes": 31451.26,
+          "over_pct": 0.0,
+          "distinct_sizes": 50
+        },
+        "bucket:1024": {
+          "mean_bytes": 31948.8,
+          "over_pct": 1.5819398014578747,
+          "distinct_sizes": 15
+        },
+        "window:100": {
+          "mean_bytes": 33889.28,
+          "over_pct": 7.751740311834884,
+          "distinct_sizes": 13
+        },
+        "runmax": {
+          "mean_bytes": 33889.28,
+          "over_pct": 7.751740311834884,
+          "distinct_sizes": 13
+        }
+      }
+    }
+  }
+}

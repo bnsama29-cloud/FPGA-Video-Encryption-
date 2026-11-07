@@ -1,0 +1,92 @@
+[
+ {
+  "area_um2": 12803.5296,
+  "cells": 1630,
+  "memory_bits": 0,
+  "block": "ascon_round",
+  "lib": "sky130",
+  "nand2_um2": 3.7536,
+  "kge": 3.41
+ },
+ {
+  "area_um2": 44227.4176,
+  "cells": 4020,
+  "memory_bits": 0,
+  "block": "ascon_aead128_core",
+  "lib": "sky130",
+  "nand2_um2": 3.7536,
+  "kge": 11.78
+ },
+ {
+  "area_um2": 50922.5888,
+  "cells": 4534,
+  "memory_bits": 0,
+  "block": "keystream_gen",
+  "lib": "sky130",
+  "nand2_um2": 3.7536,
+  "kge": 13.57
+ },
+ {
+  "area_um2": 64124.0,
+  "cells": 5103,
+  "memory_bits": 0,
+  "block": "tag_unit",
+  "lib": "sky130",
+  "nand2_um2": 3.7536,
+  "kge": 17.08
+ },
+ {
+  "area_um2": 4803.3568,
+  "cells": 290,
+  "memory_bits": 0,
+  "block": "selective_enc",
+  "lib": "sky130",
+  "nand2_um2": 3.7536,
+  "kge": 1.28
+ },
+ {
+  "area_um2": 2384.69,
+  "cells": 1737,
+  "memory_bits": 0,
+  "block": "ascon_round",
+  "lib": "nangate45",
+  "nand2_um2": 0.798,
+  "kge": 2.99
+ },
+ {
+  "area_um2": 8724.8,
+  "cells": 5004,
+  "memory_bits": 0,
+  "block": "ascon_aead128_core",
+  "lib": "nangate45",
+  "nand2_um2": 0.798,
+  "kge": 10.93
+ },
+ {
+  "area_um2": 10158.008,
+  "cells": 5194,
+  "memory_bits": 0,
+  "block": "keystream_gen",
+  "lib": "nangate45",
+  "nand2_um2": 0.798,
+  "kge": 12.73
+ },
+ {
+  "area_um2": 13310.64,
+  "cells": 7449,
+  "memory_bits": 0,
+  "block": "tag_unit",
+  "lib": "nangate45",
+  "nand2_um2": 0.798,
+  "kge": 16.68
+ },
+ {
+  "area_um2": 985.53,
+  "cells": 424,
+  "memory_bits": 0,
+  "block": "selective_enc",
+  "lib": "nangate45",
+  "nand2_um2": 0.798,
+  "kge": 1.24
+ }
+]

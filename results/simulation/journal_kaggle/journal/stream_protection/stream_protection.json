@@ -1,0 +1,62 @@
+{
+  "machine": "x86_64",
+  "python": "3.13.16",
+  "frames": 30,
+  "sizes": {
+    "352x288": {
+      "mean_frame_bytes": 17620.8,
+      "methods": {
+        "srtp_aesgcm": {
+          "label": "SRTP, AES-128-GCM (RFC 7714)",
+          "ms": 0.032034900004873634,
+          "fps_limit": 31215.955094221143,
+          "overhead_bytes": 244.8,
+          "playable_without_key": false,
+          "authenticated": true
+        },
+        "dtls_aesgcm": {
+          "label": "DTLS 1.2 records, AES-128-GCM",
+          "ms": 0.009018400032800855,
+          "fps_limit": 110884.41368345787,
+          "overhead_bytes": 74,
+          "playable_without_key": false,
+          "authenticated": true
+        },
+        "chacha20poly1305": {
+          "label": "RTP packets, ChaCha20-Poly1305",
+          "ms": 0.042494499939493835,
+          "fps_limit": 23532.457175019324,
+          "overhead_bytes": 244.8,
+          "playable_without_key": false,
+          "authenticated": true
+        },
+        "ascon_frame": {
+          "label": "Ascon-AEAD128, whole frame (C)",
+          "ms": 0.07815270000719465,
+          "fps_limit": 12795.463239375493,
+          "overhead_bytes": 16,
+          "playable_without_key": false,
+          "authenticated": true
+        },
+        "ours_E2": {
+          "label": "ours E2, C encoder on this CPU (extra over E0)",
+          "ms": 0.34646149993022846,
+          "fps_limit": 2886.3235892051016,
+          "overhead_bytes": 76.16666666666667,
+          "playable_without_key": true,
+          "authenticated": true,
+          "total_encode_ms": 3.035551499806388
+        },
+        "ours_E5": {
+          "label": "ours E5, C encoder on this CPU (extra over E0)",
+          "ms": 0.5344439998680173,
+          "fps_limit": 1871.1034275751124,
+          "overhead_bytes": 1437.4333333333334,
+          "playable_without_key": true,
+          "authenticated": true,
+          "total_encode_ms": 3.0801534999227442
+        }
+      }
+    }
+  }
+}

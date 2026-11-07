@@ -1,0 +1,68 @@
+{
+ "source": "hall_monitor_cif",
+ "frames": 40,
+ "face_detector": true,
+ "lpips": true,
+ "results": {
+  "plain": {
+   "ssim": 0.9612,
+   "lpips": 0.0339,
+   "edge_corr": 0.996,
+   "face_recall": 1.0,
+   "face_false": 0.0,
+   "faces": 12,
+   "face_frames": 12,
+   "empty_frames": 28
+  },
+  "E1": {
+   "ssim": 0.4755,
+   "lpips": 0.3287,
+   "edge_corr": 0.495,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 12,
+   "face_frames": 12,
+   "empty_frames": 28
+  },
+  "E2": {
+   "ssim": 0.3775,
+   "lpips": 0.501,
+   "edge_corr": 0.4589,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 12,
+   "face_frames": 12,
+   "empty_frames": 28
+  },
+  "E4": {
+   "ssim": 0.3942,
+   "lpips": 0.5349,
+   "edge_corr": 0.4567,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 12,
+   "face_frames": 12,
+   "empty_frames": 28
+  },
+  "E5 (N=1)": {
+   "ssim": 0.2568,
+   "lpips": 0.7858,
+   "edge_corr": 0.0095,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 12,
+   "face_frames": 12,
+   "empty_frames": 28
+  },
+  "E5 (N=32)": {
+   "ssim": 0.2913,
+   "lpips": 0.7902,
+   "edge_corr": 0.0271,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 12,
+   "face_frames": 12,
+   "empty_frames": 28
+  }
+ }
+}

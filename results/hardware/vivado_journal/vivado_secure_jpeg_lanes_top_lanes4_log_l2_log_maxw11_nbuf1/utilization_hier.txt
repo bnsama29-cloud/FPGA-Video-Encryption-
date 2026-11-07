@@ -1,0 +1,105 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (win64) Build 6511674 Tue Jun 16 11:02:23 MDT 2026
+| Date         : Sat Nov  7 00:47:34 2026
+| Host         : Samarth-Lenovo-Laptop running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 3 -file sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw11_nbuf1/utilization_hier.txt
+| Design       : secure_jpeg_lanes_top
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Routed
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++---------------------------+------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|          Instance         |            Module            | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++---------------------------+------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| secure_jpeg_lanes_top     |                        (top) |      17511 |      15141 |    2304 |   66 | 10755 |     48 |     16 |         92 |
+|   (secure_jpeg_lanes_top) |                        (top) |         75 |         75 |       0 |    0 |    59 |      0 |      0 |          0 |
+|   g_lane[0].u_lane        |                 encoder_lane |       3267 |       2675 |     576 |   16 |  2060 |     12 |      4 |         23 |
+|     u_rle                 |                zigzag_rle_40 |        421 |        389 |      32 |    0 |   238 |      0 |      0 |          0 |
+|     g_rgb.u_conv          |             rgb2ycbcr_2px_32 |        293 |        281 |       0 |   12 |   444 |     12 |      2 |          0 |
+|     u_dct                 |                    dct8x8_33 |        806 |        258 |     544 |    4 |    69 |      0 |      0 |         22 |
+|       u_cols              | dct_stage__parameterized0_45 |        505 |        151 |     352 |    2 |    36 |      0 |      0 |         11 |
+|       u_rows              |                 dct_stage_46 |        301 |        107 |     192 |    2 |    33 |      0 |      0 |         11 |
+|     u_enc                 |             selective_enc_34 |        143 |        143 |       0 |    0 |   120 |      0 |      0 |          0 |
+|       (u_enc)             |             selective_enc_34 |         83 |         83 |       0 |    0 |    24 |      0 |      0 |          0 |
+|       u_in                |                  skid_buf_44 |         60 |         60 |       0 |    0 |    96 |      0 |      0 |          0 |
+|     u_huff                |               huffman_enc_36 |        315 |        315 |       0 |    0 |    34 |      0 |      0 |          0 |
+|     u_ks                  |             keystream_gen_37 |        929 |        929 |       0 |    0 |   857 |      0 |      0 |          0 |
+|       (u_ks)              |             keystream_gen_37 |        135 |        135 |       0 |    0 |   272 |      0 |      0 |          0 |
+|       u_core              |        ascon_aead128_core_43 |        794 |        794 |       0 |    0 |   585 |      0 |      0 |          0 |
+|     u_pack                |                bit_packer_38 |        276 |        276 |       0 |    0 |   182 |      0 |      0 |          0 |
+|       (u_pack)            |                bit_packer_38 |         17 |         17 |       0 |    0 |    84 |      0 |      0 |          0 |
+|       u_in                |  skid_buf__parameterized0_41 |        228 |        228 |       0 |    0 |    78 |      0 |      0 |          0 |
+|   g_lane[1].u_lane        | encoder_lane__parameterized0 |       3270 |       2678 |     576 |   16 |  2061 |     12 |      4 |         23 |
+|     (g_lane[1].u_lane)    | encoder_lane__parameterized0 |        106 |        106 |       0 |    0 |    45 |      0 |      0 |          0 |
+|     g_rgb.u_conv          |             rgb2ycbcr_2px_17 |        297 |        285 |       0 |   12 |   444 |     12 |      2 |          0 |
+|     u_dct                 |                    dct8x8_18 |        724 |        176 |     544 |    4 |    68 |      0 |      0 |         22 |
+|       u_cols              | dct_stage__parameterized0_30 |        462 |        108 |     352 |    2 |    35 |      0 |      0 |         11 |
+|       u_rows              |                 dct_stage_31 |        262 |         68 |     192 |    2 |    33 |      0 |      0 |         11 |
+|     u_enc                 |             selective_enc_19 |        143 |        143 |       0 |    0 |   120 |      0 |      0 |          0 |
+|       (u_enc)             |             selective_enc_19 |         83 |         83 |       0 |    0 |    24 |      0 |      0 |          0 |
+|       u_in                |                  skid_buf_29 |         60 |         60 |       0 |    0 |    96 |      0 |      0 |          0 |
+|     u_huff                |               huffman_enc_21 |        314 |        314 |       0 |    0 |    34 |      0 |      0 |          0 |
+|     u_ks                  |             keystream_gen_22 |        937 |        937 |       0 |    0 |   857 |      0 |      0 |          0 |
+|       (u_ks)              |             keystream_gen_22 |        135 |        135 |       0 |    0 |   272 |      0 |      0 |          0 |
+|       u_core              |        ascon_aead128_core_28 |        803 |        803 |       0 |    0 |   585 |      0 |      0 |          0 |
+|     u_pack                |                bit_packer_23 |        280 |        280 |       0 |    0 |   182 |      0 |      0 |          0 |
+|       (u_pack)            |                bit_packer_23 |         17 |         17 |       0 |    0 |    84 |      0 |      0 |          0 |
+|       u_in                |  skid_buf__parameterized0_26 |        228 |        228 |       0 |    0 |    78 |      0 |      0 |          0 |
+|     u_rle                 |                zigzag_rle_25 |        420 |        388 |      32 |    0 |   238 |      0 |      0 |          0 |
+|   g_lane[2].u_lane        | encoder_lane__parameterized1 |       3281 |       2689 |     576 |   16 |  2060 |     12 |      4 |         23 |
+|     u_rle                 |                zigzag_rle_10 |        420 |        388 |      32 |    0 |   238 |      0 |      0 |          0 |
+|     g_rgb.u_conv          |              rgb2ycbcr_2px_2 |        300 |        289 |       0 |   11 |   444 |     12 |      2 |          0 |
+|     u_dct                 |                     dct8x8_3 |        806 |        257 |     544 |    5 |    68 |      0 |      0 |         22 |
+|       u_cols              | dct_stage__parameterized0_15 |        504 |        150 |     352 |    2 |    35 |      0 |      0 |         11 |
+|       u_rows              |                 dct_stage_16 |        302 |        107 |     192 |    3 |    33 |      0 |      0 |         11 |
+|     u_enc                 |              selective_enc_4 |        143 |        143 |       0 |    0 |   120 |      0 |      0 |          0 |
+|       (u_enc)             |              selective_enc_4 |         83 |         83 |       0 |    0 |    24 |      0 |      0 |          0 |
+|       u_in                |                  skid_buf_14 |         60 |         60 |       0 |    0 |    96 |      0 |      0 |          0 |
+|     u_huff                |                huffman_enc_6 |        314 |        314 |       0 |    0 |    34 |      0 |      0 |          0 |
+|     u_ks                  |              keystream_gen_7 |        929 |        929 |       0 |    0 |   857 |      0 |      0 |          0 |
+|       (u_ks)              |              keystream_gen_7 |        135 |        135 |       0 |    0 |   272 |      0 |      0 |          0 |
+|       u_core              |        ascon_aead128_core_13 |        794 |        794 |       0 |    0 |   585 |      0 |      0 |          0 |
+|     u_pack                |                 bit_packer_8 |        276 |        276 |       0 |    0 |   182 |      0 |      0 |          0 |
+|       (u_pack)            |                 bit_packer_8 |         17 |         17 |       0 |    0 |    84 |      0 |      0 |          0 |
+|       u_in                |  skid_buf__parameterized0_11 |        227 |        227 |       0 |    0 |    78 |      0 |      0 |          0 |
+|   g_lane[3].u_lane        | encoder_lane__parameterized2 |       4837 |       4245 |     576 |   16 |  2146 |     12 |      4 |         23 |
+|     (g_lane[3].u_lane)    | encoder_lane__parameterized2 |        105 |        105 |       0 |    0 |    45 |      0 |      0 |          0 |
+|     g_rgb.u_conv          |                rgb2ycbcr_2px |       1861 |       1850 |       0 |   11 |   528 |     12 |      2 |          0 |
+|     u_dct                 |                       dct8x8 |        723 |        174 |     544 |    5 |    69 |      0 |      0 |         22 |
+|       u_cols              |    dct_stage__parameterized0 |        464 |        109 |     352 |    3 |    36 |      0 |      0 |         11 |
+|       u_rows              |                    dct_stage |        259 |         65 |     192 |    2 |    33 |      0 |      0 |         11 |
+|     u_enc                 |                selective_enc |        143 |        143 |       0 |    0 |   120 |      0 |      0 |          0 |
+|       (u_enc)             |                selective_enc |         83 |         83 |       0 |    0 |    24 |      0 |      0 |          0 |
+|       u_in                |                     skid_buf |         60 |         60 |       0 |    0 |    96 |      0 |      0 |          0 |
+|     u_huff                |                  huffman_enc |        315 |        315 |       0 |    0 |    34 |      0 |      0 |          0 |
+|     u_ks                  |                keystream_gen |        938 |        938 |       0 |    0 |   857 |      0 |      0 |          0 |
+|       (u_ks)              |                keystream_gen |        135 |        135 |       0 |    0 |   272 |      0 |      0 |          0 |
+|       u_core              |         ascon_aead128_core_1 |        803 |        803 |       0 |    0 |   585 |      0 |      0 |          0 |
+|     u_pack                |                   bit_packer |        280 |        280 |       0 |    0 |   182 |      0 |      0 |          0 |
+|       (u_pack)            |                   bit_packer |         17 |         17 |       0 |    0 |    84 |      0 |      0 |          0 |
+|       u_in                |     skid_buf__parameterized0 |        228 |        228 |       0 |    0 |    78 |      0 |      0 |          0 |
+|     u_rle                 |                   zigzag_rle |        420 |        388 |      32 |    0 |   238 |      0 |      0 |          0 |
+|   u_kseg                  |                    kseg_unit |        790 |        790 |       0 |    0 |   591 |      0 |      0 |          0 |
+|     (u_kseg)              |                    kseg_unit |          4 |          4 |       0 |    0 |   133 |      0 |      0 |          0 |
+|     u_core                |         ascon_aead128_core_0 |        786 |        786 |       0 |    0 |   458 |      0 |      0 |          0 |
+|   u_merge                 |               segment_merger |         69 |         69 |       0 |    0 |    39 |      0 |      0 |          0 |
+|   u_regs                  |                    axil_regs |        566 |        566 |       0 |    0 |   453 |      0 |      0 |          0 |
+|   u_tag                   |                     tag_unit |       1338 |       1336 |       0 |    2 |  1191 |      0 |      0 |          0 |
+|     (u_tag)               |                     tag_unit |        361 |        359 |       0 |    2 |   605 |      0 |      0 |          0 |
+|     u_core                |           ascon_aead128_core |        977 |        977 |       0 |    0 |   586 |      0 |      0 |          0 |
+|   u_words                 |             scan_word_packer |         24 |         24 |       0 |    0 |    95 |      0 |      0 |          0 |
++---------------------------+------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+
