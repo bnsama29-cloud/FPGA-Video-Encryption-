@@ -1,0 +1,50 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2026.1 (win64) Build 6511674 Tue Jun 16 11:02:23 MDT 2026
+| Date         : Fri Nov  6 21:57:43 2026
+| Host         : Samarth-Lenovo-Laptop running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 3 -file sim_build/vivado_secure_jpeg_top_log_maxw10/utilization_hier.txt
+| Design       : secure_jpeg_top
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Routed
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++---------------------+---------------------------+------------+------------+---------+------+------+--------+--------+------------+
+|       Instance      |           Module          | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
++---------------------+---------------------------+------------+------------+---------+------+------+--------+--------+------------+
+| secure_jpeg_top     |                     (top) |       5040 |       4444 |     576 |   20 | 3498 |     12 |      3 |         23 |
+|   (secure_jpeg_top) |                     (top) |          0 |          0 |       0 |    0 |    5 |      0 |      0 |          0 |
+|   u_conv            |           rgb2ycbcr_block |        407 |        395 |       0 |   12 |  338 |     12 |      2 |          0 |
+|   u_dct             |                    dct8x8 |        808 |        258 |     544 |    6 |   69 |      0 |      0 |         22 |
+|     u_cols          | dct_stage__parameterized0 |        508 |        152 |     352 |    4 |   36 |      0 |      0 |         11 |
+|     u_rows          |                 dct_stage |        300 |        106 |     192 |    2 |   33 |      0 |      0 |         11 |
+|   u_enc             |             selective_enc |        147 |        147 |       0 |    0 |  120 |      0 |      0 |          0 |
+|     (u_enc)         |             selective_enc |         83 |         83 |       0 |    0 |   24 |      0 |      0 |          0 |
+|     u_in            |                  skid_buf |         64 |         64 |       0 |    0 |   96 |      0 |      0 |          0 |
+|   u_huff            |               huffman_enc |        315 |        315 |       0 |    0 |   34 |      0 |      0 |          0 |
+|   u_ks              |             keystream_gen |        874 |        874 |       0 |    0 |  857 |      0 |      0 |          0 |
+|     (u_ks)          |             keystream_gen |        131 |        131 |       0 |    0 |  272 |      0 |      0 |          0 |
+|     u_core          |      ascon_aead128_core_0 |        743 |        743 |       0 |    0 |  585 |      0 |      0 |          0 |
+|   u_pack            |                bit_packer |        284 |        284 |       0 |    0 |  182 |      0 |      0 |          0 |
+|     (u_pack)        |                bit_packer |         17 |         17 |       0 |    0 |   84 |      0 |      0 |          0 |
+|     u_in            |  skid_buf__parameterized0 |        228 |        228 |       0 |    0 |   78 |      0 |      0 |          0 |
+|   u_regs            |                 axil_regs |        392 |        392 |       0 |    0 |  452 |      0 |      0 |          0 |
+|   u_rle             |                zigzag_rle |        411 |        379 |      32 |    0 |  238 |      0 |      0 |          0 |
+|   u_tag             |                  tag_unit |       1357 |       1355 |       0 |    2 | 1072 |      0 |      0 |          0 |
+|     (u_tag)         |                  tag_unit |        387 |        385 |       0 |    2 |  614 |      0 |      0 |          0 |
+|     u_core          |        ascon_aead128_core |        970 |        970 |       0 |    0 |  458 |      0 |      0 |          0 |
+|   u_words           |          scan_word_packer |         20 |         20 |       0 |    0 |   95 |      0 |      0 |          0 |
++---------------------+---------------------------+------------+------------+---------+------+------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

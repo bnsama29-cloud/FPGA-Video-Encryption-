@@ -1,0 +1,68 @@
+{
+ "source": "foreman_cif",
+ "frames": 40,
+ "face_detector": true,
+ "lpips": true,
+ "results": {
+  "plain": {
+   "ssim": 0.9529,
+   "lpips": 0.0281,
+   "edge_corr": 0.9896,
+   "face_recall": 1.0,
+   "face_false": 0.0,
+   "faces": 27,
+   "face_frames": 27,
+   "empty_frames": 13
+  },
+  "E1": {
+   "ssim": 0.441,
+   "lpips": 0.479,
+   "edge_corr": 0.4316,
+   "face_recall": 0.8888888888888888,
+   "face_false": 0.0,
+   "faces": 27,
+   "face_frames": 27,
+   "empty_frames": 13
+  },
+  "E2": {
+   "ssim": 0.2946,
+   "lpips": 0.6323,
+   "edge_corr": 0.4278,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 27,
+   "face_frames": 27,
+   "empty_frames": 13
+  },
+  "E4": {
+   "ssim": 0.3095,
+   "lpips": 0.663,
+   "edge_corr": 0.4083,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 27,
+   "face_frames": 27,
+   "empty_frames": 13
+  },
+  "E5 (N=1)": {
+   "ssim": 0.2117,
+   "lpips": 0.8147,
+   "edge_corr": -0.0005,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 27,
+   "face_frames": 27,
+   "empty_frames": 13
+  },
+  "E5 (N=32)": {
+   "ssim": 0.2306,
+   "lpips": 0.811,
+   "edge_corr": 0.019,
+   "face_recall": 0.0,
+   "face_false": 0.0,
+   "faces": 27,
+   "face_frames": 27,
+   "empty_frames": 13
+  }
+ }
+}

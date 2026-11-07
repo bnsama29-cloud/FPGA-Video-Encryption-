@@ -1,0 +1,39 @@
+{
+  "source": "/kaggle/working/data/xiph/foreman_cif.mp4",
+  "size": "352x288",
+  "mode": "E2",
+  "quality": 75,
+  "seed": 1,
+  "sites": {
+    "coefficient": {
+      "trials": 300,
+      "accepted": 300,
+      "accepted_share": 1.0,
+      "identical": 0,
+      "rejected_tag": 0,
+      "rejected_malformed": 0,
+      "psnr_median": 66.47733511635263,
+      "psnr_min": 59.985732097155775
+    },
+    "ciphertext": {
+      "trials": 300,
+      "accepted": 281,
+      "accepted_share": 0.9366666666666666,
+      "identical": 0,
+      "rejected_tag": 0,
+      "rejected_malformed": 19,
+      "psnr_median": 49.232652508207835,
+      "psnr_min": 4.597528507328552
+    },
+    "after_tag": {
+      "trials": 300,
+      "accepted": 0,
+      "accepted_share": 0.0,
+      "identical": 0,
+      "rejected_tag": 300,
+      "rejected_malformed": 0,
+      "psnr_median": null,
+      "psnr_min": null
+    }
+  }
+}

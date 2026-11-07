@@ -1,0 +1,300 @@
+|dct_stage   | (PCIN+A':B'+C)'  | 30     | 18     | -      | -      | 27     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|quantiser   | (C+A*B')'        | 17     | 16     | 16     | -      | 33     | 0    | 1    | 0    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 12     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (PCIN+(A'*B')')' | 30     | 18     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 31     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 0      | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 31     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct8x8      | (PCIN+A:B+C)'    | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 23     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 27     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 23     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 27     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|quantiser   | (C+A*B')'        | 17     | 16     | 16     | -      | 33     | 0    | 1    | 0    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 12     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (PCIN+(A'*B')')' | 30     | 18     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 31     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 0      | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 31     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct8x8      | (PCIN+A:B+C)'    | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 23     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 27     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 23     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 27     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|quantiser   | (C+A*B')'        | 17     | 16     | 16     | -      | 33     | 0    | 1    | 0    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 12     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (PCIN+(A'*B')')' | 30     | 18     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 31     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 0      | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 30     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 31     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct8x8      | (PCIN+A:B+C)'    | 30     | 18     | -      | -      | 31     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 12     | 18     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (PCIN+(A'*B')')' | 30     | 18     | -      | -      | 0      | 1    | 1    | -    | -    | -     | 1    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 23     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 27     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A:B)'      | 30     | 18     | -      | -      | 27     | 0    | 0    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (A'*B')'         | 30     | 18     | -      | -      | 23     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|dct_stage   | (C+(A'*B')')'    | 30     | 18     | 48     | -      | 27     | 1    | 1    | 0    | -    | -     | 1    | 1    | 
+|dct_stage   | (PCIN+A':B'+C)'  | 30     | 18     | -      | -      | 27     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|quantiser   | (C+A*B')'        | 17     | 16     | 16     | -      | 33     | 0    | 1    | 0    | -    | -     | 0    | 1    | 
++------------+------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+---------+------+
+|      |Cell     |Count |
++------+---------+------+
+|1     |CARRY4   |  1508|
+|2     |DSP48E1  |    72|
+|9     |LUT1     |   479|
+|10    |LUT2     |  3154|
+|11    |LUT3     |  3678|
+|12    |LUT4     |  2933|
+|13    |LUT5     |  4398|
+|14    |LUT6     |  6801|
+|15    |MUXF7    |   279|
+|16    |MUXF8    |   104|
+|17    |RAM64M   |   544|
+|18    |RAM64X1D |    64|
+|19    |RAMB18E1 |    16|
+|21    |RAMB36E1 |    48|
+|23    |SRL16E   |    94|
+|24    |FDRE     | 11541|
+|25    |FDSE     |    52|
++------+---------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:04:17 ; elapsed = 00:06:07 . Memory (MB): peak = 2385.832 ; gain = 1593.508
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 55 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:03:56 ; elapsed = 00:05:29 . Memory (MB): peak = 2385.832 ; gain = 1521.000
+Synthesis Optimization Complete : Time (s): cpu = 00:04:17 ; elapsed = 00:06:12 . Memory (MB): peak = 2385.832 ; gain = 1593.508
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:01 . Memory (MB): peak = 2393.168 ; gain = 0.000
+INFO: [Netlist 29-17] Analyzing 2635 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 3 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [E:/FPGA-Video-Encryption-/sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7z010clg400-1/clock.xdc]
+Finished Parsing XDC File [E:/FPGA-Video-Encryption-/sim_build/vivado_secure_jpeg_lanes_top_lanes4_log_l2_log_maxw10_part_xc7z010clg400-1/clock.xdc]
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.023 . Memory (MB): peak = 2400.926 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 608 instances were transformed.
+  RAM64M => RAM64M (RAMD64E(x4)): 544 instances
+  RAM64X1D => RAM64X1D (RAMD64E(x2)): 64 instances
+
+Synth Design complete | Checksum: de100dc8
+INFO: [Common 17-83] Releasing license: Vivado_Synthesis
+153 Infos, 93 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:04:37 ; elapsed = 00:08:43 . Memory (MB): peak = 2400.930 ; gain = 1815.188
+# report_utilization -file $out/utilization_synth.txt
+# if {$impl eq "perf"} {
+#     opt_design -directive Explore
+#     place_design -directive ExtraTimingOpt
+#     phys_opt_design -directive AggressiveExplore
+#     route_design -directive AggressiveExplore
+#     if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] < 0} {
+#         phys_opt_design -directive AggressiveExplore
+#     }
+# } elseif {$impl eq "safe"} {
+#     opt_design -directive Explore
+#     place_design -directive ExtraTimingOpt
+#     phys_opt_design -directive Explore
+#     route_design -directive AggressiveExplore
+# } else {
+#     opt_design
+#     place_design
+#     phys_opt_design
+#     route_design
+# }
+Command: opt_design -directive Explore
+INFO: [Vivado_Tcl 4-136] Directive used for opt_design is: Explore
+Attempting to get a license for feature 'Vivado_Implementation' and/or device 'xc7z010'
+INFO: [Common 17-349] Got license for feature 'Vivado_Implementation' and/or device 'xc7z010'
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 2 threads
+WARNING: [DRC 23-814] Not all possible (connectivity based) DRCs may have been run because this design is seen as Out of Context.
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:04 . Memory (MB): peak = 2400.930 ; gain = 0.000
+
+Starting Logic Optimization Task
+
+Phase 1 Initialization
+
+Phase 1.1 Core Generation And Design Setup
+Phase 1.1 Core Generation And Design Setup | Checksum: 17369a9bd
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.759 . Memory (MB): peak = 2400.930 ; gain = 0.000
+
+Phase 1.2 Setup Constraints And Sort Netlist
+Phase 1.2 Setup Constraints And Sort Netlist | Checksum: 17369a9bd
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.925 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Phase 1 Initialization | Checksum: 17369a9bd
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.933 . Memory (MB): peak = 2400.930 ; gain = 0.000
+
+Phase 2 Timer Update And Timing Data Collection
+
+Phase 2.1 Detect if minReqCache needed
+Phase 2.1 Detect if minReqCache needed | Checksum: 17369a9bd
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:01 . Memory (MB): peak = 2400.930 ; gain = 0.000
+
+Phase 2.2 Timer Update
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Phase 2.2 Timer Update | Checksum: 17369a9bd
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:24 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Phase 2 Timer Update And Timing Data Collection | Checksum: 17369a9bd
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:24 . Memory (MB): peak = 2400.930 ; gain = 0.000
+
+Phase 3 Retarget
+INFO: [Opt 31-1851] Number of loadless carry chains removed were: 0
+INFO: [Opt 31-1834] Total Chains To Be Transformed Were: 0 AND Number of Transformed insts Created are: 0
+INFO: [Opt 31-138] Pushed 4 inverter(s) to 8 load pin(s).
+INFO: [Opt 31-49] Retargeted 0 cell(s).
+Phase 3 Retarget | Checksum: 1f9875d3a
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:31 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Retarget | Checksum: 1f9875d3a
+INFO: [Opt 31-389] Phase Retarget created 120 cells and removed 132 cells
+
+Phase 4 Constant propagation
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Phase 4 Constant propagation | Checksum: 10fc884c4
+
+Time (s): cpu = 00:00:15 ; elapsed = 00:00:32 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Constant propagation | Checksum: 10fc884c4
+INFO: [Opt 31-389] Phase Constant propagation created 214 cells and removed 370 cells
+
+Phase 5 Sweep
+INFO: [Constraints 18-11670] Building netlist checker database with flags, 0x8
+Done building netlist checker database: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.027 . Memory (MB): peak = 2400.930 ; gain = 0.000
+INFO: [Constraints 18-11670] Building netlist checker database with flags, 0x8
+Done building netlist checker database: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.026 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Phase 5 Sweep | Checksum: 1d12df1b9
+
+Time (s): cpu = 00:00:15 ; elapsed = 00:00:33 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Sweep | Checksum: 1d12df1b9
+INFO: [Opt 31-389] Phase Sweep created 0 cells and removed 16 cells
+
+Phase 6 BUFG optimization
+Phase 6 BUFG optimization | Checksum: 1d12df1b9
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:34 . Memory (MB): peak = 2400.930 ; gain = 0.000
+BUFG optimization | Checksum: 1d12df1b9
+INFO: [Opt 31-662] Phase BUFG optimization created 0 cells of which 0 are BUFGs and removed 0 cells.
+
+Phase 7 Shift Register Optimization
+INFO: [Opt 31-1064] SRL Remap converted 0 SRLs to 0 registers and converted 0 registers of register chains to 0 SRLs
+Phase 7 Shift Register Optimization | Checksum: 1d12df1b9
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:34 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Shift Register Optimization | Checksum: 1d12df1b9
+INFO: [Opt 31-389] Phase Shift Register Optimization created 0 cells and removed 0 cells
+INFO: [Opt 31-1555] control_set_opt supports Versal devices only, and device 7z010 is unsupported
+
+Phase 8 Post Processing Netlist
+Phase 8 Post Processing Netlist | Checksum: 1d12df1b9
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:35 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Post Processing Netlist | Checksum: 1d12df1b9
+INFO: [Opt 31-389] Phase Post Processing Netlist created 0 cells and removed 0 cells
+
+Phase 9 Finalization
+
+Phase 9.1 Finalizing Design Cores and Updating Shapes
+Phase 9.1 Finalizing Design Cores and Updating Shapes | Checksum: 1f117cda1
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:36 . Memory (MB): peak = 2400.930 ; gain = 0.000
+
+Phase 9.2 Verifying Netlist Connectivity
+
+Starting Connectivity Check Task
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.393 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Phase 9.2 Verifying Netlist Connectivity | Checksum: 1f117cda1
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:36 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Phase 9 Finalization | Checksum: 1f117cda1
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:36 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Opt_design Change Summary
+=========================
+
+
+-------------------------------------------------------------------------------------------------------------------------
+|  Phase                        |  #Cells created  |  #Cells Removed  |  #Constrained objects preventing optimizations  |
+-------------------------------------------------------------------------------------------------------------------------
+|  Retarget                     |             120  |             132  |                                              0  |
+|  Constant propagation         |             214  |             370  |                                              0  |
+|  Sweep                        |               0  |              16  |                                              0  |
+|  BUFG optimization            |               0  |               0  |                                              0  |
+|  Shift Register Optimization  |               0  |               0  |                                              0  |
+|  Post Processing Netlist      |               0  |               0  |                                              0  |
+-------------------------------------------------------------------------------------------------------------------------
+
+
+Ending Logic Optimization Task | Checksum: 1f117cda1
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:36 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.030 . Memory (MB): peak = 2400.930 ; gain = 0.000
+INFO: [Common 17-83] Releasing license: Vivado_Implementation
+22 Infos, 1 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:00:26 ; elapsed = 00:00:55 . Memory (MB): peak = 2400.930 ; gain = 0.000
+Command: place_design -directive ExtraTimingOpt
+Attempting to get a license for feature 'Vivado_Implementation' and/or device 'xc7z010'
+INFO: [Common 17-349] Got license for feature 'Vivado_Implementation' and/or device 'xc7z010'
+INFO: [Common 17-83] Releasing license: Vivado_Implementation
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Vivado_Tcl 4-2302] The placer was invoked with the 'ExtraTimingOpt' directive.
+Running DRC as a precondition to command place_design
+INFO: [DRC 23-27] Running DRC with 2 threads
+WARNING: [DRC 23-814] Not all possible (connectivity based) DRCs may have been run because this design is seen as Out of Context.
+INFO: [Vivado_Tcl 4-198] DRC finished with 1 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+29 Infos, 2 Warnings, 0 Critical Warnings and 2 Errors encountered.
+place_design failed
+place_design: Time (s): cpu = 00:00:07 ; elapsed = 00:00:25 . Memory (MB): peak = 2400.930 ; gain = 0.000
+ERROR: [Common 17-39] 'place_design' failed due to earlier errors.
+
+    while executing
+"place_design -directive ExtraTimingOpt"
+    invoked from within
+"if {$impl eq "perf"} {
+    opt_design -directive Explore
+    place_design -directive ExtraTimingOpt
+    phys_opt_design -directive AggressiveExplore
+ ..."
+    (file "hardware/vivado/vivado_ooc.tcl" line 76)
+INFO: [Common 17-206] Exiting Vivado at Sat Nov  7 03:50:38 2026...
+ERROR: [DRC UTLZ-1] Resource utilization: LUT as Logic over-utilized in Top Level Design (This design requires more LUT as Logic cells than are available in the target device. This design requires 17974 of such cell types but only 17600 compatible sites are available in the target device. Please analyze your synthesis results and constraints to ensure the design is mapped to Xilinx primitives as expected. If so, please consider targeting a larger device. Please set tcl parameter "drc.disableLUTOverUtilError" to 1 to change this error to warning.)
+ERROR: [Vivado_Tcl 4-23] Error(s) found during DRC. Placer not run.
