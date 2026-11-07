@@ -31,7 +31,9 @@ def p1_parsers():
 
 def params(folder):
     name = folder.name.replace("vivado_neuro_", "")
-    d = {"top": name.split("_")[0] + "_" + name.split("_")[1] if name.startswith("nv_") else name}
+    # the Tcl appends _<period>ns and _<param><value> to the top's name; strip them to get the top back
+    # (splitting at "_" gave "nv_ascon" for nv_ascon_core_u and "nv_table" for nv_table_gen)
+    d = {"top": re.sub(r"(_\d+(\.\d+)?ns|_(u|maxw|maxh|pad)\d+)+$", "", name)}
     for k, v in re.findall(r"_(u|maxw|maxh|pad)(\d+)", name):
         d[k] = int(v)
     m = re.search(r"_(\d+\.\d+)ns", name)
@@ -78,7 +80,9 @@ def main():
 
     def u(r, k):
         v = r["util"].get(k)
-        return int(v[0]) if v else "-"
+        if not v:
+            return "-"
+        return f"{v[0]:g}" if k == "bram" else int(v[0])     # BRAM tiles come in halves (RAMB18 = 0.5 tile)
     rows = [(b["build"], u(b, "lut"), u(b, "ff"), u(b, "bram"), u(b, "dsp"), b["timing"].get("wns", "-"),
              b["fmax_mhz"] or "-", b.get("auth_mev_s_fmax") or "-", b["power"].get("total", "-"), b["power_source"])
             for b in builds]

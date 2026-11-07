@@ -176,10 +176,17 @@ if PART == "B":
             s2 = s.replace("np.int(", "int(").replace("np.float(", "float(").replace("np.bool(", "bool(")
             if s2 != s:
                 f.write_text(s2)
-        ck = [f"e2vid={fetch(E2VID_URL, ext / 'E2VID_lightweight.pth.tar', 'e2vid')}"]
-        if FIRENET_CKPT:
-            ck.append(f"firenet={fetch(FIRENET_CKPT, ext / 'firenet.pth.tar', 'firenet')}")
-        recon = f"--recon-repo {ext / 'rpg_e2vid'} --recon-ckpt " + " ".join(ck)
+        ck = []
+        for name, src, dst in [("e2vid", E2VID_URL, ext / "E2VID_lightweight.pth.tar")] + (
+                [("firenet", FIRENET_CKPT, ext / "firenet.pth.tar")] if FIRENET_CKPT else []):
+            try:                         # a missing / wrong checkpoint drops that network only, not N3 and N4
+                ck.append(f"{name}={fetch(src, dst, name)}")
+                LOG.append((f"ckpt {name}", "ok", 0, ""))
+            except (OSError, SystemExit, ValueError) as e:
+                print(f"checkpoint {name} not used: {e}", flush=True)
+                LOG.append((f"ckpt {name}", "FAILED", 0, f"{type(e).__name__}: {e}"))
+        if ck:
+            recon = f"--recon-repo {ext / 'rpg_e2vid'} --recon-ckpt " + " ".join(ck)
         # The E2VID / FireNet checkpoints are old full pickles (saved with torch 0.4/1.x): torch >= 2.6 refuses them
         # under weights_only=True. They are loaded only after the SHA-256 check above, from the pinned files.
         ENV["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"

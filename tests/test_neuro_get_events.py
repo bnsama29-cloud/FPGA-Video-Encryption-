@@ -34,3 +34,18 @@ def test_wrong_archive_is_rejected(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="MD5"):
         ge.stage_gesture(tmp_path / "out", inputs)
     assert not (tmp_path / "out" / "dvsgesture" / "DVSGesture" / "ibmGestureTrain.tar.gz").exists()
+
+
+def test_archives_unpacked_by_kaggle_are_linked(tmp_path, monkeypatch):
+    # Kaggle can unpack an uploaded .tar.gz (sometimes into a folder named like the archive): the unpacked
+    # ibmGestureTrain/ folder is linked where Tonic looks, with an empty file under the archive's name
+    inputs = tmp_path / "input" / "dvs-gesture" / "ibmGestureTrain.tar.gz" / "ibmGestureTrain" / "user01_fluorescent"
+    inputs.mkdir(parents=True)
+    (inputs / "0.npy").write_bytes(b"x")
+    monkeypatch.setattr(ge, "GESTURE", {True: ("ibmGestureTrain.tar.gz", "x", "0" * 32)})
+    monkeypatch.setattr(ge, "download", lambda url, dst: pytest.fail("must not download"))
+    ge.stage_gesture(tmp_path / "out", tmp_path / "input")
+    d = tmp_path / "out" / "dvsgesture" / "DVSGesture"
+    assert (d / "ibmGestureTrain.tar.gz").is_file()
+    assert (d / "ibmGestureTrain").is_symlink()
+    assert [p.name for p in (d / "ibmGestureTrain").rglob("*.npy")] == ["0.npy"]
