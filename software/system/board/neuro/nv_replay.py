@@ -85,7 +85,8 @@ def main():
     ap.add_argument("--mock", action="store_true")
     ap.add_argument("--bitfile", default=str(ROOT / "software/system/board/overlay/neuro/nv.bit"))
     ap.add_argument("--master-hex", default=None)
-    ap.add_argument("--fclk-mhz", type=float, default=100.0)
+    ap.add_argument("--fclk-mhz", type=float, default=None,
+                    help="lower FCLK0 below the built clock (default: the clock in the .hwh, read back)")
     ap.add_argument("--out", default=str(ROOT / "sim_out/neuro/n10"))
     a = ap.parse_args()
     words, geom, name = load(a)
@@ -97,7 +98,8 @@ def main():
         ip = NvIP(MockBackend())
     else:
         from .nv_driver import PynqBackend
-        ip = NvIP(PynqBackend(a.bitfile))
+        ip = NvIP(PynqBackend(a.bitfile, fclk_mhz=a.fclk_mhz))
+    fclk = getattr(ip.b, "fabric_mhz", None) or a.fclk_mhz or 100.0
     ip.configure(sk, sid, cfg)
     sock = addr = None
     if a.udp:
@@ -128,9 +130,9 @@ def main():
     ref = enc.push(words) + enc.flush()
     first = first_mismatch(got, ref)
     c = ip.counters()
-    pl_s = c["CYCLES"] / (a.fclk_mhz * 1e6) if c["CYCLES"] else 0.0
+    pl_s = c["CYCLES"] / (fclk * 1e6) if c["CYCLES"] else 0.0
     res = {"recording": name, "mode": "timed (ARM-paced)" if a.timed else "max-rate", "mock": a.mock,
-           "level": a.level, "T_us": a.T, "words_in": int(len(words)), "packets": len(got),
+           "fclk_mhz_read_back": fclk, "level": a.level, "T_us": a.T, "words_in": int(len(words)), "packets": len(got),
            "bit_exact": first is None, "first_mismatch": first, "counters": c,
            "pl_words_per_s": (c["WORDS_IN"] / pl_s) if pl_s > 0 else None,
            "end_to_end_words_per_s": len(words) / wall, "wall_s": wall, "udp_messages": sent,

@@ -35,7 +35,7 @@ def jobs_for(step):
         for W, H in GEOMS:
             j.append((f"top_u2_{W}x{H}", ["nv_top", "10.0", "U", "2", "MAXW", str(W), "MAXH", str(H)]))
     elif step == "usweep":
-        for U in (1, 2, 4):
+        for U in (1, 4):                   # U = 2 at 1280 x 720 is the last `ooc` build (not built twice)
             j.append((f"top_u{U}_1280x720", ["nv_top", "10.0", "U", str(U)]))
     elif step == "blocks":
         for U in (1, 2, 4):
@@ -59,8 +59,15 @@ def run_job(name, cmd, dry):
         print("DRY", " ".join(cmd))
         return name, 0, 0.0
     t0 = time.time()
-    with open(log, "w", encoding="utf-8") as f:
-        rc = subprocess.run(cmd, cwd=ROOT, stdout=f, stderr=subprocess.STDOUT).returncode
+    for attempt in (1, 2):                 # a run without a RESULT line is repeated once (paper-1 bug #37)
+        with open(log, "w", encoding="utf-8") as f:
+            rc = subprocess.run(cmd, cwd=ROOT, stdout=f, stderr=subprocess.STDOUT).returncode
+        if "RESULT top=" in log.read_text(errors="replace") or "-tclargs" not in cmd:
+            break
+        tail = log.read_text(errors="replace").splitlines()[-8:]
+        print(f"{name}: no RESULT line (attempt {attempt}); last lines:")
+        print("\n".join(tail))
+        rc = rc or 1
     print(f"{name}: rc={rc} in {time.time() - t0:.0f} s (log {log})")
     return name, rc, time.time() - t0
 

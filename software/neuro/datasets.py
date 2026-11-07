@@ -237,9 +237,11 @@ def _first_int(text):
     return int(m.group(0)) if m else None
 
 
-def load_eventreid(root, split=None, columns=None, t_scale=1.0, W=None, H=None):
-    """Event-ReId samples, one per event file (tolerant reader; rules in the module docstring)."""
-    files = _eventreid_files(root, split)
+def load_eventreid(root, split=None, columns=None, t_scale=1.0, W=None, H=None, every=1):
+    """Event-ReId samples, one per event file (tolerant reader; rules in the module docstring).
+
+    every > 1 reads every `every`-th file only (spread over all persons, for a small smoke run)."""
+    files = _eventreid_files(root, split)[::max(1, int(every))]
     if not files:
         raise FileNotFoundError(f"no event files ({', '.join(EVENTREID_EXT)}) for split {split!r} under {root}")
     for f in files:
@@ -256,6 +258,27 @@ def load_eventreid(root, split=None, columns=None, t_scale=1.0, W=None, H=None):
             label = _first_int(f.stem)
         group = str(label) if label is not None else f.parent.relative_to(root).as_posix()
         yield ev, label, group, _geometry("eventreid", gw, gh)
+
+
+def eventreid_count(root, split=None):
+    return len(_eventreid_files(root, split))
+
+
+class Strided:
+    """Every `every`-th sample of a Tonic-style dataset (len, [i], optional .data), keeping all classes in a small
+    run: Tonic orders N-MNIST by digit, so the first n samples would be one class."""
+
+    def __init__(self, ds, every):
+        self.ds, self.every = ds, max(1, int(every))
+        self.data = getattr(ds, "data", None)
+        if self.data is not None:
+            self.data = self.data[::self.every]
+
+    def __len__(self):
+        return (len(self.ds) + self.every - 1) // self.every
+
+    def __getitem__(self, i):
+        return self.ds[i * self.every]
 
 
 def describe_eventreid(root, max_files=3):

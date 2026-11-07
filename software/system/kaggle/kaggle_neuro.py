@@ -29,7 +29,9 @@ FIRENET_CKPT = None              # FireNet checkpoint: a path under /kaggle/inpu
                                  # FIRENET_CKPT = "/kaggle/input/firenet-ckpt/firenet_1000.pth.tar"
 FIRENET_REPO = "https://github.com/cedric-scheerlinck/rpg_e2vid.git"   # fork with the FireNet model class
 FIRENET_BRANCH = "cedric/firenet"
-CKPT_SHA256 = {}                 # name -> sha256 once pinned after the first QUICK run (empty = record, not check)
+CKPT_SHA256 = {                  # name -> sha256; a name not listed is recorded in meta_budget.json, not checked
+    "firenet": "a64af3191a00e9f01cd47d086d9a88c35ff1e63756566ca44b4ff02301ca696e",   # firenet_1000.pth.tar, 7 Nov 2026
+}
 # =================================================================================================
 
 import hashlib, json, os, pathlib, shutil, subprocess, sys, time, urllib.request, zipfile
@@ -118,12 +120,13 @@ checkpoint()
 # ---------------------------------------------------------------- N5 count caches (Tonic needed only here)
 lim = 200 if QUICK else 0
 for ds in ("nmnist", "dvsgesture", "eventreid"):
-    loader = {"nmnist": "load_nmnist", "dvsgesture": "load_dvsgesture", "eventreid": "load_eventreid"}[ds]
-    sh(f"{sys.executable} -c \"import itertools; from neuro import datasets as D; "
-       f"it = itertools.chain(D.{loader}('{DATA}/{ds}', 'train'), D.{loader}('{DATA}/{ds}', 'test')) "
-       f"if '{ds}' != 'eventreid' else D.{loader}('{DATA}/{ds}'); "
-       f"it = itertools.islice(it, {lim}) if {lim} else it; "
-       f"print(D.cache_counts(it, '{OUT}/n5/{ds}_counts.npz'), 'samples')\"", f"N5 cache {ds}")
+    # QUICK: samples spread over every class / person (neuro_common.load_samples strides), not the first ones
+    splits = "['train', 'test']" if ds != "eventreid" else "['all']"
+    sh(f"{sys.executable} -c \"import sys; sys.path.insert(0, 'experiments'); import neuro_common as C; "
+       f"from neuro import datasets as D; "
+       f"S = [s for sp in {splits} for s in C.load_samples('{ds}', '{DATA}/{ds}', sp, {lim} or None)]; "
+       f"print(D.cache_counts(((e, l, g, m) for e, l, g, m, _ in S), '{OUT}/n5/{ds}_counts.npz'), 'samples')\"",
+       f"N5 cache {ds}")
 checkpoint()
 
 # ---------------------------------------------------------------- CPU experiments on real data
@@ -163,6 +166,9 @@ if sh(clone, "E2VID / FireNet code", cwd=WORK):
     if FIRENET_CKPT:
         ck.append(f"firenet={fetch(FIRENET_CKPT, ext / 'firenet.pth.tar', 'firenet')}")
     recon = f"--recon-repo {ext / 'rpg_e2vid'} --recon-ckpt " + " ".join(ck)
+    # The E2VID / FireNet checkpoints are old full pickles (saved with torch 0.4/1.x): torch >= 2.6 refuses them
+    # under weights_only=True. They are loaded only after the SHA-256 check above, from the pinned files.
+    ENV["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
 sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset eventreid --data {DATA}/eventreid --keys {KEYS} "
    f"{lim_s} {q} {recon} --out {OUT}/n3/eventreid", "N3 eventreid", check=False)
 sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset synthetic --keys {KEYS} {q} {recon} "

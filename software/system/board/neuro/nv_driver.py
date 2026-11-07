@@ -149,9 +149,19 @@ class MockBackend:
 class PynqBackend:
     """The PYNQ-Z2 overlay (UNTESTED until overlay/neuro/nv.bit exists)."""
 
-    def __init__(self, bitfile, max_words=1 << 22, max_packet_bytes=1 << 20):
+    def __init__(self, bitfile, max_words=1 << 22, max_packet_bytes=1 << 20, fclk_mhz=None):
         from pynq import Overlay, allocate
+        from system.board.pynq_driver import built_fclk_mhz, choose_fclk
         self.ol = Overlay(str(bitfile))
+        # PYNQ copies the .hwh's FCLK0 dividers, which assume Vivado's IO PLL: a 100 MHz image then runs at
+        # 62.5 MHz on the PYNQ-Z2 (paper-1 bug #44). Set FCLK0 to the clock the image was built for.
+        from pynq import Clocks
+        target, note = choose_fclk(built_fclk_mhz(bitfile), Clocks.fclk0_mhz, fclk_mhz)
+        if note:
+            print(note)
+        if target:
+            Clocks.fclk0_mhz = target
+        self.fabric_mhz = Clocks.fclk0_mhz
         self.ip = self.ol.nv
         self.dma = self.ol.dma
         self.inbuf = allocate(shape=(max_words,), dtype=np.uint32)

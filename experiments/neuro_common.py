@@ -167,11 +167,21 @@ def load_samples(name, root=None, split="test", limit=None, seed=0):
     if root is None or name == "synthetic":
         return synthetic_samples(limit or 24, seed)
     from neuro import datasets
-    loader = {"nmnist": datasets.load_nmnist, "dvsgesture": datasets.load_dvsgesture,
-              "eventreid": datasets.load_eventreid}[name]
+    if name == "eventreid":
+        # no train/test folders of its own: all files (persons split later by group); a limit takes every k-th
+        # file so a small run still spans many persons
+        every = max(1, datasets.eventreid_count(root) // limit) if limit else 1
+        it = datasets.load_eventreid(root, None, every=every)
+    else:
+        tonic = datasets._tonic()
+        cls = tonic.datasets.NMNIST if name == "nmnist" else tonic.datasets.DVSGesture
+        ds = cls(save_to=str(root), train=(split == "train"))
+        if limit:                                   # spread over every class (Tonic orders N-MNIST by digit)
+            ds = datasets.Strided(ds, max(1, len(ds) // limit))
+        loader = datasets.load_nmnist if name == "nmnist" else datasets.load_dvsgesture
+        it = loader(root, split, dataset=ds)
     out = []
-    # Event-ReId has no train/test folders of its own: all files, split later by person (group)
-    for i, (ev, label, group, geom) in enumerate(loader(root, None if name == "eventreid" else split)):
+    for i, (ev, label, group, geom) in enumerate(it):
         if limit and i >= limit:
             break
         out.append((ev, label, group, geom, None))

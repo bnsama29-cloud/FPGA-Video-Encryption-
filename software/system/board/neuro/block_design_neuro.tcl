@@ -72,6 +72,12 @@ connect_bd_net [get_bd_pins dma/s2mm_introut] [get_bd_pins irq_concat/In1]
 connect_bd_net [get_bd_pins irq_concat/dout]  [get_bd_pins ps7/IRQ_F2P]
 
 assign_bd_address
+# both DMA masters must reach DDR (paper-1 bug #32: an S2MM left without a segment wrote nothing on the board)
+foreach seg {Data_MM2S Data_S2MM} {
+    if {[llength [get_bd_addr_segs -quiet -of_objects [get_bd_addr_spaces dma/$seg]]] == 0} {
+        error "dma/$seg has no address segment: the DMA cannot reach DDR"
+    }
+}
 validate_bd_design
 save_bd_design
 make_wrapper -files [get_files system.bd] -top
