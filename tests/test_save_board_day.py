@@ -54,3 +54,21 @@ def test_dry_run_copies_nothing(tmp_path):
     _tree(tmp_path, {"sim_out/board/a/first_contact.json": "{}"})
     rows, _ = sbd.save(tmp_path / "out", root=tmp_path, dry_run=True)
     assert len(rows) == 1 and not (tmp_path / "out").exists()
+
+
+def test_pull_lists_repeat_and_rekey_runs_as_done(tmp_path):
+    """Bug #51: pull_board_results listed board_repeat_runs and board_rekey_load as 'unfinished' because it
+    only knew hw_tamper.md and summary.json; repeat_runs writes table.md and rekey_load writes rekey_load.md."""
+    from scripts import pull_board_results as pbr
+    _tree(tmp_path, {
+        "runs/board_repeat_runs/table.md": "x",
+        "runs/board_rekey_load/rekey_load.md": "x",
+        "runs/hw_tamper_journal/hw_tamper.md": "x",
+        "runs/board_full_suite_rep1/summary.json": "{}",
+        "runs/board_half_done/events.jsonl": "{}\n",
+    })
+    got = {name: state for name, state, _ in pbr.laptop_rows(tmp_path)}
+    want = {"runs/board_repeat_runs": "done", "runs/board_rekey_load": "done", "runs/hw_tamper_journal": "done",
+            "runs/board_full_suite_rep1": "done", "runs/board_half_done": "unfinished"}
+    for k, v in want.items():
+        assert got.get(k) == v, f"{k}: got {got.get(k)!r}, expected {v!r}"
