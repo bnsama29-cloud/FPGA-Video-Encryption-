@@ -225,7 +225,10 @@ py experiments\rekey_load.py --external-sender 192.168.2.99 --board-max-mode E5 
 ```
 Paste the printed board command as in 4.7.
 
-### 4.9 Tamper button with debounce (X13)
+### 4.9 Tamper button with debounce (X13, optional)
+Optional: skip it if the paper leaves out the tamper buttons. The debounce is still checked in simulation
+(`hardware/tb/test_axis_tamper.py`). If you skip it, no `hw_tamper_*` folder is saved in 5.1.
+
 On the board, set **SW1 up** and **SW0 down**, and Ctrl+C any sender still running. LD0 shows SW1 only
 while the tamper image is loaded, so it stays dark until the board command below has started. Laptop window:
 ```
