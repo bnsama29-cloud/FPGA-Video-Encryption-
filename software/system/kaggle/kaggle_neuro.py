@@ -21,8 +21,14 @@ KEYS = 5                         # independent master keys (N3, N4)
 SEEDS = [0, 1, 2]                # N6 training seeds
 E2VID_URL = "http://rpg.ifi.uzh.ch/data/E2VID/models/E2VID_lightweight.pth.tar"
 E2VID_REPO = "https://github.com/uzh-rpg/rpg_e2vid.git"
-FIRENET_URL = None               # FireNet checkpoint (Google Drive in the upstream README): set a direct URL or a
-                                 # Kaggle-dataset path; None = FireNet skipped (stated in run_log.md)
+FIRENET_CKPT = None              # FireNet checkpoint: a path under /kaggle/input/... (upload it as a private Kaggle
+                                 # dataset) or a direct https URL; None = FireNet skipped. Procedure: download
+                                 # firenet_1000.pth.tar from the Google Drive link in the README of
+                                 # cedric-scheerlinck/rpg_e2vid (branch cedric/firenet), upload it as a private
+                                 # Kaggle dataset, add it as input, e.g.
+                                 # FIRENET_CKPT = "/kaggle/input/firenet-ckpt/firenet_1000.pth.tar"
+FIRENET_REPO = "https://github.com/cedric-scheerlinck/rpg_e2vid.git"   # fork with the FireNet model class
+FIRENET_BRANCH = "cedric/firenet"
 CKPT_SHA256 = {}                 # name -> sha256 once pinned after the first QUICK run (empty = record, not check)
 # =================================================================================================
 
@@ -80,7 +86,10 @@ def checkpoint():
 
 def fetch(url, dst, name):
     if not dst.exists():
-        urllib.request.urlretrieve(url, dst)
+        if os.path.exists(url):                      # a file of an attached Kaggle dataset
+            shutil.copy(url, dst)
+        else:
+            urllib.request.urlretrieve(url, dst)
     h = hashlib.sha256(dst.read_bytes()).hexdigest()
     want = CKPT_SHA256.get(name)
     if want and h != want:
@@ -140,7 +149,10 @@ checkpoint()
 ext = WORK / "ext"
 ext.mkdir(exist_ok=True)
 recon = ""
-if sh(f"git clone --depth 1 {E2VID_REPO} {ext / 'rpg_e2vid'}", "E2VID code", cwd=WORK):
+# with FireNet: the fork (it keeps E2VID's code and adds the FireNet class), else upstream E2VID
+clone = (f"git clone --depth 1 -b {FIRENET_BRANCH} {FIRENET_REPO} {ext / 'rpg_e2vid'}" if FIRENET_CKPT
+         else f"git clone --depth 1 {E2VID_REPO} {ext / 'rpg_e2vid'}")
+if sh(clone, "E2VID / FireNet code", cwd=WORK):
     # old-numpy names used by the upstream code (patched in this downloaded copy only)
     for f in (ext / "rpg_e2vid").rglob("*.py"):
         s = f.read_text(errors="replace")
@@ -148,8 +160,8 @@ if sh(f"git clone --depth 1 {E2VID_REPO} {ext / 'rpg_e2vid'}", "E2VID code", cwd
         if s2 != s:
             f.write_text(s2)
     ck = [f"e2vid={fetch(E2VID_URL, ext / 'E2VID_lightweight.pth.tar', 'e2vid')}"]
-    if FIRENET_URL:
-        ck.append(f"firenet={fetch(FIRENET_URL, ext / 'firenet.pth.tar', 'firenet')}")
+    if FIRENET_CKPT:
+        ck.append(f"firenet={fetch(FIRENET_CKPT, ext / 'firenet.pth.tar', 'firenet')}")
     recon = f"--recon-repo {ext / 'rpg_e2vid'} --recon-ckpt " + " ".join(ck)
 sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset eventreid --data {DATA}/eventreid --keys {KEYS} "
    f"{lim_s} {q} {recon} --out {OUT}/n3/eventreid", "N3 eventreid", check=False)
