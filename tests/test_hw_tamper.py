@@ -76,3 +76,29 @@ def test_rehearsal_every_shot_costs_exactly_one_frame(tmp_path):
     assert r["shots"] == 5 and r["detected"] == 5, r
     assert r["frames_rejected_per_shot"] == {"1": 5}, r
     assert r["unexplained_rejections"] == 0 and r["frames_ok"] > 50, r
+
+
+class _FakeLog:
+    def __init__(self, events):
+        import threading
+        self.events, self.lock = list(events), threading.Lock()
+
+    def take(self, kind=None, src=None):
+        return [e for e in self.events if (kind is None or e["kind"] == kind) and (src is None or e["src"] == src)]
+
+
+def test_board_wait_ignores_a_sender_left_running(capsys):
+    """Bug #50 (journal board day, 7 Nov 2026): a board sender still running from the previous repetition
+    reported at once, the scenario clock started, the operator restarted the board, and the first attacks hit
+    a link with no video. Only a sender whose `start` this run saw may start the clock."""
+    old = [dict(src="sender", kind="window", t=100.0 + i) for i in range(3)]
+    log = _FakeLog(old)
+    with pytest.raises(RuntimeError, match="newly started"):
+        scenario.wait_for_fresh_sender(log, wait_s=0.3, poll_s=0.01, stale_hint_s=0.0)
+    assert "still streaming" in capsys.readouterr().out, "the operator must be told to restart the board"
+    log = _FakeLog(old + [dict(src="sender", kind="start", t=200.0), dict(src="sender", kind="window", t=201.0),
+                          dict(src="receiver", kind="frame", t=150.0)])
+    scenario.wait_for_fresh_sender(log, wait_s=1.0, poll_s=0.01)
+    kept = [(e["src"], e["kind"], e["t"]) for e in log.events]
+    expected = [("sender", "start", 200.0), ("sender", "window", 201.0), ("receiver", "frame", 150.0)]
+    assert kept == expected, f"got {kept}, expected {expected} (the old sender's reports must be dropped)"

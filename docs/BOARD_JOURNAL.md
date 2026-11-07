@@ -207,9 +207,16 @@ Sync the clock (3.4) first. Laptop window:
 ```
 py experiments\repeat_runs.py --reps 5 --external-sender 192.168.2.99 --board-max-mode E5 --set keys.master=%KEY% --out sim_out\runs\board_repeat_runs
 ```
-Before each repetition the laptop prints a board command (it starts with `sudo -E env PYTHONPATH=software`).
-Replace `<LAPTOP IP>` with `192.168.2.1` and paste it in the board window. Leave both windows alone
-until the laptop prints `written ...`. Then press Ctrl+C in the board window and wait for the next command.
+Every repetition needs a NEW board sender. When the laptop prints `=== repetition N ===` and a board
+command (it starts with `sudo -E env PYTHONPATH=software`):
+1. Board window: **Ctrl+C** first, if a sender from the last repetition is still running.
+2. Board window: paste the command with `<LAPTOP IP>` replaced by `192.168.2.1` (from repetition 2 on,
+   up arrow + Enter gives the same command).
+3. Leave both windows alone until the next `=== repetition ... ===` (or the table after the last one).
+
+The laptop waits for the new sender before it starts the clock. If it prints `a board sender from an
+earlier run is still streaming`, do steps 1 and 2. (On 7 Nov an old sender started the clock and the
+first attacks of three repetitions hit a link with no video: bug #50, fixed.)
 **Expect** (24 Oct, one run): 11/11 mitigated, 0 false alarms.
 
 ### 4.8 Rekey under load (X25, about 5 min)
