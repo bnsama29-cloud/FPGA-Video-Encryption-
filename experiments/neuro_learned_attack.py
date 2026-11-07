@@ -84,7 +84,14 @@ def build(torch, H, W, n_counts):
     return UNet(), mlp
 
 
-def train(torch, model, X, Y, epochs, dev, seed, bs=32):
+def batch_size(px, cap=32, budget_px=3_000_000):
+    """Images per batch: the U-Net keeps ~14 activation maps of up to 32 channels per image for backward, about
+    0.4 GB at 480 x 640, so 32 of them do not fit a 15 GB T4. 32 for N-MNIST / DVS Gesture, 9 for Event-ReId."""
+    return max(1, min(cap, budget_px // px))
+
+
+def train(torch, model, X, Y, epochs, dev, seed, bs=None):
+    bs = bs or batch_size(Y[0].size)             # pixels per sample (flattened for the MLP control, too)
     torch.manual_seed(seed)
     model = model.to(dev)
     opt = torch.optim.Adam(model.parameters(), 1e-3)
@@ -102,9 +109,10 @@ def train(torch, model, X, Y, epochs, dev, seed, bs=32):
 
 
 def predict(torch, model, X, shape, dev):
+    bs = 2 * batch_size(shape[0] * shape[1])
     with torch.no_grad():
-        return np.concatenate([model(torch.from_numpy(X[i:i + 64]).to(dev)).reshape(-1, *shape).cpu().numpy()
-                               for i in range(0, len(X), 64)])
+        return np.concatenate([model(torch.from_numpy(X[i:i + bs]).to(dev)).reshape(-1, *shape).cpu().numpy()
+                               for i in range(0, len(X), bs)])
 
 
 def main():
@@ -113,6 +121,8 @@ def main():
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--win-ms", type=float, default=20.0)
     ap.add_argument("--T", type=int, default=1024)
+    ap.add_argument("--max-windows", type=int, default=6,
+                    help="windows kept per recording: the contiguous run with the most events (4 with --quick)")
     ap.add_argument("--views", nargs="+", default=["plain", "V1", "V2", "V3", "Du 2021", "Zhang 2024"])
     a = ap.parse_args()
     try:
@@ -125,6 +135,7 @@ def main():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     samples = C.load_samples(a.dataset, a.data, limit=a.limit or (12 if a.quick else 400), seed=a.seed)
     win = int(a.win_ms * 1000)
+    samples = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows)
     groups = sorted({s[2] for s in samples})
     train_g = set(groups[: max(1, len(groups) // 2)])
     test_g = set(groups) - train_g

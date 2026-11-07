@@ -136,6 +136,35 @@ def protect(events, geom, level, T_us=1024, ts_bits=None, pad=None, key_index=0,
     return enc.push(words) + enc.flush()
 
 
+def crop_to_busiest_windows(ev, win_us, max_windows):
+    """The contiguous run of `max_windows` windows of `win_us` with the most events, rebased to start at t = 0.
+
+    Event-ReId recordings are about 1 M events and 160 windows of 20 ms; N3 and N4 keep a window image (7 MB at
+    640 x 480) per window and view, and sealing a whole recording costs minutes. The run is contiguous because
+    E2VID / FireNet are recurrent (they need consecutive windows), and the busiest because the person is in view.
+    A recording of at most `max_windows` windows is returned unchanged (TESTING bug #57)."""
+    if max_windows is None or len(ev) == 0:
+        return ev
+    t = ev["t"].astype(np.int64)
+    t0 = int(t[0])
+    n_w = int((int(t[-1]) - t0) // win_us) + 1
+    if n_w <= max_windows:
+        return ev
+    cnt = np.bincount((t - t0) // win_us, minlength=n_w)
+    run = np.convolve(cnt, np.ones(max_windows, dtype=np.int64), mode="valid")      # events per run of windows
+    start = t0 + int(np.argmax(run)) * win_us
+    keep = (t >= start) & (t < start + max_windows * win_us)
+    out = ev[keep].copy()
+    out["t"] = (t[keep] - start).astype(out["t"].dtype)
+    return out
+
+
+def crop_samples(samples, win_us, max_windows):
+    """crop_to_busiest_windows on every sample without ground-truth frames (frames are indexed by time)."""
+    return [(crop_to_busiest_windows(ev, win_us, max_windows) if frames is None else ev, label, grp, geom, frames)
+            for ev, label, grp, geom, frames in samples]
+
+
 def keyless_payloads(packets):
     """What an eavesdropper extracts from the public framing: per packet (header, payload words). V4 -> None."""
     out = []

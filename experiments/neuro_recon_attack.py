@@ -171,6 +171,8 @@ def main():
     C.dataset_arg(ap)
     ap.add_argument("--win-ms", type=float, default=20.0)
     ap.add_argument("--T", type=int, default=1024)
+    ap.add_argument("--max-windows", type=int, default=6,
+                    help="windows kept per recording: the contiguous run with the most events (4 with --quick)")
     ap.add_argument("--recon-repo", type=Path, default=None)
     ap.add_argument("--recon-ckpt", nargs="*", default=[])
     a = ap.parse_args()
@@ -179,6 +181,7 @@ def main():
     samples = C.load_samples(a.dataset, a.data, limit=a.limit or (8 if a.quick else 400), seed=a.seed)
     learned = Learned(a.recon_repo, a.recon_ckpt) if a.recon_repo else None
     win = int(a.win_ms * 1000)
+    samples = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows)
     recs = []                      # one record per (sample, window)
     for si, (ev, label, grp, geom, frames) in enumerate(samples):
         if len(ev) == 0:

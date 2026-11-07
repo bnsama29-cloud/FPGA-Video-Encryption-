@@ -29,7 +29,7 @@ Readers and what each one assumes (an assumption that a file contradicts raises 
   are in **milliseconds** with a fractional part, so `t_scale` defaults to 1e3 (µs = t * t_scale). Evidence
   (001/cam01, Zenodo 8256439, 7 Nov 2026): the file spans 3229.9 units and its label.json has 95 frames of
   33.3 ms = 3163 ms, and the README gives 3-4 s per recording; read as µs the same file would span 3.2 ms at
-  3e8 events/s (the first Kaggle QUICK run, TESTING bug #51). Every file's span must lie in
+  3e8 events/s (the first Kaggle QUICK run, TESTING bug #51). Each recording is rebased to start at t = 0. Every file's span must lie in
   [EVENTREID_SPAN_S] after scaling, else the reader raises, so a unit error cannot pass silently. `describe_eventreid(root)` prints what the
   files hold, for the QUICK run. label = the first integer in the parent directory's name (else in the
   file stem); group = label (person id, the identity cluster) or, without a label, the parent directory.
@@ -272,6 +272,10 @@ def load_eventreid(root, split=None, columns=None, t_scale=1e3, W=None, H=None, 
         c = read_event_file(f, columns)
         res = c.pop("_resolution", None)
         ev = _to_events(c["t"], c["x"], c["y"], c["p"], t_scale)
+        if ev.size:
+            # The camera clock is absolute (001/cam01 starts at 66 626 956 ms = 18.5 h) but EVT 2.0 holds 34 bits of
+            # µs (4.77 h): each recording starts at t = 0, as every recording is its own stream (TESTING bug #56).
+            ev["t"] -= ev["t"][0]
         if ev.size > 1:
             span_s = (int(ev["t"][-1]) - int(ev["t"][0])) / 1e6
             lo, hi = EVENTREID_SPAN_S

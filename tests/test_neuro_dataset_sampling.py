@@ -65,7 +65,9 @@ def test_eventreid_text_layout_from_its_readme(tmp_path):
     assert [(lab, grp) for _, lab, grp, _ in got] == [(1, "1"), (1, "1"), (10, "10"), (10, "10")]
     ev, _, _, geom = got[0]
     assert (geom.W, geom.H) == (640, 480)
-    assert ev["t"].tolist() == [66626956403, 66626956405, 66630186297], ev["t"].tolist()   # ms -> µs
+    assert ev["t"].tolist() == [0, 2, 3229894], ev["t"].tolist()   # ms -> µs, rebased to the recording's start
+    from neuro import evt2
+    assert len(evt2.encode(ev, 1024)) > 0                           # the absolute 6.7e10 µs did not fit 34 bits (#56)
     assert ev["x"].tolist() == [213, 186, 205] and ev["p"].tolist() == [1, 1, 0]
     span_s = (int(ev["t"][-1]) - int(ev["t"][0])) / 1e6
     assert abs(span_s - 3.2299) < 1e-3, f"span {span_s} s, expected 3.2299 s (README: 3-4 s per recording)"
