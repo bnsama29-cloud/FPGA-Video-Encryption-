@@ -57,6 +57,18 @@ def bucket_target(n_real, policy):
     return t
 
 
+def bucket_targets(n_real, policy):
+    """bucket_target over an array of per-bucket counts (vectorised; equal to the scalar rule element by element)."""
+    n = np.asarray(n_real, dtype=np.int64)
+    if policy.kind == FLOOR:
+        return np.maximum(n, policy.pad_min)
+    k = np.ceil(np.log2(np.maximum(n, 1) / policy.pad_min)).clip(min=0).astype(np.int64)
+    t = policy.pad_min * (1 << k)
+    t = np.where(t < n, t * 2, t)                         # guard against log2 rounding just below an integer
+    t = np.where((t // 2 >= n) & (t // 2 >= policy.pad_min), t // 2, t)
+    return np.where(n > policy.pad_cap, n, t)
+
+
 def _dummy_from(ks, W, H):
     x = (ks.take(16) * W) >> 16
     y = (ks.take(16) * H) >> 16

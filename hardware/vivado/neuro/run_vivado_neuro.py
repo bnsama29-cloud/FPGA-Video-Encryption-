@@ -64,10 +64,15 @@ def run_job(name, cmd, dry):
             rc = subprocess.run(cmd, cwd=ROOT, stdout=f, stderr=subprocess.STDOUT).returncode
         if "RESULT top=" in log.read_text(errors="replace") or "-tclargs" not in cmd:
             break
-        tail = log.read_text(errors="replace").splitlines()[-8:]
-        print(f"{name}: no RESULT line (attempt {attempt}); last lines:")
-        print("\n".join(tail))
+        text = log.read_text(errors="replace")
+        kept = LOGS / f"{name}.attempt{attempt}.log"      # the retry overwrites the log: keep the failed one
+        kept.write_text(text, encoding="utf-8")
+        errors = [l for l in text.splitlines() if l.startswith(("ERROR", "CRITICAL WARNING"))][:6]
+        print(f"{name}: no RESULT line (attempt {attempt}), log kept in {kept.name}; first errors:")
+        print("\n".join(errors or text.splitlines()[-8:]))
         rc = rc or 1
+        if attempt == 1 and any("[Synth " in l or "[DRC " in l for l in errors):
+            break                          # a design / tool error repeats: do not spend another hour on it
     print(f"{name}: rc={rc} in {time.time() - t0:.0f} s (log {log})")
     return name, rc, time.time() - t0
 

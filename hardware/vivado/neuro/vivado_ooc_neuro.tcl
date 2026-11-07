@@ -36,8 +36,11 @@ read_xdc -mode out_of_context $xdc
 set gopt {}
 foreach g $gens { lappend gopt -generic $g }
 set sargs [list -top $top -part $part -mode out_of_context -flatten_hierarchy rebuilt {*}$gopt]
-if {[catch {synth_design {*}$sargs -global_retiming on} err]} {
-    puts "WARNING: synth_design -global_retiming not accepted ($err); synthesising without retiming"
+# -retiming, not -global_retiming on: with -global_retiming on, the 128 x 128 build failed in opt_design with
+# ERROR [Synth 20-411] (7 Nov 2026) after the same RTL had placed and routed with -retiming the same morning.
+# Vivado prints that -retiming is deprecated; it is still accepted and is the flow paper 1 used.
+if {[catch {synth_design {*}$sargs -retiming} err]} {
+    puts "WARNING: synth_design -retiming not accepted ($err); synthesising without retiming"
     synth_design {*}$sargs
 }
 report_utilization -file $out/utilization_synth.txt

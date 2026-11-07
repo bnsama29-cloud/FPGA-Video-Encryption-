@@ -218,8 +218,25 @@ def read_event_file(path, columns=None):
             return _from_matrix(next(iter(dsets.values())), columns, path)
         raise ValueError(f"{path}: datasets {sorted(dsets)} do not name t/x/y/p")
     if ext in (".txt", ".csv"):
-        arr = np.loadtxt(path, delimiter="," if ext == ".csv" else None, ndmin=2)
-        return _from_matrix(arr, columns, path)
+        # Event-ReId (its README, read 7 Nov 2026): first row "width height", then "t x y p" per row, t in µs
+        # with a fractional part. A first row of two numbers is taken as the resolution; four columns without
+        # names default to (t, x, y, p).
+        sep = "," if ext == ".csv" else None
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            first = fh.readline().replace(",", " ").split()
+        skip, res = 0, None
+        if len(first) == 2 and all(v.replace(".", "", 1).isdigit() for v in first):
+            skip, res = 1, (int(float(first[0])), int(float(first[1])))
+        try:
+            import pandas as pd  # noqa: PLC0415 (fast C parser when present)
+            arr = pd.read_csv(path, sep=sep or r"\s+", header=None, skiprows=skip).to_numpy(dtype=np.float64)
+        except ImportError:
+            arr = np.loadtxt(path, delimiter=sep, ndmin=2, skiprows=skip)
+        cols = columns or (("t", "x", "y", "p") if arr.ndim == 2 and arr.shape[1] == 4 else None)
+        out = _from_matrix(arr, cols, path)
+        if res:
+            out["_resolution"] = res
+        return out
     raise ValueError(f"{path}: unsupported extension {ext}")
 
 
@@ -246,14 +263,19 @@ def load_eventreid(root, split=None, columns=None, t_scale=1.0, W=None, H=None, 
         raise FileNotFoundError(f"no event files ({', '.join(EVENTREID_EXT)}) for split {split!r} under {root}")
     for f in files:
         c = read_event_file(f, columns)
+        res = c.pop("_resolution", None)
         ev = _to_events(c["t"], c["x"], c["y"], c["p"], t_scale)
         if ev.size and (ev["x"].astype(np.int64).min() < 0):
             raise ValueError(f"{f}: negative x")
-        gw = W if W is not None else (int(ev["x"].max()) + 1 if ev.size else 1)
-        gh = H if H is not None else (int(ev["y"].max()) + 1 if ev.size else 1)
+        gw = W if W is not None else (res[0] if res else (int(ev["x"].max()) + 1 if ev.size else 1))
+        gh = H if H is not None else (res[1] if res else (int(ev["y"].max()) + 1 if ev.size else 1))
         if ev.size and (ev["x"].max() >= gw or ev["y"].max() >= gh):
             raise ValueError(f"{f}: event outside {gw} x {gh}")
-        label = _first_int(f.parent.name)
+        # person id: the all-digit folder of the path (Event-ReId: <id>/<camera>/events.txt); the camera folder
+        # (cam01..) must not become the label
+        rel = f.relative_to(Path(root)).parts[:-1]
+        ids = [p for p in rel if p.isdigit()]
+        label = int(ids[-1]) if ids else _first_int(f.parent.name)
         if label is None:
             label = _first_int(f.stem)
         group = str(label) if label is not None else f.parent.relative_to(root).as_posix()

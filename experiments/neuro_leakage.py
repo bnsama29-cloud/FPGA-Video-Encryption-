@@ -32,7 +32,7 @@ import numpy as np
 import neuro_common as C
 from neuro import evt2
 from neuro.packet import packetize
-from neuro.pad import FLOOR, LADDER, PadPolicy, bucket_target, pad_packet
+from neuro.pad import FLOOR, LADDER, PadPolicy, bucket_target, bucket_targets, pad_packet
 from neuro.stats import cluster_bootstrap_ci, mi_perm_null, n_clusters, quantize
 
 POLICIES = {"floor 4": PadPolicy(FLOOR, 4), "floor 16": PadPolicy(FLOOR, 16), "ladder 2..64": PadPolicy(LADDER, 2, 64)}
@@ -58,13 +58,13 @@ def visible(series, view, T=1024):
         return series
     if view.startswith("V3 + pad"):
         pol = POLICIES[view.split("pad ")[1]]
-        return np.array([bucket_target(int(n), pol) for n in series])
+        return bucket_targets(series, pol)
     pad = len(series) % nb
     s = np.concatenate([series, np.zeros((nb - pad) % nb, np.int64)]).reshape(-1, nb)
     if view == "V4":
         return s.sum(1) + (s > 0).sum(1)
     pol = POLICIES[view.split("pad ")[1]]
-    return np.array([sum(bucket_target(int(n), pol) for n in row) + nb for row in s])
+    return bucket_targets(s, pol).sum(1) + nb
 
 
 def features(v):
@@ -100,6 +100,10 @@ def dummy_auc(samples, policy, T=1024, max_packets=200):
     from scipy.stats import rankdata
     mult, pos, lab = [], [], []
     for ev, _, _, geom, _ in samples:
+        if len(ev) == 0:
+            continue
+        t = ev["t"].astype(np.int64)
+        ev = ev[t < t[0] + max_packets * T]               # long recordings (DVS Gesture, 6 s): only what is used
         words = evt2.encode(ev, T)
         for raw in packetize(words, geom, T)[:max_packets]:
             w, _, _, dm = pad_packet(raw.words, policy, bytes(16), 1 << 16, raw.ctr, geom, raw.t_start, T)
@@ -134,7 +138,7 @@ def pad_cost(series_list):
     for name, pol in POLICIES.items():
         real = dummies = above = nb = 0
         for s, _, _ in series_list:
-            t = np.array([bucket_target(int(n), pol) for n in s])
+            t = bucket_targets(s, pol)
             real += s.sum()
             dummies += (t - s).sum()
             lim = pol.pad_min if pol.kind == FLOOR else pol.pad_cap
