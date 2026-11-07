@@ -207,9 +207,16 @@ Sync the clock (3.4) first. Laptop window:
 ```
 py experiments\repeat_runs.py --reps 5 --external-sender 192.168.2.99 --board-max-mode E5 --set keys.master=%KEY% --out sim_out\runs\board_repeat_runs
 ```
-Before each repetition the laptop prints a board command (it starts with `sudo -E env PYTHONPATH=software`).
-Replace `<LAPTOP IP>` with `192.168.2.1` and paste it in the board window. Leave both windows alone
-until the laptop prints `written ...`. Then press Ctrl+C in the board window and wait for the next command.
+Every repetition needs a NEW board sender. When the laptop prints `=== repetition N ===` and a board
+command (it starts with `sudo -E env PYTHONPATH=software`):
+1. Board window: **Ctrl+C** first, if a sender from the last repetition is still running.
+2. Board window: paste the command with `<LAPTOP IP>` replaced by `192.168.2.1` (from repetition 2 on,
+   up arrow + Enter gives the same command).
+3. Leave both windows alone until the next `=== repetition ... ===` (or the table after the last one).
+
+The laptop waits for the new sender before it starts the clock. If it prints `a board sender from an
+earlier run is still streaming`, do steps 1 and 2. (On 7 Nov an old sender started the clock and the
+first attacks of three repetitions hit a link with no video: bug #50, fixed.)
 **Expect** (24 Oct, one run): 11/11 mitigated, 0 false alarms.
 
 ### 4.8 Rekey under load (X25, about 5 min)
@@ -218,12 +225,17 @@ py experiments\rekey_load.py --external-sender 192.168.2.99 --board-max-mode E5 
 ```
 Paste the printed board command as in 4.7.
 
-### 4.9 Tamper button with debounce (X13)
-On the board, set SW1 so that **LD0** is on, and **SW0 down**. Laptop window:
+### 4.9 Tamper button with debounce (X13, optional)
+Optional: skip it if the paper leaves out the tamper buttons. The debounce is still checked in simulation
+(`hardware/tb/test_axis_tamper.py`). If you skip it, no `hw_tamper_*` folder is saved in 5.1.
+
+On the board, set **SW1 up** and **SW0 down**, and Ctrl+C any sender still running. LD0 shows SW1 only
+while the tamper image is loaded, so it stays dark until the board command below has started. Laptop window:
 ```
 py experiments\hw_tamper.py --external-sender 192.168.2.99 --trigger manual --set keys.master=%KEY% --out sim_out\runs\hw_tamper_journal
 ```
-Paste the printed board command. At each beep, give BTN0 **one** tap. The debounce ignores the contact
+Paste the printed board command. Once it has loaded the tamper image, **LD0 must be on**; if it is off,
+flip SW1. At each beep, give BTN0 **one** tap. The debounce ignores the contact
 bounce for about 10 ms after a press, so every shot must now give exactly one rejected frame. On 24 Oct,
 without the debounce, 9 of 25 shots gave 2 frames. It does not merge deliberate presses: two taps are
 two shots.
@@ -280,3 +292,4 @@ power readings into `results/board/journal_<date>/README.md` with the date, the 
 | `kex: no answer from the receiver` | The board started more than 2 min after the laptop. Ctrl+C both, start the laptop, then the board |
 | Latency 0 ms, negative or huge | Board clock drifted. Run 3.4 again right before the run |
 | Tamper run: 0 of 25 detected | SW1 is the wrong way round (LD0 off) |
+| LD0 off before the tamper run | Normal until the board command has loaded the tamper image (4.9) |

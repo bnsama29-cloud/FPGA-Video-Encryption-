@@ -1,0 +1,399 @@
+{
+ "cpu": {
+  "machine": "armv7l",
+  "host": "pynq",
+  "python": "3.10.4",
+  "cpu": "ARMv7 Processor rev 0 (v7l)",
+  "cores": 2,
+  "cflags": "-O3 -shared -fPIC -pthread"
+ },
+ "quality": 75,
+ "frames": 20,
+ "sizes": {
+  "320x240": {
+   "ours on the PS, E0, 1 core": {
+    "kind": "ps_ours",
+    "mode": 0,
+    "threads": 1,
+    "ms": 31.52525199993761,
+    "playable": true,
+    "authenticated": true,
+    "fps": 31.720602899605023
+   },
+   "ours on the PS, E2, 1 core": {
+    "kind": "ps_ours",
+    "mode": 2,
+    "threads": 1,
+    "ms": 33.044772000266676,
+    "playable": true,
+    "authenticated": true,
+    "fps": 30.2619730586106
+   },
+   "ours on the PS, E4, 1 core": {
+    "kind": "ps_ours",
+    "mode": 4,
+    "threads": 1,
+    "ms": 33.18940600001952,
+    "playable": true,
+    "authenticated": true,
+    "fps": 30.13009633252888
+   },
+   "ours on the PS, E5, 1 core": {
+    "kind": "ps_ours",
+    "mode": 5,
+    "threads": 1,
+    "ms": 38.350461999925756,
+    "playable": true,
+    "authenticated": true,
+    "fps": 26.075305168473225
+   },
+   "ours on the PS, E0, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 0,
+    "threads": 2,
+    "ms": 19.191042999864294,
+    "playable": true,
+    "authenticated": true,
+    "fps": 52.107642091525264
+   },
+   "ours on the PS, E2, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 2,
+    "threads": 2,
+    "ms": 19.976107500497164,
+    "playable": true,
+    "authenticated": true,
+    "fps": 50.05980269054479
+   },
+   "ours on the PS, E4, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 4,
+    "threads": 2,
+    "ms": 20.1022340002055,
+    "playable": true,
+    "authenticated": true,
+    "fps": 49.74571482899748
+   },
+   "ours on the PS, E5, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 5,
+    "threads": 2,
+    "ms": 22.94815999994171,
+    "playable": true,
+    "authenticated": true,
+    "fps": 43.576478462871975
+   },
+   "libjpeg-turbo (no security)": {
+    "kind": "libjpeg",
+    "ms": 7.458442999450199,
+    "playable": true,
+    "authenticated": false,
+    "bytes": 12660,
+    "fps": 134.07624085532532
+   },
+   "libjpeg-turbo + Ascon-AEAD128 whole file (C)": {
+    "kind": "libjpeg_ascon",
+    "ms": 8.541494999917632,
+    "playable": false,
+    "authenticated": true,
+    "fps": 117.0755236653119
+   },
+   "libjpeg-turbo + AES-128-GCM whole file (OpenSSL)": {
+    "kind": "libjpeg_aesgcm",
+    "ms": 8.809526000277401,
+    "playable": false,
+    "authenticated": true,
+    "fps": 113.51348528496439
+   },
+   "PL (FPGA) round trip, E0": {
+    "kind": "pl_round_trip",
+    "mode": 0,
+    "ms": 15.82,
+    "playable": true,
+    "authenticated": true,
+    "fps": 63.21112515802781
+   },
+   "PL fabric only, E0": {
+    "kind": "pl_fabric",
+    "mode": 0,
+    "ms": 0.83,
+    "playable": true,
+    "authenticated": true,
+    "fps": 1204.8192771084339
+   },
+   "PL (FPGA) round trip, E2": {
+    "kind": "pl_round_trip",
+    "mode": 2,
+    "ms": 15.77,
+    "playable": true,
+    "authenticated": true,
+    "fps": 63.41154090044388
+   },
+   "PL fabric only, E2": {
+    "kind": "pl_fabric",
+    "mode": 2,
+    "ms": 0.825,
+    "playable": true,
+    "authenticated": true,
+    "fps": 1212.1212121212122
+   },
+   "PL (FPGA) round trip, E4": {
+    "kind": "pl_round_trip",
+    "mode": 4,
+    "ms": 15.75,
+    "playable": true,
+    "authenticated": true,
+    "fps": 63.492063492063494
+   },
+   "PL fabric only, E4": {
+    "kind": "pl_fabric",
+    "mode": 4,
+    "ms": 0.824,
+    "playable": true,
+    "authenticated": true,
+    "fps": 1213.5922330097087
+   },
+   "PL (FPGA) round trip, E5": {
+    "kind": "pl_round_trip",
+    "mode": 5,
+    "ms": 17.14,
+    "playable": true,
+    "authenticated": true,
+    "fps": 58.343057176196034
+   },
+   "PL fabric only, E5": {
+    "kind": "pl_fabric",
+    "mode": 5,
+    "ms": 0.827,
+    "playable": true,
+    "authenticated": true,
+    "fps": 1209.1898428053205
+   },
+   "PL (FPGA) round trip, zero-copy, E0": {
+    "kind": "pl_zero_copy",
+    "mode": 0,
+    "ms": 4.85,
+    "playable": true,
+    "authenticated": true,
+    "fps": 206.18556701030928
+   },
+   "PL (FPGA) round trip, zero-copy, E2": {
+    "kind": "pl_zero_copy",
+    "mode": 2,
+    "ms": 4.79,
+    "playable": true,
+    "authenticated": true,
+    "fps": 208.76826722338205
+   },
+   "PL (FPGA) round trip, zero-copy, E4": {
+    "kind": "pl_zero_copy",
+    "mode": 4,
+    "ms": 4.79,
+    "playable": true,
+    "authenticated": true,
+    "fps": 208.76826722338205
+   },
+   "PL (FPGA) round trip, zero-copy, E5": {
+    "kind": "pl_zero_copy",
+    "mode": 5,
+    "ms": 6.18,
+    "playable": true,
+    "authenticated": true,
+    "fps": 161.81229773462783
+   }
+  },
+  "640x480": {
+   "ours on the PS, E0, 1 core": {
+    "kind": "ps_ours",
+    "mode": 0,
+    "threads": 1,
+    "ms": 114.38269199970819,
+    "playable": true,
+    "authenticated": true,
+    "fps": 8.742581438829497
+   },
+   "ours on the PS, E2, 1 core": {
+    "kind": "ps_ours",
+    "mode": 2,
+    "threads": 1,
+    "ms": 119.76735650023329,
+    "playable": true,
+    "authenticated": true,
+    "fps": 8.349520513947823
+   },
+   "ours on the PS, E4, 1 core": {
+    "kind": "ps_ours",
+    "mode": 4,
+    "threads": 1,
+    "ms": 120.38332900010573,
+    "playable": true,
+    "authenticated": true,
+    "fps": 8.30679802848052
+   },
+   "ours on the PS, E5, 1 core": {
+    "kind": "ps_ours",
+    "mode": 5,
+    "threads": 1,
+    "ms": 140.43949899951258,
+    "playable": true,
+    "authenticated": true,
+    "fps": 7.120503897578492
+   },
+   "ours on the PS, E0, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 0,
+    "threads": 2,
+    "ms": 61.9051845001195,
+    "playable": true,
+    "authenticated": true,
+    "fps": 16.15373587971569
+   },
+   "ours on the PS, E2, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 2,
+    "threads": 2,
+    "ms": 64.75439399991956,
+    "playable": true,
+    "authenticated": true,
+    "fps": 15.442967468759607
+   },
+   "ours on the PS, E4, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 4,
+    "threads": 2,
+    "ms": 65.12362749981548,
+    "playable": true,
+    "authenticated": true,
+    "fps": 15.355409985459323
+   },
+   "ours on the PS, E5, 2 cores": {
+    "kind": "ps_ours",
+    "mode": 5,
+    "threads": 2,
+    "ms": 78.37262149996604,
+    "playable": true,
+    "authenticated": true,
+    "fps": 12.759557876986841
+   },
+   "libjpeg-turbo (no security)": {
+    "kind": "libjpeg",
+    "ms": 28.756547999819304,
+    "playable": true,
+    "authenticated": false,
+    "bytes": 44189,
+    "fps": 34.774688533765726
+   },
+   "libjpeg-turbo + Ascon-AEAD128 whole file (C)": {
+    "kind": "libjpeg_ascon",
+    "ms": 32.2018554998067,
+    "playable": false,
+    "authenticated": true,
+    "fps": 31.054111152259622
+   },
+   "libjpeg-turbo + AES-128-GCM whole file (OpenSSL)": {
+    "kind": "libjpeg_aesgcm",
+    "ms": 31.901685999855545,
+    "playable": false,
+    "authenticated": true,
+    "fps": 31.346305646809018
+   },
+   "PL (FPGA) round trip, E0": {
+    "kind": "pl_round_trip",
+    "mode": 0,
+    "ms": 49.47,
+    "playable": true,
+    "authenticated": true,
+    "fps": 20.214271275520517
+   },
+   "PL fabric only, E0": {
+    "kind": "pl_fabric",
+    "mode": 0,
+    "ms": 1.812,
+    "playable": true,
+    "authenticated": true,
+    "fps": 551.8763796909492
+   },
+   "PL (FPGA) round trip, E2": {
+    "kind": "pl_round_trip",
+    "mode": 2,
+    "ms": 49.45,
+    "playable": true,
+    "authenticated": true,
+    "fps": 20.222446916076844
+   },
+   "PL fabric only, E2": {
+    "kind": "pl_fabric",
+    "mode": 2,
+    "ms": 1.814,
+    "playable": true,
+    "authenticated": true,
+    "fps": 551.2679162072767
+   },
+   "PL (FPGA) round trip, E4": {
+    "kind": "pl_round_trip",
+    "mode": 4,
+    "ms": 49.45,
+    "playable": true,
+    "authenticated": true,
+    "fps": 20.222446916076844
+   },
+   "PL fabric only, E4": {
+    "kind": "pl_fabric",
+    "mode": 4,
+    "ms": 1.813,
+    "playable": true,
+    "authenticated": true,
+    "fps": 551.5719801434087
+   },
+   "PL (FPGA) round trip, E5": {
+    "kind": "pl_round_trip",
+    "mode": 5,
+    "ms": 52.41,
+    "playable": true,
+    "authenticated": true,
+    "fps": 19.080328181644724
+   },
+   "PL fabric only, E5": {
+    "kind": "pl_fabric",
+    "mode": 5,
+    "ms": 1.816,
+    "playable": true,
+    "authenticated": true,
+    "fps": 550.6607929515418
+   },
+   "PL (FPGA) round trip, zero-copy, E0": {
+    "kind": "pl_zero_copy",
+    "mode": 0,
+    "ms": 5.9,
+    "playable": true,
+    "authenticated": true,
+    "fps": 169.4915254237288
+   },
+   "PL (FPGA) round trip, zero-copy, E2": {
+    "kind": "pl_zero_copy",
+    "mode": 2,
+    "ms": 5.9,
+    "playable": true,
+    "authenticated": true,
+    "fps": 169.4915254237288
+   },
+   "PL (FPGA) round trip, zero-copy, E4": {
+    "kind": "pl_zero_copy",
+    "mode": 4,
+    "ms": 5.95,
+    "playable": true,
+    "authenticated": true,
+    "fps": 168.0672268907563
+   },
+   "PL (FPGA) round trip, zero-copy, E5": {
+    "kind": "pl_zero_copy",
+    "mode": 5,
+    "ms": 8.78,
+    "playable": true,
+    "authenticated": true,
+    "fps": 113.89521640091117
+   }
+  }
+ },
+ "pl_json": "sim_out/board/j_lanes4/first_contact.json"
+}

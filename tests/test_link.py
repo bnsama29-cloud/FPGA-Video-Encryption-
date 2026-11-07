@@ -186,6 +186,8 @@ def test_end_to_end_link_detects_and_reacts():
     assert verdicts & {"replay", "stale-epoch"}
     windows = log.take("window", "sender")
     assert any(w["mode"] == c["defence"]["max_mode"] for w in windows), "sender never escalated"
+    bad = [w.get("encoder") for w in windows if w.get("encoder") != "model"]
+    assert not bad, f"bug #49: every window event names the encoder (got {bad[:3]}, expected 'model')"
     assert log.take("rekey", "sender"), "sender never rekeyed"
     assert log.take("epoch", "receiver"), "receiver did not follow the rekey"
 

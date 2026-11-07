@@ -1,0 +1,99 @@
+{
+ "by_type": {
+  "bitflip": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": 0.064,
+   "first_rejection_ci": 0.02895568940294808,
+   "mitigate_s": 0.9034,
+   "mitigate_ci": 0.030213798320634914
+  },
+  "downgrade": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": 0.081,
+   "first_rejection_ci": 0.02529056361570457,
+   "mitigate_s": 0.9032,
+   "mitigate_ci": 0.04512515868382069
+  },
+  "splice": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": 0.0662,
+   "first_rejection_ci": 0.037258429175691235,
+   "mitigate_s": 0.9076,
+   "mitigate_ci": 0.04798225861461712
+  },
+  "inject": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": 0.0706,
+   "first_rejection_ci": 0.03366407941055272,
+   "mitigate_s": 0.9108,
+   "mitigate_ci": 0.059203691538957263
+  },
+  "replay": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": 0.06420000000000001,
+   "first_rejection_ci": 0.02391874800736861,
+   "mitigate_s": 0.9038,
+   "mitigate_ci": 0.0355544808855368
+  },
+  "delay": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": 4.0324,
+   "first_rejection_ci": 0.042178759955219275,
+   "mitigate_s": 1.9208,
+   "mitigate_ci": 0.0454315108689992
+  },
+  "drop": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": null,
+   "first_rejection_ci": null,
+   "mitigate_s": 1.9006,
+   "mitigate_ci": 0.02887039999999995
+  },
+  "flood": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": null,
+   "first_rejection_ci": null,
+   "mitigate_s": 0.9024,
+   "mitigate_ci": 0.02575254369106091
+  },
+  "fb_drop": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": null,
+   "first_rejection_ci": null,
+   "mitigate_s": 3.1178,
+   "mitigate_ci": 0.5342342581518337
+  },
+  "fb_forge": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": null,
+   "first_rejection_ci": null,
+   "mitigate_s": 0.8954,
+   "mitigate_ci": 0.0434299854681072
+  },
+  "fb_replay": {
+   "episodes": 5,
+   "mitigated": 5,
+   "first_rejection_s": null,
+   "first_rejection_ci": null,
+   "mitigate_s": 0.893,
+   "mitigate_ci": 0.02554825057024455
+  }
+ },
+ "false_alarms": 0,
+ "calm_windows": 635,
+ "reps": 5,
+ "mitigate_all_s": 1.2871636363636363,
+ "mitigate_all_ci": 0.18808284605296716,
+ "mitigated_all": 55,
+ "episodes_all": 55
+}

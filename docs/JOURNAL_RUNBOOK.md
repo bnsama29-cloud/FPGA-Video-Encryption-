@@ -59,7 +59,7 @@ Step-by-step version, with start-up, keys, clock sync and saving the results: `d
 | X3 | Repeats with the board as the camera | `python experiments/repeat_runs.py --reps 5 --external-sender <BOARD IP>` |
 | X4 | ARM against the FPGA, with zero-copy and the ARM overlapped with the fabric | `first_contact.py --zero-copy --pipeline`, then `sudo -E python3 -m system.arm.arm_baseline --pl-json sim_out/board/first_contact.json` |
 | X5 | Webcam source | `python -m system.board.first_contact --source webcam:0` and `board_sender.py ... --set sender.source=webcam:0` |
-| X13 | Tamper button with debounce | build the `bd_tamper` overlay again (LOCK_BITS defaults to 20, about 10 ms), then press BTN0 quickly several times: one press should tamper one frame |
+| X13 | Tamper button with debounce (optional; may stay out of the paper) | build the `bd_tamper` overlay again (LOCK_BITS defaults to 20, about 10 ms), then press BTN0 quickly several times: one press should tamper one frame |
 | X22, X25 | Several cameras and rekey under load, board as sender | `multi_camera.py` / `rekey_load.py --external-sender <BOARD IP>` |
 | X23 | Wi-Fi link | the same scenarios with the receiver on Wi-Fi; record the RSSI |
 

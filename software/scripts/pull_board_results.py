@@ -87,12 +87,17 @@ def board_rows(sim=SIM):
     return rows
 
 
+DONE_FILES = ("hw_tamper.md", "table.md", "rekey_load.md", "summary.json")
+
+
 def laptop_rows(sim=SIM):
     rows = []
     runs = sim / "runs"
     for d in sorted(p for p in runs.glob("*") if p.is_dir()) if runs.exists() else []:
-        if (d / "hw_tamper.md").exists() or (d / "summary.json").exists():
-            rows.append((f"runs/{d.name}", "done", "hw_tamper.md" if (d / "hw_tamper.md").exists() else "summary.json"))
+        # each laptop script writes its own summary file (hw_tamper, repeat_runs, rekey_load, scenario)
+        done = next((n for n in DONE_FILES if (d / n).exists()), None)
+        if done:
+            rows.append((f"runs/{d.name}", "done", done))
         else:
             rows.append((f"runs/{d.name}", "unfinished", "no summary yet: run it again with the same --out"))
     if (ROOT / "software" / "system" / "baselines" / "power_template.md").exists():

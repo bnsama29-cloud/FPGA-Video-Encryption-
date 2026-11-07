@@ -151,7 +151,8 @@ class Sender:
                        alerts=w.alerts[:20], hb_age=round(w.hb_age, 2),
                        enc_fraction=round(self.enc_bits / payload, 4),
                        frames=self.frames_sent, fps=round(self.measured_fps, 2),
-                       encode_ms=round(1000 * self.t_encode, 1), policy_info=self.policy.info())
+                       encode_ms=round(1000 * self.t_encode, 1), policy_info=self.policy.info(),
+                       encoder=self.encoder.name)   # also here: a dashboard opened after sender.start never saw it
         self.enc_bits = self.payload_bits = self.frames_sent = 0
 
     # ---------------------------------------------------------------- main

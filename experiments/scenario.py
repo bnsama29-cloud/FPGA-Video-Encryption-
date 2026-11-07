@@ -50,6 +50,32 @@ MODES = ["E0", "E1", "E2", "E3", "E4", "E5"]
 BOARD_BIT = "software/system/board/overlay/secure_jpeg_lanes.bit"
 
 
+def wait_for_fresh_sender(log, wait_s, poll_s=0.2, stale_hint_s=3.0):
+    """Wait until a sender that started during this run (its `start` event) has sent a report.
+
+    Bug #50: a board sender left running from the previous run reports at once on the same ports, so the
+    scenario clock used to start with it. The operator then restarted the board, and the attacks of the next
+    ~25 s ran on a link with no video (nothing to reject, counted as not mitigated). Reports from a sender
+    whose start this run did not see are dropped from the log."""
+    t_wait, hinted = time.time(), False
+    while True:
+        starts = log.take("start", "sender")
+        if starts:
+            t_start = starts[-1]["t"]
+            if any(w["t"] >= t_start for w in log.take("window", "sender")):
+                with log.lock:
+                    log.events = [e for e in log.events if e.get("src") != "sender" or e["t"] >= t_start]
+                return
+        elif not hinted and log.take("window", "sender") and time.time() - t_wait > stale_hint_s:
+            print("a board sender from an earlier run is still streaming: press Ctrl+C on the board, then start "
+                  "the command above again", flush=True)
+            hinted = True
+        if time.time() - t_wait > wait_s:
+            raise RuntimeError(f"no report from a newly started board sender in {wait_s} s: check IPs, firewall "
+                               "and ports, and restart the board command")
+        time.sleep(poll_s)
+
+
 def board_command(base_port, policy, laptop="<LAPTOP IP>", extra_sets=(), pq_kex=False, bus_host=None,
                   bitfile=BOARD_BIT):
     """The board_sender command whose ports match a scenario run on base_port. Settings that
@@ -151,17 +177,16 @@ def run(scenario, policy, out, base_port=47200, extra_sets=(), watch=False, memo
              for n in nodes]
     if external_sender:
         if not pq_kex:
-            print("\nStart the sender on the board now (same ports as this run):\n  "
-                  + board_command(base_port, policy, extra_sets=extra_sets, **to_board))
+            print("\nStart a NEW sender on the board now (Ctrl+C the one from the last run first; same ports as "
+                  "this run):\n  " + board_command(base_port, policy, extra_sets=extra_sets, **to_board))
         print("Waiting for the board's first report ...", flush=True)
-        t_wait = time.time()
-        while not log.take("window", "sender"):
-            if time.time() - t_wait > wait_s:
-                for p in procs:
-                    p.terminate()
-                log.close()
-                raise RuntimeError(f"no report from the board in {wait_s} s: check IPs, firewall and ports")
-            time.sleep(0.2)
+        try:
+            wait_for_fresh_sender(log, wait_s)
+        except RuntimeError:
+            for p in procs:
+                p.terminate()
+            log.close()
+            raise
         print("board is streaming: scenario clock starts", flush=True)
     t0 = time.time()
     hw_events = []
