@@ -50,12 +50,14 @@ If any of these fails, fix it here first. A board day spent on a design that the
 
 ## 2. Board phase (PYNQ-Z2)
 
+Step-by-step version, with start-up, keys, clock sync and saving the results: `docs/BOARD_JOURNAL.md`.
+
 | X | Experiment | Command |
 |---|---|---|
-| X1 | Power from a USB meter, idle against encoding | read the meter during `first_contact.py --timing-frames 600`, and log the readings next to the run |
-| X2 | 1080p and YUYV overlays | `python -m system.board.first_contact --sizes 1920x1080` with the `lanes4hd` and `lanes4yuyv` bitstreams |
+| X1 | Power from a USB meter, idle against encoding (optional: needs a meter; without one, keep the Vivado estimate and say so) | read the meter during `first_contact.py --timing-frames 600`, and log the readings next to the run |
+| X2 | 1080p and YUYV overlays | `python -m system.board.first_contact --sizes 1280x720 1920x1088` with `lanes4hd` (sizes must be multiples of 16, so 1080p is coded as 1088 lines); `--sizes 640x480 1024x768` with `lanes4yuyv` (lines up to 1024 px) |
 | X3 | Repeats with the board as the camera | `python experiments/repeat_runs.py --reps 5 --external-sender <BOARD IP>` |
-| X4 | ARM against the FPGA, with zero-copy | `first_contact.py --zero-copy`, then `sudo -E python3 -m system.arm.arm_baseline --pl-json sim_out/board/first_contact.json` |
+| X4 | ARM against the FPGA, with zero-copy and the ARM overlapped with the fabric | `first_contact.py --zero-copy --pipeline`, then `sudo -E python3 -m system.arm.arm_baseline --pl-json sim_out/board/first_contact.json` |
 | X5 | Webcam source | `python -m system.board.first_contact --source webcam:0` and `board_sender.py ... --set sender.source=webcam:0` |
 | X13 | Tamper button with debounce | build the `bd_tamper` overlay again (LOCK_BITS defaults to 20, about 10 ms), then press BTN0 quickly several times: one press should tamper one frame |
 | X22, X25 | Several cameras and rekey under load, board as sender | `multi_camera.py` / `rekey_load.py --external-sender <BOARD IP>` |

@@ -17,6 +17,8 @@ Part 2 -- speed (only after Part 1 passed)
     over --timing-frames frames per size and mode -> fps and ms/frame, split into: load (ARM writes the
     pixels into the DMA buffer + cache flush), DMA (both channels + invalidate), ARM after (headers, E5
     shuffle) and the fabric-only time from the CYCLES register (bitstreams from 21 Oct 2026).
+    --pipeline adds complete frames with the ARM and the fabric overlapped (pipe_ms, pipe_fps; the JPEGs
+    must be byte-identical to the one-by-one run, else the run counts as not bit-exact).
 Writes sim_out/board/first_contact.json and .md (results_tables.py picks the .md up).
 """
 import argparse
@@ -129,14 +131,14 @@ def save_progress(out, meta, rows):
     tmp.replace(out / PROGRESS)                 # never a half-written file if the run is cut
 
 
-def timing(ip, sizes, n, source, zero_copy=False):
+def timing(ip, sizes, n, source, zero_copy=False, pipeline=False):
     rows = []
     for (w, h) in sizes:
         imgs = frames(source, w, h, n)
         if getattr(ip, "pixfmt", "rgb") == "yuyv":     # time what a YUYV camera delivers (not the ARM converting)
             imgs = [hw.rgb_to_yuyv(x) for x in imgs]
         for mode in range(ip.max_mode + 1):
-            t_enc, t_full, parts = [], [], []
+            t_enc, t_full, parts, jpegs = [], [], [], []
             for i, rgb in enumerate(imgs):
                 if zero_copy:                      # the frame is already in the DMA buffer (as a camera
                     buf = ip.pixel_buffer(w, h)    # writing there would leave it): not timed
@@ -145,7 +147,7 @@ def timing(ip, sizes, n, source, zero_copy=False):
                 t0 = time.perf_counter()
                 scan, tag = ip.encode(rgb, mode, 50_000 + i)
                 t1 = time.perf_counter()
-                ip.build_jpeg(w, h, mode, 50_000 + i, scan, tag)
+                jpegs.append(ip.build_jpeg(w, h, mode, 50_000 + i, scan, tag))
                 t2 = time.perf_counter()
                 t_enc.append(t1 - t0)
                 t_full.append(t2 - t0)
@@ -162,13 +164,51 @@ def timing(ip, sizes, n, source, zero_copy=False):
                        out_stall=med("out_stall", 0))
             if row["fabric_ms"]:
                 row["fabric_fps"] = round(1000 / row["fabric_ms"], 1)
+            if pipeline:
+                pm, same = pipelined(ip, imgs, w, h, mode, zero_copy, jpegs)
+                row.update(pipe_ms=round(1000 * pm, 2), pipe_fps=round(1 / pm, 1), pipe_same_bytes=same)
             rows.append(row)
             fab = (f", fabric {row['fabric_ms']:.3f} ms = {row['fabric_fps']} fps (in_wait {row['in_wait']:.0f}, "
                    f"out_stall {row['out_stall']:.0f} clocks)") if row["fabric_ms"] else ", fabric: no counter"
             print(f"  {w}x{h} E{mode}: encode {1000 * me:.2f} ms ({1 / me:.1f} fps), "
                   f"with headers {1000 * mf:.2f} ms ({1 / mf:.1f} fps); load {row['load_ms']} + DMA {row['dma_ms']} "
                   f"+ ARM {row['arm_ms']} ms{fab}", flush=True)
+            if pipeline:
+                print(f"  {w}x{h} E{mode}: pipelined (ARM builds frame t while the fabric encodes t+1) "
+                      f"{row['pipe_ms']:.2f} ms/frame ({row['pipe_fps']} fps), same bytes as one-by-one: "
+                      f"{'yes' if row['pipe_same_bytes'] else 'NO'}", flush=True)
     return rows
+
+
+def pipelined(ip, imgs, w, h, mode, zero_copy, expected):
+    """Complete authenticated frames with the ARM and the fabric overlapped: frame t+1 is started on the
+    fabric (encode_start) before the ARM builds the JPEG of frame t (headers, APP11, E5 shuffle), and
+    collected afterwards (encode_finish). One pixel buffer, so loading frame t+1 is not overlapped.
+    -> (mean seconds per frame over the whole run, every JPEG identical to the one-by-one run `expected`).
+    With zero_copy the np.copyto into the DMA buffer stands for a camera writing there and is not timed."""
+    copy_s = 0.0
+
+    def start(i):
+        nonlocal copy_s
+        rgb = imgs[i]
+        if zero_copy:
+            c0 = time.perf_counter()
+            buf = ip.pixel_buffer(w, h)
+            np.copyto(buf, rgb)
+            rgb = buf
+            copy_s += time.perf_counter() - c0
+        return ip.encode_start(rgb, mode, 50_000 + i)
+
+    out = []
+    t0 = time.perf_counter()
+    job = start(0)
+    for i in range(len(imgs)):
+        scan, tag = ip.encode_finish(job)
+        if i + 1 < len(imgs):
+            job = start(i + 1)                       # the fabric encodes t+1 ...
+        out.append(ip.build_jpeg(w, h, mode, 50_000 + i, scan, tag))   # ... while the ARM finishes t
+    total = time.perf_counter() - t0 - copy_s
+    return total / len(imgs), out == list(expected)
 
 
 def main(argv=None):
@@ -196,6 +236,9 @@ def main(argv=None):
     ap.add_argument("--resume", action="store_true",
                     help="continue an interrupted run with the same --out: skip the levels it already proved "
                          "bit-exact (saved in <out>/bitexact_progress.json after every level)")
+    ap.add_argument("--pipeline", action="store_true",
+                    help="Part 2 also times complete frames with the ARM and the fabric overlapped (frame t+1 "
+                         "encodes while the ARM builds frame t) and checks they are byte-identical")
     ap.add_argument("--full-cache-ops", action="store_true",
                     help="flush/invalidate the whole DMA buffers instead of only the frame's bytes")
     a = ap.parse_args(argv)
@@ -226,10 +269,13 @@ def main(argv=None):
     speed = []
     if ok:
         print("Part 2: speed", flush=True)
-        speed = timing(ip, sizes, a.timing_frames, a.source)
+        speed = timing(ip, sizes, a.timing_frames, a.source, pipeline=a.pipeline)
         if a.zero_copy:
             print("Part 2b: speed with the frame already in the DMA buffer (zero copy)", flush=True)
-            speed += timing(ip, sizes, a.timing_frames, a.source, zero_copy=True)
+            speed += timing(ip, sizes, a.timing_frames, a.source, zero_copy=True, pipeline=a.pipeline)
+        if a.pipeline and not all(r["pipe_same_bytes"] for r in speed):
+            ok = False
+            print("Pipelined frames differ from one-by-one frames: all_bit_exact set to false")
     else:
         print("Part 1 FAILED: speed not measured (a fast wrong encoder is worthless). See the docstring.")
     out = Path(a.out)
@@ -248,6 +294,13 @@ def main(argv=None):
                f"| {r.get('fabric_fps', '-')} |" for r in speed]
         md += ["", f"fabric = CYCLES register (START to DONE, {getattr(backend, 'fabric_hz', 100e6) / 1e6:.0f} MHz clocks): the encoder alone, without the ARM; "
                "'-' = bitstream built before the counters (21 Oct 2026)."]
+        if any("pipe_ms" in r for r in speed):
+            md += ["", "Pipelined (--pipeline): the ARM builds frame t while the fabric encodes frame t+1.", "",
+                   "| Size | Mode | Zero copy | Complete frame, one by one (ms) | fps | Pipelined (ms) | fps "
+                   "| Same bytes |", "|---|---|---|---|---|---|---|---|"]
+            md += [f"| {r['size']} | E{r['mode']} | {'yes' if r.get('zero_copy') else 'no'} | {r['full_ms']} "
+                   f"| {r['full_fps']} | {r['pipe_ms']} | {r['pipe_fps']} | {'yes' if r['pipe_same_bytes'] else 'NO'} |"
+                   for r in speed if "pipe_ms" in r]
         if a.mock:
             md += ["", "MOCK backend: these times are the Python emulation, NOT the FPGA. Do not report them."]
     (out / "first_contact.md").write_text("\n".join(md) + "\n")

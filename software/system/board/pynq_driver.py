@@ -173,7 +173,17 @@ class MockBackend:
 
     def run(self, n, timeout_s=2.0):
         """Start both DMA channels on the loaded frame and return the scan bytes."""
-        return self.transfer(self._words[:n])
+        self.start_run(n)
+        return self.finish_run(timeout_s)
+
+    def start_run(self, n, start=None):
+        """As PynqBackend.start_run; the emulation encodes the whole frame here."""
+        if start:
+            start()
+        self.transfer(self._words[:n])
+
+    def finish_run(self, timeout_s=2.0):
+        return self.out
 
     def transfer(self, words):
         """Send the pixel words, receive the scan bytes (what the two DMA channels do)."""
@@ -334,8 +344,24 @@ class PynqBackend:
 
     def run(self, n, timeout_s=2.0):
         """Start both DMA channels on the loaded frame; return the scan bytes."""
+        self.start_run(n)
+        return self.finish_run(timeout_s)
+
+    def start_run(self, n, start=None):
+        """Arm both DMA channels on the loaded frame and return at once (the fabric works on its own).
+        start: callable that writes CTRL.START. It runs after the receive channel is armed and before the
+        send channel: the encoder's output only waits on an armed S2MM, and the pixels start to flow one
+        pynq transfer() call earlier than when START came first (that call was counted in
+        IN_WAIT). The send channel stays after START because the dealer in secure_jpeg_lanes_top.v
+        takes pixels whenever a lane is ready and START clears its position."""
         self.dma.recvchannel.transfer(self.outbuf)                 # receive first
+        if start:
+            start()
         self.dma.sendchannel.transfer(self.inbuf[:n])
+
+    def finish_run(self, timeout_s=2.0):
+        """Wait for the frame started by start_run; return the scan bytes (copied out of the DMA buffer,
+        so the next start_run may reuse it)."""
         self._wait(self.dma.sendchannel, "send (MM2S, pixels in)", timeout_s)
         self._wait(self.dma.recvchannel, "receive (S2MM, scan out)", timeout_s)
         nbytes = self.read(OUT_BYTES)
@@ -412,6 +438,13 @@ class SecureJpegIP:
         rgb: an RGB frame (H x W x 3), or for a YUYV bitstream (VERSION bit 6) a YUYV frame (H x 2W bytes,
         straight from the camera); an RGB frame given to a YUYV bitstream is converted on the ARM
         (software/model/hw.py :: rgb_to_yuyv), which costs time: give the camera's YUYV when there is one."""
+        return self.encode_finish(self.encode_start(rgb, mode, frame_ctr), timeout_s)
+
+    def encode_start(self, rgb, mode, frame_ctr):
+        """First half of encode(): load the frame, start the fabric and return without waiting. The ARM
+        can then work on the previous frame (build_jpeg) while the fabric encodes this one; encode_finish()
+        collects the result. One frame in flight at a time: call encode_finish before the next start, and
+        do not touch the pixel buffer in between."""
         if self.pixfmt == "yuyv" and not is_yuyv_frame(rgb):
             rgb = hw.rgb_to_yuyv(rgb)
         elif self.pixfmt == "rgb" and is_yuyv_frame(rgb):
@@ -428,9 +461,21 @@ class SecureJpegIP:
         t0 = time.perf_counter()
         npix = self.b.load(rgb)                                    # pixels into the DMA buffer (+ cache flush)
         t1 = time.perf_counter()
-        self.b.write(CTRL, 1 | (mode << 1))
-        scan = self.b.run(npix, timeout_s)
-        t2 = time.perf_counter()
+
+        def go():
+            self.b.write(CTRL, 1 | (mode << 1))
+        start_run = getattr(self.b, "start_run", None)
+        if start_run:                                              # board / mock: DMA armed around START
+            start_run(npix, go)
+        else:                                                      # backends with run() only
+            go()
+        return dict(npix=npix, t0=t0, t1=t1)
+
+    def encode_finish(self, job, timeout_s=2.0):
+        """Second half of encode(): wait for the frame from encode_start; returns (scan bytes, tag)."""
+        finish_run = getattr(self.b, "finish_run", None)
+        scan = finish_run(timeout_s) if finish_run else self.b.run(job["npix"], timeout_s)
+        t1, t2 = job["t1"], time.perf_counter()
         t0w = time.monotonic()
         while not self.b.read(STATUS) & 1:
             if time.monotonic() - t0w > timeout_s:
@@ -441,9 +486,10 @@ class SecureJpegIP:
         tag = b"".join(self.b.read(TAG0 + 4 * i).to_bytes(4, "little") for i in range(4))
         cyc = self.b.read(CYCLES)
         # Where the time went (ms): load = ARM writes the pixels and flushes; dma = start, wait, invalidate,
-        # copy out; fabric = START..DONE in the fabric's own clock (None if the bitstream has no counter or
-        # this is the mock); in_wait / out_stall = fabric clocks lost waiting for pixels / for the DMA.
-        self.last_timing = dict(load_ms=1e3 * (t1 - t0), dma_ms=1e3 * (t2 - t1),
+        # copy out (in a pipelined loop it also holds the ARM work done between start and finish);
+        # fabric = START..DONE in the fabric's own clock (None if the bitstream has no counter or this is
+        # the mock); in_wait / out_stall = fabric clocks lost waiting for pixels / for the DMA.
+        self.last_timing = dict(load_ms=1e3 * (t1 - job["t0"]), dma_ms=1e3 * (t2 - t1),
                                 fabric_ms=1e3 * cyc / getattr(self.b, 'fabric_hz', FABRIC_HZ) if cyc else None, cycles=cyc or None,
                                 in_wait=self.b.read(IN_WAIT) if cyc else None,
                                 out_stall=self.b.read(OUT_STALL) if cyc else None)
