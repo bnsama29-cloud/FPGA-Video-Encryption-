@@ -120,7 +120,10 @@ def stage_gesture(out, inputs):
             print(f"DVS Gesture: using the unpacked folder {unpacked[0]} (no MD5 check possible on a folder)")
             link = dst_dir / folder
             if not link.exists():
-                link.symlink_to(unpacked[0].resolve(), target_is_directory=True)
+                try:
+                    link.symlink_to(unpacked[0].resolve(), target_is_directory=True)
+                except OSError:          # Windows without the symlink privilege (WinError 1314): copy instead
+                    shutil.copytree(unpacked[0], link)
             dst.touch()
             continue
         if found:
