@@ -8,6 +8,7 @@ Checks: every output word and tlast (first mismatch reported with its packet), e
 counters after SNAP (PKTS, WORDS_IN, WORDS_OUT, ERR_*), and the FIFO overflow flag.
 FULL=1 adds every geometry x level case.
 """
+import json
 import os
 
 import cocotb
@@ -143,7 +144,14 @@ async def run_case(d, case):
     for name, a in ERRS.items():
         v = await d.rd(a)
         assert v == c[name], f"{case.name}: {name} = {v}, model {c[name]}"
-    d.dut._log.info("%-22s ok: %d packets, %d words", case.name, ref["packets"], len(exp))
+    cycles = (await d.rd(0xC0)) | ((await d.rd(0xC4)) << 32)
+    d.dut._log.info("%-22s ok: %d packets, %d words, %d clk", case.name, ref["packets"], len(exp), cycles)
+    rep = os.getenv("NV_REPORT")
+    if rep:                                        # experiments/neuro_rtl_exact.py (N1) collects these
+        with open(rep, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"case": case.name, "packets": ref["packets"], "words_out": len(exp),
+                                "words_in": c["WORDS_IN"], "cycles": cycles,
+                                "seed": os.getenv("SEED")}) + "\n")
 
 
 @cocotb.test()
