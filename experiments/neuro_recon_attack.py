@@ -82,21 +82,47 @@ def classical(ev, geom, level):
     return out
 
 
+def normalize_nonzero(vg):
+    """E2VID / FireNet input normalisation (rpg_e2vid utils/inference_utils.py EventPreprocessor, on by default):
+    the non-zero voxels are shifted and scaled to mean 0 and standard deviation 1; zero voxels stay 0."""
+    nz = vg != 0
+    n = int(nz.sum())
+    if n == 0:
+        return vg
+    mean = vg.sum(dtype=np.float64) / n
+    std = np.sqrt(max((vg.astype(np.float64) ** 2).sum() / n - mean ** 2, 0.0))
+    if std == 0:
+        return np.where(nz, vg - mean, 0).astype(np.float32)
+    return np.where(nz, (vg - mean) / std, 0).astype(np.float32)
+
+
 class Learned:
     """E2VID / FireNet from an rpg_e2vid checkout (run-time download; GPL code is never committed)."""
 
     def __init__(self, repo, ckpts):
         import sys
         import torch
-        sys.path.insert(0, str(repo))
-        from utils.loading_utils import load_model           # rpg_e2vid
         self.torch = torch
         self.dev = "cuda" if torch.cuda.is_available() else "cpu"
         self.models = {}
-        for spec in ckpts:
-            name, path = spec.split("=", 1)
-            m = load_model(path)
-            self.models[name] = m.to(self.dev).eval()
+        # rpg_e2vid's top-level packages `model`, `utils` and `base` clash with this repository's golden model
+        # (software/model, already imported as `model`), so `from model.model import *` in rpg_e2vid's
+        # loading_utils failed. Their modules are swapped out of sys.modules while the networks load, then put
+        # back; the loaded networks keep references to the rpg_e2vid classes they need.
+        clash = ("model", "utils", "base")
+        mine = {k: sys.modules.pop(k) for k in list(sys.modules) if k.split(".")[0] in clash}
+        sys.path.insert(0, str(repo))
+        try:
+            from utils.loading_utils import load_model           # rpg_e2vid
+            for spec in ckpts:
+                name, path = spec.split("=", 1)
+                m = load_model(path)
+                self.models[name] = m.to(self.dev).eval()
+        finally:
+            sys.path.remove(str(repo))
+            for k in [k for k in sys.modules if k.split(".")[0] in clash]:
+                del sys.modules[k]
+            sys.modules.update(mine)
         self.states = {}
 
     def reset(self):
@@ -108,7 +134,7 @@ class Learned:
         # pad to a multiple of 16 (UNet downsampling)
         Hp, Wp = -(-geom.H // 16) * 16, -(-geom.W // 16) * 16
         x = np.zeros((1, 5, Hp, Wp), np.float32)
-        x[0, :, :geom.H, :geom.W] = vg
+        x[0, :, :geom.H, :geom.W] = normalize_nonzero(vg)
         out = {}
         with torch.no_grad():
             t = torch.from_numpy(x).to(self.dev)

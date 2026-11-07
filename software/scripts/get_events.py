@@ -8,7 +8,8 @@
               ibmGestureTrain.tar.gz / ibmGestureTest.tar.gz are taken from an attached Kaggle dataset when present
               (any folder under --inputs, default /kaggle/input), else downloaded from figshare (files 38022171,
               38020584); either way checked against Tonic's MD5 and placed where Tonic looks, so Tonic never
-              downloads itself (its own download failed on Kaggle, 7 Nov 2026)
+              downloads itself (its own download failed on Kaggle, 7 Nov 2026). If Kaggle unpacked an uploaded
+              archive, the unpacked ibmGestureTrain/ / ibmGestureTest/ folder (with .npy files) is linked instead
   eventreid   Event-ReId from Zenodo record 8256439 (doi 10.5281/zenodo.8256439), every file of the record,
               into <out>/eventreid; zip/tar archives are extracted. --max-gb refuses a record larger than that.
 Each dataset is fetched on its own: a failure is reported and the others still run (exit code 1 at the end).
@@ -109,7 +110,19 @@ def stage_gesture(out, inputs):
         dst = dst_dir / fname
         if dst.exists() and md5(dst) == want:
             continue
-        found = sorted(Path(inputs).rglob(fname)) if Path(inputs).exists() else []
+        found = [f for f in (sorted(Path(inputs).rglob(fname)) if Path(inputs).exists() else []) if f.is_file()]
+        folder = fname.replace(".tar.gz", "")
+        unpacked = [d for d in (sorted(Path(inputs).rglob(folder)) if Path(inputs).exists() else [])
+                    if d.is_dir() and next(d.rglob("*.npy"), None) is not None]
+        if not found and unpacked:
+            # Kaggle can unpack an uploaded .tar.gz: link the unpacked folder where Tonic looks and leave an empty
+            # file under the archive's name (Tonic only checks that the archive file exists, then uses the folder)
+            print(f"DVS Gesture: using the unpacked folder {unpacked[0]} (no MD5 check possible on a folder)")
+            link = dst_dir / folder
+            if not link.exists():
+                link.symlink_to(unpacked[0].resolve(), target_is_directory=True)
+            dst.touch()
+            continue
         if found:
             print(f"DVS Gesture: using {found[0]}")
             shutil.copy(found[0], dst)
