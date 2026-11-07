@@ -117,7 +117,7 @@ print(f"free disk after setup: {free_gb():.1f} GB")
 
 # ---------------------------------------------------------------- data
 NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid", "C": "nmnist dvsgesture"}[PART]
-sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED}", "data", check=QUICK)
+sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED}", "data", check=True)   # never run hours on missing data
 if "eventreid" in NEED:
   sh(f"{sys.executable} -c \"import json; from neuro import datasets; "
    f"print(json.dumps(datasets.describe_eventreid('{DATA}/eventreid'), indent=1))\"", "eventreid format",

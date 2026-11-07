@@ -4,12 +4,18 @@
     python software/scripts/get_events.py --out data eventreid --list        (sizes only, no download)
 
   nmnist      N-MNIST through Tonic 1.7.0 (tonic.datasets.NMNIST, train + test), into <out>/nmnist
-  dvsgesture  DVS Gesture through Tonic 1.7.0 (official train/test files), into <out>/dvsgesture
+  dvsgesture  DVS Gesture (official train/test files, Tonic 1.7.0 layout), into <out>/dvsgesture. The two archives
+              ibmGestureTrain.tar.gz / ibmGestureTest.tar.gz are taken from an attached Kaggle dataset when present
+              (any folder under --inputs, default /kaggle/input), else downloaded from figshare (files 38022171,
+              38020584); either way checked against Tonic's MD5 and placed where Tonic looks, so Tonic never
+              downloads itself (its own download failed on Kaggle, 7 Nov 2026)
   eventreid   Event-ReId from Zenodo record 8256439 (doi 10.5281/zenodo.8256439), every file of the record,
               into <out>/eventreid; zip/tar archives are extracted. --max-gb refuses a record larger than that.
+Each dataset is fetched on its own: a failure is reported and the others still run (exit code 1 at the end).
 Writes <out>/<name>/MANIFEST.json (neuro.datasets.manifest: SHA-256 and size per file) and prints the totals.
 """
 import argparse
+import hashlib
 import json
 import shutil
 import sys
@@ -81,7 +87,45 @@ def get_eventreid(out, max_gb, list_only):
     return {"files": files, "total_bytes": total}
 
 
-def get_tonic(name, out):
+GESTURE = {  # Tonic 1.7.0 tonic/datasets/dvsgesture.py
+    True: ("ibmGestureTrain.tar.gz", "https://figshare.com/ndownloader/files/38022171", "3a8f0d4120a166bac7591f77409cb105"),
+    False: ("ibmGestureTest.tar.gz", "https://figshare.com/ndownloader/files/38020584", "56070e45dadaa85fff82e0fbfbc06de5"),
+}
+
+
+def md5(path):
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(1 << 22), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def stage_gesture(out, inputs):
+    """Put both DVS Gesture archives, MD5-checked, into <out>/dvsgesture/DVSGesture/ (Tonic's location)."""
+    dst_dir = out / "dvsgesture" / "DVSGesture"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    for train, (fname, url, want) in GESTURE.items():
+        dst = dst_dir / fname
+        if dst.exists() and md5(dst) == want:
+            continue
+        found = sorted(Path(inputs).rglob(fname)) if Path(inputs).exists() else []
+        if found:
+            print(f"DVS Gesture: using {found[0]}")
+            shutil.copy(found[0], dst)
+        else:
+            print(f"DVS Gesture: {fname} not under {inputs}; downloading {url}")
+            download(url, dst)
+        got = md5(dst)
+        if got != want:
+            dst.unlink()
+            raise RuntimeError(f"{fname}: MD5 {got} != {want}. Download both archives in a browser from figshare "
+                               f"(DVS Gesture, files 38022171 and 38020584) and attach them as a Kaggle dataset")
+
+
+def get_tonic(name, out, inputs="/kaggle/input"):
+    if name == "dvsgesture":
+        stage_gesture(out, inputs)
     import tonic
     cls = {"nmnist": tonic.datasets.NMNIST, "dvsgesture": tonic.datasets.DVSGesture}[name]
     for train in (True, False):
@@ -95,18 +139,27 @@ def main():
     ap.add_argument("--out", type=Path, default=ROOT / "data")
     ap.add_argument("--max-gb", type=float, default=40.0)
     ap.add_argument("--list", action="store_true", help="Event-ReId: print the record's files only")
+    ap.add_argument("--inputs", default="/kaggle/input", help="where attached archives are looked for")
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
+    failed = []
     for n in a.names:
-        if n == "eventreid":
-            info = get_eventreid(a.out, a.max_gb, a.list)
-            if a.list:
-                continue
-        else:
-            get_tonic(n, a.out)
+        try:
+            if n == "eventreid":
+                get_eventreid(a.out, a.max_gb, a.list)
+                if a.list:
+                    continue
+            else:
+                get_tonic(n, a.out, a.inputs)
+        except (OSError, RuntimeError, ValueError, SystemExit) as e:   # report, go on with the next dataset
+            print(f"FAILED {n}: {type(e).__name__}: {e}")
+            failed.append(n)
+            continue
         man = datasets.manifest(a.out / n)
         (a.out / n / "MANIFEST.json").write_text(json.dumps(man, indent=1), encoding="utf-8")
         print(f"{n}: {len(man)} files, {sum(v['bytes'] for v in man.values()) / 1e9:.2f} GB, manifest written")
+    if failed:
+        raise SystemExit(f"datasets not fetched: {', '.join(failed)}")
 
 
 if __name__ == "__main__":
