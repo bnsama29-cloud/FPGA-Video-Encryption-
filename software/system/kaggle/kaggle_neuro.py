@@ -178,6 +178,12 @@ if "n3" in RUN:
             if s2 != s:
                 f.write_text(s2)
         ck = []
+        if FIRENET_CKPT and not FIRENET_CKPT.startswith("http") and not os.path.exists(FIRENET_CKPT):
+            # Kaggle mounts an attached dataset under /kaggle/input/<name>/ or /kaggle/input/datasets/<owner>/<name>/
+            hits = sorted(pathlib.Path("/kaggle/input").rglob(pathlib.Path(FIRENET_CKPT).name)) if ON_KAGGLE else []
+            print(f"FIRENET_CKPT {FIRENET_CKPT} not found; search under /kaggle/input: {[str(h) for h in hits]}", flush=True)
+            if hits:
+                FIRENET_CKPT = str(hits[0])
         for name, src, dst in [("e2vid", E2VID_URL, ext / "E2VID_lightweight.pth.tar")] + (
                 [("firenet", FIRENET_CKPT, ext / "firenet.pth.tar")] if FIRENET_CKPT else []):
             try:                         # a missing / wrong checkpoint drops that network only, not N3 and N4
