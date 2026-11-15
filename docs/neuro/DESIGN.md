@@ -1008,6 +1008,9 @@ energy, multiplicity and dummy position reveal, and what does padding cost?
   measure fixed in advance is accuracy (ii) − chance, with a CI. V1 is expected to keep almost all accuracy and
   is presented as a leak.
 - ≥ 3 training seeds, Student-t interval (`mean_ci`). Baselines: plain, V1-V4, Du, Zhang.
+- Cost: the clean model is trained on the whole training set; the ciphertext rows and the decryption check use a
+  fixed seeded subset (N-MNIST 4000 train / 2000 test, DVS Gesture 300 / all 264), because sealing costs 0.7 s
+  (N-MNIST) to 20-50 s (DVS Gesture) per sample for the six views (TESTING bug #62).
 
 **N7 `neuro_active_attacks.py`**, L. Detection is 100 % for ours and acceptance 100 % for Du/Zhang by
 construction, so the main table states this together with the analytical forgery bound (2^-128 per attempt), and

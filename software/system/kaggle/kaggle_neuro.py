@@ -50,6 +50,9 @@ BRANCH = os.environ.get("BRANCH", BRANCH)
 WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "/tmp/kneuro"))
 WORK.mkdir(parents=True, exist_ok=True)
 QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
+PART = os.environ.get("PART", PART).upper()          # the notebook cell sets PART / QUICK and runs this file
+if PART not in ("A", "B", "C"):
+    raise SystemExit(f"PART must be A, B or C, not {PART!r}")
 REPO = WORK / "repo"
 def _data_dir():
     """data/ goes to the disk with the most free space among /kaggle/working, /kaggle/temp and /tmp (env DATA

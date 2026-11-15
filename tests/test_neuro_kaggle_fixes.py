@@ -206,3 +206,23 @@ def test_n4_verdict_is_invalid_when_control_f_is_worse_than_the_median_frame():
     assert (valid, p1) == (True, True), "network = control (f) >= control (c): P1 passes"
     _, _, valid, p1 = N4.verdict(f_ok + 0.3, f_ok, c, g)
     assert (valid, p1) == (True, False), "network far above a valid control (f): P1 fails"
+
+
+# ---------------------------------------------------------------- #62: N6 seals a fixed subset, in parallel
+def test_n6_subset_is_fixed_sorted_and_complete_when_small():
+    import neuro_task_accuracy as N6
+    a, b = N6.subset(list(range(100)), 10, 3), N6.subset(list(range(100)), 10, 3)
+    assert a == b and a == sorted(a) and len(set(a)) == 10, a
+    assert N6.subset(list(range(5)), 10, 3) == [0, 1, 2, 3, 4]
+    assert N6.subset(list(range(5)), None, 3) == [0, 1, 2, 3, 4]
+
+
+def test_n6_parallel_sealing_equals_serial():
+    import neuro_common as C
+    import neuro_task_accuracy as N6
+    S = C.synthetic_samples(10, 0)
+    keys = list(range(10))
+    for view in ("V2", "V3"):
+        serial = N6.sealed_frames(S, view, keys, 1)
+        par = N6.sealed_frames(S, view, keys, 2)
+        assert serial.shape == par.shape and np.array_equal(serial, par), f"{view}: parallel frames differ"
