@@ -191,3 +191,18 @@ def test_n4_masks_its_loss_and_scores_inside_the_box():
     m = N4.mask_of((2, 5, 3, 7), 8, 10)
     assert m.sum() == 3 * 4 and m[2:5, 3:7].all(), m
     assert N4.mask_of(None, 8, 10).all()
+
+
+# ---------------------------------------------------------------- #59: N4 control (f) must not be worse than (c)
+def test_n4_verdict_is_invalid_when_control_f_is_worse_than_the_median_frame():
+    import neuro_learned_attack as N4
+    rng = np.random.default_rng(0)
+    g = [f"g{i % 6}" for i in range(48)]
+    net, f_bad, c = 0.64 + 0.01 * rng.random(48), 0.015 + 0.01 * rng.random(48), 0.6 + 0.01 * rng.random(48)
+    d, fc, valid, p1 = N4.verdict(net, f_bad, c, g)
+    assert (valid, p1) == (False, None), f"control (f) {fc} below control (c): P1 must be invalid, got {valid, p1}"
+    f_ok = c + 0.02
+    _, _, valid, p1 = N4.verdict(f_ok + 0.001, f_ok, c, g)
+    assert (valid, p1) == (True, True), "network = control (f) >= control (c): P1 passes"
+    _, _, valid, p1 = N4.verdict(f_ok + 0.3, f_ok, c, g)
+    assert (valid, p1) == (True, False), "network far above a valid control (f): P1 fails"

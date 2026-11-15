@@ -88,6 +88,19 @@ def build(torch, H, W, n_counts):
     return UNet(), mlp
 
 
+def verdict(s_net, s_f, s_c, groups, seed=0):
+    """(network - control (f), control (f) - control (c), valid, P1 pass or None).
+
+    Control (f) sees strictly more than control (c) (the count series vs nothing), so a working (f) is never
+    clearly worse than (c). If it is (upper CI bound of (f) - (c) below 0), (f) failed to train and
+    network - control (f) measures that failure, not leakage (local QUICK 15 Nov 2026: (f) 0.015 against a network
+    that output the mean frame, 0.639, on every view; TESTING bug #59). P1 is then None ("invalid")."""
+    d = paired_bootstrap_diff(s_net, s_f, groups, n=1000, seed=seed)
+    fc = paired_bootstrap_diff(s_f, s_c, groups, n=1000, seed=seed)
+    valid = bool(fc[2] >= 0)
+    return d, fc, valid, (bool(d[2] < 0.05) if valid else None)
+
+
 def batch_size(px, cap=32, budget_px=2_500_000):
     """Images per batch. One training step of the U-Net at 480 x 640 needs 0.72-0.92 GB per image (measured on CPU,
     15 Nov 2026: 0.92 GB at batch 1, 0.72 GB at batch 4), so 32 images do not fit a 15 GB T4. 8 at 480 x 640
@@ -187,13 +200,18 @@ def main():
         pc = predict(torch, mlp, np.stack([w[1] for w in te]) / max(1.0, Xc.max()), (H, Wd), dev)
         sn = [structural_similarity(C.in_roi(p, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for p, w in zip(pn, te)]
         sc = [structural_similarity(C.in_roi(p, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for p, w in zip(pc, te)]
+        med = np.median(Y, 0)                                            # control (c): training-median frame
+        s_c = [structural_similarity(C.in_roi(med, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for w in te]
         g = [w[3] for w in te]
-        d = paired_bootstrap_diff(sn, sc, g, n=1000, seed=a.seed)
+        d, fc, valid, p1 = verdict(sn, sc, s_c, g, a.seed)
         res[view] = {"ssim_net": cluster_bootstrap_ci(sn, g, n=1000, seed=a.seed),
-                     "ssim_control_f": cluster_bootstrap_ci(sc, g, n=1000, seed=a.seed), "net_minus_control_f": d,
+                     "ssim_control_f": cluster_bootstrap_ci(sc, g, n=1000, seed=a.seed),
+                     "ssim_control_c": cluster_bootstrap_ci(s_c, g, n=1000, seed=a.seed), "net_minus_control_f": d,
+                     "control_f_minus_control_c": fc, "control_f_valid": valid,
                      "train_windows": len(tr), "test_windows": len(te), "test_clusters": n_clusters(g),
-                     "P1_pass": bool(d[2] < 0.05)}
-        rows.append((view, res[view]["ssim_net"], res[view]["ssim_control_f"], d, "yes" if d[2] < 0.05 else "no",
+                     "P1_pass": p1}
+        rows.append((view, res[view]["ssim_net"], res[view]["ssim_control_f"], res[view]["ssim_control_c"], d,
+                     ("yes" if d[2] < 0.05 else "no") if valid else "invalid: control (f) < control (c)",
                      n_clusters(g)))
     data = {"results": res,
             "scored": C.SCORED[boxed],
@@ -202,8 +220,10 @@ def main():
                            ci="paired cluster bootstrap 95 %, 1000 resamples")}
     md = ["# N4 learned attack" + (" (synthetic smoke data)" if a.data is None else ""), "",
           f"Scored {data['scored']}.", "",
-          C.table(["view", "SSIM network", "SSIM control (f)", "network - control (f)", "P1 pass", "test clusters"],
-                  rows)]
+          "Validity: control (f) (count series) must not be clearly worse than control (c) (median frame), "
+          "else P1 is reported as invalid.", "",
+          C.table(["view", "SSIM network", "SSIM control (f)", "SSIM control (c)", "network - control (f)", "P1 pass",
+                   "test clusters"], rows)]
     C.write("n4", "learned_attack", data, "\n".join(md), a.out)
 
 

@@ -193,6 +193,9 @@ q = "--quick" if QUICK else ""
 # N9 seals every recording at 4 T x 4 pad policies; one Event-ReId recording (~1 M events) takes ~35 s per setting
 # (profiled 15 Nov), so the default 30 recordings would need ~4.5 h. 8 recordings fit the 2-hour step limit.
 N9_LIMIT = {"eventreid": "--limit 8"} if not QUICK else {}
+# N11 seals each Event-ReId recording at ~9 settings (bandwidth V1-V3, activity V1-V4 and padding): its QUICK default of
+# 4 recordings timed out at 15 min (local dry run, 15 Nov) and the full default of 40 would take ~3.5 h.
+N11_LIMIT = "--limit 2" if QUICK else "--limit 10"
 
 # ---------------------------------------------------------------- CPU experiments on real data
 if "cpu" in RUN:
@@ -208,7 +211,7 @@ if "cpu" in RUN:
        f"--out {OUT}/n8", "N8", want="wrote ")
     sh(f"{sys.executable} experiments/neuro_active_attacks.py --dataset nmnist --data {DATA}/nmnist {q} "
        f"--out {OUT}/n7", "N7", want="wrote ")
-    sh(f"{sys.executable} experiments/neuro_fpe_utility.py --dataset eventreid --data {DATA}/eventreid {q} "
+    sh(f"{sys.executable} experiments/neuro_fpe_utility.py --dataset eventreid --data {DATA}/eventreid {N11_LIMIT} {q} "
        f"--out {OUT}/n11", "N11", want="wrote ")
     checkpoint()
 

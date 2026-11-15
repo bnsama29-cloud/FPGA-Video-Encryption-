@@ -42,7 +42,7 @@ Paper 2 (event-camera encryption, branch `neuromorphic`; design `docs/neuro/DESI
 | `neuro_rtl_exact.py` | N1: RTL bit-exact against the model (every cocotb test, per seed) and RTL clocks vs the cycle model |
 | `neuro_hw_tables.py` | N2: area, Fmax, power, authenticated rate from the Vivado runs (`hardware/vivado/neuro/run_vivado_neuro.py`) |
 | `neuro_recon_attack.py` | N3: reconstruction attacks (classical; E2VID/FireNet on Kaggle) per level, controls, validity gate, P1; `--max-windows` (default 6, 4 with `--quick`): the busiest contiguous run of 20 ms windows per recording; Event-ReId scored inside the person box (`labels/label.json`) |
-| `neuro_learned_attack.py` | N4: network trained on (ciphertext, plaintext) pairs vs the count-series control (PyTorch); same `--max-windows`; batch size shrinks with image size (8 at 480 x 640); Event-ReId: loss and SSIM inside the person box |
+| `neuro_learned_attack.py` | N4: network trained on (ciphertext, plaintext) pairs vs the count-series control (PyTorch); same `--max-windows`; batch size shrinks with image size (8 at 480 x 640); Event-ReId: loss and SSIM inside the person box; controls (c) and (f), P1 invalid when (f) < (c) |
 | `neuro_adjacency_attack.py` | N4b: layout recovered from co-activation of permuted addresses, vs an ideal permutation |
 | `neuro_leakage.py` | N5: MI and classifiers on the visible counts per level and padding policy, dummy distinguisher, padding cost |
 | `neuro_task_accuracy.py` | N6: task accuracy with the key and without it (PyTorch) |

@@ -971,7 +971,9 @@ the GT/APS frame where it exists (Event-ReId if it has frames, HQF), else the pl
 labelled as such. Controls: (c) training-median frame; (f) a network given only the public per-bucket count
 series. Leakage measure: network SSIM − control (f) SSIM, paired cluster-bootstrap CI. ≥ 5 master keys.
 On Event-ReId the network and control (f) are trained with the loss restricted to the person box and scored inside
-it (as N3); a full-frame loss rewarded a blank prediction.
+it (as N3); a full-frame loss rewarded a blank prediction. Validity: control (f) sees strictly more than control (c),
+so if (f) scores clearly below (c) (upper CI bound of (f) − (c) < 0) it did not train, and P1 is reported as
+**invalid** for that view rather than as a pass or a fail (TESTING bug #59).
 Baselines: V1, V2, V3; Du, Zhang.
 
 **N4b `neuro_adjacency_attack.py`**, L (CPU). Does co-activation reveal the layout without the key? For each
