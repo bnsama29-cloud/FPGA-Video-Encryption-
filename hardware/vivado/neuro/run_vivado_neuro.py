@@ -1,6 +1,11 @@
 """N2: Vivado runs for the paper-2 encryptor (area, Fmax, power), one command (DESIGN §8.2 N2).
 
     python hardware/vivado/neuro/run_vivado_neuro.py --steps ooc usweep blocks bd parse [--jobs 2] [--dry] [--resume]
+                                                     [--impl fast|perf]
+
+--impl fast (default): Vivado's default directives, redone with the timing-driven ones only when a build misses
+100 MHz; --impl perf: the timing-driven directives everywhere (the flow of 7 Nov, hours per build). Area is the same;
+the strategy is written to every build's impl.txt and shown in the N2 table.
 
 Steps (run only when the PC is free of paper-1 runs):
   ooc      nv_top, plan of record U = 2, PAD = 1, at 100 MHz for MAXW x MAXH in {34x34, 128x128, 346x260, 1280x720}
@@ -89,9 +94,11 @@ def main():
                     choices=["ooc", "usweep", "blocks", "bd", "power", "parse"])
     ap.add_argument("--jobs", type=int, default=2, help="parallel Vivado runs (each needs ~6 GB RAM)")
     ap.add_argument("--dry", action="store_true", help="print the commands only")
+    ap.add_argument("--impl", choices=["fast", "perf"], default="fast", help="Vivado implementation strategy")
     ap.add_argument("--resume", action="store_true",
                     help="skip jobs whose log already has a RESULT line (continue an interrupted run)")
     a = ap.parse_args()
+    os.environ["NV_IMPL"] = a.impl                 # read by vivado_ooc_neuro.tcl (inherited by every Vivado job)
     exe = "vivado" if a.dry else None
     todo = []
     for s in a.steps:

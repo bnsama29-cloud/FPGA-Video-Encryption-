@@ -44,12 +44,40 @@ if {[catch {synth_design {*}$sargs -retiming} err]} {
     synth_design {*}$sargs
 }
 report_utilization -file $out/utilization_synth.txt
-opt_design -directive Explore
-place_design -directive ExtraTimingOpt
-phys_opt_design -directive Explore
-route_design -directive AggressiveExplore
-# No post-route phys_opt_design -directive AggressiveExplore: Vivado 2026.1 crashed there on nv_top
+# Implementation strategy (env NV_IMPL, as paper 1's SJPEG_IMPL):
+#   fast (default): Vivado's default directives; if the routed design misses the clock, the implementation is redone
+#                   with the perf directives from the same synthesised netlist (the user's runs took hours, 15 Nov
+#                   2026, TESTING bug #61). Area is the same; the Fmax from the slack can be slightly pessimistic.
+#   perf:           the timing-driven directives of every step (the flow of 7 Nov).
+# No post-route phys_opt_design -directive AggressiveExplore in either: Vivado 2026.1 crashed there on nv_top
 # (EXCEPTION_ACCESS_VIOLATION, 7 Nov 2026), as on paper 1's lane encoder (TESTING bug #38).
+set impl [expr {[info exists ::env(NV_IMPL)] ? $::env(NV_IMPL) : "fast"}]
+proc impl_perf {} {
+    opt_design -directive Explore
+    place_design -directive ExtraTimingOpt
+    phys_opt_design -directive Explore
+    route_design -directive AggressiveExplore
+}
+if {$impl eq "perf"} {
+    impl_perf
+    set used perf
+} else {
+    write_checkpoint -force $out/synth.dcp
+    opt_design
+    place_design
+    phys_opt_design
+    route_design
+    set used fast
+    if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] < 0} {
+        puts "INFO: fast implementation misses ${period} ns; redoing it with the perf directives"
+        close_design
+        open_checkpoint $out/synth.dcp
+        impl_perf
+        set used fast+perf
+    }
+    file delete -force $out/synth.dcp
+}
+set f [open $out/impl.txt w]; puts $f $used; close $f
 report_utilization    -file $out/utilization.txt
 report_utilization    -hierarchical -hierarchical_depth 4 -file $out/utilization_hier.txt
 report_timing_summary -max_paths 10 -file $out/timing.txt
@@ -59,7 +87,7 @@ if {[info exists ::env(NV_SAIF)] && [file exists $::env(NV_SAIF)]} {
 }
 report_power -file $out/power.txt
 set wns [get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]]
-puts "RESULT top=$top period=${period}ns $gens WNS=${wns}ns -> reports in $out/"
+puts "RESULT top=$top period=${period}ns $gens WNS=${wns}ns impl=$used -> reports in $out/"
 file delete -force $out/routed.dcp
 if {[catch {write_checkpoint -force $out/routed.dcp} err]} {
     puts "WARNING: checkpoint not written ($err)"

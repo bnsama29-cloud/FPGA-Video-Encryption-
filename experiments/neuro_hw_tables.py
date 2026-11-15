@@ -66,7 +66,9 @@ def main():
         fmax = r.get("fmax_mhz")
         row = {"build": f.name.replace("vivado_neuro_", ""), "params": p, "util": r["util"], "timing": r["timing"],
                "fmax_mhz": fmax, "power": r["power"], "power_source": "SAIF" if (f / "power_saif.txt").exists()
-               else "vectorless", "missing": r["missing"], "kpol_generators": 1}
+               else "vectorless", "missing": r["missing"], "kpol_generators": 1,
+               # NV_IMPL of the build (impl.txt): "fast" Fmax can be slightly pessimistic; builds before 15 Nov: perf
+               "impl": (f / "impl.txt").read_text().strip() if (f / "impl.txt").exists() else "perf"}
         if U and "nv_top" in f.name:
             tag = 4 / (8 // U + 1)
             W, H = p.get("maxw", 1280), p.get("maxh", 720)
@@ -84,14 +86,17 @@ def main():
             return "-"
         return f"{v[0]:g}" if k == "bram" else int(v[0])     # BRAM tiles come in halves (RAMB18 = 0.5 tile)
     rows = [(b["build"], u(b, "lut"), u(b, "ff"), u(b, "bram"), u(b, "dsp"), b["timing"].get("wns", "-"),
-             b["fmax_mhz"] or "-", b.get("auth_mev_s_fmax") or "-", b["power"].get("total", "-"), b["power_source"])
+             b["fmax_mhz"] or "-", b.get("auth_mev_s_fmax") or "-", b["power"].get("total", "-"), b["power_source"],
+             b["impl"])
             for b in builds]
     data = {"builds": builds, "meta": C.meta(a, note="authenticated rate = min(1, tag rate) x Fmax; fill-bound "
                                                      "rate per packet is in fill_clk (see §6.3)")}
     md = ["# N2 hardware tables (Vivado, xc7z020clg400-1, post-route OOC)", "",
           "No build found: run hardware/vivado/neuro/run_vivado_neuro.py first." if not builds else
           C.table(["build", "LUT", "FF", "BRAM tiles", "DSP", "WNS ns", "Fmax MHz", "auth Mev/s at Fmax", "power W",
-                   "power source"], rows)]
+                   "power source", "impl"], rows),
+          "", "impl: Vivado implementation strategy (NV_IMPL). fast = default directives, redone with the timing-driven "
+          "ones only when 100 MHz was missed (fast+perf); its Fmax from the slack can be slightly below a perf build's."]
     C.write("n2", "hw_tables", data, "\n".join(md), a.out)
 
 
