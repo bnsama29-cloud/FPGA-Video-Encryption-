@@ -1,8 +1,8 @@
 """Paper 2 (event-camera encryption) on Kaggle: data, N5 count cache, N3, N6, N4 and the CPU experiments (DESIGN §8.4).
 
 HOW TO RUN (two Kaggle accounts, one PART each, in parallel)
-  1. In each account: New Notebook, Internet ON, Accelerator GPU T4. For "B" add the private dataset with
-     firenet_1000.pth.tar as input (FIRENET_CKPT). ("C" alone = N6 only, if a third account is ever free.)
+  1. In each account: New Notebook, Internet ON, Accelerator GPU T4. No inputs to attach: DVS Gesture and FireNet
+     come from DATA_ZIP (Google Drive), N-MNIST and Event-ReId from their sources. ("C" = N6 only, optional.)
   2. Paste this whole file into ONE code cell, set PART, run QUICK = True first (about 20-30 min; the assertions of
      DESIGN §8.4 fail fast), then QUICK = False with "Save Version -> Save & Run All (Commit)".
   3. Output: neuro_results_<PART>.zip (sim_out/neuro/ of every step, data manifests, meta_budget.json with the
@@ -27,12 +27,13 @@ KEYS = 5                         # independent master keys (N3, N4)
 SEEDS = [0, 1, 2]                # N6 training seeds
 E2VID_URL = "http://rpg.ifi.uzh.ch/data/E2VID/models/E2VID_lightweight.pth.tar"
 E2VID_REPO = "https://github.com/uzh-rpg/rpg_e2vid.git"
-FIRENET_CKPT = None              # FireNet checkpoint: a path under /kaggle/input/... (upload it as a private Kaggle
-                                 # dataset) or a direct https URL; None = FireNet skipped. Procedure: download
-                                 # firenet_1000.pth.tar from the Google Drive link in the README of
-                                 # cedric-scheerlinck/rpg_e2vid (branch cedric/firenet), upload it as a private
-                                 # Kaggle dataset, add it as input, e.g.
-                                 # FIRENET_CKPT = "/kaggle/input/firenet-ckpt/firenet_1000.pth.tar"
+# One zip with the files that cannot be downloaded reliably from their sources: ibmGestureTrain.tar.gz,
+# ibmGestureTest.tar.gz (DVS Gesture; figshare refused some hosts) and firenet_1000.pth.tar. Each run takes only the
+# members it needs (HTTP range requests: part B reads 0.5 MB, not 3 GB). Files attached as a Kaggle dataset (archives
+# or folders Kaggle unpacked) are used first; None = attached inputs and the original sources only.
+DATA_ZIP = "https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing"
+FIRENET_CKPT = "auto"            # "auto": firenet_1000.pth.tar from the attached inputs, else from DATA_ZIP; or a path /
+                                 # https URL; None = FireNet skipped. Checked against CKPT_SHA256 either way.
 FIRENET_REPO = "https://github.com/cedric-scheerlinck/rpg_e2vid.git"   # fork with the FireNet model class
 FIRENET_BRANCH = "cedric/firenet"
 CKPT_SHA256 = {                  # name -> sha256; a name not listed is recorded in meta_budget.json, not checked
@@ -50,8 +51,26 @@ WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "
 WORK.mkdir(parents=True, exist_ok=True)
 QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
 REPO = WORK / "repo"
-DATA = WORK / "data"
+def _data_dir():
+    """data/ goes to the disk with the most free space among /kaggle/working, /kaggle/temp and /tmp (env DATA
+    overrides): unpacked DVS Gesture alone is 16 GB, and /kaggle/working showed 20.9 GB free in the 7 Nov runs.
+    Nothing in data/ is part of the results (the manifests are copied into the zip)."""
+    if os.environ.get("DATA"):
+        return pathlib.Path(os.environ["DATA"])
+    cands = [WORK] + ([pathlib.Path("/kaggle/temp"), pathlib.Path("/tmp")] if ON_KAGGLE else [])
+    for c in cands[1:]:
+        try:
+            c.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+    ok = [c for c in cands if c.is_dir() and os.access(c, os.W_OK)]
+    best = max(ok, key=lambda c: shutil.disk_usage(c).free)
+    return (best / "data") if best == WORK else (best / "kneuro_data")
+
+
+DATA = _data_dir()
 OUT = REPO / "sim_out" / "neuro"
+INPUTS = WORK / "inputs"             # members extracted from DATA_ZIP
 LOGS = WORK / "logs"                 # the full output of every step (run_log.md keeps only the tails)
 ENV = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONPATH": f"{REPO}/software:{REPO}"}
 LOG, BUDGET = [], {}
@@ -161,17 +180,20 @@ sh(f"{sys.executable} -m pip install -q -e . tonic==1.7.0 expelliarmus zstandard
    f"scikit-image", "pip", check=QUICK)
 sh(f"{sys.executable} -c \"import tonic, torch; print('tonic', tonic.__version__, 'torch', torch.__version__, "
    f"'cuda', torch.cuda.is_available())\"", "assert imports", check=QUICK)
-print(f"free disk after setup: {free_gb():.1f} GB")
+print(f"free disk after setup: {free_gb():.1f} GB at {WORK}; data in {DATA} ({free_gb(DATA):.1f} GB free)", flush=True)
 
 # ---------------------------------------------------------------- data
 RUN = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[PART]
 NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid", "C": "nmnist dvsgesture"}[PART]
-sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED}", "data", check=True)   # never run hours on missing data
+ZIP_ARG = f"--zip-url '{DATA_ZIP}'" if DATA_ZIP else ""
+sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED} --inputs /kaggle/input --inputs {INPUTS} "
+   f"{ZIP_ARG}", "data", check=True)   # never run hours on missing data
 if "eventreid" in NEED:
   sh(f"{sys.executable} -c \"import json; from neuro import datasets; "
    f"print(json.dumps(datasets.describe_eventreid('{DATA}/eventreid'), indent=1))\"", "eventreid format",
    check=QUICK)
-print(f"free disk after data: {free_gb():.1f} GB")
+print(f"free disk after data: {free_gb():.1f} GB at {WORK}, {free_gb(DATA):.1f} GB at {DATA}")
+BUDGET["data_dir"] = {"path": str(DATA), "free_gb_after": round(free_gb(DATA), 2)}
 checkpoint()
 
 # ---------------------------------------------------------------- N5 count caches (Tonic needed only here)
@@ -222,8 +244,20 @@ if "n3" in RUN:
         shutil.rmtree(ext)
     ext.mkdir()
     recon = ""
+    want_firenet = bool(FIRENET_CKPT)
+    if want_firenet and (FIRENET_CKPT == "auto" or not (FIRENET_CKPT.startswith("http") or os.path.exists(FIRENET_CKPT))):
+        # Attached inputs first: Kaggle mounts them under /kaggle/input/<name>/ (or .../datasets/<owner>/<name>/)
+        # through symbolic links, which Path.rglob does not enter, hence os.walk(followlinks=True) (TESTING bug #52)
+        want = "firenet_1000.pth.tar" if FIRENET_CKPT == "auto" else pathlib.Path(FIRENET_CKPT).name
+        hits = sorted(pathlib.Path(d) / want for root in ("/kaggle/input", INPUTS)
+                      for d, _, fs in os.walk(root, followlinks=True) if want in fs)
+        print(f"FireNet: {want} in the inputs: {[str(h) for h in hits]}", flush=True)
+        if not hits and DATA_ZIP and sh(f"{sys.executable} software/scripts/get_events.py --zip-url '{DATA_ZIP}' "
+                                        f"--extract {want} --extract-to {INPUTS}", "FireNet from DATA_ZIP"):
+            hits = [INPUTS / want]
+        FIRENET_CKPT = str(hits[0]) if hits else None
     # with FireNet: the fork (it keeps E2VID's code and adds the FireNet class), else upstream E2VID
-    clone = (f"git clone --depth 1 -b {FIRENET_BRANCH} {FIRENET_REPO} {ext / 'rpg_e2vid'}" if FIRENET_CKPT
+    clone = (f"git clone --depth 1 -b {FIRENET_BRANCH} {FIRENET_REPO} {ext / 'rpg_e2vid'}" if want_firenet
              else f"git clone --depth 1 {E2VID_REPO} {ext / 'rpg_e2vid'}")
     if sh(clone, "E2VID / FireNet code", cwd=WORK, check=QUICK):
         # old-numpy names used by the upstream code (patched in this downloaded copy only)
@@ -233,16 +267,6 @@ if "n3" in RUN:
             if s2 != s:
                 f.write_text(s2)
         ck = []
-        if FIRENET_CKPT and not FIRENET_CKPT.startswith("http") and not os.path.exists(FIRENET_CKPT):
-            # Kaggle mounts an attached dataset under /kaggle/input/<name>/ or /kaggle/input/datasets/<owner>/<name>/
-            # os.walk(followlinks=True): Kaggle mounts inputs through symbolic links, which Path.rglob does not
-            # enter (the first part-B run found nothing and FireNet was skipped, TESTING bug #52)
-            want = pathlib.Path(FIRENET_CKPT).name
-            hits = sorted(pathlib.Path(d) / want for d, _, fs in os.walk("/kaggle/input", followlinks=True)
-                          if want in fs) if ON_KAGGLE else []
-            print(f"FIRENET_CKPT {FIRENET_CKPT} not found; search under /kaggle/input: {[str(h) for h in hits]}", flush=True)
-            if hits:
-                FIRENET_CKPT = str(hits[0])
         for name, src, dst in [("e2vid", E2VID_URL, ext / "E2VID_lightweight.pth.tar")] + (
                 [("firenet", FIRENET_CKPT, ext / "firenet.pth.tar")] if FIRENET_CKPT else []):
             try:                         # a missing / wrong checkpoint drops that network only, not N3 and N4
@@ -252,7 +276,7 @@ if "n3" in RUN:
                 print(f"checkpoint {name} not used: {e}", flush=True)
                 LOG.append((f"ckpt {name}", "FAILED", 0, f"{type(e).__name__}: {e}"))
         missing = ["e2vid"] * (not any(c.startswith("e2vid=") for c in ck)) + \
-                  ["firenet"] * bool(FIRENET_CKPT and not any(c.startswith("firenet=") for c in ck))
+                  ["firenet"] * (want_firenet and not any(c.startswith("firenet=") for c in ck))
         if missing and QUICK:        # DESIGN §8.4: QUICK asserts that the checkpoints load, before any paid GPU step
             checkpoint()
             raise SystemExit(f"checkpoint(s) {missing} not usable (see ckpt lines above): stop (QUICK assertion)")

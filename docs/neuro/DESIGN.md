@@ -1067,7 +1067,10 @@ recording trigger. (c) Reader compatibility (from N8-R). If no keyless utility s
 - **Datasets.** N-MNIST (`Train.zip`, `Test.zip` from Mendeley) and DVS Gesture (figshare
   `ibmGestureTrain/Test.tar.gz`); sizes and MD5 values are in `lit_formats_data.md` §6. Event-ReId from Zenodo
   (doi 10.5281/zenodo.8256439); its size, licence and file format are read in the QUICK run, not assumed. HQF
-  optional. All are downloaded on Kaggle by `software/scripts/get_events.py` with a SHA-256 manifest. v2e-lite
+  optional. All are downloaded on Kaggle by `software/scripts/get_events.py` with a SHA-256 manifest. The DVS
+  Gesture archives and the FireNet checkpoint are also kept in one zip on Google Drive (`DATA_ZIP` in
+  `kaggle_neuro.py`); a run reads only the members it needs from it by HTTP range requests, after attached Kaggle
+  inputs and before figshare, and the archives are still MD5-checked (checkpoint: SHA-256). v2e-lite
   events are generated from the Xiph clips that `get_xiph.py` already fetches.
 - **Baselines (`docs/neuro/BASELINES.md`, written before any baseline code).** It must contain, read from the
   PDFs with section numbers: Du 2021 §4 in full (§3 is its threat model; corrected 7 Nov 2026) (2D-SIMM iteration and parameters, the mapping from the six
@@ -1099,8 +1102,8 @@ QUICK run replaces them with measured values (written to `meta.budget` by `kaggl
 QUICK run assertions (fail fast): `pip install tonic==1.7.0` succeeds; `torch.load(weights_only=True)` works for
 both checkpoints, else falls back with the SHA-256 checked; free disk after extraction is printed and must leave
 room for checkpoints within the `/kaggle/working` limit; Event-ReId downloads and its geometry is printed. Both
-checkpoints are mirrored, SHA-256 pinned, into a private Kaggle dataset and fetched from there, with the upstream
-URL (FireNet: Google Drive) as fallback.
+checkpoints are SHA-256 pinned; E2VID comes from its upstream URL, FireNet from an attached Kaggle input or else from
+the `DATA_ZIP` zip on Google Drive (only that 0.5 MB member is read).
 
 ---
 
