@@ -117,7 +117,7 @@ def test_n4_builds_at_most_max_windows_per_recording():
     assert len(w) == 3, f"{len(w)} windows built, expected 3"
 
 
-@pytest.mark.parametrize("px,expected", [(34 * 34, 32), (128 * 128, 32), (480 * 640, 9)])
+@pytest.mark.parametrize("px,expected", [(34 * 34, 32), (128 * 128, 32), (480 * 640, 8)])
 def test_n4_batch_size_shrinks_with_image_size(px, expected):
     import neuro_learned_attack as N4
     assert N4.batch_size(px) == expected, f"{px} px: got {N4.batch_size(px)}, expected {expected}"

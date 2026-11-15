@@ -215,12 +215,14 @@ if "cpu" in RUN:
 # ---------------------------------------------------------------- N3 reconstruction (GPU)
 if "n3" in RUN:
     ext = WORK / "ext"
-    ext.mkdir(exist_ok=True)
+    if ext.exists():                 # a folder left by an earlier run made the clone fail: N3 then ran without E2VID
+        shutil.rmtree(ext)
+    ext.mkdir()
     recon = ""
     # with FireNet: the fork (it keeps E2VID's code and adds the FireNet class), else upstream E2VID
     clone = (f"git clone --depth 1 -b {FIRENET_BRANCH} {FIRENET_REPO} {ext / 'rpg_e2vid'}" if FIRENET_CKPT
              else f"git clone --depth 1 {E2VID_REPO} {ext / 'rpg_e2vid'}")
-    if sh(clone, "E2VID / FireNet code", cwd=WORK):
+    if sh(clone, "E2VID / FireNet code", cwd=WORK, check=QUICK):
         # old-numpy names used by the upstream code (patched in this downloaded copy only)
         for f in (ext / "rpg_e2vid").rglob("*.py"):
             s = f.read_text(errors="replace")
@@ -246,6 +248,11 @@ if "n3" in RUN:
             except (OSError, SystemExit, ValueError) as e:
                 print(f"checkpoint {name} not used: {e}", flush=True)
                 LOG.append((f"ckpt {name}", "FAILED", 0, f"{type(e).__name__}: {e}"))
+        missing = ["e2vid"] * (not any(c.startswith("e2vid=") for c in ck)) + \
+                  ["firenet"] * bool(FIRENET_CKPT and not any(c.startswith("firenet=") for c in ck))
+        if missing and QUICK:        # DESIGN §8.4: QUICK asserts that the checkpoints load, before any paid GPU step
+            checkpoint()
+            raise SystemExit(f"checkpoint(s) {missing} not usable (see ckpt lines above): stop (QUICK assertion)")
         if ck:
             recon = f"--recon-repo {ext / 'rpg_e2vid'} --recon-ckpt " + " ".join(ck)
         # The E2VID / FireNet checkpoints are old full pickles (saved with torch 0.4/1.x): torch >= 2.6 refuses them

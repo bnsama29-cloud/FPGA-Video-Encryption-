@@ -84,9 +84,10 @@ def build(torch, H, W, n_counts):
     return UNet(), mlp
 
 
-def batch_size(px, cap=32, budget_px=3_000_000):
-    """Images per batch: the U-Net keeps ~14 activation maps of up to 32 channels per image for backward, about
-    0.4 GB at 480 x 640, so 32 of them do not fit a 15 GB T4. 32 for N-MNIST / DVS Gesture, 9 for Event-ReId."""
+def batch_size(px, cap=32, budget_px=2_500_000):
+    """Images per batch. One training step of the U-Net at 480 x 640 needs 0.72-0.92 GB per image (measured on CPU,
+    15 Nov 2026: 0.92 GB at batch 1, 0.72 GB at batch 4), so 32 images do not fit a 15 GB T4. 8 at 480 x 640
+    (about 6 GB), 32 for N-MNIST / DVS Gesture."""
     return max(1, min(cap, budget_px // px))
 
 
