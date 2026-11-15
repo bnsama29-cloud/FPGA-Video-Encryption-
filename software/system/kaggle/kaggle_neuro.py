@@ -40,16 +40,19 @@ CKPT_SHA256 = {                  # name -> sha256; a name not listed is recorded
 }
 # =================================================================================================
 
-import hashlib, json, os, pathlib, shutil, subprocess, sys, time, urllib.request, zipfile
+import hashlib, json, os, pathlib, re, shutil, signal, subprocess, sys, time, urllib.request, zipfile
 
 T0 = time.time()
 ON_KAGGLE = os.path.exists("/kaggle")
+REPO_URL = os.environ.get("REPO_URL", REPO_URL)      # overridable for a local dry run (as in paper 1's kaggle_runs.py)
+BRANCH = os.environ.get("BRANCH", BRANCH)
 WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "/tmp/kneuro"))
 WORK.mkdir(parents=True, exist_ok=True)
 QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
 REPO = WORK / "repo"
 DATA = WORK / "data"
 OUT = REPO / "sim_out" / "neuro"
+LOGS = WORK / "logs"                 # the full output of every step (run_log.md keeps only the tails)
 ENV = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONPATH": f"{REPO}/software:{REPO}"}
 LOG, BUDGET = [], {}
 
@@ -59,27 +62,40 @@ def free_gb(p=WORK):
 
 
 STEP_S = 900 if QUICK else 7200     # per-step limit (paper 1's kaggle_runs.py gives every step one too)
+GPU_S = None if QUICK else 4 * 3600  # N3, N4 and N6 per dataset (DESIGN §8.4 guesses: 2, 2-4 and 3 GPU-h)
 DEADLINE_S = 11.3 * 3600             # stop starting steps before Kaggle's 12-hour limit; checkpoint() keeps the rest
 
 
 def sh(cmd, step, cwd=None, check=False, limit=None, want=None):
     """Run one step with a time limit; ok only if rc 0 and, when given, `want` appears in the output
-    (experiments print "wrote <file>"). The first QUICK run had no limit: part A's N9 took 58 min (TESTING bug #53)."""
+    (experiments print "wrote <file>"). The first QUICK run had no limit: part A's N9 took 58 min (TESTING bug #53).
+    The step runs in its own process group and the whole group is killed at the limit, so a timed-out step cannot
+    keep a GPU or CPU busy under the next ones (paper 1's kaggle_runs.py, bug #14). Its full output goes to
+    logs/<step>.log, which is in the zip."""
     t0 = time.time()
     left = DEADLINE_S - (t0 - T0)
     lim = min(limit or STEP_S, left - 600)
     print(f"\n=== {step} (limit {lim / 60:.0f} min): {cmd}", flush=True)
+    full = ""
     if lim <= 0:
-        out, st = "", "SKIPPED: Kaggle 12-hour budget used up"
+        st = "SKIPPED: Kaggle 12-hour budget used up"
     else:
+        p = subprocess.Popen(cmd, shell=True, cwd=cwd or REPO, env=ENV, stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT, text=True, errors="replace", start_new_session=True)
         try:
-            p = subprocess.run(cmd, shell=True, cwd=cwd or REPO, env=ENV, capture_output=True, text=True, timeout=lim)
-            out = (p.stdout + p.stderr)[-4000:]
-            st = ("ok" if (want is None or want in p.stdout + p.stderr) else f"FAILED: no '{want}' in the output") \
+            full, _ = p.communicate(timeout=lim)
+            st = ("ok" if (want is None or want in full) else f"FAILED: no '{want}' in the output") \
                 if p.returncode == 0 else f"FAILED rc={p.returncode}"
-        except subprocess.TimeoutExpired as e:
-            out = ((e.stdout or b"").decode(errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or ""))[-4000:]
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            full, _ = p.communicate()
             st = f"TIMEOUT after {lim / 60:.0f} min"
+    LOGS.mkdir(parents=True, exist_ok=True)
+    (LOGS / (re.sub(r"[^A-Za-z0-9._-]+", "_", step) + ".log")).write_text(f"$ {cmd}\n\n{full}\n{st}\n", encoding="utf-8")
+    out = full[-4000:]
     print(out, st, flush=True)
     LOG.append((step, st, round(time.time() - t0, 1), out[-600:]))
     BUDGET[step] = {"seconds": round(time.time() - t0, 1), "free_gb_after": round(free_gb(), 2), "status": st}
@@ -94,7 +110,8 @@ def checkpoint():
     (WORK / "run_log.md").write_text("# kaggle_neuro run\n\n| step | status | s |\n|---|---|---|\n" + "\n".join(
         f"| {s} | {st} | {t} |" for s, st, t, _ in LOG) + "\n\n" + "\n\n".join(
         f"## {s}\n```\n{o}\n```" for s, st, _, o in LOG if st != "ok"), encoding="utf-8")
-    (WORK / "meta_budget.json").write_text(json.dumps({"quick": QUICK, "branch": BRANCH, "steps": BUDGET,
+    (WORK / "meta_budget.json").write_text(json.dumps({"quick": QUICK, "branch": BRANCH, "commit": COMMIT,
+                                                       "part": PART, "steps": BUDGET,
                                                        "total_s": round(time.time() - T0)}, indent=1))
     with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as f:
         for p in [WORK / "run_log.md", WORK / "meta_budget.json"]:
@@ -105,6 +122,8 @@ def checkpoint():
                     f.write(p, "sim_out/neuro/" + p.relative_to(OUT).as_posix())
         for p in DATA.glob("*/MANIFEST.json"):
             f.write(p, "data_manifests/" + p.parent.name + ".json")
+        for p in sorted(LOGS.glob("*.log")):
+            f.write(p, "logs/" + p.name)
     print(f"checkpoint: {z} ({z.stat().st_size / 1e6:.1f} MB), {time.time() - T0:.0f} s so far", flush=True)
 
 
@@ -126,10 +145,20 @@ def fetch(url, dst, name):
 
 
 # ---------------------------------------------------------------- setup
-if not REPO.exists():
-    sh(f"git clone --depth 1 -b {BRANCH} {REPO_URL} {REPO}", "clone", cwd=WORK, check=True)
-sh(f"{sys.executable} -m pip install -q -e . tonic==1.7.0 expelliarmus zstandard snntorch h5py", "pip",
-   check=QUICK)
+# Always a fresh clone (paper 1 does the same): in an interactive Kaggle session /kaggle/working survives a re-run of
+# the cell, and the old `if not REPO.exists()` kept running the code of the first run after every push.
+COMMIT = None
+if REPO.exists():
+    shutil.rmtree(REPO)
+if LOGS.exists():
+    shutil.rmtree(LOGS)
+sh(f"git clone --depth 1 -b {BRANCH} {REPO_URL} {REPO}", "clone", cwd=WORK, check=True)
+COMMIT = subprocess.run(["git", "-C", str(REPO), "log", "-1", "--format=%h %cI %s"], capture_output=True,
+                        text=True).stdout.strip()
+print("code:", COMMIT, flush=True)
+# scipy, pandas and scikit-image are on Kaggle's image; listed so that the run does not depend on it
+sh(f"{sys.executable} -m pip install -q -e . tonic==1.7.0 expelliarmus zstandard snntorch h5py scipy pandas "
+   f"scikit-image", "pip", check=QUICK)
 sh(f"{sys.executable} -c \"import tonic, torch; print('tonic', tonic.__version__, 'torch', torch.__version__, "
    f"'cuda', torch.cuda.is_available())\"", "assert imports", check=QUICK)
 print(f"free disk after setup: {free_gb():.1f} GB")
@@ -158,28 +187,30 @@ if "cpu" in RUN:
            f"N5 cache {ds}")
     checkpoint()
 
+# QUICK is the smoke run of DESIGN §8.4: every experiment with its own --quick sample count (3-12 samples). The old
+# `--limit 20` overrode those counts, so QUICK sealed 20 full recordings per step and took hours (part A, 7 Nov).
+q = "--quick" if QUICK else ""
+# N9 seals every recording at 4 T x 4 pad policies; one Event-ReId recording (~1 M events) takes ~35 s per setting
+# (profiled 15 Nov), so the default 30 recordings would need ~4.5 h. 8 recordings fit the 2-hour step limit.
+N9_LIMIT = {"eventreid": "--limit 8"} if not QUICK else {}
+
 # ---------------------------------------------------------------- CPU experiments on real data
 if "cpu" in RUN:
-    q = "--quick" if QUICK else ""
-    lim_s = "--limit 20" if QUICK else ""
     for ds in ("nmnist", "dvsgesture", "eventreid"):
         sh(f"{sys.executable} experiments/neuro_leakage.py --counts {OUT}/n5/{ds}_counts.npz --dataset {ds} "
-           f"--data {DATA}/{ds} {lim_s} --out {OUT}/n5/{ds}", f"N5 {ds}", want="wrote ")
+           f"--data {DATA}/{ds} {q} --out {OUT}/n5/{ds}", f"N5 {ds}", want="wrote ")
     for ds in ("eventreid", "dvsgesture", "nmnist"):
-        sh(f"{sys.executable} experiments/neuro_adjacency_attack.py --dataset {ds} --data {DATA}/{ds} {lim_s} {q} "
+        sh(f"{sys.executable} experiments/neuro_adjacency_attack.py --dataset {ds} --data {DATA}/{ds} {q} "
            f"--out {OUT}/n4b/{ds}", f"N4b {ds}", want="wrote ")
-        sh(f"{sys.executable} experiments/neuro_overhead.py --dataset {ds} --data {DATA}/{ds} {lim_s} {q} "
-           f"--out {OUT}/n9/{ds}", f"N9 {ds}", want="wrote ")
-    sh(f"{sys.executable} experiments/neuro_perm_strength.py --dataset dvsgesture --data {DATA}/dvsgesture {lim_s} {q} "
+        sh(f"{sys.executable} experiments/neuro_overhead.py --dataset {ds} --data {DATA}/{ds} {N9_LIMIT.get(ds, '')} "
+           f"{q} --out {OUT}/n9/{ds}", f"N9 {ds}", want="wrote ")
+    sh(f"{sys.executable} experiments/neuro_perm_strength.py --dataset dvsgesture --data {DATA}/dvsgesture {q} "
        f"--out {OUT}/n8", "N8", want="wrote ")
     sh(f"{sys.executable} experiments/neuro_active_attacks.py --dataset nmnist --data {DATA}/nmnist {q} "
        f"--out {OUT}/n7", "N7", want="wrote ")
-    sh(f"{sys.executable} experiments/neuro_fpe_utility.py --dataset eventreid --data {DATA}/eventreid {lim_s} {q} "
+    sh(f"{sys.executable} experiments/neuro_fpe_utility.py --dataset eventreid --data {DATA}/eventreid {q} "
        f"--out {OUT}/n11", "N11", want="wrote ")
     checkpoint()
-
-q = "--quick" if QUICK else ""
-lim_s = "--limit 20" if QUICK else ""
 
 # ---------------------------------------------------------------- N3 reconstruction (GPU)
 if "n3" in RUN:
@@ -221,9 +252,9 @@ if "n3" in RUN:
         # under weights_only=True. They are loaded only after the SHA-256 check above, from the pinned files.
         ENV["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
     sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset eventreid --data {DATA}/eventreid --keys {KEYS} "
-       f"{lim_s} {q} {recon} --out {OUT}/n3/eventreid", "N3 eventreid", check=False, want="wrote ")
+       f"{q} {recon} --out {OUT}/n3/eventreid", "N3 eventreid", limit=GPU_S, want="wrote ")
     sh(f"{sys.executable} experiments/neuro_recon_attack.py --dataset synthetic --keys {KEYS} {q} {recon} "
-       f"--out {OUT}/n3/synthetic", "N3 synthetic (v2e-lite, exact ground truth)", want="wrote ")
+       f"--out {OUT}/n3/synthetic", "N3 synthetic (v2e-lite, exact ground truth)", limit=GPU_S, want="wrote ")
     checkpoint()
 
 # ---------------------------------------------------------------- N6 task accuracy (GPU)
@@ -231,14 +262,14 @@ if "n6" in RUN:
     seeds = "0" if QUICK else " ".join(map(str, SEEDS))
     for ds in ("nmnist", "dvsgesture"):
         sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} --seeds {seeds} "
-           f"{'--limit 300 --epochs 2' if QUICK else ''} --out {OUT}/n6/{ds}", f"N6 {ds}", want="wrote ")
+           f"{'--limit 300 --epochs 2' if QUICK else ''} --out {OUT}/n6/{ds}", f"N6 {ds}", limit=GPU_S, want="wrote ")
     checkpoint()
 
 # ---------------------------------------------------------------- N4 learned attacker (GPU, last)
 if "n4" in RUN:
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset eventreid --data {DATA}/eventreid "
-       f"--keys {KEYS} {lim_s} {q} --out {OUT}/n4/eventreid", "N4 eventreid", want="wrote ")
+       f"--keys {KEYS} {q} --out {OUT}/n4/eventreid", "N4 eventreid", limit=GPU_S, want="wrote ")
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset synthetic --keys {KEYS} {q} "
-       f"--out {OUT}/n4/synthetic", "N4 synthetic", want="wrote ")
+       f"--out {OUT}/n4/synthetic", "N4 synthetic", limit=GPU_S, want="wrote ")
     checkpoint()
 print(f"done in {(time.time() - T0) / 60:.0f} min; download {WORK / f'neuro_results_{PART}.zip'}")

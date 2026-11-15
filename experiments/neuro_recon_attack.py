@@ -112,6 +112,10 @@ class Learned:
         clash = ("model", "utils", "base")
         mine = {k: sys.modules.pop(k) for k in list(sys.modules) if k.split(".")[0] in clash}
         sys.path.insert(0, str(repo))
+        # rpg_e2vid's load_model calls torch.load(path) without map_location, and the checkpoints were saved on a
+        # GPU: without CUDA the load fails ("Attempting to deserialize object on a CUDA device"). Map to self.dev.
+        torch_load = torch.load
+        torch.load = lambda f, *a, **k: torch_load(f, *a, **{"map_location": self.dev, **k})
         try:
             from utils.loading_utils import load_model           # rpg_e2vid
             for spec in ckpts:
@@ -119,6 +123,7 @@ class Learned:
                 m = load_model(path)
                 self.models[name] = m.to(self.dev).eval()
         finally:
+            torch.load = torch_load
             sys.path.remove(str(repo))
             for k in [k for k in sys.modules if k.split(".")[0] in clash]:
                 del sys.modules[k]
