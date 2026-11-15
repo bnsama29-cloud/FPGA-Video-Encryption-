@@ -45,9 +45,12 @@ import hashlib, json, os, pathlib, re, shutil, signal, subprocess, sys, time, ur
 
 T0 = time.time()
 ON_KAGGLE = os.path.exists("/kaggle")
+ON_COLAB = not ON_KAGGLE and os.path.isdir("/content") and "COLAB_RELEASE_TAG" in os.environ
+COLAB_DRIVE = pathlib.Path("/content/drive/MyDrive/kneuro_results")   # results copied here when Drive is mounted
 REPO_URL = os.environ.get("REPO_URL", REPO_URL)      # overridable for a local dry run (as in paper 1's kaggle_runs.py)
 BRANCH = os.environ.get("BRANCH", BRANCH)
-WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else "/tmp/kneuro"))
+WORK = pathlib.Path(os.environ.get("WORK", "/kaggle/working" if ON_KAGGLE else
+                                   "/content/kneuro" if ON_COLAB else "/tmp/kneuro"))
 WORK.mkdir(parents=True, exist_ok=True)
 QUICK = os.environ.get("QUICK", str(QUICK)) == "True"
 PART = os.environ.get("PART", PART).upper()          # the notebook cell sets PART / QUICK and runs this file
@@ -59,16 +62,20 @@ def _data_dir():
     overrides): unpacked DVS Gesture alone is 16 GB, and /kaggle/working showed 20.9 GB free in the 7 Nov runs.
     Nothing in data/ is part of the results (the manifests are copied into the zip)."""
     if os.environ.get("DATA"):
-        return pathlib.Path(os.environ["DATA"])
-    cands = [WORK] + ([pathlib.Path("/kaggle/temp"), pathlib.Path("/tmp")] if ON_KAGGLE else [])
-    for c in cands[1:]:
-        try:
-            c.mkdir(parents=True, exist_ok=True)
+        d = pathlib.Path(os.environ["DATA"])
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+    cands = [WORK / "data"] + ([pathlib.Path("/kaggle/temp/kneuro_data"), pathlib.Path("/tmp/kneuro_data")]
+                               if ON_KAGGLE else [])
+    usable = []
+    for d in cands:
+        try:                                          # the folder must exist before its free space is read (the
+            d.mkdir(parents=True, exist_ok=True)      # 15 Nov run stopped on a /kaggle/temp/kneuro_data never created)
+            if os.access(d, os.W_OK):
+                usable.append(d)
         except OSError:
             pass
-    ok = [c for c in cands if c.is_dir() and os.access(c, os.W_OK)]
-    best = max(ok, key=lambda c: shutil.disk_usage(c).free)
-    return (best / "data") if best == WORK else (best / "kneuro_data")
+    return max(usable, key=lambda d: shutil.disk_usage(d).free)
 
 
 DATA = _data_dir()
@@ -80,6 +87,9 @@ LOG, BUDGET = [], {}
 
 
 def free_gb(p=WORK):
+    p = pathlib.Path(p)
+    while not p.exists() and p != p.parent:          # a folder not created yet: its disk is its parent's
+        p = p.parent
     return shutil.disk_usage(p).free / 1e9
 
 
@@ -147,6 +157,9 @@ def checkpoint():
         for p in sorted(LOGS.glob("*.log")):
             f.write(p, "logs/" + p.name)
     print(f"checkpoint: {z} ({z.stat().st_size / 1e6:.1f} MB), {time.time() - T0:.0f} s so far", flush=True)
+    if ON_COLAB and COLAB_DRIVE.parent.is_dir():      # Colab deletes the VM on a disconnect; Drive keeps the zip
+        COLAB_DRIVE.mkdir(exist_ok=True)
+        shutil.copy(z, COLAB_DRIVE / z.name)
 
 
 def fetch(url, dst, name):
