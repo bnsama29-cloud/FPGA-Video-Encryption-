@@ -23,8 +23,9 @@ from neuro.stats import cluster_bootstrap_ci, n_clusters, paired_bootstrap_diff
 from neuro.voxel import voxel_grid
 
 
-def windows_of(samples, view, T, win_us, n_keys):
-    """[(x (6, H, W), counts (win/64,), target (H, W), group)] for one view."""
+def windows_of(samples, view, T, win_us, n_keys, rois=None):
+    """[(x (6, H, W), counts (win/64,), target (H, W), group, box)] for one view. With rois (C.load_rois), box is
+    the scoring region (C.roi_box) and windows without a labelled frame are left out; else box is None."""
     out = []
     for si, (ev, _, grp, geom, frames) in enumerate(samples):
         if len(ev) == 0:
@@ -43,6 +44,9 @@ def windows_of(samples, view, T, win_us, n_keys):
         n_w = int((int(ev["t"].max()) - t0) // win_us) + 1
         for w in range(n_w):
             lo, hi = t0 + w * win_us, t0 + (w + 1) * win_us
+            box = C.roi_box(rois[si], lo, hi, geom.W, geom.H) if rois is not None else None
+            if rois is not None and rois[si] is not None and box is None:
+                continue
             we = e[(e["t"].astype(np.int64) >= lo) & (e["t"].astype(np.int64) < hi)]
             pe = ev[(ev["t"].astype(np.int64) >= lo) & (ev["t"].astype(np.int64) < hi)]
             vg = voxel_grid(we, 5, H=geom.H, W=geom.W) if len(we) else np.zeros((5, geom.H, geom.W))
@@ -54,7 +58,7 @@ def windows_of(samples, view, T, win_us, n_keys):
             else:
                 c = attacks.event_count_frame(pe, geom)
                 tgt = c / max(1.0, c.max())
-            out.append((x, cs.astype(np.float32), tgt.astype(np.float32), grp))
+            out.append((x, cs.astype(np.float32), tgt.astype(np.float32), grp, box))
     return out
 
 
@@ -91,18 +95,33 @@ def batch_size(px, cap=32, budget_px=2_500_000):
     return max(1, min(cap, budget_px // px))
 
 
-def train(torch, model, X, Y, epochs, dev, seed, bs=None):
+def mask_of(box, H, W):
+    """1 inside the scoring region (the whole frame when box is None)."""
+    m = np.zeros((H, W), np.float32) if box is not None else np.ones((H, W), np.float32)
+    if box is not None:
+        m[box[0]:box[1], box[2]:box[3]] = 1
+    return m
+
+
+def train(torch, model, X, Y, epochs, dev, seed, bs=None, M=None):
+    """L1 loss, over the scoring region only when M (masks shaped like Y) is given: on Event-ReId ~95 % of a frame is
+    empty, and a full-frame loss rewards a blank prediction (TESTING bug #58)."""
     bs = bs or batch_size(Y[0].size)             # pixels per sample (flattened for the MLP control, too)
     torch.manual_seed(seed)
     model = model.to(dev)
     opt = torch.optim.Adam(model.parameters(), 1e-3)
     Xt, Yt = torch.from_numpy(X), torch.from_numpy(Y)
+    Mt = torch.from_numpy(M) if M is not None else None
     for _ in range(epochs):
         perm = torch.randperm(len(Xt))
         for i in range(0, len(Xt), bs):
             j = perm[i:i + bs]
             p = model(Xt[j].to(dev)).reshape(Yt[j].shape)
-            loss = torch.nn.functional.l1_loss(p, Yt[j].to(dev))
+            if Mt is None:
+                loss = torch.nn.functional.l1_loss(p, Yt[j].to(dev))
+            else:
+                m = Mt[j].to(dev)
+                loss = ((p - Yt[j].to(dev)).abs() * m).sum() / m.sum().clamp(min=1.0)
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -134,9 +153,15 @@ def main():
     if a.quick:
         a.epochs, a.keys = 2, 2
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    samples = C.load_samples(a.dataset, a.data, limit=a.limit or (12 if a.quick else 400), seed=a.seed)
+    lim = a.limit or (12 if a.quick else 400)
+    samples = C.load_samples(a.dataset, a.data, limit=lim, seed=a.seed)
     win = int(a.win_ms * 1000)
-    samples = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows)
+    rois = C.load_rois(a.dataset, a.data, lim)
+    if rois is None:
+        samples = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows)
+    else:
+        samples, rois = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows, rois=rois)
+    boxed = rois is not None and any(r is not None for r in rois)
     groups = sorted({s[2] for s in samples})
     train_g = set(groups[: max(1, len(groups) // 2)])
     test_g = set(groups) - train_g
@@ -145,7 +170,7 @@ def main():
     for view in a.views:
         if view in ("Du 2021", "Zhang 2024") and not C.baseline("du2021" if view.startswith("Du") else "zhang2024"):
             continue
-        W_ = windows_of(samples, view, a.T, win, a.keys)
+        W_ = windows_of(samples, view, a.T, win, a.keys, rois)
         tr = [w for w in W_ if w[3] in train_g]
         te = [w for w in W_ if w[3] in test_g]
         if not tr or not te:
@@ -153,13 +178,15 @@ def main():
         H, Wd = tr[0][2].shape
         net, mlp = build(torch, H, Wd, len(tr[0][1]))
         X, Y = np.stack([w[0] for w in tr]), np.stack([w[2] for w in tr])
-        net = train(torch, net, X, Y, a.epochs, dev, a.seed)
+        M = np.stack([mask_of(w[4], H, Wd) for w in tr]) if boxed else None
+        net = train(torch, net, X, Y, a.epochs, dev, a.seed, M=M)
         Xc = np.stack([w[1] for w in tr])
-        mlp = train(torch, mlp, Xc / max(1.0, Xc.max()), Y.reshape(len(Y), -1), a.epochs, dev, a.seed)
+        mlp = train(torch, mlp, Xc / max(1.0, Xc.max()), Y.reshape(len(Y), -1), a.epochs, dev, a.seed,
+                    M=None if M is None else M.reshape(len(M), -1))
         pn = predict(torch, net, np.stack([w[0] for w in te]), (H, Wd), dev)
         pc = predict(torch, mlp, np.stack([w[1] for w in te]) / max(1.0, Xc.max()), (H, Wd), dev)
-        sn = [structural_similarity(p, w[2], data_range=1.0) for p, w in zip(pn, te)]
-        sc = [structural_similarity(p, w[2], data_range=1.0) for p, w in zip(pc, te)]
+        sn = [structural_similarity(C.in_roi(p, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for p, w in zip(pn, te)]
+        sc = [structural_similarity(C.in_roi(p, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for p, w in zip(pc, te)]
         g = [w[3] for w in te]
         d = paired_bootstrap_diff(sn, sc, g, n=1000, seed=a.seed)
         res[view] = {"ssim_net": cluster_bootstrap_ci(sn, g, n=1000, seed=a.seed),
@@ -169,10 +196,12 @@ def main():
         rows.append((view, res[view]["ssim_net"], res[view]["ssim_control_f"], d, "yes" if d[2] < 0.05 else "no",
                      n_clusters(g)))
     data = {"results": res,
+            "scored": C.SCORED[boxed],
             "meta": C.meta(a, dataset=a.dataset, synthetic=a.data is None, n_keys=a.keys, device=dev,
                            target="ground truth" if samples[0][4] is not None else "plaintext count image",
                            ci="paired cluster bootstrap 95 %, 1000 resamples")}
     md = ["# N4 learned attack" + (" (synthetic smoke data)" if a.data is None else ""), "",
+          f"Scored {data['scored']}.", "",
           C.table(["view", "SSIM network", "SSIM control (f)", "network - control (f)", "P1 pass", "test clusters"],
                   rows)]
     C.write("n4", "learned_attack", data, "\n".join(md), a.out)

@@ -136,6 +136,29 @@ def protect(events, geom, level, T_us=1024, ts_bits=None, pad=None, key_index=0,
     return enc.push(words) + enc.flush()
 
 
+def _busiest_start(ev, win_us, max_windows):
+    """Start time of the contiguous run of `max_windows` windows with the most events, or None if the recording has
+    at most `max_windows` windows (or max_windows is None)."""
+    if max_windows is None or len(ev) == 0:
+        return None
+    t = ev["t"].astype(np.int64)
+    t0 = int(t[0])
+    n_w = int((int(t[-1]) - t0) // win_us) + 1
+    if n_w <= max_windows:
+        return None
+    cnt = np.bincount((t - t0) // win_us, minlength=n_w)
+    run = np.convolve(cnt, np.ones(max_windows, dtype=np.int64), mode="valid")      # events per run of windows
+    return t0 + int(np.argmax(run)) * win_us
+
+
+def _crop(ev, start, win_us, max_windows):
+    t = ev["t"].astype(np.int64)
+    keep = (t >= start) & (t < start + max_windows * win_us)
+    out = ev[keep].copy()
+    out["t"] = (t[keep] - start).astype(out["t"].dtype)
+    return out
+
+
 def crop_to_busiest_windows(ev, win_us, max_windows):
     """The contiguous run of `max_windows` windows of `win_us` with the most events, rebased to start at t = 0.
 
@@ -143,26 +166,78 @@ def crop_to_busiest_windows(ev, win_us, max_windows):
     640 x 480) per window and view, and sealing a whole recording costs minutes. The run is contiguous because
     E2VID / FireNet are recurrent (they need consecutive windows), and the busiest because the person is in view.
     A recording of at most `max_windows` windows is returned unchanged (TESTING bug #57)."""
-    if max_windows is None or len(ev) == 0:
-        return ev
-    t = ev["t"].astype(np.int64)
-    t0 = int(t[0])
-    n_w = int((int(t[-1]) - t0) // win_us) + 1
-    if n_w <= max_windows:
-        return ev
-    cnt = np.bincount((t - t0) // win_us, minlength=n_w)
-    run = np.convolve(cnt, np.ones(max_windows, dtype=np.int64), mode="valid")      # events per run of windows
-    start = t0 + int(np.argmax(run)) * win_us
-    keep = (t >= start) & (t < start + max_windows * win_us)
-    out = ev[keep].copy()
-    out["t"] = (t[keep] - start).astype(out["t"].dtype)
-    return out
+    start = _busiest_start(ev, win_us, max_windows)
+    return ev if start is None else _crop(ev, start, win_us, max_windows)
 
 
-def crop_samples(samples, win_us, max_windows):
-    """crop_to_busiest_windows on every sample without ground-truth frames (frames are indexed by time)."""
-    return [(crop_to_busiest_windows(ev, win_us, max_windows) if frames is None else ev, label, grp, geom, frames)
-            for ev, label, grp, geom, frames in samples]
+def crop_samples(samples, win_us, max_windows, rois=None):
+    """crop_to_busiest_windows on every sample without ground-truth frames (frames are indexed by time). With
+    `rois` (load_rois, one per sample), returns (samples, rois) with the box times shifted like the events."""
+    out_s, out_r = [], []
+    for i, (ev, label, grp, geom, frames) in enumerate(samples):
+        roi = rois[i] if rois is not None else None
+        start = None if frames is not None else _busiest_start(ev, win_us, max_windows)
+        if start is None:
+            out_s.append((ev, label, grp, geom, frames))
+            out_r.append(roi)
+            continue
+        out_s.append((_crop(ev, start, win_us, max_windows), label, grp, geom, frames))
+        if roi is not None:
+            roi = roi.copy()
+            roi[:, :2] -= start
+        out_r.append(roi)
+    return out_s if rois is None else (out_s, out_r)
+
+
+def load_rois(name, root, limit):
+    """Person boxes aligned with load_samples(name, root, limit=limit): Event-ReId's labels (one array per sample,
+    see neuro.datasets.load_eventreid_boxes); None for the other datasets (scored on the full frame)."""
+    if name != "eventreid" or root is None:
+        return None
+    from neuro import datasets
+    every = max(1, datasets.eventreid_count(root) // limit) if limit else 1
+    boxes = datasets.load_eventreid_boxes(root, None, every=every)
+    return boxes[:limit] if limit else boxes
+
+
+SCORE_MARGIN, SCORE_MIN = 4, 7      # px around the person box; SSIM's 7 x 7 window needs at least 7 x 7
+
+
+def roi_box(roi, lo_us, hi_us, W, H, margin=SCORE_MARGIN, min_size=SCORE_MIN):
+    """Scoring region of one window [lo_us, hi_us): the union of the person boxes of every labelled frame that
+    overlaps the window, plus `margin` px, clipped to the sensor and grown to at least min_size x min_size.
+    Returns (y0, y1, x0, x1) (end-exclusive), or None when no labelled frame overlaps the window.
+
+    Why: an Event-ReId frame is 640 x 480 and the person a small patch (the dataset removed every event outside the
+    box), so a window's target image is ~95 % zero and SSIM gave ~0.97 to any near-blank image, the median-frame
+    control and V4 included (15 Nov 2026, TESTING bug #58)."""
+    if roi is None or len(roi) == 0:
+        return None
+    m = (roi[:, 0] < hi_us) & (roi[:, 1] > lo_us)
+    if not m.any():
+        return None
+    x0 = max(0, int(np.floor(roi[m, 2].min())) - margin)
+    y0 = max(0, int(np.floor(roi[m, 3].min())) - margin)
+    x1 = min(W, int(np.ceil(roi[m, 4].max())) + 1 + margin)
+    y1 = min(H, int(np.ceil(roi[m, 5].max())) + 1 + margin)
+
+    def grow(a, b, n):
+        if b - a >= min_size:
+            return a, b
+        a = max(0, min(a - (min_size - (b - a)) // 2, n - min_size))
+        return a, min(n, a + min_size)
+    x0, x1 = grow(x0, x1, W)
+    y0, y1 = grow(y0, y1, H)
+    return y0, y1, x0, x1
+
+
+def in_roi(img, box):
+    """img restricted to roi_box's region (the whole image when box is None)."""
+    return img if box is None else img[box[0]:box[1], box[2]:box[3]]
+
+
+SCORED = {True: "inside the person box (Event-ReId labels/label.json; union over the frames of the window, "
+                f"+{SCORE_MARGIN} px)", False: "full frame"}
 
 
 def keyless_payloads(packets):

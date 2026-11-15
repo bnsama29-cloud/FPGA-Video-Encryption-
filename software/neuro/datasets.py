@@ -38,6 +38,7 @@ Readers and what each one assumes (an assumption that a file contradicts raises 
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -297,6 +298,29 @@ def load_eventreid(root, split=None, columns=None, t_scale=1e3, W=None, H=None, 
             label = _first_int(f.stem)
         group = str(label) if label is not None else f.parent.relative_to(root).as_posix()
         yield ev, label, group, _geometry("eventreid", gw, gh)
+
+
+EVENTREID_FRAME_US = 100_000 / 3    # one labelled frame = 33.3 ms (Event-ReId README, "Labels/BBOX")
+
+
+def load_eventreid_boxes(root, split=None, every=1):
+    """The person boxes, per file in load_eventreid's order: an array (n, 6) of [t0, t1, x1, y1, x2, y2] per
+    labelled frame, times in µs from the start of the recording (frame f covers (f - 1) * 33.3 ms .. f * 33.3 ms),
+    corners inclusive; None for a file without labels/label.json. label.json: {"bounding_boxes":
+    [[[x1, y1, x2, y2], f], ...]} (README: top-left and bottom-right corners and the frame number)."""
+    out = []
+    for f in _eventreid_files(root, split)[::max(1, int(every))]:
+        lab = f.parent / "labels" / "label.json"
+        if not lab.exists():
+            out.append(None)
+            continue
+        bb = json.loads(lab.read_text()).get("bounding_boxes")
+        if not bb:
+            out.append(None)
+            continue
+        rows = [((int(fn) - 1) * EVENTREID_FRAME_US, int(fn) * EVENTREID_FRAME_US, *map(float, box)) for box, fn in bb]
+        out.append(np.array(rows, float).reshape(-1, 6))
+    return out
 
 
 def eventreid_count(root, split=None):

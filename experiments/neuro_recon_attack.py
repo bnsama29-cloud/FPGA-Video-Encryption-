@@ -183,11 +183,14 @@ def main():
     a = ap.parse_args()
     if a.quick:
         a.keys = 2
-    samples = C.load_samples(a.dataset, a.data, limit=a.limit or (8 if a.quick else 400), seed=a.seed)
+    lim = a.limit or (8 if a.quick else 400)
+    samples = C.load_samples(a.dataset, a.data, limit=lim, seed=a.seed)
     learned = Learned(a.recon_repo, a.recon_ckpt) if a.recon_repo else None
     win = int(a.win_ms * 1000)
-    samples = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows)
-    recs = []                      # one record per (sample, window)
+    samples, rois = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows,
+                                   rois=C.load_rois(a.dataset, a.data, lim) or [None] * len(samples))
+    boxed = any(r is not None for r in rois)          # Event-ReId: score inside the person box (C.roi_box)
+    recs, unlabelled = [], 0       # one record per (sample, window); windows without a labelled frame skipped
     for si, (ev, label, grp, geom, frames) in enumerate(samples):
         if len(ev) == 0:
             continue
@@ -209,16 +212,23 @@ def main():
                 wins.append(imgs)
             per_view[name] = wins
         for k in range(n_w):
+            box = C.roi_box(rois[si], t0 + k * win, t0 + (k + 1) * win, geom.W, geom.H)
+            if boxed and box is None:
+                unlabelled += 1
+                continue
             if frames is not None:
                 fi = min(len(frames) - 1, int((t0 + (k + 1) * win - 10_000) // 1000))
                 target, tgt_kind = frames[fi], "ground truth"
             else:
-                target, tgt_kind = max(per_view["plain"][k].values(), key=lambda im: im.std()), "plaintext recon"
+                target = max(per_view["plain"][k].values(), key=lambda im: C.in_roi(im, box).std())
+                tgt_kind = "plaintext recon"
             we = ev[(ev["t"].astype(np.int64) >= t0 + k * win) & (ev["t"].astype(np.int64) < t0 + (k + 1) * win)]
             cnt = np.bincount(((we["t"].astype(np.int64) - (t0 + k * win)) // 64), minlength=win // 64)[:win // 64]
-            r = {"sample": si, "group": grp, "window": k, "target": target, "target_kind": tgt_kind, "counts": cnt}
+            r = {"sample": si, "group": grp, "window": k, "target": target, "target_kind": tgt_kind, "counts": cnt,
+                 "box": box}
             for name, wins in per_view.items():
-                best = max((scores(img, target) + (att,) for att, img in wins[k].items()), key=lambda s: s[0])
+                best = max((scores(C.in_roi(img, box), C.in_roi(target, box)) + (att,) for att, img in wins[k].items()),
+                           key=lambda s: s[0])
                 r[name] = best
             recs.append(r)
     # controls: split groups in half (train / test)
@@ -229,10 +239,11 @@ def main():
     med = np.median(np.stack([r["target"] for r in tr]), 0)
     Ctr = np.stack([r["counts"] for r in tr]).astype(float)
     for r in te:
-        r["control_c"] = scores(med, r["target"])
+        r["control_c"] = scores(C.in_roi(med, r["box"]), C.in_roi(r["target"], r["box"]))
         d = ((Ctr - r["counts"]) ** 2).sum(1)
         nn = np.argsort(d)[:5]
-        r["control_f"] = scores(np.mean([tr[i]["target"] for i in nn], 0), r["target"])
+        r["control_f"] = scores(C.in_roi(np.mean([tr[i]["target"] for i in nn], 0), r["box"]),
+                                C.in_roi(r["target"], r["box"]))
     g = [r["group"] for r in te]
     res = {}
     rows = []
@@ -256,13 +267,13 @@ def main():
     gate = bool(gate_d[0] >= 0.05 and gate_d[1] > 0)
     data = {"results": res, "validity_gate": {"plain_minus_control_c": gate_d, "passes": gate},
             "windows_test": len(te), "clusters_test": n_clusters(g), "target": te[0]["target_kind"],
-            "learned_attacks": bool(learned)}
+            "learned_attacks": bool(learned), "scored": C.SCORED[boxed], "windows_unlabelled_skipped": unlabelled}
     data["meta"] = C.meta(a, dataset=a.dataset, synthetic=a.data is None, n_keys=a.keys,
                           ci="cluster bootstrap 95 % over recordings, 1000 resamples",
                           baselines={b: bool(C.baseline(b)) for b in ("du2021", "zhang2024")})
     md = ["# N3 reconstruction attack" + (" (synthetic smoke data)" if a.data is None else ""), "",
           f"Target: {data['target']}; {len(te)} test windows, {data['clusters_test']} clusters, {a.keys} keys; "
-          f"learned attacks: {'yes' if learned else 'no (classical only)'}.", "",
+          f"learned attacks: {'yes' if learned else 'no (classical only)'}; scored {data['scored']}.", "",
           f"Validity gate (plain - control (c) >= 0.05, CI excluding 0): {gate_d} -> "
           f"{'passes' if gate else 'FAILS: dataset not counted'}", "",
           C.table(["view", "SSIM [95 % CI]", "PSNR", "edge corr", "SSIM - control (f)", "P1 pass", "best attack"],

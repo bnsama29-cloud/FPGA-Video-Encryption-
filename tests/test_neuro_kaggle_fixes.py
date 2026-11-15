@@ -4,6 +4,7 @@
     instead of reporting 0 balanced accuracy as if it were a result.
 #55 N4b: a view with no packet of --min-addr distinct addresses (N-MNIST) must be named, not silently dropped.
 #57 N3 / N4: a 3 s Event-ReId recording is 160 windows of 640 x 480; both keep the busiest contiguous run only.
+#58 N3 / N4 on Event-ReId are scored inside the person box: on the full frame a blank image scored SSIM ~0.97.
 """
 import json
 import subprocess
@@ -121,3 +122,72 @@ def test_n4_builds_at_most_max_windows_per_recording():
 def test_n4_batch_size_shrinks_with_image_size(px, expected):
     import neuro_learned_attack as N4
     assert N4.batch_size(px) == expected, f"{px} px: got {N4.batch_size(px)}, expected {expected}"
+
+
+# ---------------------------------------------------------------- #58: scoring inside the person box (N3, N4)
+def _labelled_eventreid(root, persons=4, W=160, H=120, box=(70, 40, 89, 69), span_us=300_000, n=6000, seed=0):
+    """Event-ReId layout (<id>/<cam>/events.txt + labels/label.json); every event inside one person box."""
+    rng = np.random.default_rng(seed)
+    x1, y1, x2, y2 = box
+    frames = int(span_us // datasets.EVENTREID_FRAME_US) + 1
+    for pid in range(1, persons + 1):
+        d = root / "Event_ReId" / f"{pid:03d}" / "cam01"
+        (d / "labels").mkdir(parents=True)
+        (d / "labels" / "label.json").write_text(json.dumps(
+            {"bounding_boxes": [[[x1, y1, x2, y2], f] for f in range(1, frames + 1)]}))
+        t = np.sort(rng.uniform(0, span_us, n)) / 1e3                      # ms, as in the dataset
+        xs, ys = rng.integers(x1, x2 + 1, n), rng.integers(y1 + 4 * pid, y2 + 1, n)   # a different shape per person
+        rows = "".join(f"{a:.4f} {b} {c} {e}\n" for a, b, c, e in zip(t, xs, ys, rng.integers(0, 2, n)))
+        (d / "events.txt").write_text(f"{W} {H}\n" + rows)
+
+
+def test_load_eventreid_boxes_reads_frames_in_file_order(tmp_path):
+    _labelled_eventreid(tmp_path, persons=2, span_us=100_000)
+    b = datasets.load_eventreid_boxes(tmp_path)
+    n_frames = len(json.loads((tmp_path / "Event_ReId" / "001" / "cam01" / "labels" / "label.json").read_text())
+                   ["bounding_boxes"])
+    assert len(b) == 2 and b[0].shape == (n_frames, 6), [None if x is None else x.shape for x in b]
+    assert b[0][0].tolist() == [0.0, datasets.EVENTREID_FRAME_US, 70.0, 40.0, 89.0, 69.0], b[0][0].tolist()
+    assert abs(b[0][1][0] - datasets.EVENTREID_FRAME_US) < 1e-6, "frame 2 must start at 33.3 ms"
+
+
+def test_roi_box_union_margin_clip_and_minimum():
+    import neuro_common as C
+    roi = np.array([[0, 33_333, 10, 20, 30, 40], [33_333, 66_667, 12, 18, 35, 41], [66_667, 100_000, 600, 0, 639, 3]])
+    assert C.roi_box(roi, 0, 20_000, 640, 480) == (16, 45, 6, 35), "one frame, +4 px"
+    assert C.roi_box(roi, 20_000, 40_000, 640, 480) == (14, 46, 6, 40), "union of frames 1 and 2"
+    y0, y1, x0, x1 = C.roi_box(roi, 70_000, 80_000, 640, 480)
+    assert (x1 == 640, y0 == 0) == (True, True) and y1 - y0 >= 7, (y0, y1, x0, x1)
+    assert C.roi_box(roi, 200_000, 220_000, 640, 480) is None, "no labelled frame overlaps"
+    assert C.roi_box(None, 0, 1, 640, 480) is None
+    tiny = np.array([[0, 10, 5, 5, 5, 5]])
+    y0, y1, x0, x1 = C.roi_box(tiny, 0, 10, 640, 480, margin=0)
+    assert (y1 - y0, x1 - x0) == (7, 7), "SSIM needs at least 7 x 7"
+
+
+def test_crop_samples_shifts_the_boxes_with_the_events():
+    import neuro_common as C
+    ev = _burst()                                  # windows 5-7 are the busiest
+    roi = np.array([[0.0, 1e9, 1, 2, 3, 4]])
+    s, r = C.crop_samples([(ev, 0, "g", None, None)], 20_000, 3, rois=[roi])
+    assert r[0][0, 0] == -5 * 20_000 and r[0][0, 2:].tolist() == [1, 2, 3, 4], r[0].tolist()
+    assert C.crop_samples([(ev, 0, "g", None, None)], 20_000, 3, rois=[None])[1] == [None]
+
+
+def test_n3_scores_event_reid_inside_the_person_box(tmp_path):
+    """A blank image (V4) scored ~0.97 on the full frame; inside the box it must score clearly lower."""
+    _labelled_eventreid(tmp_path / "d")
+    _run(["experiments/neuro_recon_attack.py", "--dataset", "eventreid", "--data", str(tmp_path / "d"), "--quick",
+          "--out", str(tmp_path / "o")])
+    d = json.loads((tmp_path / "o" / "recon_attack.json").read_text())
+    assert d["scored"].startswith("inside the person box"), d["scored"]
+    v4 = d["results"]["V4"]["ssim"][0]
+    assert v4 < 0.8, f"V4 (no events) scored SSIM {v4}: the blank background is being scored"
+    assert d["windows_unlabelled_skipped"] == 0
+
+
+def test_n4_masks_its_loss_and_scores_inside_the_box():
+    import neuro_learned_attack as N4
+    m = N4.mask_of((2, 5, 3, 7), 8, 10)
+    assert m.sum() == 3 * 4 and m[2:5, 3:7].all(), m
+    assert N4.mask_of(None, 8, 10).all()

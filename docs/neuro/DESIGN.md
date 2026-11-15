@@ -956,6 +956,10 @@ energy is claimed unless a board-level measurement is added. Baselines: paper-1 
   ideal permutation (§4.4) on DVS Gesture (128 × 128, against plaintext E2VID output, labelled as such).
 - Metrics: SSIM, PSNR, LPIPS, edge correlation vs ground truth (or vs plaintext reconstruction, labelled);
   face recall (YuNet) and ArcFace verification where faces exist; re-ID rank-1 on Event-ReId.
+  On Event-ReId every image metric is computed **inside the person box** of the dataset's `labels/label.json`
+  (union of the boxes of the 33.3 ms frames that overlap the window, + 4 px, at least 7 × 7): the sensor is
+  640 × 480, the dataset removed every event outside the box, and on the full frame a blank image scored SSIM
+  ≈ 0.97, V4 and control (c) included (TESTING bug #58). The attacks still see the whole 640 × 480 view.
 - Baselines: plain, V0-V4, Du 2021 (own 2D-SIMM), Zhang 2024. Du sanity anchor: Ahmad 2023 Table 3 reports Du at
   75 % encryption on Event-ReId with SSIM 0.451; our Du reimplementation must land within ±0.03 SSIM.
 - Statistics: ≥ 5 independent master keys; `cluster_bootstrap_ci` over recordings/subjects; number of clusters
@@ -966,6 +970,8 @@ grids of ciphertext events, fresh key per sample, train and test recordings disj
 the GT/APS frame where it exists (Event-ReId if it has frames, HQF), else the plaintext E2VID reconstruction,
 labelled as such. Controls: (c) training-median frame; (f) a network given only the public per-bucket count
 series. Leakage measure: network SSIM − control (f) SSIM, paired cluster-bootstrap CI. ≥ 5 master keys.
+On Event-ReId the network and control (f) are trained with the loss restricted to the person box and scored inside
+it (as N3); a full-frame loss rewarded a blank prediction.
 Baselines: V1, V2, V3; Du, Zhang.
 
 **N4b `neuro_adjacency_attack.py`**, L (CPU). Does co-activation reveal the layout without the key? For each
