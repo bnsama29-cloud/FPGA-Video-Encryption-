@@ -32,7 +32,7 @@ from neuro.stats import mean_ci
 
 GATE = {"nmnist": 0.98, "dvsgesture": 0.90}
 CT_DEFAULT = {"nmnist": (4000, 2000), "dvsgesture": (300, 264)}     # ciphertext subset (train, test), full run
-CT_QUICK = (40, 40)
+CT_QUICK = {"nmnist": (40, 40), "dvsgesture": (16, 16)}   # QUICK: DVS Gesture costs 20-50 s per recording to seal
 _POOL = None                         # samples visible to the forked sealing workers (no pickling of event arrays)
 
 
@@ -166,7 +166,7 @@ def main():
     classes = int(max(s[1] for s in tr_s + te_s)) + 1
     ytr = np.array([s[1] for s in tr_s])
     yte = np.array([s[1] for s in te_s])
-    n_tr, n_te = CT_QUICK if a.quick else CT_DEFAULT.get(a.dataset, (None, None))
+    n_tr, n_te = CT_QUICK.get(a.dataset, (40, 40)) if a.quick else CT_DEFAULT.get(a.dataset, (None, None))
     n_tr, n_te = a.ct_train or n_tr, a.ct_test or n_te
     i_tr, i_te = subset(tr_s, n_tr, a.seed), subset(te_s, n_te, a.seed + 1)
     ct_tr, ct_te = [tr_s[i] for i in i_tr], [te_s[i] for i in i_te]
