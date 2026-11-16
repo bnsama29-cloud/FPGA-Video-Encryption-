@@ -72,6 +72,18 @@ def features(v):
     return np.array([v.mean(), v.std(), v.max(), np.quantile(v, 0.9), v.sum(), len(v), (v > 0).mean()])
 
 
+def knn_indices(Zte, Ztr, k, max_bytes=256 << 20):
+    """Indices of the k nearest training rows of every test row, in blocks of test rows. The single
+    (n_test, n_train, 7) array of before needed ~69 GB on N-MNIST (35 k x 35 k samples) and was Killed on Kaggle
+    (16 Nov, TESTING bug #66); each block uses the same formula and argsort, so the result is identical."""
+    rows = max(1, int(max_bytes // max(1, Ztr.size * Ztr.itemsize)))
+    out = np.empty((len(Zte), min(k, len(Ztr))), dtype=np.int64)
+    for i in range(0, len(Zte), rows):
+        d = ((Zte[i:i + rows][:, None] - Ztr[None]) ** 2).sum(-1)
+        out[i:i + rows] = np.argsort(d, 1)[:, :k]
+    return out
+
+
 def classify(X, y, g, test_groups):
     te = np.isin(g, test_groups)
     tr = ~te
@@ -80,8 +92,7 @@ def classify(X, y, g, test_groups):
     classes = np.unique(y[tr])
     cent = np.stack([Z[tr & (y == c)].mean(0) for c in classes])
     pred_c = classes[np.argmin(((Z[te][:, None] - cent[None]) ** 2).sum(-1), 1)]
-    d = ((Z[te][:, None] - Z[tr][None]) ** 2).sum(-1)
-    nn = np.argsort(d, 1)[:, :5]
+    nn = knn_indices(Z[te], Z[tr], 5)
     ytr = y[tr]
     pred_k = np.array([np.bincount(ytr[r], minlength=classes.max() + 1).argmax() for r in nn])
     return te, {"nearest-centroid": pred_c, "5-NN": pred_k}

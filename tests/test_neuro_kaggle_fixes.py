@@ -244,3 +244,18 @@ def test_n6_decryption_check_runs_on_a_fixed_subset_and_still_decrypts():
     got = [N6._check_one(k) for k in i_ck]
     assert got == [1, 1, 1], f"positions {i_ck}: decryption event-equal flags {got}, expected all 1"
     assert N6.subset(ct_te, N6.CHECK_N, 2) == list(range(6)), "fewer samples than --check: all are checked"
+
+
+def test_n5_knn_in_blocks_equals_the_one_shot_computation():
+    """Bug #66: N5's 5-NN built one (n_test, n_train, 7) array (~69 GB on N-MNIST, Killed). Blocks must not change it."""
+    import neuro_leakage as N5
+    rng = np.random.default_rng(1)
+    Zte, Ztr = rng.normal(size=(301, 7)), rng.normal(size=(457, 7))
+    Ztr[10] = Ztr[11]                                                     # a tie: argsort order must be kept
+    ref = np.argsort(((Zte[:, None] - Ztr[None]) ** 2).sum(-1), 1)[:, :5]
+    for mb in (1, 7 * 8 * 457 * 3, 1 << 30):                              # 1 row, 3 rows, everything per block
+        got = N5.knn_indices(Zte, Ztr, 5, max_bytes=mb)
+        bad = np.argwhere(got != ref)
+        assert not len(bad), f"max_bytes {mb}: first mismatch at {tuple(bad[0])}: got {got[tuple(bad[0])]}, " \
+                             f"expected {ref[tuple(bad[0])]}"
+    assert N5.knn_indices(Zte, Ztr[:3], 5).shape == (301, 3), "fewer training rows than k"

@@ -23,6 +23,8 @@ PART = "A"                       # one part per Kaggle account, run in parallel 
                                  #   "C"  N6 only (optional third account)                         (~3-4 h)
                                  # env STEPS narrows a part: with three accounts, A runs STEPS=cpu (no GPU step, so a
                                  # CPU session that skips the T4 queue) and C runs N6.
+                                 # env ONLY reruns named steps (plus setup), e.g. ONLY="N5 cache nmnist,N5 nmnist";
+                                 # for N3 also name "E2VID / FireNet code" (and "FireNet from DATA_ZIP").
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
 BRANCH = "neuromorphic"
 KEYS = 5                         # independent master keys (N3, N4)
@@ -100,12 +102,29 @@ GPU_S = None if QUICK else 4 * 3600  # N3, N4 and N6 per dataset (DESIGN §8.4 g
 DEADLINE_S = 11.3 * 3600             # stop starting steps before Kaggle's 12-hour limit; checkpoint() keeps the rest
 
 
+SETUP = ("clone", "pip", "assert imports", "data", "eventreid format")
+
+
+def selected(step, only):
+    """True when `step` runs: always without ONLY; with ONLY (comma list of step names, as paper 1's --only) only
+    the setup steps and the named ones, so one failed step can be rerun alone (16 Nov: N5 nmnist, bug #66)."""
+    if not only:
+        return True
+    names = {n.strip().lower() for n in only.split(",") if n.strip()}
+    return step.lower() in names or step.lower() in SETUP
+
+
+ONLY = os.environ.get("ONLY", "")
+
+
 def sh(cmd, step, cwd=None, check=False, limit=None, want=None):
     """Run one step with a time limit; ok only if rc 0 and, when given, `want` appears in the output
     (experiments print "wrote <file>"). The first QUICK run had no limit: part A's N9 took 58 min (TESTING bug #53).
     The step runs in its own process group and the whole group is killed at the limit, so a timed-out step cannot
     keep a GPU or CPU busy under the next ones (paper 1's kaggle_runs.py, bug #14). Its full output goes to
     logs/<step>.log, which is in the zip."""
+    if not selected(step, ONLY):
+        return False
     t0 = time.time()
     left = DEADLINE_S - (t0 - T0)
     lim = min(limit or STEP_S, left - 600)
@@ -230,7 +249,7 @@ def n6_datasets(env):
 
 NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid",
         "C": " ".join(n6_datasets(os.environ.get("N6_DATASETS")))}[PART]
-print("steps:", sorted(RUN), flush=True)
+print("steps:", sorted(RUN), "| ONLY:", ONLY or "-", flush=True)
 ZIP_ARG = f"--zip-url '{DATA_ZIP}'" if DATA_ZIP else ""
 sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED} --inputs /kaggle/input --inputs {INPUTS} "
    f"{ZIP_ARG}", "data", check=True)   # never run hours on missing data

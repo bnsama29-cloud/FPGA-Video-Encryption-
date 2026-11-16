@@ -69,3 +69,18 @@ def test_n6_gets_the_session_budget_in_full_runs():
     src = SRC.read_text(encoding="utf-8")
     assert "N6_S = GPU_S if QUICK else DEADLINE_S" in src
     assert 'limit=N6_S, want="wrote "' in src, "N6 must run under N6_S, not the 4-hour GPU_S"
+
+
+def test_only_reruns_named_steps_and_setup():
+    """Bug #66: ONLY reruns one failed step (as paper 1's --only) without the rest of the part."""
+    ns = {}
+    tree = ast.parse(SRC.read_text(encoding="utf-8"))
+    keep = [n for n in tree.body if (isinstance(n, ast.FunctionDef) and n.name == "selected") or
+            (isinstance(n, ast.Assign) and any(getattr(t, "id", "") == "SETUP" for t in n.targets))]
+    exec(compile(ast.Module(body=keep, type_ignores=[]), str(SRC), "exec"), ns)
+    sel = ns["selected"]
+    only = "N5 cache nmnist, n5 NMNIST"
+    for step, want in [("N5 nmnist", True), ("N5 cache nmnist", True), ("data", True), ("clone", True),
+                       ("N5 dvsgesture", False), ("N9 eventreid", False)]:
+        assert sel(step, only) is want, f"step {step!r} with ONLY={only!r}: got {sel(step, only)}, expected {want}"
+    assert all(sel(s, "") for s in ("N5 nmnist", "N9 eventreid")), "no ONLY: every step runs"
