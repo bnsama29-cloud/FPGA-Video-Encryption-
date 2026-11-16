@@ -6,7 +6,8 @@ Usage:
 Method (DESIGN §1.6, §8.2 N11):
   (a) bandwidth: bytes of the plain EVT 2.0 payload and of the V1/V2/V3 payloads after a general-purpose
       compressor (zstd if installed, else lzma and zlib from the standard library, labelled), and of V4 (which
-      does not compress). EVT 3.0 re-encoding needs expelliarmus (Kaggle run); here it is reported as not run.
+      does not compress); and of the plain and V1-V3 events re-encoded as EVT 3.0 by expelliarmus (evt3_bytes; the
+      keyless events, time-sorted for every view alike as EVT 3.0 needs a monotone clock).
   (b) keyless function: activity / wake-up detection by an untrusted node from what each packet shows without the
       key. Streams alternate idle stretches (sparse uniform background events, 2 kev/s) and active stretches (the
       dataset's recordings); a packet is "active" if it lies in an active stretch. Detector score per packet:
@@ -60,6 +61,30 @@ def bandwidth(samples):
             tot[f"V{level}"]["raw"] += len(b)
             for k, f in comp.items():
                 tot[f"V{level}"][k] += f(b)
+    return tot
+
+
+def evt3_bytes(samples):
+    """Bytes of each sample's events written as EVT 3.0 by expelliarmus (an independent Prophesee-format writer), plain
+    and V1-V3 keyless events (sum over samples). EVT 3.0 codes addresses relative to the previous event, so it rewards
+    the locality that V2/V3 remove. Before 17 Nov the table printed a placeholder instead (TESTING bug #74)."""
+    try:
+        from expelliarmus import Wizard
+    except ImportError:
+        return "not run: expelliarmus not installed"
+    import os
+    import tempfile
+    wz, tot = Wizard(encoding="evt3"), {v: 0 for v in ("plain", "V1", "V2", "V3")}
+    tmp = tempfile.TemporaryDirectory()
+    f = os.path.join(tmp.name, "n11_evt3.raw")
+    for ev, _, _, geom, _ in samples:
+        for v in tot:
+            e = ev if v == "plain" else C.keyless_events(C.protect(ev, geom, int(v[1]), 1024))
+            if not len(e):
+                continue
+            wz.save(f, np.sort(e, order="t", kind="stable"))
+            tot[v] += os.path.getsize(f)
+    tmp.cleanup()
     return tot
 
 
@@ -129,7 +154,7 @@ def main():
     samples = C.load_samples(a.dataset, a.data, limit=a.limit or (4 if a.quick else 40), seed=a.seed)
     data = {"bandwidth_bytes": bandwidth(samples[:2] if a.quick else samples),
             "activity_auc": activity(samples, a.seed),
-            "evt3": "not run here: needs expelliarmus (Kaggle job)"}
+            "evt3": evt3_bytes(samples[:2] if a.quick else samples)}
     n8 = C.OUT / "n8" / "perm_strength.json"
     data["readers"] = json.loads(n8.read_text())["readers"] if n8.exists() else "run N8 first"
     pa = data["activity_auc"]["plain"]
@@ -148,7 +173,8 @@ def main():
           C.table(["view", "AUC"], list(data["activity_auc"].items())), "",
           f"Criterion: kept by {keep or 'none'}; lost by V4 + padding: {lost or 'none'} -> "
           f"{'FPE worth it' if data['criterion']['fpe_worth_it'] else 'reframe V1-V3 as compatible transport'}.",
-          "", f"EVT 3.0: {data['evt3']}"]
+          "", "EVT 3.0 bytes (expelliarmus writer, sum over samples): " + (
+              ", ".join(f"{k} {v}" for k, v in data["evt3"].items()) if isinstance(data["evt3"], dict) else data["evt3"])]
     C.write("n11", "fpe_utility", data, "\n".join(md), a.out)
 
 

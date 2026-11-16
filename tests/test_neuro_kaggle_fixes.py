@@ -433,3 +433,62 @@ def test_n8_expelliarmus_check_reports_a_mismatch(tmp_path):
     wrong["x"][0] = (wrong["x"][0] + 1) % g.W                        # one event differs from what the file holds
     got = N8.expelliarmus_check(path, wrong, g)
     assert got == f"{len(ours)} read, {len(ours) - 1} equal to ours, in range", got
+
+
+def test_n11_evt3_bytes_writes_every_view_and_round_trips(tmp_path):
+    """Bug #74: N11's EVT 3.0 column was a placeholder ("needs expelliarmus (Kaggle job)") on Kaggle itself."""
+    pytest.importorskip("expelliarmus")
+    from expelliarmus import Wizard
+    import neuro_common as C
+    import neuro_fpe_utility as N11
+    S = C.synthetic_samples(1, seed=3)
+    got = N11.evt3_bytes(S)
+    assert set(got) == {"plain", "V1", "V2", "V3"} and all(v > 0 for v in got.values()), got
+    ev = np.sort(S[0][0], order="t", kind="stable")                  # what evt3_bytes writes for plain
+    f = tmp_path / "p.raw"
+    Wizard(encoding="evt3").save(f, ev)
+    assert got["plain"] == f.stat().st_size
+    back = Wizard(encoding="evt3", fpath=f).read()
+    assert len(back) == len(ev)
+    for k in "txyp":
+        bad = np.flatnonzero(back[k].astype(np.int64) != ev[k].astype(np.int64))
+        assert not len(bad), f"field {k}: first mismatch at {bad[0]}: got {back[k][bad[0]]}, expected {ev[k][bad[0]]}"
+
+
+def test_n11_evt3_bytes_says_when_expelliarmus_is_missing(monkeypatch):
+    import neuro_fpe_utility as N11
+    monkeypatch.setitem(sys.modules, "expelliarmus", None)
+    assert N11.evt3_bytes([]) == "not run: expelliarmus not installed"
+
+
+# ---------------------------------------------------------------- #74: N6 model under the gate, time-binned input
+def test_n6_features_bins_tell_a_stream_from_its_time_reverse():
+    """DVS Gesture separates clockwise from counter-clockwise rotation: one count frame cannot, BINS[dvsgesture] can."""
+    import neuro_common as C
+    import neuro_task_accuracy as N6
+    ev, _, _, g, _ = C.synthetic_samples(1, seed=5)[0]
+    rev = ev.copy()
+    rev["t"] = ev["t"].max() + ev["t"].min() - ev["t"]           # same events, played backwards
+    rev = rev[np.argsort(rev["t"], kind="stable")]
+    assert np.array_equal(N6.features(ev, g, 1), N6.frame(ev, g))
+    assert np.array_equal(N6.features(ev, g, 1), N6.features(rev, g, 1)), "one frame is blind to time order"
+    nb = N6.BINS["dvsgesture"]
+    f, r = N6.features(ev, g, nb), N6.features(rev, g, nb)
+    assert f.shape == (2 * nb, g.H, g.W) and f.max() == 1.0
+    assert not np.array_equal(f, r), "time bins must see the order"
+    assert np.allclose(f.reshape(nb, 2, g.H, g.W).sum(0) / f.reshape(nb, 2, g.H, g.W).sum(0).max(), N6.frame(ev, g))
+
+
+def test_n6_cnn_learns_and_evaluates_deterministically():
+    """The new CNN (BatchNorm, dropout) must be evaluated in eval mode: two evaluations give the same accuracy."""
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 2, 128)
+    X = rng.random((128, 4, 34, 34), dtype=np.float32) * 0.1
+    X[y == 1, 0, :17] += 1.0                                       # class 1: bright top half in channel 0
+    m, acc = N6.fit_eval(torch, X[:96], y[:96], X[96:], y[96:], 2, 10, 0, "cpu", bs=16)
+    assert acc == 1.0, f"separable toy task: accuracy {acc}"
+    m.train()
+    assert N6.evaluate(torch, m, X[96:], y[96:], "cpu") == acc and not m.training, "evaluate() must switch to eval"
+    assert N6.cnn(torch, 11, 16)(torch.zeros(2, 16, 128, 128)).shape == (2, 11)      # DVS Gesture input

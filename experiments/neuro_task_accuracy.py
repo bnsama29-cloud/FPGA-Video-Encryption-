@@ -1,13 +1,16 @@
 """N6: is task utility kept with the key and lost without it?
 
-Usage (Kaggle GPU; needs PyTorch, snnTorch optional):
+Usage (Kaggle GPU; needs PyTorch):
     python experiments/neuro_task_accuracy.py --dataset nmnist --data <root> [--seeds 0 1 2] [--epochs 20] [--quick]
 
 Method (DESIGN §8.2 N6). Official train/test files (Tonic 1.7.0 loaders in neuro.datasets).
   * Decryption is exact, so "accuracy on decrypted data" is not a result: the script decrypts every test sample
     through neuro.receiver.Decryptor at V3 and asserts event equality, reporting the count in one sentence.
-  * Models: a frame CNN on 2-channel (ON / OFF) count frames; an SNN (snnTorch leaky integrate-and-fire on 10 time
-    bins) when snnTorch is installed.
+  * Model: a CNN on ON / OFF count frames, cut into BINS time bins per dataset (DVS Gesture: 8, because a single
+    time-integrated frame cannot tell clockwise from counter-clockwise arm rotation); two conv-BN-ReLU blocks of two
+    layers, dropout, AdamW with a one-cycle schedule. The first CNN (two plain conv layers pooled to 4 x 4, constant
+    learning rate) reached 0.974 on N-MNIST, under the 0.98 gate, so no ciphertext row was produced (Kaggle part C,
+    16 Nov 2026; TESTING bug #74). The SNN of DESIGN §8.2 is not implemented (stated in the table).
   * Gate (fixed in §8.2): clean test accuracy >= 98 % (N-MNIST) / >= 90 % (DVS Gesture) before any ciphertext
     row is reported; synthetic data have no gate.
   * Rows per view (V1, V2, V3, V4 = empty input, Du 2021, Zhang 2024): (i) trained on clear, tested on
@@ -32,19 +35,21 @@ from neuro import evt2, keys, receiver
 from neuro.stats import mean_ci
 
 GATE = {"nmnist": 0.98, "dvsgesture": 0.90}
+BINS = {"dvsgesture": 8}             # time bins of the CNN input (default 1: one count frame)
 # The decryption check seals and decrypts a sample again: ~26 s per DVS Gesture recording (profiled 16 Nov), i.e. ~2 h
 # for all 264 test recordings on top of the ~4.6 h of sealing. It shows exactness, not accuracy, so it runs on a fixed
 # seeded subset of the ciphertext test samples (TESTING bug #65).
 CHECK_N = 64
 CT_DEFAULT = {"nmnist": (4000, 2000), "dvsgesture": (300, 264)}     # ciphertext subset (train, test), full run
 CT_QUICK = {"nmnist": (40, 40), "dvsgesture": (16, 16)}   # QUICK: DVS Gesture costs 20-50 s per recording to seal
+_NB = 1                              # time bins of features(), set by main() before sealing
 _POOL = None                         # samples visible to the forked sealing workers (no pickling of event arrays)
 
 
 def _seal_one(job):
     i, view, key = job
     ev, geom = _POOL[i][0], _POOL[i][3]
-    return frame(view_events(ev, geom, view, key), geom)
+    return features(view_events(ev, geom, view, key), geom, _NB)
 
 
 def _check_one(i):
@@ -52,7 +57,7 @@ def _check_one(i):
 
 
 def sealed_frames(samples, view, keys, workers):
-    """frame(view_events(...)) of every sample, in parallel over `workers` forked processes."""
+    """features(view_events(...)) of every sample, in parallel over `workers` forked processes."""
     global _POOL
     _POOL = samples
     jobs = [(j, view, keys[j]) for j in range(len(samples))]
@@ -85,6 +90,15 @@ def bins(ev, geom, nb=10):
     return out
 
 
+def features(ev, geom, nb=1):
+    """CNN input (2 nb, H, W): ON / OFF counts in nb equal time bins of the sample, scaled by the sample's maximum.
+    nb = 1 is frame()."""
+    if nb == 1:
+        return frame(ev, geom)
+    x = bins(ev, geom, nb).reshape(2 * nb, geom.H, geom.W)
+    return x / max(1.0, float(x.max()))
+
+
 def view_events(ev, geom, view, k, T=1024):
     if view == "clear":
         return ev
@@ -110,33 +124,40 @@ def decrypt_check(samples, T=1024, base=0):
     return ok
 
 
-def cnn(torch, classes, H, W):
+def cnn(torch, classes, in_ch=2):
+    """Two blocks of two conv-BN-ReLU layers (32, 64 channels), each max-pooled, then adaptive pooling to 8 x 8,
+    dropout and two linear layers (bug #74: the previous two-layer CNN stayed under the N-MNIST gate)."""
     nn = torch.nn
-    return nn.Sequential(nn.Conv2d(2, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
-                         nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(), nn.AdaptiveAvgPool2d(4), nn.Flatten(),
-                         nn.Linear(64 * 16, 128), nn.ReLU(), nn.Linear(128, classes))
+
+    def blk(i, o):
+        return [nn.Conv2d(i, o, 3, padding=1), nn.BatchNorm2d(o), nn.ReLU()]
+    return nn.Sequential(*blk(in_ch, 32), *blk(32, 32), nn.MaxPool2d(2), *blk(32, 64), *blk(64, 64), nn.MaxPool2d(2),
+                         nn.AdaptiveAvgPool2d(8), nn.Dropout(0.25), nn.Flatten(), nn.Linear(64 * 64, 256), nn.ReLU(),
+                         nn.Dropout(0.5), nn.Linear(256, classes))
 
 
-def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev):
+def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64):
+    """Train a fresh cnn() with AdamW and a one-cycle learning rate (peak 3e-3), return (model, test accuracy)."""
     torch.manual_seed(seed)
-    m = cnn(torch, classes, Xtr.shape[-2], Xtr.shape[-1]).to(dev)
-    opt = torch.optim.Adam(m.parameters(), 1e-3)
+    m = cnn(torch, classes, Xtr.shape[1]).to(dev)
+    opt = torch.optim.AdamW(m.parameters(), 1e-3)
     Xt, yt = torch.from_numpy(Xtr), torch.from_numpy(ytr).long()
+    sch = torch.optim.lr_scheduler.OneCycleLR(opt, 3e-3, total_steps=max(1, epochs * ((len(Xt) + bs - 1) // bs)))
     for _ in range(epochs):
+        m.train()
         perm = torch.randperm(len(Xt))
-        for i in range(0, len(Xt), 64):
-            j = perm[i:i + 64]
+        for i in range(0, len(Xt), bs):
+            j = perm[i:i + bs]
             loss = torch.nn.functional.cross_entropy(m(Xt[j].to(dev)), yt[j].to(dev))
             opt.zero_grad()
             loss.backward()
             opt.step()
-    with torch.no_grad():
-        pred = torch.cat([m(torch.from_numpy(Xte[i:i + 256]).to(dev)).argmax(1).cpu()
-                          for i in range(0, len(Xte), 256)]).numpy()
-    return m, float((pred == yte).mean())
+            sch.step()
+    return m, evaluate(torch, m, Xte, yte, dev)
 
 
 def evaluate(torch, m, X, y, dev):
+    m.eval()                                             # BatchNorm running statistics, no dropout
     with torch.no_grad():
         pred = torch.cat([m(torch.from_numpy(X[i:i + 256]).to(dev)).argmax(1).cpu() for i in range(0, len(X), 256)])
     return float((pred.numpy() == y).mean())
@@ -180,6 +201,8 @@ def main():
     ytr_ct, yte_ct = ytr[i_tr], yte[i_te]
     # Sealing first, in forked workers, while PyTorch has not initialised CUDA in this process. Keys: training
     # sample i -> key i, test sample i -> key 10 000 + i (fresh key per sample, as before the subset).
+    global _NB
+    _NB = BINS.get(a.dataset, 1)
     sealed = {}
     for view in a.views:
         if view in ("Du 2021", "Zhang 2024") and not C.baseline("du2021" if view.startswith("Du") else "zhang2024"):
@@ -194,8 +217,8 @@ def main():
             n_equal = int(sum(pool.map(_check_one, i_ck)))
     else:
         n_equal = int(sum(_check_one(k) for k in i_ck))
-    Xtr = np.stack([frame(s[0], geom) for s in tr_s])
-    Xte = np.stack([frame(s[0], geom) for s in te_s])
+    Xtr = np.stack([features(s[0], geom, _NB) for s in tr_s])
+    Xte = np.stack([features(s[0], geom, _NB) for s in te_s])
     clean, models = [], []
     for sd in a.seeds:
         m, acc = fit_eval(torch, Xtr, ytr, Xte, yte, classes, a.epochs, sd, dev)
@@ -212,18 +235,15 @@ def main():
             d = mean_ci(np.asarray(r_ii) - chance)
             res[view] = {"i_clear_trained": mean_ci(r_i), "ii_cipher_trained": mean_ci(r_ii), "ii_minus_chance": d}
             rows.append((view, mean_ci(r_i), mean_ci(r_ii), d))
-    try:
-        import snntorch  # noqa: F401
-        snn = "installed: SNN rows to be added by the Kaggle run"
-    except ImportError:
-        snn = "snnTorch not installed: SNN rows not run"
+    snn = "SNN rows not run: the SNN of DESIGN §8.2 is not implemented, CNN only"
     data = {"results": res, "gate": {"threshold": gate_thr, "clean_mean": float(np.mean(clean)), "passes": bool(gate)},
             "decrypted_event_equal": f"{n_equal} of {len(i_ck)}",
             "ciphertext_subset": {"train": len(ct_tr), "test": len(ct_te), "of_train": len(tr_s), "of_test": len(te_s),
                                   "seed": a.seed},
             "chance": chance, "snn": snn,
             "meta": C.meta(a, dataset=a.dataset, synthetic=a.data is None, device=dev, seeds=a.seeds,
-                           ci="Student-t 95 % over seeds", n_keys="fresh key per sample")}
+                           ci="Student-t 95 % over seeds", n_keys="fresh key per sample",
+                           time_bins=_NB, epochs=a.epochs)}
     md = ["# N6 task accuracy" + (" (synthetic smoke data)" if a.data is None else ""), "",
           f"Clean model: {len(tr_s)} training / {len(te_s)} test samples; ciphertext rows and decryption check: a "
           f"fixed subset of {len(ct_tr)} / {len(ct_te)}. "
