@@ -21,6 +21,8 @@ PART = "A"                       # one part per Kaggle account, run in parallel 
                                  #        N9, N11 (CPU), then N6 (GPU, frame CNN, 3 seeds)          (~6-9 h)
                                  #   "B"  Event-ReId only: N3 (E2VID, FireNet), then N4            (~4-6 h)
                                  #   "C"  N6 only (optional third account)                         (~3-4 h)
+                                 # env STEPS narrows a part: with three accounts, A runs STEPS=cpu (no GPU step, so a
+                                 # CPU session that skips the T4 queue) and C runs N6.
 REPO_URL = "https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git"
 BRANCH = "neuromorphic"
 KEYS = 5                         # independent master keys (N3, N4)
@@ -143,7 +145,8 @@ def checkpoint():
         f"| {s} | {st} | {t} |" for s, st, t, _ in LOG) + "\n\n" + "\n\n".join(
         f"## {s}\n```\n{o}\n```" for s, st, _, o in LOG if st != "ok"), encoding="utf-8")
     (WORK / "meta_budget.json").write_text(json.dumps({"quick": QUICK, "branch": BRANCH, "commit": COMMIT,
-                                                       "part": PART, "steps": BUDGET,
+                                                       "part": PART, "run": sorted(globals().get("RUN", ())),
+                                                       "steps": BUDGET,
                                                        "total_s": round(time.time() - T0)}, indent=1))
     with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as f:
         for p in [WORK / "run_log.md", WORK / "meta_budget.json"]:
@@ -199,8 +202,21 @@ sh(f"{sys.executable} -c \"import tonic, torch; print('tonic', tonic.__version__
 print(f"free disk after setup: {free_gb():.1f} GB at {WORK}; data in {DATA} ({free_gb(DATA):.1f} GB free)", flush=True)
 
 # ---------------------------------------------------------------- data
-RUN = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[PART]
+def plan(part, steps=None):
+    """Step groups of a part; env STEPS (comma list of cpu, n3, n4, n6) narrows it. With three accounts part C runs
+    N6, so part A runs STEPS=cpu: no GPU step left, a CPU session that does not wait in the T4 queue (16 Nov)."""
+    run = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[part]
+    if steps:
+        want = {s.strip().lower() for s in steps.split(",") if s.strip()}
+        if not want <= run:
+            raise SystemExit(f"STEPS {sorted(want - run)} are not part of part {part} ({sorted(run)})")
+        run = want
+    return run
+
+
+RUN = plan(PART, os.environ.get("STEPS"))
 NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid", "C": "nmnist dvsgesture"}[PART]
+print("steps:", sorted(RUN), flush=True)
 ZIP_ARG = f"--zip-url '{DATA_ZIP}'" if DATA_ZIP else ""
 sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED} --inputs /kaggle/input --inputs {INPUTS} "
    f"{ZIP_ARG}", "data", check=True)   # never run hours on missing data
