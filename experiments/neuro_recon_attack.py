@@ -157,8 +157,25 @@ def views_of(ev, geom, key_index, T):
     du, zh = C.baseline("du2021"), C.baseline("zhang2024")
     if du:
         out["Du 2021"] = du.encrypt(ev, geom.W, geom.H, du.DuKey.from_seed(C.master(key_index)))
-    if zh and geom.W * geom.H <= 64 * 64 * 4:
+    if zh and geom.W * geom.H <= ZHANG_MAX_PX:
         out["Zhang 2024"], _ = zh.encrypt(ev, geom.W, geom.H, C.master(key_index))
+    return out
+
+
+# Zhang 2024 fills every empty pixel with noise events (Algorithm 1): at 640 x 480 that is ~300 k pixels per window,
+# so it runs on sensors up to 128 x 128 only. The table says so instead of dropping the row silently (as bug #55).
+ZHANG_MAX_PX = 64 * 64 * 4
+
+
+def views_not_run(geom):
+    """{view: reason} for the views N3 does not build at this sensor size or without the baseline module."""
+    out = {}
+    if not C.baseline("du2021"):
+        out["Du 2021"] = "baseline module not installed"
+    if not C.baseline("zhang2024"):
+        out["Zhang 2024"] = "baseline module not installed"
+    elif geom.W * geom.H > ZHANG_MAX_PX:
+        out["Zhang 2024"] = f"not run at {geom.W} x {geom.H}: it adds noise events to every empty pixel (> 128 x 128)"
     return out
 
 
@@ -267,7 +284,8 @@ def main():
     gate = bool(gate_d[0] >= 0.05 and gate_d[1] > 0)
     data = {"results": res, "validity_gate": {"plain_minus_control_c": gate_d, "passes": gate},
             "windows_test": len(te), "clusters_test": n_clusters(g), "target": te[0]["target_kind"],
-            "learned_attacks": bool(learned), "scored": C.SCORED[boxed], "windows_unlabelled_skipped": unlabelled}
+            "learned_attacks": bool(learned), "scored": C.SCORED[boxed], "windows_unlabelled_skipped": unlabelled,
+            "views_not_run": views_not_run(samples[0][3])}
     data["meta"] = C.meta(a, dataset=a.dataset, synthetic=a.data is None, n_keys=a.keys,
                           ci="cluster bootstrap 95 % over recordings, 1000 resamples",
                           baselines={b: bool(C.baseline(b)) for b in ("du2021", "zhang2024")})
@@ -277,7 +295,7 @@ def main():
           f"Validity gate (plain - control (c) >= 0.05, CI excluding 0): {gate_d} -> "
           f"{'passes' if gate else 'FAILS: dataset not counted'}", "",
           C.table(["view", "SSIM [95 % CI]", "PSNR", "edge corr", "SSIM - control (f)", "P1 pass", "best attack"],
-                  rows)]
+                  rows)] + [f"\n{v}: {why}." for v, why in data["views_not_run"].items()]
     C.write("n3", "recon_attack", data, "\n".join(md), a.out)
 
 

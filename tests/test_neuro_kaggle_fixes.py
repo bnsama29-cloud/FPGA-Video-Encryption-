@@ -184,6 +184,10 @@ def test_n3_scores_event_reid_inside_the_person_box(tmp_path):
     v4 = d["results"]["V4"]["ssim"][0]
     assert v4 < 0.8, f"V4 (no events) scored SSIM {v4}: the blank background is being scored"
     assert d["windows_unlabelled_skipped"] == 0
+    # above 128 x 128 (the fixture is 160 x 120): Zhang 2024 is not run, and the table says why instead of dropping the row (16 Nov, B's QUICK table)
+    assert "Zhang 2024" not in d["results"], "Zhang 2024 must not run above 128 x 128"
+    assert "every empty pixel" in d["views_not_run"].get("Zhang 2024", ""), d["views_not_run"]
+    assert "Zhang 2024: not run at 160 x 120" in (tmp_path / "o" / "recon_attack.md").read_text()
 
 
 def test_n4_masks_its_loss_and_scores_inside_the_box():

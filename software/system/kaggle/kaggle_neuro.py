@@ -324,11 +324,17 @@ if "n3" in RUN:
     checkpoint()
 
 # ---------------------------------------------------------------- N6 task accuracy (GPU)
+def n6_args(quick, seeds):
+    """N6 options. QUICK passes --quick (seed 0, 2 epochs and the small ciphertext subset CT_QUICK) plus --limit 300 for
+    the clean model. Without --quick, N6 sealed its full-run subset (300 + 264 DVS Gesture recordings, ~1 h): part C's
+    QUICK timed out on DVS Gesture (16 Nov, TESTING bug #64)."""
+    return "--quick --limit 300" if quick else "--seeds " + " ".join(map(str, seeds))
+
+
 if "n6" in RUN:
-    seeds = "0" if QUICK else " ".join(map(str, SEEDS))
     for ds in ("nmnist", "dvsgesture"):
-        sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} --seeds {seeds} "
-           f"{'--limit 300 --epochs 2' if QUICK else ''} --out {OUT}/n6/{ds}", f"N6 {ds}", limit=GPU_S, want="wrote ")
+        sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} "
+           f"{n6_args(QUICK, SEEDS)} --out {OUT}/n6/{ds}", f"N6 {ds}", limit=GPU_S, want="wrote ")
     checkpoint()
 
 # ---------------------------------------------------------------- N4 learned attacker (GPU, last)
