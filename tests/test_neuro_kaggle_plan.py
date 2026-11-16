@@ -84,3 +84,9 @@ def test_only_reruns_named_steps_and_setup():
                        ("N5 dvsgesture", False), ("N9 eventreid", False)]:
         assert sel(step, only) is want, f"step {step!r} with ONLY={only!r}: got {sel(step, only)}, expected {want}"
     assert all(sel(s, "") for s in ("N5 nmnist", "N9 eventreid")), "no ONLY: every step runs"
+
+
+def test_n9_caps_dvs_gesture_recordings_in_full_runs():
+    """Bug #73: N9 on DVS Gesture (default 30 recordings) timed out at the 2-hour step limit on Kaggle."""
+    src = SRC.read_text(encoding="utf-8")
+    assert 'N9_LIMIT = {"eventreid": "--limit 8", "dvsgesture": "--limit 12"} if not QUICK else {}' in src

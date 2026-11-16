@@ -22,7 +22,6 @@ Method (DESIGN §4.3, §8.2 N8):
 Writes sim_out/neuro/n8/perm_strength.{json,md} and n8/readers.raw (scratch).
 """
 import argparse
-import importlib
 import math
 
 import numpy as np
@@ -140,6 +139,27 @@ def round_structure(W, H, rounds=(1, 2, 4, 6, 8), pairs=20000, seed=0):
     return out
 
 
+def expelliarmus_check(path, ours, g):
+    """Read the RAW file with expelliarmus (an independent EVT 2.0 reader, Wizard(encoding="evt2")) and compare every
+    event with neuro.evt2's decode: "n read, k equal to ours, in range" or the error. Bug #73: this check of claim
+    (iii) was a placeholder that never ran."""
+    try:
+        from expelliarmus import Wizard
+    except ImportError:
+        return "not installed here"
+    try:
+        arr = Wizard(encoding="evt2", fpath=str(path)).read()
+    except Exception as e:                                   # noqa: BLE001 (any reader failure is the result)
+        return f"read error: {type(e).__name__}: {e}"
+    n = len(arr)
+    same = 0
+    if n == len(ours):
+        same = int(((arr["t"].astype(np.int64) == ours["t"].astype(np.int64)) & (arr["x"] == ours["x"]) &
+                    (arr["y"] == ours["y"]) & (arr["p"].astype(int) == ours["p"].astype(int))).sum())
+    in_range = bool(n == 0 or ((arr["x"] < g.W) & (arr["y"] < g.H)).all())
+    return f"{n} read, {same} equal to ours, {'in range' if in_range else 'OUT OF RANGE'}"
+
+
 def readers(samples, out_dir):
     """N8-R: extracted payloads of V1/V2/V3 written to RAW and read back."""
     ev, _, _, g, _ = samples[0]
@@ -158,12 +178,11 @@ def readers(samples, out_dir):
                "in_range": bool(((e2["x"] < g.W) & (e2["y"] < g.H)).all()),
                "non_monotone_pairs": int((np.diff(t) < 0).sum()),
                "max_backstep_us": int(max(0, -np.diff(t).min())) if len(t) > 1 else 0}
-        for mod in ("expelliarmus", "tonic"):
-            try:
-                importlib.import_module(mod)
-                row[mod] = "installed: run on Kaggle (reader call in kaggle_neuro.py)"
-            except ImportError:
-                row[mod] = "not installed here"
+        row["expelliarmus"] = expelliarmus_check(path, e2, g)
+        # Tonic 1.7.0 has readers for AEDAT4, DAVIS/DVS .aedat, IBM and MNIST files, but none for Prophesee EVT 2.0 RAW
+        # (checked in the installed package, 16 Nov 2026), so there is nothing to run (bug #73: the column used to say
+        # "run on Kaggle" although no call existed)
+        row["tonic"] = "no EVT 2.0 RAW reader in Tonic 1.7.0"
         res[f"V{level}"] = row
     return res
 

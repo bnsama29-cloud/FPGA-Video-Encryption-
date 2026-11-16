@@ -404,3 +404,32 @@ def test_n4_selection_by_ssim_keeps_the_median_frame_when_updates_hurt_held_out_
     f = N4.train(torch, f, X, Yfit, 20, "cpu", 0, bs=16, val=(X[:4], Yval, None), shape=(H, W))
     out = f(torch.from_numpy(X[:4])).detach().numpy().reshape(4, H, W)
     assert np.allclose(out, med[None], atol=1e-6), "SSIM selection must keep the epoch-0 (median) weights"
+
+
+def test_n8_readers_check_payloads_with_expelliarmus_event_by_event(tmp_path):
+    """Bug #73: claim (iii)'s independent-reader check was a placeholder ("run on Kaggle") that never ran."""
+    pytest.importorskip("expelliarmus")
+    import neuro_common as C
+    import neuro_perm_strength as N8
+    res = N8.readers(C.synthetic_samples(1, seed=1), tmp_path)
+    for lv in ("V1", "V2", "V3"):
+        n = res[lv]["n_cd"]
+        want = f"{n} read, {n} equal to ours, in range"
+        assert res[lv]["expelliarmus"] == want, f"{lv}: got {res[lv]['expelliarmus']!r}, expected {want!r}"
+        assert res[lv]["tonic"] == "no EVT 2.0 RAW reader in Tonic 1.7.0"
+
+
+def test_n8_expelliarmus_check_reports_a_mismatch(tmp_path):
+    pytest.importorskip("expelliarmus")
+    import neuro_common as C
+    import neuro_perm_strength as N8
+    from neuro import evt2
+    ev, _, _, g, _ = C.synthetic_samples(1, seed=2)[0]
+    words = evt2.encode(ev, 1024)
+    path = tmp_path / "x.raw"
+    evt2.write_raw(path, words, g)
+    ours, _ = evt2.decode(words)
+    wrong = ours.copy()
+    wrong["x"][0] = (wrong["x"][0] + 1) % g.W                        # one event differs from what the file holds
+    got = N8.expelliarmus_check(path, wrong, g)
+    assert got == f"{len(ours)} read, {len(ours) - 1} equal to ours, in range", got

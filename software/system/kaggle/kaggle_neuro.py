@@ -279,7 +279,9 @@ if "cpu" in RUN:
 q = "--quick" if QUICK else ""
 # N9 seals every recording at 4 T x 4 pad policies; one Event-ReId recording (~1 M events) takes ~35 s per setting
 # (profiled 15 Nov), so the default 30 recordings would need ~4.5 h. 8 recordings fit the 2-hour step limit.
-N9_LIMIT = {"eventreid": "--limit 8"} if not QUICK else {}
+# DVS Gesture: the default 30 recordings timed out at the 2-hour limit on Kaggle (16 Nov, bug #73); Event-ReId's 8
+# recordings took 84 min there, so 12 DVS Gesture recordings (about a third of the events each) fit with margin.
+N9_LIMIT = {"eventreid": "--limit 8", "dvsgesture": "--limit 12"} if not QUICK else {}
 # N11 seals each Event-ReId recording at ~9 settings (bandwidth V1-V3, activity V1-V4 and padding): its QUICK default of
 # 4 recordings timed out at 15 min (local dry run, 15 Nov) and the full default of 40 would take ~3.5 h.
 N11_LIMIT = "--limit 2" if QUICK else "--limit 10"
