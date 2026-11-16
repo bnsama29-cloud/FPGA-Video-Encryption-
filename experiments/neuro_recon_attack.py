@@ -17,7 +17,7 @@ per window is kept (paper 1's rule):
     dt <= 5 ms), and at V1 the polarity-collapsed count image;
   * learned (with --recon-repo): E2VID and FireNet on 5-bin voxel grids (neuro.voxel), recurrent over windows.
   Target: the ground-truth intensity frame where the dataset has one (synthetic v2e-lite: exact), else the
-  plaintext reconstruction (labelled "vs plaintext reconstruction").
+  plaintext E2VID reconstruction (pick_target; labelled), and only without E2VID the most structured plain image.
 Controls: (c) the training-median frame; (f) a prior conditioned on the public per-bucket count series (mean
 target frame of the 5 nearest training windows in count-series space). Validity gate: the dataset counts only
 if the best plaintext SSIM exceeds control (c) by >= 0.05 with a CI excluding 0.
@@ -149,6 +149,16 @@ class Learned:
         return out
 
 
+def pick_target(plain_imgs, box):
+    """Target without ground truth: the plaintext E2VID reconstruction (DESIGN §8.2 N3/N4). Only without E2VID (laptop
+    smoke runs) the most structured plain image. Bug #68: that fallback was used on Kaggle too; it picked the sparse
+    count image, so plain scored 1.000 by construction and SSIM rewarded blank predictions (the median frame beat the
+    count-series control, and N4 collapsed to a blank output on every view)."""
+    if "e2vid" in plain_imgs:
+        return np.clip(plain_imgs["e2vid"], 0, 1), "plaintext E2VID reconstruction"
+    return max(plain_imgs.values(), key=lambda im: C.in_roi(im, box).std()), "most structured plain image (no E2VID)"
+
+
 def views_of(ev, geom, key_index, T):
     """Events an eavesdropper sees per view (V4: none)."""
     out = {"plain": ev}
@@ -237,8 +247,7 @@ def main():
                 fi = min(len(frames) - 1, int((t0 + (k + 1) * win - 10_000) // 1000))
                 target, tgt_kind = frames[fi], "ground truth"
             else:
-                target = max(per_view["plain"][k].values(), key=lambda im: C.in_roi(im, box).std())
-                tgt_kind = "plaintext recon"
+                target, tgt_kind = pick_target(per_view["plain"][k], box)
             we = ev[(ev["t"].astype(np.int64) >= t0 + k * win) & (ev["t"].astype(np.int64) < t0 + (k + 1) * win)]
             cnt = np.bincount(((we["t"].astype(np.int64) - (t0 + k * win)) // 64), minlength=win // 64)[:win // 64]
             r = {"sample": si, "group": grp, "window": k, "target": target, "target_kind": tgt_kind, "counts": cnt,

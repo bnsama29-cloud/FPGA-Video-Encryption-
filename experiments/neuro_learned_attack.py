@@ -14,6 +14,7 @@ Control (f): an MLP that sees only the public per-bucket count series of the win
 Writes sim_out/neuro/n4/learned_attack.{json,md}.
 """
 import argparse
+from pathlib import Path
 
 import numpy as np
 
@@ -23,9 +24,33 @@ from neuro.stats import cluster_bootstrap_ci, n_clusters, paired_bootstrap_diff
 from neuro.voxel import voxel_grid
 
 
-def windows_of(samples, view, T, win_us, n_keys, rois=None):
+def plain_targets(samples, win_us, recon):
+    """Per recording, the plaintext E2VID reconstruction of every window (E2VID is recurrent: reset per recording,
+    windows in order, as in N3). The target where a dataset has no intensity frames (DESIGN §8.2 N4); bug #68: the
+    plaintext count image used before is mostly zero even inside the person box, so the L1 loss drove the network to
+    a blank output on every view, plaintext included."""
+    out = []
+    for ev, _, _, geom, frames in samples:
+        if frames is not None or len(ev) == 0 or recon is None:
+            out.append(None)
+            continue
+        recon.reset()
+        t0 = int(ev["t"].min())
+        n_w = int((int(ev["t"].max()) - t0) // win_us) + 1
+        ims = []
+        for w in range(n_w):
+            pe = ev[(ev["t"].astype(np.int64) >= t0 + w * win_us) & (ev["t"].astype(np.int64) < t0 + (w + 1) * win_us)]
+            ims.append(np.clip(recon(pe, geom)["e2vid"], 0, 1).astype(np.float32) if len(pe)
+                       else (ims[-1] if ims else np.zeros((geom.H, geom.W), np.float32)))
+        out.append(ims)
+    return out
+
+
+def windows_of(samples, view, T, win_us, n_keys, rois=None, targets=None):
     """[(x (6, H, W), counts (win/64,), target (H, W), group, box)] for one view. With rois (C.load_rois), box is
-    the scoring region (C.roi_box) and windows without a labelled frame are left out; else box is None."""
+    the scoring region (C.roi_box) and windows without a labelled frame are left out; else box is None. targets
+    (plain_targets) gives the per-window target where the dataset has no frames; without it the plaintext count
+    image (laptop smoke runs only)."""
     out = []
     for si, (ev, _, grp, geom, frames) in enumerate(samples):
         if len(ev) == 0:
@@ -55,6 +80,8 @@ def windows_of(samples, view, T, win_us, n_keys, rois=None):
             cs = np.bincount((pe["t"].astype(np.int64) - lo) // 64, minlength=win_us // 64)[:win_us // 64]
             if frames is not None:
                 tgt = frames[min(len(frames) - 1, int((hi - 10_000) // 1000))] / 255.0
+            elif targets is not None and targets[si] is not None:
+                tgt = targets[si][w]
             else:
                 c = attacks.event_count_frame(pe, geom)
                 tgt = c / max(1.0, c.max())
@@ -157,6 +184,8 @@ def main():
     ap.add_argument("--max-windows", type=int, default=6,
                     help="windows kept per recording: the contiguous run with the most events (4 with --quick)")
     ap.add_argument("--views", nargs="+", default=["plain", "V1", "V2", "V3", "Du 2021", "Zhang 2024"])
+    ap.add_argument("--recon-repo", type=Path, default=None, help="rpg_e2vid checkout: plaintext E2VID targets")
+    ap.add_argument("--recon-ckpt", nargs="*", default=[])
     a = ap.parse_args()
     try:
         import torch
@@ -175,6 +204,13 @@ def main():
     else:
         samples, rois = C.crop_samples(samples, win, min(a.max_windows, 4) if a.quick else a.max_windows, rois=rois)
     boxed = rois is not None and any(r is not None for r in rois)
+    recon = None
+    if a.recon_repo:
+        from neuro_recon_attack import Learned
+        recon = Learned(a.recon_repo, [c for c in a.recon_ckpt if c.startswith("e2vid=")])
+    targets = plain_targets(samples, win, recon)
+    target_kind = ("ground truth" if samples and samples[0][4] is not None else
+                   "plaintext E2VID reconstruction" if recon else "plaintext count image (no E2VID: smoke run only)")
     groups = sorted({s[2] for s in samples})
     train_g = set(groups[: max(1, len(groups) // 2)])
     test_g = set(groups) - train_g
@@ -183,7 +219,7 @@ def main():
     for view in a.views:
         if view in ("Du 2021", "Zhang 2024") and not C.baseline("du2021" if view.startswith("Du") else "zhang2024"):
             continue
-        W_ = windows_of(samples, view, a.T, win, a.keys, rois)
+        W_ = windows_of(samples, view, a.T, win, a.keys, rois, targets)
         tr = [w for w in W_ if w[3] in train_g]
         te = [w for w in W_ if w[3] in test_g]
         if not tr or not te:
@@ -214,12 +250,12 @@ def main():
                      ("yes" if d[2] < 0.05 else "no") if valid else "invalid: control (f) < control (c)",
                      n_clusters(g)))
     data = {"results": res,
-            "scored": C.SCORED[boxed],
+            "scored": C.SCORED[boxed], "target": target_kind,
             "meta": C.meta(a, dataset=a.dataset, synthetic=a.data is None, n_keys=a.keys, device=dev,
-                           target="ground truth" if samples[0][4] is not None else "plaintext count image",
+                           target=target_kind,
                            ci="paired cluster bootstrap 95 %, 1000 resamples")}
     md = ["# N4 learned attack" + (" (synthetic smoke data)" if a.data is None else ""), "",
-          f"Scored {data['scored']}.", "",
+          f"Target: {target_kind}. Scored {data['scored']}.", "",
           "Validity: control (f) (count series) must not be clearly worse than control (c) (median frame), "
           "else P1 is reported as invalid.", "",
           C.table(["view", "SSIM network", "SSIM control (f)", "SSIM control (c)", "network - control (f)", "P1 pass",

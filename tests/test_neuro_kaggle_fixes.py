@@ -289,3 +289,43 @@ def test_n5_uses_the_official_test_split_when_groups_name_it():
     assert got == ["test/0", "test/1"], f"official split: got {got}, expected ['test/0', 'test/1']"
     persons = np.array(["p1", "p2", "p3", "p4"])                    # Event-ReId: no split prefix, half of the groups
     assert N5.official_test_groups(persons).tolist() == ["p3", "p4"]
+
+
+def test_n3_target_is_the_plaintext_e2vid_reconstruction_when_available():
+    """Bug #68: without ground truth N3 picked the most structured plain image (the sparse count image), so plain
+    scored 1.000 by construction and the median frame beat the count-series control."""
+    import neuro_recon_attack as N3
+    e2 = np.full((8, 8), 0.4)
+    e2[2, 3] = 1.7                                                       # E2VID output can leave [0, 1]
+    cnt = np.zeros((8, 8))
+    cnt[1:7, 1:7] = 9.0                                                  # far more contrast than e2
+    tgt, kind = N3.pick_target({"count": cnt, "e2vid": e2}, None)
+    assert kind == "plaintext E2VID reconstruction", kind
+    assert tgt.max() == 1.0 and tgt[0, 0] == 0.4, "E2VID target must be used, clipped to [0, 1]"
+    tgt, kind = N3.pick_target({"count": cnt, "integration": e2}, None)  # no E2VID: smoke-run fallback, labelled
+    assert kind.startswith("most structured") and tgt is cnt, kind
+
+
+class _FakeE2VID:
+    """Stands in for N3's Learned: recurrent state = number of calls since reset."""
+    def __init__(self):
+        self.n = 0
+    def reset(self):
+        self.n = 0
+    def __call__(self, ev, geom):
+        self.n += 1
+        return {"e2vid": np.full((geom.H, geom.W), 0.1 * self.n)}
+
+
+def test_n4_trains_toward_plaintext_e2vid_targets_reset_per_recording():
+    import neuro_common as C
+    import neuro_learned_attack as N4
+    samples = [(ev, lab, grp, geom, None) for ev, lab, grp, geom, _ in C.synthetic_samples(2, seed=3)]
+    win = 2_000
+    tg = N4.plain_targets(samples, win, _FakeE2VID())
+    assert [round(float(t[0][0, 0]), 3) for t in tg] == [0.1, 0.1], "E2VID state must restart per recording"
+    assert round(float(tg[0][1][0, 0]), 3) == 0.2, "windows of one recording run in order through E2VID"
+    W_ = N4.windows_of(samples, "V2", 1024, win, 2, None, tg)
+    first = W_[0][2]
+    assert np.allclose(first, tg[0][0]), f"N4 target is not the plaintext E2VID window (got mean {first.mean()})"
+    assert N4.plain_targets(samples, win, None) == [None, None], "without E2VID: count-image fallback"

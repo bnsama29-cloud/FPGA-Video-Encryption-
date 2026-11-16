@@ -377,8 +377,11 @@ if "n6" in RUN:
 
 # ---------------------------------------------------------------- N4 learned attacker (GPU, last)
 if "n4" in RUN:
+    # N4's target on Event-ReId is the plaintext E2VID reconstruction (bug #68), so it needs N3's checkout and
+    # checkpoints (recon is set in the N3 block; part B runs both)
+    recon_n4 = recon if "n3" in RUN else ""
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset eventreid --data {DATA}/eventreid "
-       f"--keys {KEYS} {q} --out {OUT}/n4/eventreid", "N4 eventreid", limit=GPU_S, want="wrote ")
+       f"--keys {KEYS} {q} {recon_n4} --out {OUT}/n4/eventreid", "N4 eventreid", limit=GPU_S, want="wrote ")
     sh(f"{sys.executable} experiments/neuro_learned_attack.py --dataset synthetic --keys {KEYS} {q} "
        f"--out {OUT}/n4/synthetic", "N4 synthetic", limit=GPU_S, want="wrote ")
     checkpoint()
