@@ -348,3 +348,30 @@ def test_n4_control_f_starts_at_the_median_frame_and_learns_a_correction():
     f = N4.train(torch, f, X, Y.reshape(8, -1), 30, "cpu", 0, bs=8)
     after = np.abs(f(torch.from_numpy(X)).detach().numpy() - Y.reshape(8, -1)).mean()
     assert after < np.abs(med - 0.9).mean(), f"training did not move control (f) toward the target ({after})"
+
+
+def test_n4_holdout_split_is_by_group_and_never_empty_for_fit():
+    """Bug #70: model selection on held-out training recordings (never windows of the same recording)."""
+    import neuro_learned_attack as N4
+    groups = ["a", "a", "b", "c", "c", "d", "e"]
+    fit, hold = N4.holdout_split(groups)
+    assert {groups[i] for i in hold} == {"e"} and set(fit) | set(hold) == set(range(7)), (fit, hold)
+    assert not {groups[i] for i in fit} & {groups[i] for i in hold}, "a group is on both sides"
+    fit1, hold1 = N4.holdout_split(["x", "x"])
+    assert len(hold1) == 0 and len(fit1) == 2, "a single group cannot be split"
+
+
+def test_n4_training_keeps_the_untrained_control_when_training_hurts_held_out_data():
+    """Bug #70: epoch 0 of control (f) is control (c); selection must keep it when every update makes held-out worse."""
+    torch = pytest.importorskip("torch")
+    import neuro_learned_attack as N4
+    rng = np.random.default_rng(1)
+    H, W, n = 4, 4, 3
+    med = np.full((H, W), 0.5, np.float32)
+    _, f = N4.build(torch, H, W, n, median=med)
+    X = rng.uniform(size=(16, n)).astype(np.float32)
+    Yfit = np.full((16, H * W), 1.0, np.float32)                         # pulls the correction up ...
+    Yval = np.full((4, H * W), 0.5, np.float32)                          # ... which hurts the held-out recordings
+    f = N4.train(torch, f, X, Yfit, 20, "cpu", 0, bs=16, val=(X[:4], Yval, None))
+    out = f(torch.from_numpy(X[:4])).detach().numpy()
+    assert np.allclose(out, 0.5, atol=1e-6), f"held-out selection should keep the median frame, got {out.mean()}"

@@ -131,6 +131,16 @@ def build(torch, H, W, n_counts, median=None):
     return UNet(), CountNet()
 
 
+def holdout_split(groups, frac=0.2):
+    """(fit, held-out) window indices: the last frac of the sorted training groups (at least one, none if there is
+    only one group) are held out for model selection (bug #70)."""
+    gs = sorted(set(groups))
+    k = max(1, int(round(frac * len(gs)))) if len(gs) > 1 else 0
+    held = set(gs[len(gs) - k:]) if k else set()
+    idx = np.arange(len(groups))
+    return idx[[g not in held for g in groups]], idx[[g in held for g in groups]]
+
+
 def verdict(s_net, s_f, s_c, groups, seed=0):
     """(network - control (f), control (f) - control (c), valid, P1 pass or None).
 
@@ -159,28 +169,55 @@ def mask_of(box, H, W):
     return m
 
 
-def train(torch, model, X, Y, epochs, dev, seed, bs=None, M=None):
+def _loss(torch, p, y, m):
+    if m is None:
+        return torch.nn.functional.l1_loss(p, y)
+    return ((p - y).abs() * m).sum() / m.sum().clamp(min=1.0)
+
+
+def train(torch, model, X, Y, epochs, dev, seed, bs=None, M=None, val=None):
     """L1 loss, over the scoring region only when M (masks shaped like Y) is given: on Event-ReId ~95 % of a frame is
-    empty, and a full-frame loss rewards a blank prediction (TESTING bug #58)."""
+    empty, and a full-frame loss rewards a blank prediction (TESTING bug #58).
+
+    val = (Xv, Yv, Mv or None): held-out training recordings. The weights with the lowest held-out loss are kept,
+    the untrained model (epoch 0) included. For control (f) epoch 0 IS control (c), so (f) cannot end below (c) on
+    held-out data; without it the count correction overfit few recordings (bug #70). The attack network gets the
+    same rule, which can only make the attacker stronger."""
+    import copy
     bs = bs or batch_size(Y[0].size)             # pixels per sample (flattened for the MLP control, too)
     torch.manual_seed(seed)
     model = model.to(dev)
     opt = torch.optim.Adam(model.parameters(), 1e-3)
     Xt, Yt = torch.from_numpy(X), torch.from_numpy(Y)
     Mt = torch.from_numpy(M) if M is not None else None
+
+    def val_loss():
+        Xv, Yv, Mv = val
+        tot, n = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(Xv), bs):
+                p = model(torch.from_numpy(Xv[i:i + bs]).to(dev)).reshape(Yv[i:i + bs].shape)
+                m = None if Mv is None else torch.from_numpy(Mv[i:i + bs]).to(dev)
+                tot += float(_loss(torch, p, torch.from_numpy(Yv[i:i + bs]).to(dev), m)) * len(p)
+                n += len(p)
+        return tot / max(1, n)
+
+    best = (val_loss(), copy.deepcopy(model.state_dict())) if val is not None else None
     for _ in range(epochs):
         perm = torch.randperm(len(Xt))
         for i in range(0, len(Xt), bs):
             j = perm[i:i + bs]
             p = model(Xt[j].to(dev)).reshape(Yt[j].shape)
-            if Mt is None:
-                loss = torch.nn.functional.l1_loss(p, Yt[j].to(dev))
-            else:
-                m = Mt[j].to(dev)
-                loss = ((p - Yt[j].to(dev)).abs() * m).sum() / m.sum().clamp(min=1.0)
+            loss = _loss(torch, p, Yt[j].to(dev), None if Mt is None else Mt[j].to(dev))
             opt.zero_grad()
             loss.backward()
             opt.step()
+        if val is not None:
+            v = val_loss()
+            if v < best[0]:
+                best = (v, copy.deepcopy(model.state_dict()))
+    if best is not None:
+        model.load_state_dict(best[1])
     return model
 
 
@@ -244,10 +281,15 @@ def main():
         X, Y = np.stack([w[0] for w in tr]), np.stack([w[2] for w in tr])
         net, mlp = build(torch, H, Wd, len(tr[0][1]), median=np.median(Y, 0))
         M = np.stack([mask_of(w[4], H, Wd) for w in tr]) if boxed else None
-        net = train(torch, net, X, Y, a.epochs, dev, a.seed, M=M)
         Xc = np.stack([w[1] for w in tr])
-        mlp = train(torch, mlp, Xc / max(1.0, Xc.max()), Y.reshape(len(Y), -1), a.epochs, dev, a.seed,
-                    M=None if M is None else M.reshape(len(M), -1))
+        fit, hold = holdout_split([w[3] for w in tr])          # by recording group, never by window
+        sel = lambda A, i: None if A is None else A[i]          # noqa: E731
+        net = train(torch, net, X[fit], Y[fit], a.epochs, dev, a.seed, M=sel(M, fit),
+                    val=(X[hold], Y[hold], sel(M, hold)) if len(hold) else None)
+        Yf, Mf = Y.reshape(len(Y), -1), None if M is None else M.reshape(len(M), -1)
+        Xn = Xc / max(1.0, Xc.max())
+        mlp = train(torch, mlp, Xn[fit], Yf[fit], a.epochs, dev, a.seed, M=sel(Mf, fit),
+                    val=(Xn[hold], Yf[hold], sel(Mf, hold)) if len(hold) else None)
         pn = predict(torch, net, np.stack([w[0] for w in te]), (H, Wd), dev)
         pc = predict(torch, mlp, np.stack([w[1] for w in te]) / max(1.0, Xc.max()), (H, Wd), dev)
         sn = [structural_similarity(C.in_roi(p, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for p, w in zip(pn, te)]
