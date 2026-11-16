@@ -63,6 +63,7 @@ module nv_packetizer (
     input  wire [63:0]  ld_ctr0,
     input  wire         flush,        // pulse: CTRL.FLUSH
     input  wire         ds_idle,      // everything behind this stage is empty
+    input  wire         hold,         // nv_axil_regs evaluates a commit: keep the packet state (no word, no step)
     // status
     output reg  [63:0]  open_ctr,
     output reg          started,
@@ -176,7 +177,7 @@ module nv_packetizer (
     reg [2:0] act;
     always @* begin
         act = A_NONE;
-        if (st == S_RUN && enable && !halted && !flush_req && s_tvalid && settle == 2'd0) begin
+        if (st == S_RUN && enable && !hold && !halted && !flush_req && s_tvalid && settle == 2'd0) begin
             if (!started)
                 act = (typ == 4'h8) ? A_START : A_DROP;
             else if (typ == 4'h8) begin
@@ -249,7 +250,7 @@ module nv_packetizer (
             if (flush) flush_req <= 1'b1;
 
             // -------------------------------------------- main FSM
-            case (st)
+            if (!hold) case (st)
             S_RUN: begin
                 if (flush_req && o_free) begin
                     flush_req <= 1'b0;

@@ -25,6 +25,7 @@ module nv_axil_regs #(
     input  wire         clk,
     input  wire         por,               // power-on reset
     output wire         soft_rst,          // datapath reset: por or CTRL.SOFT_RST
+    output wire         commit_hold,       // a commit is being evaluated: nv_packetizer keeps its state
     // AXI4-Lite slave
     input  wire [7:0]   s_axil_awaddr,
     input  wire [2:0]   s_axil_awprot,
@@ -136,7 +137,7 @@ module nv_axil_regs #(
             code = C_TUS;
         else if (s_sid == 0)
             code = C_REWIND;
-        else if (!ctl_enable)
+        else if (!en_q)
             code = rewind_bad ? C_REWIND : C_NONE;
         else if (halted)
             code = (s_sid == a_sid || rewind_bad) ? C_REWIND : C_NONE;
@@ -160,7 +161,16 @@ module nv_axil_regs #(
     // ------------------------------------------------------------ AXI-Lite
     assign s_axil_bresp = 2'b00;
     assign s_axil_rresp = 2'b00;
-    wire wr = s_axil_awvalid && s_axil_wvalid && !s_axil_bvalid;
+    // Commit in two clocks (Vivado 7 Nov 2026: the one-clock check `COMMIT_AT >= open ctr + 2` with the REWIND compares
+    // drove every key register's clock enable through 23 logic levels, WNS -0.347 ns at 346 x 260): c1 = the clock
+    // after the CTRL write, when `code` is registered; c2 = the clock the decision is applied. nv_packetizer holds its
+    // state during c1 and c2 (commit_hold), so `code` sees the counters of the write and the result is the same as
+    // the one-clock rule; ENABLE is taken as it was before the write (en_q). The write response waits for the
+    // decision, so CFG_CODE is final when the ARM can read it, and no other write is accepted meanwhile.
+    reg        c1, c2, en_q;
+    reg  [2:0] code_r;
+    assign commit_hold = c1 || c2;
+    wire wr = s_axil_awvalid && s_axil_wvalid && !s_axil_bvalid && !c1 && !c2;
     assign s_axil_awready = wr;
     assign s_axil_wready  = wr;
     assign s_axil_arready = !s_axil_rvalid;
@@ -181,7 +191,12 @@ module nv_axil_regs #(
         resume <= 1'b0;
         flush  <= 1'b0;
         ctl_srst <= 1'b0;
+        c1 <= do_commit;
+        c2 <= c1;
+        if (do_commit) en_q <= ctl_enable;
+        if (c1) code_r <= code;
         if (por) begin
+            c1 <= 1'b0; c2 <= 1'b0;
             s_axil_bvalid <= 1'b0;
             ctl_enable <= 1'b0; keys_valid <= 1'b0; commit_late <= 1'b0; cfg_err <= 1'b0; cfg_code <= C_NONE;
             last_valid <= 1'b0; last_sid <= 64'd0; last_ctr <= 64'd0; p_valid <= 1'b0;
@@ -198,8 +213,9 @@ module nv_axil_regs #(
                 last_sid   <= a_sid;
                 last_ctr   <= pkt_done_ctr;
             end
+            if (c2) s_axil_bvalid <= 1'b1;      // response of a commit write: after the decision
             if (wr) begin
-                s_axil_bvalid <= 1'b1;
+                s_axil_bvalid <= !do_commit;
                 case (wa)
                 6'h01: if (ws[0]) begin
                     ctl_enable <= wd[0];
@@ -232,21 +248,21 @@ module nv_axil_regs #(
                 endcase
             end
             // -------------------------------------------- commit
-            if (do_commit) begin
-                if (code != C_NONE) begin
-                    cfg_code <= code;
+            if (c2) begin
+                if (code_r != C_NONE) begin
+                    cfg_code <= code_r;
                     cfg_err  <= 1'b1;
-                    if (code == C_LATE) commit_late <= 1'b1;
+                    if (code_r == C_LATE) commit_late <= 1'b1;
                 end else begin
                     cfg_code    <= C_NONE;
                     commit_late <= 1'b0;
                     keys_valid  <= 1'b1;
-                    if (!ctl_enable || halted) begin
+                    if (!en_q || halted) begin
                         take_shadow;
                         a_ctr0  <= s_ctr0;
                         a_first <= 1'b1;
                         a_link  <= 64'hFFFF_FFFF_FFFF_FFFF;
-                        if (!ctl_enable) load <= 1'b1;
+                        if (!en_q) load <= 1'b1;
                         else             resume <= 1'b1;
                     end else begin
                         q_mode <= s_mode; q_geom <= s_geom; q_tus <= s_tus; q_padmin <= s_padmin;
@@ -290,7 +306,7 @@ module nv_axil_regs #(
             c_iw <= 0; c_os <= 0; c_tw <= 0; c_kw <= 0; c_rng <= 0; c_ord <= 0; c_pre <= 0; c_jmp <= 0; c_ovf <= 0;
             c_cfg <= 0;
         end else begin
-            if (do_commit && code != C_NONE) c_cfg <= sat(c_cfg, 1'b1);
+            if (c2 && code_r != C_NONE) c_cfg <= sat(c_cfg, 1'b1);
             if (enable) begin
                 c_cyc  <= c_cyc + 64'd1;
                 c_pkts <= c_pkts + (ev_pkt ? 64'd1 : 64'd0);

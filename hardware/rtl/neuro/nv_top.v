@@ -64,10 +64,10 @@ module nv_top #(
     wire [127:0] k_tag, k_pol, k_perm, k_dum, k_aead;
     wire         p_valid, p_newsid, apply, load, resume, flush, halted, started, pkt_done, pk_idle;
     wire         e_pre, e_order, e_range, e_jump, e_padovf, table_wait, ks_stall;
-    wire         ds_idle;
+    wire         ds_idle, commit_hold;
 
     nv_axil_regs #(.MAXW(MAXW), .MAXH(MAXH), .PAD_BUILT(PAD), .BUILD(BUILD)) u_regs (
-        .clk(clk), .por(rst), .soft_rst(srst),
+        .clk(clk), .por(rst), .soft_rst(srst), .commit_hold(commit_hold),
         .s_axil_awaddr(s_axil_awaddr), .s_axil_awprot(s_axil_awprot), .s_axil_awvalid(s_axil_awvalid),
         .s_axil_awready(s_axil_awready), .s_axil_wdata(s_axil_wdata), .s_axil_wstrb(s_axil_wstrb),
         .s_axil_wvalid(s_axil_wvalid), .s_axil_wready(s_axil_wready), .s_axil_bresp(s_axil_bresp),
@@ -102,20 +102,29 @@ module nv_top #(
         .a_level(a_level), .a_ts(a_ts), .a_pad(a_pad), .a_policy(a_policy), .a_jump(a_jump), .a_W(a_W), .a_H(a_H),
         .a_T(a_T), .a_sid(a_sid), .a_ctr0(a_ctr0), .a_first(a_first), .a_link(a_link), .a_maxgap(a_maxgap),
         .p_valid(p_valid), .p_at(p_at), .p_newsid(p_newsid), .p_ctr0(p_ctr0), .apply(apply), .apply_ctr(apply_ctr),
-        .load(load), .resume(resume), .ld_ctr0(ld_ctr0), .flush(flush), .ds_idle(ds_idle),
+        .load(load), .resume(resume), .ld_ctr0(ld_ctr0), .flush(flush), .ds_idle(ds_idle), .hold(commit_hold),
         .open_ctr(open_ctr), .started(started), .halted(halted), .pkt_done(pkt_done), .pkt_done_ctr(pkt_done_ctr),
         .idle(pk_idle), .e_pre(e_pre), .e_order(e_order), .e_range(e_range), .e_jump(e_jump),
         .table_wait(table_wait), .tg_start(tg_start), .tg_ctr(tg_ctr), .tg_bank(tg_bank), .tg_done(tg_done),
         .fe_exit_perm(fe_valid && fe_perm), .fe_exit_bank(fe_bank));
 
     // ---------------------------------------------------------------- trailer (counts, padding)
+    // Register slice between the packetizer and the trailer: the trailer's i_ready (bucket compare, 28-bit) and the
+    // nv_xor ready behind it reached s_axis_tready in one clock (Vivado 7 Nov 2026: WNS -0.695 ns at 346 x 260,
+    // -0.281 ns at 128 x 128). skid_buf's ready is a register, so the packetizer's o_ready no longer depends on them.
+    wire        ps_valid, ps_ready;
+    wire [36:0] ps_data;
+    skid_buf #(.W(37)) u_pk_skid (
+        .clk(clk), .rst(srst), .i_valid(pk_valid), .i_ready(pk_ready),
+        .i_data({pk_kind, pk_xor, pk_perm, pk_bank, pk_word}),
+        .o_valid(ps_valid), .o_ready(ps_ready), .o_data(ps_data));
     wire        tr_valid, tr_ready, tr_last, tr_xor, tr_perm, tr_bank, tr_busy;
     wire [31:0] tr_word;
     wire [1:0]  tr_kind;
     nv_trailer #(.PAD(PAD), .MAX_CD(MAX_CD), .BM_AW(BM_AW)) u_tr (
         .clk(clk), .rst(srst), .pad_min(a_padmin), .pad_cap(a_padcap), .key_dum(k_dum),
-        .i_valid(pk_valid), .i_ready(pk_ready), .i_word(pk_word), .i_kind(pk_kind), .i_xor(pk_xor),
-        .i_perm(pk_perm), .i_bank(pk_bank),
+        .i_valid(ps_valid), .i_ready(ps_ready), .i_word(ps_data[31:0]), .i_kind(ps_data[36:35]),
+        .i_xor(ps_data[34]), .i_perm(ps_data[33]), .i_bank(ps_data[32]),
         .o_valid(tr_valid), .o_ready(tr_ready), .o_word(tr_word), .o_kind(tr_kind), .o_last(tr_last),
         .o_xor(tr_xor), .o_perm(tr_perm), .o_bank(tr_bank), .e_padovf(e_padovf), .busy(tr_busy));
 
@@ -215,7 +224,7 @@ module nv_top #(
         .t_valid(t_valid), .t_data(t_data), .t_ack(t_ack),
         .m_tvalid(m_axis_tvalid), .m_tready(m_axis_tready), .m_tdata(m_axis_tdata), .m_tlast(m_axis_tlast));
 
-    assign ds_idle = !tr_busy && !xo_valid && !sk_valid && (fe_cnt == 6'd0) && (f_count == 10'd0) && !f_valid &&
+    assign ds_idle = !ps_valid && !tr_busy && !xo_valid && !sk_valid && (fe_cnt == 6'd0) && (f_count == 10'd0) && !f_valid &&
                      !tag_busy;
 endmodule
 `default_nettype wire

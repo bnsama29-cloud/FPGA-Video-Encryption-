@@ -253,3 +253,11 @@ JUMP_HALT, a commit with a new SID resumes at once (`CTRL.CLEAR_HALT` of the dra
 set is pending until packet COMMIT_AT − 1 has closed; the pipeline is then drained before the set becomes active,
 because the downstream stages read the active keys. This costs one pipeline drain per commit and changes no output
 word (checked by `test_nv_top.py`: `commit_level_change`, `commit_new_epoch`).
+
+**Commit timing (two clocks, 16 Nov 2026).** A CTRL write with COMMIT is decided over two clocks: in the first the
+check (`COMMIT_AT ≥ open ctr + 2`, REWIND against LAST_SID, the field checks) is registered, in the second its result
+is applied. `nv_packetizer` holds its state during both (`commit_hold`: no word accepted, no packet step), so the
+check sees the counters of the write and the result equals the one-clock rule of the model; ENABLE is taken as it was
+before the write. The AXI-Lite write response (BVALID) of a COMMIT write comes after the decision, so CFG_CODE is
+final when the ARM can read it, and no other write is accepted in between. Reason: the one-clock check drove every
+key register's clock enable through 23 logic levels (Vivado, 7 Nov 2026: WNS −0.347 ns at 346 × 260; TESTING bug #71).
