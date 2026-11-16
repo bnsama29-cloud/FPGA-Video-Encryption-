@@ -118,10 +118,12 @@ def _nmnist_files(root, split):
 
 
 def load_nmnist(root, split, backend="auto", dataset=None):
-    """N-MNIST samples (events, digit, group=file stem or index, Geometry nmnist 34 x 34)."""
+    """N-MNIST samples (events, digit, group, Geometry nmnist 34 x 34). group = "<split>/<index>" (Tonic) or
+    "<split>/<digit>/<file stem>": unique across both splits, and the prefix names the official split. Before
+    16 Nov 2026 it was str(i), so training sample 5 and test sample 5 shared one group (TESTING bug #67)."""
     geom = _sensor("nmnist")
     if dataset is not None:  # an already built Tonic-style dataset (tests, or a caller with transforms)
-        yield from _from_tonic(dataset, geom, lambda ds, i: str(i))
+        yield from _from_tonic(dataset, geom, lambda ds, i: f"{split}/{i}")
         return
     if backend == "auto":
         try:
@@ -131,7 +133,7 @@ def load_nmnist(root, split, backend="auto", dataset=None):
             backend = "native"
     if backend == "tonic":
         ds = _tonic().datasets.NMNIST(save_to=str(root), train=_check_split(split))
-        yield from _from_tonic(ds, geom, lambda d, i: str(i))
+        yield from _from_tonic(ds, geom, lambda d, i: f"{split}/{i}")
         return
     if backend != "native":
         raise ValueError(f"unknown backend {backend!r}")
@@ -142,26 +144,27 @@ def load_nmnist(root, split, backend="auto", dataset=None):
         ev = read_nmnist_bin(f)
         if ev.size and (ev["x"].max() >= geom.W or ev["y"].max() >= geom.H):
             raise ValueError(f"{f}: event outside {geom.W} x {geom.H}")
-        yield ev, int(f.parent.name), f.stem, geom
+        yield ev, int(f.parent.name), f"{split}/{f.parent.name}/{f.stem}", geom
 
 
 # ---------------------------------------------------------------- DVS Gesture
 
-def _gesture_group(ds, i):
+def _gesture_group(ds, i, split):
+    """"<split>/userNN" (the official split prefix, then the subject) or "<split>/<index>" when no subject is known."""
     paths = getattr(ds, "data", None)
     if paths is not None and i < len(paths):
         m = re.search(r"user(\d+)", str(paths[i]))
         if m:
-            return f"user{int(m.group(1)):02d}"
-    return str(i)
+            return f"{split}/user{int(m.group(1)):02d}"
+    return f"{split}/{i}"
 
 
 def load_dvsgesture(root, split, dataset=None):
-    """DVS Gesture samples via Tonic's official train/test files (group = subject `userNN` when known)."""
+    """DVS Gesture samples via Tonic's official train/test files (group = "<split>/userNN" when known)."""
     geom = _sensor("dvsgesture")
     ds = dataset if dataset is not None else _tonic().datasets.DVSGesture(save_to=str(root),
                                                                            train=_check_split(split))
-    yield from _from_tonic(ds, geom, _gesture_group)
+    yield from _from_tonic(ds, geom, lambda d, i: _gesture_group(d, i, split))
 
 
 # ---------------------------------------------------------------- Event-ReId (tolerant reader)

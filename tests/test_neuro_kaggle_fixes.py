@@ -259,3 +259,33 @@ def test_n5_knn_in_blocks_equals_the_one_shot_computation():
         assert not len(bad), f"max_bytes {mb}: first mismatch at {tuple(bad[0])}: got {got[tuple(bad[0])]}, " \
                              f"expected {ref[tuple(bad[0])]}"
     assert N5.knn_indices(Zte, Ztr[:3], 5).shape == (301, 3), "fewer training rows than k"
+
+
+def test_dataset_groups_are_unique_across_splits_and_name_the_split(tmp_path):
+    """Bug #67: N-MNIST groups were str(index) in both splits (train 5 and test 5 shared a group)."""
+    from neuro import datasets as D
+
+    class Fake:                                        # Tonic-style: len, [i] -> (events, target)
+        def __init__(self, n):
+            self.n = n
+        def __len__(self):
+            return self.n
+        def __getitem__(self, i):
+            ev = np.zeros(3, dtype=[("t", "<i8"), ("x", "<i2"), ("y", "<i2"), ("p", "<i1")])
+            ev["t"] = [0, 5, 9]
+            return ev, i % 10
+    tr = [g for _, _, g, _ in D.load_nmnist(None, "train", dataset=Fake(4))]
+    te = [g for _, _, g, _ in D.load_nmnist(None, "test", dataset=Fake(4))]
+    assert not set(tr) & set(te), f"train and test share groups {sorted(set(tr) & set(te))}"
+    assert all(g.startswith("train/") for g in tr) and all(g.startswith("test/") for g in te), (tr, te)
+    gtr = [g for _, _, g, _ in D.load_dvsgesture(None, "train", dataset=Fake(2))]
+    assert gtr == ["train/0", "train/1"], gtr
+
+
+def test_n5_uses_the_official_test_split_when_groups_name_it():
+    import neuro_leakage as N5
+    g = np.array(["train/0", "train/1", "train/2", "test/0", "test/1"])
+    got = sorted(N5.official_test_groups(g).tolist())
+    assert got == ["test/0", "test/1"], f"official split: got {got}, expected ['test/0', 'test/1']"
+    persons = np.array(["p1", "p2", "p3", "p4"])                    # Event-ReId: no split prefix, half of the groups
+    assert N5.official_test_groups(persons).tolist() == ["p3", "p4"]

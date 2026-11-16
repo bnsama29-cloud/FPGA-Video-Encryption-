@@ -84,6 +84,17 @@ def knn_indices(Zte, Ztr, k, max_bytes=256 << 20):
     return out
 
 
+def official_test_groups(g):
+    """The groups of the official test split when the groups name it ("test/..." from neuro.datasets: N-MNIST, DVS
+    Gesture), else the second half of the sorted groups (Event-ReId persons, synthetic). Bug #67: N-MNIST groups were
+    str(index) in both splits, so the "half" mixed train and test samples and merged unrelated samples."""
+    groups = np.unique(g)
+    test = groups[np.char.startswith(groups.astype(str), "test/")]
+    if len(test) and len(test) < len(groups):
+        return test
+    return groups[len(groups) // 2:] if len(groups) > 1 else groups
+
+
 def classify(X, y, g, test_groups):
     te = np.isin(g, test_groups)
     tr = ~te
@@ -169,8 +180,7 @@ def main():
     sl = [s for s in sl if s[1] is not None]
     y = np.array([lab for _, lab, _ in sl])
     g = np.array([grp for _, _, grp in sl])
-    groups = np.unique(g)
-    test_groups = groups[len(groups) // 2:] if len(groups) > 1 else groups
+    test_groups = official_test_groups(g)
     # Event-ReId: label = person = group, so no test label is ever seen in training and a classifier scores 0 by
     # construction (first Kaggle QUICK run, TESTING bug #54). Classifiers then report n/a; MI is still valid.
     tr_labels = set(y[~np.isin(g, test_groups)].tolist())
@@ -193,14 +203,16 @@ def main():
         res[v] = r
         rows.append((v, mi, p, r["nearest-centroid"], r["5-NN"]))
     chance = 1 / len(np.unique(y))
-    data = {"views": res, "chance": chance, "test_clusters": n_clusters(g[np.isin(g, test_groups)]),
+    split = ("official test split" if all(str(t).startswith("test/") for t in test_groups)
+             else "second half of the sorted groups")
+    data = {"views": res, "chance": chance, "test_clusters": n_clusters(g[np.isin(g, test_groups)]), "split": split,
             "dummy_auc": {k: dummy_auc(samples[:4] if a.quick else samples, p) for k, p in POLICIES.items()},
             "pad_cost": pad_cost(sl)}
     data["meta"] = C.meta(a, inputs=[a.counts] if a.counts else [], dataset=a.dataset, synthetic=a.data is None,
                           split="by group (half of the groups for test)", ci="cluster bootstrap 95 % over test groups",
                           classifiers="nearest-centroid, 5-NN (GBT / 1-D CNN only on Kaggle)")
     md = ["# N5 leakage" + (" (synthetic smoke data)" if a.data is None and not a.counts else ""), "",
-          f"Chance level {chance:.3f}; {data['test_clusters']} test clusters."
+          f"Chance level {chance:.3f}; {data['test_clusters']} test clusters ({split})."
           + ("" if clf_ok else " Classifiers n/a: every test label is a group never seen in training "
              "(label = group, e.g. Event-ReId persons), so only MI is reported."), "",
           C.table(["view", "MI bits (total count)", "p (perm.)", "bal. acc. nearest-centroid", "bal. acc. 5-NN"], rows),
