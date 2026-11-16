@@ -329,3 +329,22 @@ def test_n4_trains_toward_plaintext_e2vid_targets_reset_per_recording():
     first = W_[0][2]
     assert np.allclose(first, tg[0][0]), f"N4 target is not the plaintext E2VID window (got mean {first.mean()})"
     assert N4.plain_targets(samples, win, None) == [None, None], "without E2VID: count-image fallback"
+
+
+def test_n4_control_f_starts_at_the_median_frame_and_learns_a_correction():
+    """Bug #69: control (f) was an MLP from ~300 counts to every pixel; on Event-ReId it did not even learn the mean
+    frame (0.29 vs 0.57 for the median), so every view was 'invalid'. It is now median + learned correction."""
+    torch = pytest.importorskip("torch")
+    import neuro_learned_attack as N4
+    rng = np.random.default_rng(0)
+    H, W, n = 6, 5, 4
+    med = rng.uniform(size=(H, W)).astype(np.float32)
+    _, f = N4.build(torch, H, W, n, median=med)
+    x = torch.from_numpy(rng.uniform(size=(3, n)).astype(np.float32))
+    out = f(x).detach().numpy().reshape(3, H, W)
+    assert np.allclose(out, med[None], atol=1e-6), "untrained control (f) must equal control (c), the median frame"
+    Y = np.stack([med * 0 + 0.9] * 8).astype(np.float32)                  # a target the counts could explain
+    X = rng.uniform(size=(8, n)).astype(np.float32)
+    f = N4.train(torch, f, X, Y.reshape(8, -1), 30, "cpu", 0, bs=8)
+    after = np.abs(f(torch.from_numpy(X)).detach().numpy() - Y.reshape(8, -1)).mean()
+    assert after < np.abs(med - 0.9).mean(), f"training did not move control (f) toward the target ({after})"

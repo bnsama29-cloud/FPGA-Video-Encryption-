@@ -89,7 +89,7 @@ def windows_of(samples, view, T, win_us, n_keys, rois=None, targets=None):
     return out
 
 
-def build(torch, H, W, n_counts):
+def build(torch, H, W, n_counts, median=None):
     nn = torch.nn
 
     class UNet(nn.Module):
@@ -111,8 +111,24 @@ def build(torch, H, W, n_counts):
             u = f.interpolate(d, size=a.shape[-2:])
             return torch.sigmoid(self.out(self.d1(torch.cat([u, a], 1))))[:, 0]
 
-    mlp = nn.Sequential(nn.Linear(n_counts, 256), nn.ReLU(), nn.Linear(256, H * W), nn.Sigmoid())
-    return UNet(), mlp
+    class CountNet(nn.Module):
+        """Control (f): the training-median frame plus a correction learned from the count series alone. The last
+        layer starts at zero, so before training it IS control (c), and training can only add what the counts reveal.
+        Bug #69: a plain MLP from ~300 counts to 307 200 pixels did not even learn the mean frame on Event-ReId
+        (SSIM 0.29 vs 0.57 for the median), so every view was reported invalid."""
+        def __init__(self):
+            super().__init__()
+            self.hidden = nn.Sequential(nn.Linear(n_counts, 256), nn.ReLU())
+            self.out = nn.Linear(256, H * W)
+            nn.init.zeros_(self.out.weight)
+            nn.init.zeros_(self.out.bias)
+            med = torch.zeros(H * W) if median is None else torch.as_tensor(median, dtype=torch.float32).reshape(-1)
+            self.register_buffer("median", med)
+
+        def forward(self, x):
+            return (self.median + self.out(self.hidden(x))).clamp(0, 1)
+
+    return UNet(), CountNet()
 
 
 def verdict(s_net, s_f, s_c, groups, seed=0):
@@ -225,8 +241,8 @@ def main():
         if not tr or not te:
             continue
         H, Wd = tr[0][2].shape
-        net, mlp = build(torch, H, Wd, len(tr[0][1]))
         X, Y = np.stack([w[0] for w in tr]), np.stack([w[2] for w in tr])
+        net, mlp = build(torch, H, Wd, len(tr[0][1]), median=np.median(Y, 0))
         M = np.stack([mask_of(w[4], H, Wd) for w in tr]) if boxed else None
         net = train(torch, net, X, Y, a.epochs, dev, a.seed, M=M)
         Xc = np.stack([w[1] for w in tr])
