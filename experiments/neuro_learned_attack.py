@@ -175,14 +175,27 @@ def _loss(torch, p, y, m):
     return ((p - y).abs() * m).sum() / m.sum().clamp(min=1.0)
 
 
-def train(torch, model, X, Y, epochs, dev, seed, bs=None, M=None, val=None):
+def masked_ssim(pred, tgt, mask=None):
+    """SSIM inside the scoring region (the bounding box of mask; the whole frame without one), as N3/N4 score."""
+    from skimage.metrics import structural_similarity
+    if mask is not None and mask.any():
+        r, c = np.flatnonzero(mask.any(1)), np.flatnonzero(mask.any(0))
+        pred, tgt = pred[r[0]:r[-1] + 1, c[0]:c[-1] + 1], tgt[r[0]:r[-1] + 1, c[0]:c[-1] + 1]
+    if min(pred.shape) < 7:
+        return float(1.0 - np.abs(pred - tgt).mean())
+    return float(structural_similarity(pred, tgt, data_range=1.0))
+
+
+def train(torch, model, X, Y, epochs, dev, seed, bs=None, M=None, val=None, shape=None):
     """L1 loss, over the scoring region only when M (masks shaped like Y) is given: on Event-ReId ~95 % of a frame is
     empty, and a full-frame loss rewards a blank prediction (TESTING bug #58).
 
-    val = (Xv, Yv, Mv or None): held-out training recordings. The weights with the lowest held-out loss are kept,
+    val = (Xv, Yv, Mv or None): held-out training recordings. The weights with the best held-out score are kept,
     the untrained model (epoch 0) included. For control (f) epoch 0 IS control (c), so (f) cannot end below (c) on
-    held-out data; without it the count correction overfit few recordings (bug #70). The attack network gets the
-    same rule, which can only make the attacker stronger."""
+    held-out data; without it the count correction overfit few recordings (bug #70). The score is the metric P1 uses,
+    SSIM inside the scoring region, when `shape` (H, W) is given: selecting by L1 kept blurry weights that beat the
+    median frame in L1 but lost to it in SSIM (Kaggle 16 Nov: control (f) 0.620 vs (c) 0.687; bug #72). The attack
+    network gets the same rule, which can only make the attacker stronger."""
     import copy
     bs = bs or batch_size(Y[0].size)             # pixels per sample (flattened for the MLP control, too)
     torch.manual_seed(seed)
@@ -192,13 +205,20 @@ def train(torch, model, X, Y, epochs, dev, seed, bs=None, M=None, val=None):
     Mt = torch.from_numpy(M) if M is not None else None
 
     def val_loss():
+        """Lower is better: held-out L1, or minus mean held-out SSIM when shape is given."""
         Xv, Yv, Mv = val
         tot, n = 0.0, 0
         with torch.no_grad():
             for i in range(0, len(Xv), bs):
                 p = model(torch.from_numpy(Xv[i:i + bs]).to(dev)).reshape(Yv[i:i + bs].shape)
-                m = None if Mv is None else torch.from_numpy(Mv[i:i + bs]).to(dev)
-                tot += float(_loss(torch, p, torch.from_numpy(Yv[i:i + bs]).to(dev), m)) * len(p)
+                if shape is not None:
+                    pn = p.cpu().numpy().reshape(-1, *shape)
+                    yn = Yv[i:i + bs].reshape(-1, *shape)
+                    mn = [None] * len(pn) if Mv is None else Mv[i:i + bs].reshape(-1, *shape)
+                    tot -= sum(masked_ssim(a, b, m) for a, b, m in zip(pn, yn, mn))
+                else:
+                    m = None if Mv is None else torch.from_numpy(Mv[i:i + bs]).to(dev)
+                    tot += float(_loss(torch, p, torch.from_numpy(Yv[i:i + bs]).to(dev), m)) * len(p)
                 n += len(p)
         return tot / max(1, n)
 
@@ -285,11 +305,11 @@ def main():
         fit, hold = holdout_split([w[3] for w in tr])          # by recording group, never by window
         sel = lambda A, i: None if A is None else A[i]          # noqa: E731
         net = train(torch, net, X[fit], Y[fit], a.epochs, dev, a.seed, M=sel(M, fit),
-                    val=(X[hold], Y[hold], sel(M, hold)) if len(hold) else None)
+                    val=(X[hold], Y[hold], sel(M, hold)) if len(hold) else None, shape=(H, Wd))
         Yf, Mf = Y.reshape(len(Y), -1), None if M is None else M.reshape(len(M), -1)
         Xn = Xc / max(1.0, Xc.max())
         mlp = train(torch, mlp, Xn[fit], Yf[fit], a.epochs, dev, a.seed, M=sel(Mf, fit),
-                    val=(Xn[hold], Yf[hold], sel(Mf, hold)) if len(hold) else None)
+                    val=(Xn[hold], Yf[hold], sel(Mf, hold)) if len(hold) else None, shape=(H, Wd))
         pn = predict(torch, net, np.stack([w[0] for w in te]), (H, Wd), dev)
         pc = predict(torch, mlp, np.stack([w[1] for w in te]) / max(1.0, Xc.max()), (H, Wd), dev)
         sn = [structural_similarity(C.in_roi(p, w[4]), C.in_roi(w[2], w[4]), data_range=1.0) for p, w in zip(pn, te)]

@@ -375,3 +375,32 @@ def test_n4_training_keeps_the_untrained_control_when_training_hurts_held_out_da
     f = N4.train(torch, f, X, Yfit, 20, "cpu", 0, bs=16, val=(X[:4], Yval, None))
     out = f(torch.from_numpy(X[:4])).detach().numpy()
     assert np.allclose(out, 0.5, atol=1e-6), f"held-out selection should keep the median frame, got {out.mean()}"
+
+
+def test_n4_masked_ssim_scores_the_same_region_as_the_test_metric():
+    """Bug #72: weights are selected by held-out SSIM in the scoring region; it must equal N4's test-time metric."""
+    from skimage.metrics import structural_similarity
+    import neuro_common as C
+    import neuro_learned_attack as N4
+    rng = np.random.default_rng(5)
+    p, t = rng.uniform(size=(40, 50)), rng.uniform(size=(40, 50))
+    box = (5, 30, 8, 41)
+    want = structural_similarity(C.in_roi(p, box), C.in_roi(t, box), data_range=1.0)
+    got = N4.masked_ssim(p, t, N4.mask_of(box, 40, 50))
+    assert abs(got - want) < 1e-12, f"selection SSIM {got} != test SSIM {want}"
+    assert abs(N4.masked_ssim(p, t) - structural_similarity(p, t, data_range=1.0)) < 1e-12, "no box: full frame"
+
+
+def test_n4_selection_by_ssim_keeps_the_median_frame_when_updates_hurt_held_out_ssim():
+    torch = pytest.importorskip("torch")
+    import neuro_learned_attack as N4
+    rng = np.random.default_rng(2)
+    H, W, n = 8, 8, 3
+    med = rng.uniform(0.2, 0.8, size=(H, W)).astype(np.float32)        # structured: SSIM of med vs med = 1
+    _, f = N4.build(torch, H, W, n, median=med)
+    X = rng.uniform(size=(16, n)).astype(np.float32)
+    Yfit = np.full((16, H * W), 0.5, np.float32)                         # pulls toward a flat frame ...
+    Yval = np.stack([med.reshape(-1)] * 4)                               # ... which ruins held-out structure
+    f = N4.train(torch, f, X, Yfit, 20, "cpu", 0, bs=16, val=(X[:4], Yval, None), shape=(H, W))
+    out = f(torch.from_numpy(X[:4])).detach().numpy().reshape(4, H, W)
+    assert np.allclose(out, med[None], atol=1e-6), "SSIM selection must keep the epoch-0 (median) weights"
