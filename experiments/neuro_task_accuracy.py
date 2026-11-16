@@ -17,7 +17,8 @@ Method (DESIGN §8.2 N6). Official train/test files (Tonic 1.7.0 loaders in neur
   * Cost (TESTING bug #62): sealing is Python and ~0.7 s (N-MNIST) / 20-50 s (DVS Gesture) per sample for the six
     views, so the clean model uses the whole training set (frames only) but the ciphertext rows and the decryption
     check use a fixed seeded subset (--ct-train / --ct-test, default N-MNIST 4000 / 2000, DVS Gesture 300 / all
-    264), sealed in parallel over --workers processes before PyTorch touches the GPU.
+    264), sealed in parallel over --workers processes before PyTorch touches the GPU. The decryption check runs on
+    --check (default 64) of the ciphertext test samples (bug #65: ~26 s per DVS Gesture recording).
 Writes sim_out/neuro/n6/task_accuracy.{json,md}.
 """
 import argparse
@@ -31,6 +32,10 @@ from neuro import evt2, keys, receiver
 from neuro.stats import mean_ci
 
 GATE = {"nmnist": 0.98, "dvsgesture": 0.90}
+# The decryption check seals and decrypts a sample again: ~26 s per DVS Gesture recording (profiled 16 Nov), i.e. ~2 h
+# for all 264 test recordings on top of the ~4.6 h of sealing. It shows exactness, not accuracy, so it runs on a fixed
+# seeded subset of the ciphertext test samples (TESTING bug #65).
+CHECK_N = 64
 CT_DEFAULT = {"nmnist": (4000, 2000), "dvsgesture": (300, 264)}     # ciphertext subset (train, test), full run
 CT_QUICK = {"nmnist": (40, 40), "dvsgesture": (16, 16)}   # QUICK: DVS Gesture costs 20-50 s per recording to seal
 _POOL = None                         # samples visible to the forked sealing workers (no pickling of event arrays)
@@ -145,6 +150,8 @@ def main():
     ap.add_argument("--views", nargs="+", default=["V1", "V2", "V3", "V4", "Du 2021", "Zhang 2024"])
     ap.add_argument("--ct-train", type=int, help="training samples sealed for row (ii) (default by dataset)")
     ap.add_argument("--ct-test", type=int, help="test samples sealed for rows (i), (ii) and the decryption check")
+    ap.add_argument("--check", type=int, default=CHECK_N,
+                    help="ciphertext test samples whose V3 decryption is checked (fixed seeded subset)")
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 1, help="processes that seal in parallel")
     a = ap.parse_args()
     try:
@@ -181,11 +188,12 @@ def main():
                         sealed_frames(ct_te, view, [10_000 + i for i in i_te], a.workers))
     global _POOL
     _POOL = ct_te
-    if a.workers > 1 and len(ct_te) >= 8:
+    i_ck = subset(ct_te, a.check, a.seed + 2)            # positions in ct_te; key of position k is k (as before)
+    if a.workers > 1 and len(i_ck) >= 8:
         with mp.get_context("fork").Pool(a.workers) as pool:
-            n_equal = int(sum(pool.map(_check_one, range(len(ct_te)))))
+            n_equal = int(sum(pool.map(_check_one, i_ck)))
     else:
-        n_equal = decrypt_check(ct_te)
+        n_equal = int(sum(_check_one(k) for k in i_ck))
     Xtr = np.stack([frame(s[0], geom) for s in tr_s])
     Xte = np.stack([frame(s[0], geom) for s in te_s])
     clean, models = [], []
@@ -210,7 +218,7 @@ def main():
     except ImportError:
         snn = "snnTorch not installed: SNN rows not run"
     data = {"results": res, "gate": {"threshold": gate_thr, "clean_mean": float(np.mean(clean)), "passes": bool(gate)},
-            "decrypted_event_equal": f"{n_equal} of {len(ct_te)}",
+            "decrypted_event_equal": f"{n_equal} of {len(i_ck)}",
             "ciphertext_subset": {"train": len(ct_tr), "test": len(ct_te), "of_train": len(tr_s), "of_test": len(te_s),
                                   "seed": a.seed},
             "chance": chance, "snn": snn,

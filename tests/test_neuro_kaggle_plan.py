@@ -54,3 +54,18 @@ def test_n6_quick_passes_quick_so_the_small_ciphertext_subset_is_used():
     assert q[q.index("--limit") + 1] == "300", f"QUICK N6 options {q}: clean model limit should be 300"
     full = n6_args(False, [0, 1, 2])
     assert full == "--seeds 0 1 2", f"full N6 options: got {full!r}, expected '--seeds 0 1 2'"
+
+
+def test_n6_datasets_default_and_narrowed():
+    """Bug #65: a second account runs N6 on DVS Gesture alone (N6_DATASETS=dvsgesture)."""
+    f = _fn("n6_datasets")
+    assert f(None) == ["nmnist", "dvsgesture"]
+    assert f(" DVSGesture ") == ["dvsgesture"]
+    with pytest.raises(SystemExit, match="cifar"):
+        f("dvsgesture,cifar")
+
+
+def test_n6_gets_the_session_budget_in_full_runs():
+    src = SRC.read_text(encoding="utf-8")
+    assert "N6_S = GPU_S if QUICK else DEADLINE_S" in src
+    assert 'limit=N6_S, want="wrote "' in src, "N6 must run under N6_S, not the 4-hour GPU_S"

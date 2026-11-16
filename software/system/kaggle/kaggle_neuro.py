@@ -199,6 +199,8 @@ sh(f"{sys.executable} -m pip install -q -e . tonic==1.7.0 expelliarmus zstandard
    f"scikit-image", "pip", check=QUICK)
 sh(f"{sys.executable} -c \"import tonic, torch; print('tonic', tonic.__version__, 'torch', torch.__version__, "
    f"'cuda', torch.cuda.is_available())\"", "assert imports", check=QUICK)
+print(f"CPU cores: {os.cpu_count()}", flush=True)     # N6 / N9 sealing scales with them (bug #65)
+BUDGET["cpu_count"] = os.cpu_count()
 print(f"free disk after setup: {free_gb():.1f} GB at {WORK}; data in {DATA} ({free_gb(DATA):.1f} GB free)", flush=True)
 
 # ---------------------------------------------------------------- data
@@ -215,7 +217,19 @@ def plan(part, steps=None):
 
 
 RUN = plan(PART, os.environ.get("STEPS"))
-NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid", "C": "nmnist dvsgesture"}[PART]
+
+
+def n6_datasets(env):
+    """N6 datasets, env N6_DATASETS (comma list) narrows them: a second account can run N6 on DVS Gesture alone."""
+    names = [d.strip().lower() for d in (env or "nmnist,dvsgesture").split(",") if d.strip()]
+    bad = [d for d in names if d not in ("nmnist", "dvsgesture")]
+    if bad or not names:
+        raise SystemExit(f"N6_DATASETS {env!r}: use nmnist and/or dvsgesture")
+    return names
+
+
+NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid",
+        "C": " ".join(n6_datasets(os.environ.get("N6_DATASETS")))}[PART]
 print("steps:", sorted(RUN), flush=True)
 ZIP_ARG = f"--zip-url '{DATA_ZIP}'" if DATA_ZIP else ""
 sh(f"{sys.executable} software/scripts/get_events.py --out {DATA} {NEED} --inputs /kaggle/input --inputs {INPUTS} "
@@ -331,10 +345,15 @@ def n6_args(quick, seeds):
     return "--quick --limit 300" if quick else "--seeds " + " ".join(map(str, seeds))
 
 
+# N6 on DVS Gesture seals ~564 recordings at ~31 s each with a fresh key per sample (the table cache cannot help):
+# ~4.9 CPU-h, so the 4-hour GPU_S cap could cut it on a slow machine (16 Nov, bug #65). Full runs give N6 the rest
+# of the 12-hour session instead; DEADLINE_S still stops it in time for the checkpoint.
+N6_S = GPU_S if QUICK else DEADLINE_S
 if "n6" in RUN:
-    for ds in ("nmnist", "dvsgesture"):
+    for ds in n6_datasets(os.environ.get("N6_DATASETS")):
         sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} "
-           f"{n6_args(QUICK, SEEDS)} --out {OUT}/n6/{ds}", f"N6 {ds}", limit=GPU_S, want="wrote ")
+           f"{n6_args(QUICK, SEEDS)} --out {OUT}/n6/{ds}", f"N6 {ds}", limit=N6_S, want="wrote ")
+        checkpoint()                 # each dataset's rows reach the zip as soon as they exist
     checkpoint()
 
 # ---------------------------------------------------------------- N4 learned attacker (GPU, last)

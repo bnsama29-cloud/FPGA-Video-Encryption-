@@ -230,3 +230,17 @@ def test_n6_parallel_sealing_equals_serial():
         serial = N6.sealed_frames(S, view, keys, 1)
         par = N6.sealed_frames(S, view, keys, 2)
         assert serial.shape == par.shape and np.array_equal(serial, par), f"{view}: parallel frames differ"
+
+
+def test_n6_decryption_check_runs_on_a_fixed_subset_and_still_decrypts():
+    """Bug #65: the V3 decryption check (~26 s per DVS Gesture recording) runs on --check (64) fixed samples."""
+    import neuro_common as C
+    import neuro_task_accuracy as N6
+    assert N6.CHECK_N == 64
+    ct_te = C.synthetic_samples(6, seed=4)
+    i_ck = N6.subset(ct_te, 3, 2)
+    assert i_ck == N6.subset(ct_te, 3, 2) and len(i_ck) == 3, i_ck            # fixed and seeded
+    N6._POOL = ct_te
+    got = [N6._check_one(k) for k in i_ck]
+    assert got == [1, 1, 1], f"positions {i_ck}: decryption event-equal flags {got}, expected all 1"
+    assert N6.subset(ct_te, N6.CHECK_N, 2) == list(range(6)), "fewer samples than --check: all are checked"
