@@ -100,3 +100,20 @@ def test_hw_table_shows_the_strategy(tmp_path):
     assert p.returncode == 0, p.stdout + p.stderr
     builds = {b["build"]: b["impl"] for b in json.loads((tmp_path / "hw_tables.json").read_text())["builds"]}
     assert builds == {"nv_top_u2": "fast+perf", "nv_feistel": "perf"}, builds
+
+
+@pytest.mark.parametrize("log,rc,word", [
+    ("OVERLAY written ...\nRESULT overlay fclk=100MHz U=2 WNS=0.412ns\n", 0, "meets"),
+    ("RESULT overlay fclk=100MHz U=2 WNS=-1.205ns\n", 1, "misses"),          # paper 1 bug #20: never "built"
+    ("ERROR: [Place 30-640] ...\n", 1, "no 'RESULT overlay'"),
+])
+def test_bd_step_fails_without_timing_or_result(log, rc, word):
+    sys.path.insert(0, str(ROOT / "hardware" / "vivado" / "neuro"))
+    import run_vivado_neuro as R
+    got_rc, msg = R.overlay_status(log)
+    assert (got_rc, word in msg) == (rc, True), f"log {log!r}: got ({got_rc}, {msg!r}), expected rc {rc} with {word!r}"
+
+
+def test_bd_script_prints_the_overlay_wns():
+    tcl = (ROOT / "software" / "system" / "board" / "neuro" / "block_design_neuro.tcl").read_text()
+    assert 'puts "RESULT overlay fclk=${fclk}MHz U=$U WNS=${wns}ns"' in tcl

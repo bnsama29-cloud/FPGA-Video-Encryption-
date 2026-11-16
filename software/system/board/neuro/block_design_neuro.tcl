@@ -98,3 +98,8 @@ file copy -force $bit [file join $outdir nv.bit]
 set hwh [glob -nocomplain [file join $projdir pynq_neuro.gen sources_1 bd system hw_handoff system.hwh]]
 if {$hwh ne ""} { file copy -force [lindex $hwh 0] [file join $outdir nv.hwh] }
 puts "OVERLAY written to $outdir (nv.bit, nv.hwh) U=$U FCLK0=$fclk MHz"
+# The routed slack, as paper 1's block_design.tcl prints it: run_vivado_neuro.py fails the bd step when WNS < 0, so a
+# bitstream that misses FCLK0 is never reported as built (paper 1's first overlay missed by 3.1 ns, TESTING bug #20).
+set wns [get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]]
+puts "RESULT overlay fclk=${fclk}MHz U=$U WNS=${wns}ns"
+puts "WNS must be >= 0 before nv.bit is used on the board."

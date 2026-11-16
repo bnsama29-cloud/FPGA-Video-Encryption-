@@ -21,6 +21,7 @@ Each job's log goes to sim_build/vivado_neuro_logs/<job>.log; a failed job does 
 """
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -61,6 +62,18 @@ def done(name):
     """True when this job's log already holds its RESULT line (a finished build)."""
     log = LOGS / f"{name}.log"
     return log.exists() and "RESULT top=" in log.read_text(errors="replace")
+
+
+def overlay_status(text):
+    """(rc, message) of the bd step from its log: 0 only with a RESULT overlay line and WNS >= 0 (paper 1 checks the
+    same line; a bitstream that misses its clock must not be reported as built)."""
+    m = re.search(r"RESULT overlay .*WNS=(-?[\d.]+)ns", text)
+    if not m:
+        return 1, "bd: no 'RESULT overlay' line (implementation or bitstream failed; see the log)"
+    wns = float(m.group(1))
+    if wns < 0:
+        return 1, f"bd: overlay misses its clock (WNS = {wns} ns): do not use nv.bit"
+    return 0, f"bd: overlay meets its clock (WNS = {wns} ns)"
 
 
 def run_job(name, cmd, dry):
@@ -113,8 +126,12 @@ def main():
         with ThreadPoolExecutor(max_workers=max(1, a.jobs)) as ex:
             results = list(ex.map(lambda t: run_job(t[0], t[1], a.dry), todo))
     if "bd" in a.steps:
-        results.append(run_job("bd", [exe or vivado(), "-mode", "batch", "-nojournal", "-nolog", "-source",
-                                      "software/system/board/neuro/block_design_neuro.tcl"], a.dry))
+        name, rc, dt = run_job("bd", [exe or vivado(), "-mode", "batch", "-nojournal", "-nolog", "-source",
+                                      "software/system/board/neuro/block_design_neuro.tcl"], a.dry)
+        if not a.dry:
+            rc, msg = overlay_status((LOGS / "bd.log").read_text(errors="replace"))
+            print(msg)
+        results.append((name, rc, dt))
     if "power" in a.steps and not os.getenv("NV_SAIF"):
         print("power: NV_SAIF not set; the tables use the vectorless estimate (labelled)")
     if "parse" in a.steps:
