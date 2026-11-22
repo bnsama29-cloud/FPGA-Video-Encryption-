@@ -117,3 +117,33 @@ def test_bd_step_fails_without_timing_or_result(log, rc, word):
 def test_bd_script_prints_the_overlay_wns():
     tcl = (ROOT / "software" / "system" / "board" / "neuro" / "block_design_neuro.tcl").read_text()
     assert 'puts "RESULT overlay fclk=${fclk}MHz U=$U WNS=${wns}ns"' in tcl
+
+
+def test_resume_reuses_a_build_only_from_the_same_sources(tmp_path, monkeypatch):
+    """Bug #76: --resume reused any log with a RESULT line, including builds of the RTL before bug #71's fix."""
+    sys.path.insert(0, str(ROOT / "hardware" / "vivado" / "neuro"))
+    import run_vivado_neuro as R
+    monkeypatch.setattr(R, "LOGS", tmp_path)
+    (tmp_path / "top_u2_34x34.log").write_text("...\nRESULT top=nv_top WNS=0.1\n")
+    assert R.done("top_u2_34x34", "abc") is False, "a log without a .src stamp is from unknown sources"
+    (tmp_path / "top_u2_34x34.src").write_text("abc\n")
+    assert R.done("top_u2_34x34", "abc") is True
+    assert R.done("top_u2_34x34", "def") is False, "sources changed since the build: rebuild"
+    (tmp_path / "core_u1.log").write_text("ERROR: out of memory\n")
+    (tmp_path / "core_u1.src").write_text("abc\n")
+    assert R.done("core_u1", "abc") is False, "no RESULT line: not built"
+
+
+def test_sources_hash_ignores_line_endings_and_sees_rtl_edits(tmp_path):
+    sys.path.insert(0, str(ROOT / "hardware" / "vivado" / "neuro"))
+    import run_vivado_neuro as R
+    rtl = tmp_path / "hardware" / "rtl" / "neuro"
+    rtl.mkdir(parents=True)
+    (tmp_path / "hardware" / "vivado" / "neuro").mkdir(parents=True)
+    (rtl / "a.v").write_bytes(b"module a;\nendmodule\n")
+    h = R.sources_hash(tmp_path)
+    (rtl / "a.v").write_bytes(b"module a;\r\nendmodule\r\n")          # Windows checkout
+    assert R.sources_hash(tmp_path) == h, "CRLF must not look like an RTL change"
+    (rtl / "a.v").write_bytes(b"module a; wire w;\nendmodule\n")
+    assert R.sources_hash(tmp_path) != h, "an RTL edit must change the hash"
+    assert R.sources_hash() == R.sources_hash(), "deterministic"

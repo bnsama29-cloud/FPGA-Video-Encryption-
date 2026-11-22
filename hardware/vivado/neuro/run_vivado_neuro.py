@@ -20,6 +20,7 @@ The N2b walk ablation (nv_feistel_walk) is not built: the walk variant exists in
 Each job's log goes to sim_build/vivado_neuro_logs/<job>.log; a failed job does not stop the others.
 """
 import argparse
+import hashlib
 import os
 import re
 import shutil
@@ -58,10 +59,29 @@ def vivado():
     return exe
 
 
-def done(name):
-    """True when this job's log already holds its RESULT line (a finished build)."""
-    log = LOGS / f"{name}.log"
-    return log.exists() and "RESULT top=" in log.read_text(errors="replace")
+SOURCES = ["hardware/rtl/**/*.v", "hardware/rtl/**/*.vh", "hardware/rtl/**/*.sv", "hardware/vivado/neuro/*.tcl",
+           "hardware/vivado/neuro/*.xdc"]
+
+
+def sources_hash(root=None):
+    """SHA-256 of every RTL source and the Vivado scripts, line endings normalised (a Windows checkout has CRLF).
+    A build is only reused by --resume when it was made from exactly these sources (TESTING bug #76)."""
+    root = Path(root or ROOT)
+    h = hashlib.sha256()
+    for pat in SOURCES:
+        for f in sorted(root.glob(pat)):
+            h.update(f.relative_to(root).as_posix().encode() + b"\0")
+            h.update(f.read_bytes().replace(b"\r\n", b"\n") + b"\0")
+    return h.hexdigest()
+
+
+def done(name, current=None):
+    """True when this job's log holds its RESULT line AND its .src stamp equals the current sources_hash().
+    Before 22 Nov a RESULT line alone counted, so --resume reused builds of older RTL (bug #76)."""
+    log, stamp = LOGS / f"{name}.log", LOGS / f"{name}.src"
+    if not (log.exists() and "RESULT top=" in log.read_text(errors="replace")):
+        return False
+    return stamp.exists() and stamp.read_text().strip() == (current or sources_hash())
 
 
 def overlay_status(text):
@@ -97,6 +117,8 @@ def run_job(name, cmd, dry):
         rc = rc or 1
         if attempt == 1 and any("[Synth " in l or "[DRC " in l for l in errors):
             break                          # a design / tool error repeats: do not spend another hour on it
+    if "RESULT top=" in log.read_text(errors="replace"):
+        (LOGS / f"{name}.src").write_text(sources_hash() + "\n")       # which sources this build was made from
     print(f"{name}: rc={rc} in {time.time() - t0:.0f} s (log {log})")
     return name, rc, time.time() - t0
 
@@ -109,16 +131,19 @@ def main():
     ap.add_argument("--dry", action="store_true", help="print the commands only")
     ap.add_argument("--impl", choices=["fast", "perf"], default="fast", help="Vivado implementation strategy")
     ap.add_argument("--resume", action="store_true",
-                    help="skip jobs whose log already has a RESULT line (continue an interrupted run)")
+                    help="skip jobs already built from the current sources (RESULT line and matching .src stamp)")
     a = ap.parse_args()
     os.environ["NV_IMPL"] = a.impl                 # read by vivado_ooc_neuro.tcl (inherited by every Vivado job)
     exe = "vivado" if a.dry else None
     todo = []
+    current = sources_hash()
     for s in a.steps:
         for name, args in jobs_for(s):
-            if a.resume and done(name):
-                print(f"{name}: already built (RESULT line in {LOGS / (name + '.log')}), skipped")
+            if a.resume and done(name, current):
+                print(f"{name}: already built from the current sources ({LOGS / (name + '.log')}), skipped")
                 continue
+            if a.resume and (LOGS / f"{name}.log").exists():
+                print(f"{name}: log is from other or unknown sources, rebuilt")
             todo.append((name, [exe or vivado(), "-mode", "batch", "-nojournal", "-nolog", "-source", TCL,
                                 "-tclargs", *args]))
     results = []
