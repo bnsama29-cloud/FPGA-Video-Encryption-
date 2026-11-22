@@ -1,0 +1,5 @@
+wrote E:\FPGA-Video-Encryption-\neuro_wt\sim_out\neuro\n2\hw_tables.json and .md
+power real_v2: 1524 events in 130409 clk, bit-exact; report sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720/power_saif_real_v2.txt
+power real_v3: 1524 events in 130409 clk, bit-exact; report sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720/power_saif_real_v3.txt
+power dense_v2: 80000 events in 102779 clk, bit-exact; report sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720/power_saif_dense_v2.txt
+power dense_v3: 80000 events in 102779 clk, bit-exact; report sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720/power_saif_dense_v3.txt

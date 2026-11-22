@@ -1,0 +1,32 @@
+{
+ "level": 3,
+ "events": 1524,
+ "words_in": 2279,
+ "words_out": 3514,
+ "packets": 65,
+ "source": "user24_fluorescent/0.npy (sha256 425c54c9b4e8e89b13f839b8704c1dbd6d2b7cfc46158f25fd969a42a5a18f40)",
+ "start_ms": 2000,
+ "ms": 64,
+ "T_us": 1024,
+ "meta": {
+  "commit": "ef5cb5869cfc2a6a2cbea79f3ea4514232e30228",
+  "date": "2026-11-22 15:28:24",
+  "argv": [
+   "--level",
+   "3",
+   "--npy",
+   "sim_build\\power_input\\ibmGestureTest\\user24_fluorescent\\0.npy",
+   "--out",
+   "E:\\FPGA-Video-Encryption-\\neuro_wt\\sim_build\\nv_power_real_v3"
+  ],
+  "inputs": {},
+  "args": {
+   "npy": "sim_build\\power_input\\ibmGestureTest\\user24_fluorescent\\0.npy",
+   "level": 3,
+   "rate": 10000,
+   "start_ms": 2000,
+   "ms": 64,
+   "out": "E:\\FPGA-Video-Encryption-\\neuro_wt\\sim_build\\nv_power_real_v3"
+  }
+ }
+}

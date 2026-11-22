@@ -1,0 +1,32 @@
+{
+ "level": 2,
+ "events": 80000,
+ "words_in": 80126,
+ "words_out": 80316,
+ "packets": 10,
+ "source": "synthetic: 10000 events/ms, uniform pixels (neuro.vectors.events, seed 0)",
+ "start_ms": 2000,
+ "ms": 8,
+ "T_us": 1024,
+ "meta": {
+  "commit": "ef5cb5869cfc2a6a2cbea79f3ea4514232e30228",
+  "date": "2026-11-22 15:31:50",
+  "argv": [
+   "--level",
+   "2",
+   "--ms",
+   "8",
+   "--out",
+   "E:\\FPGA-Video-Encryption-\\neuro_wt\\sim_build\\nv_power_dense_v2"
+  ],
+  "inputs": {},
+  "args": {
+   "npy": null,
+   "level": 2,
+   "rate": 10000,
+   "start_ms": 2000,
+   "ms": 8,
+   "out": "E:\\FPGA-Video-Encryption-\\neuro_wt\\sim_build\\nv_power_dense_v2"
+  }
+ }
+}

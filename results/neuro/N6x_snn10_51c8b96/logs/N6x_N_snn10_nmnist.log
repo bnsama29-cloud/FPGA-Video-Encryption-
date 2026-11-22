@@ -1,0 +1,14 @@
+$ /usr/bin/python3 experiments/neuro_task_accuracy.py --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist --config N_snn10 --views "V1" "V2" "V3" "V4" "Du 2021" "Zhang 2024" --seeds 0 1 2 --out /kaggle/working/repo/sim_out/neuro/n6x/N_snn10/nmnist
+
+clean seed 0: 0.9896
+clean seed 1: 0.9910
+clean seed 2: 0.9902
+sealed V1
+sealed V2
+sealed V3
+sealed V4
+sealed Du 2021
+sealed Zhang 2024
+wrote /kaggle/working/repo/sim_out/neuro/n6x/N_snn10/nmnist/task_accuracy.json and .md
+
+ok
