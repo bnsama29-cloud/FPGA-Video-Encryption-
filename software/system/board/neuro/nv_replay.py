@@ -71,6 +71,15 @@ def first_mismatch(got, ref):
     return None
 
 
+def pl_busy_rate(c, fclk_mhz):
+    """WORDS_IN per second of the clocks in which the PL had input (CYCLES - IN_WAIT): the fabric's own rate, without
+    the gaps in which the ARM / DMA offered nothing. None when IN_WAIT saturated (2^32 - 1) or nothing was counted."""
+    if c.get("IN_WAIT", 0) >= 0xFFFFFFFF or not c.get("CYCLES"):
+        return None
+    busy = c["CYCLES"] - c["IN_WAIT"]
+    return c["WORDS_IN"] * fclk_mhz * 1e6 / busy if busy > 0 else None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     src = ap.add_mutually_exclusive_group(required=True)
@@ -135,9 +144,11 @@ def main():
            "fclk_mhz_read_back": fclk, "level": a.level, "T_us": a.T, "words_in": int(len(words)), "packets": len(got),
            "bit_exact": first is None, "first_mismatch": first, "counters": c,
            "pl_words_per_s": (c["WORDS_IN"] / pl_s) if pl_s > 0 else None,
+           "pl_busy_words_per_s": pl_busy_rate(c, fclk),
            "end_to_end_words_per_s": len(words) / wall, "wall_s": wall, "udp_messages": sent,
-           "note": "PL rate from CYCLES (clocks since ENABLE: includes idle input time in timed mode); the mock's "
-                   "CYCLES is host time, not a hardware number"}
+           "note": "pl_words_per_s: WORDS_IN over CYCLES (clocks since ENABLE, idle input included); "
+                   "pl_busy_words_per_s: over CYCLES - IN_WAIT (clocks with input); the mock's CYCLES is host time, "
+                   "not a hardware number"}
     print(json.dumps({k: v for k, v in res.items() if k != "counters"}, indent=1))
     Path(a.out).mkdir(parents=True, exist_ok=True)
     mode = "timed" if a.timed else "max"

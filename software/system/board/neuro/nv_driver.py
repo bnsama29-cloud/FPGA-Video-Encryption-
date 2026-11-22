@@ -9,8 +9,8 @@ The register sequence is the one verified in simulation (hardware/tb/neuro/test_
     counters  : CTRL = ENABLE | SNAP, then read (64-bit pairs are consistent)
 
 Backends
-    PynqBackend : the board (needs `pynq` and overlay/neuro/nv.bit + nv.hwh from block_design_neuro.tcl).
-                  UNTESTED until the bitstream exists.
+    PynqBackend : the board (needs `pynq` and overlay/neuro/nv.bit + nv.hwh from block_design_neuro.tcl);
+                  checked against a fake of pynq (tests/test_neuro_board_pynq.py) until the first board run.
     MockBackend : the golden model (neuro.sender.Encryptor) behind the same register interface; used by the
                   --mock paths of nv_first_contact.py / nv_replay.py and by tests/test_neuro_board.py.
 
@@ -147,9 +147,24 @@ class MockBackend:
 
 
 class PynqBackend:
-    """The PYNQ-Z2 overlay (UNTESTED until overlay/neuro/nv.bit exists)."""
+    """The PYNQ-Z2 overlay (overlay/neuro/nv.bit + nv.hwh from block_design_neuro.tcl; cells `nv` and `dma`).
 
-    def __init__(self, bitfile, max_words=1 << 22, max_packet_bytes=1 << 20, fclk_mhz=None):
+    Checked against a model-backed fake of pynq's Overlay / DMA / cacheable buffers (tests/test_neuro_board_pynq.py)
+    before the first board run. Follows the paper-1 board lessons (software/system/board/pynq_driver.py):
+      * cache: the input words are flushed and every received packet invalidated before it is read (the buffers
+        from allocate() are cacheable; the DMA sees memory, the ARM its cache);
+      * no pynq channel.wait() without a deadline (it hung the first paper-1 board run, bug #32): `idle` is
+        polled and a timeout raises with the DMA status registers;
+      * the receive channel is never stopped mid-transfer: one S2MM transfer stays armed until a packet (tlast)
+        completes it, and the next one is armed at once, so output never backs up into the input;
+      * push() returns the packets completed so far without waiting (a fixed wait per chunk would cap the replay
+        rate); drain(), after FLUSH, waits until no packet completes for quiet_s.
+    """
+
+    S2MM_LENGTH, MM2S_SR, S2MM_SR = 0x58, 0x04, 0x34
+
+    def __init__(self, bitfile, max_words=1 << 22, max_packet_bytes=1 << 20, fclk_mhz=None, timeout_s=5.0,
+                 quiet_s=0.05):
         from pynq import Overlay, allocate
         from system.board.pynq_driver import built_fclk_mhz, choose_fclk
         self.ol = Overlay(str(bitfile))
@@ -166,6 +181,8 @@ class PynqBackend:
         self.dma = self.ol.dma
         self.inbuf = allocate(shape=(max_words,), dtype=np.uint32)
         self.outbuf = allocate(shape=(max_packet_bytes // 4,), dtype=np.uint32)
+        self.timeout_s, self.quiet_s = timeout_s, quiet_s
+        self.armed = False
 
     def write(self, addr, value):
         self.ip.write(addr, value & 0xFFFFFFFF)
@@ -173,32 +190,61 @@ class PynqBackend:
     def read(self, addr):
         return self.ip.read(addr)
 
-    def _recv_packets(self, until_idle_s=0.05):
-        out = []
-        while True:
+    def _regs(self):
+        return (f"STATUS=0x{self.read(STATUS):x} MM2S_SR=0x{self.dma.mmio.read(self.MM2S_SR):08x} "
+                f"S2MM_SR=0x{self.dma.mmio.read(self.S2MM_SR):08x}")
+
+    def _arm(self):
+        if not self.armed:
             self.dma.recvchannel.transfer(self.outbuf)
-            t0 = time.monotonic()
-            while not self.dma.recvchannel.idle:
-                if time.monotonic() - t0 > until_idle_s:
-                    self.dma.recvchannel.stop()         # no further packet: the encryptor is waiting for input
-                    self.dma.recvchannel.start()
-                    return out
-            n = self.dma.mmio.read(0x58)                 # S2MM_LENGTH: bytes of this packet
-            out.append(self.outbuf[:n // 4].tobytes())
+            self.armed = True
+
+    def _take(self, out):
+        """Collect the packet of a completed receive transfer (if any) and arm the next one; True if one came."""
+        if not (self.armed and self.dma.recvchannel.idle):
+            return False
+        self.dma.recvchannel.wait()                       # idle: returns at once, raises on a DMA error
+        n = self.dma.mmio.read(self.S2MM_LENGTH)          # bytes of this packet (tlast ended the transfer)
+        if n % 4 or n > 4 * len(self.outbuf):
+            raise RuntimeError(f"S2MM length {n} bytes: not a whole packet of 32-bit words ({self._regs()})")
+        view = self.outbuf[:n // 4]
+        view.invalidate()
+        out.append(np.array(view, dtype=np.uint32).tobytes())
+        self.armed = False
+        self._arm()
+        return True
+
+    def _collect(self, out):
+        """Receive packets until none completes for quiet_s (the encryptor holds the open packet until it closes)."""
+        self._arm()
+        t = time.monotonic()
+        while True:
+            if self._take(out):
+                t = time.monotonic()
+            elif time.monotonic() - t > self.quiet_s:
+                return out
 
     def transfer(self, words):
         w = np.asarray(words, dtype=np.uint32)
         out = []
         for i in range(0, len(w), len(self.inbuf)):
             chunk = w[i:i + len(self.inbuf)]
-            self.inbuf[:len(chunk)] = chunk
-            self.dma.sendchannel.transfer(self.inbuf, nbytes=4 * len(chunk))
-            out += self._recv_packets()
+            view = self.inbuf[:len(chunk)]
+            view[:] = chunk
+            view.flush()
+            self._arm()
+            self.dma.sendchannel.transfer(view)
+            t0 = time.monotonic()
+            while not self.dma.sendchannel.idle:          # receive while sending: packets must not back up
+                if not self._take(out) and time.monotonic() - t0 > self.timeout_s:
+                    raise TimeoutError(f"MM2S not finished after {self.timeout_s} s ({self._regs()})")
             self.dma.sendchannel.wait()
+        while self._take(out):                            # packets already complete; the rest come with the next
+            pass                                          # push or drain() (the receive channel stays armed)
         return out
 
     def drain(self):
-        return self._recv_packets()
+        return self._collect([])
 
 
 class NvIP:
