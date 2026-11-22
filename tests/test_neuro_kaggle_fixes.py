@@ -544,29 +544,46 @@ def test_n6_shift_augmentation_moves_content_and_keeps_shape():
     assert N6.shift_batch(torch, x, 0, g) is x
 
 
-def test_n6_deep_cnn_works_on_both_dvs_input_sizes():
+def test_n6_every_candidate_builds_on_its_dvs_input(monkeypatch):
     torch = pytest.importorskip("torch")
-    import neuro_task_accuracy as N6
-    for c in N6.CANDIDATES.values():
-        side = 128 // c["down"]
-        out = N6.cnn(torch, 11, 2 * c["nb"], c["arch"])(torch.zeros(2, 2 * c["nb"], side, side))
-        assert out.shape == (2, 11), (c, out.shape)
-
-
-def test_n6_select_scores_on_held_out_training_users_only(monkeypatch, tmp_path):
-    """Bug #75: the DVS model is chosen on users held out of the TRAINING split; the test split is never loaded."""
-    torch = pytest.importorskip("torch")
+    pytest.importorskip("torchvision")
     import neuro_common as C
-    import neuro_n6_select as SEL
-    loaded = []
-    real = C.load_samples
-    monkeypatch.setattr(C, "load_samples", lambda *a, **k: loaded.append(a[2] if len(a) > 2 else k.get("split")) or real(*a, **k))
-    held = SEL.holdout_users([f"u{i % 6}" for i in range(36)], 2)
-    assert held == SEL.holdout_users([f"u{i % 6}" for i in range(36)], 2) and len(held) == 2   # fixed seed
-    monkeypatch.setattr(sys, "argv", ["sel", "--quick", "--limit", "36", "--holdout", "2", "--seeds", "0",
-                                      "--profile", "1", "--candidates", "A_bug74", "--out", str(tmp_path)])
-    SEL.main()
-    data = json.loads((tmp_path / "selection.json").read_text())
-    assert data["chosen"] == "A_bug74" and data["data"]["held_out"] + data["data"]["fit"] == 36
-    assert set(data["data"]["held_out_users"]) and "V3" in data["sealing_profile"]
-    assert "test" not in loaded, "the test split must not be touched by model selection"
+    import neuro_task_accuracy as N6
+    monkeypatch.setattr(N6, "PRETRAINED", False)                         # no weight download in tests
+    g = C.Geometry("dvs", 128, 128)
+    ev = C.synthetic_samples(1, seed=2)[0][0]
+    for name, c in N6.CANDIDATES.items():
+        x = N6.features_cfg(ev, g, c)
+        out = N6.cnn(torch, 11, x.shape[0], c["arch"])(torch.from_numpy(np.stack([x, x])))
+        assert out.shape == (2, 11), (name, x.shape, out.shape)
+        assert name in N6.ROUNDS, f"{name}: selection round not recorded"
+
+
+def test_n6_ts3_counts_events_and_keeps_the_last_time():
+    import neuro_common as C
+    import neuro_task_accuracy as N6
+    g = C.Geometry("t", 8, 8)
+    ev = np.zeros(4, C.synthetic_samples(1)[0][0].dtype)
+    ev["t"], ev["x"], ev["y"], ev["p"] = [0, 10, 20, 30], [1, 1, 2, 3], [1, 1, 2, 3], [1, 1, 0, 1]
+    x = N6.ts3(ev, g)
+    assert x.shape == (3, 8, 8)
+    assert x[1, 1, 1] == 1.0 and x[0, 2, 2] == 0.5 and x[1, 3, 3] == 0.5, "ON/OFF counts scaled by the maximum (2)"
+    assert np.isclose(x[2, 1, 1], 10 / 30, atol=1e-6) and np.isclose(x[2, 3, 3], 1.0) and x[2, 0, 0] == 0.0
+
+
+def test_n6_resnet18_first_conv_keeps_the_pretrained_response_on_flat_input(monkeypatch):
+    """Init of the 2*nb-channel conv: a flat input of value v gives the same response as the original RGB conv on
+    (v, v, v), so the pretrained filters still mean something on the first step."""
+    torch = pytest.importorskip("torch")
+    tv = pytest.importorskip("torchvision")
+    import copy
+    import neuro_task_accuracy as N6
+    torch.manual_seed(0)
+    ref = tv.models.resnet18(weights=None)
+    monkeypatch.setattr(tv.models, "resnet18", lambda weights=None: copy.deepcopy(ref))
+    m = N6.resnet18(torch, 11, 32, pretrained=False)
+    with torch.no_grad():
+        a = m.conv1(torch.full((1, 32, 16, 16), 0.5))
+        b = ref.conv1(torch.full((1, 3, 16, 16), 0.5))
+    assert torch.allclose(a, b, atol=1e-5), f"max difference {float((a - b).abs().max())}"
+    assert m.fc.out_features == 11

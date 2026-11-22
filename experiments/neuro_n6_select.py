@@ -59,9 +59,9 @@ def main():
     rows, res, cache = [], {}, {}
     for name in a.candidates:
         cfg = N6.CANDIDATES[name]
-        key = (cfg["nb"], cfg["down"])
+        key = (cfg.get("feat", "bins"), cfg["nb"], cfg["down"])
         if key not in cache:
-            cache[key] = np.stack([N6.features(s[0], geom, cfg["nb"], cfg["down"]) for s in S])
+            cache[key] = np.stack([N6.features_cfg(s[0], geom, cfg) for s in S])
         X = cache[key]
         accs = []
         t0 = time.time()
@@ -72,7 +72,8 @@ def main():
             print(f"{name} seed {sd}: held-out accuracy {acc:.4f}", flush=True)
         res[name] = {"config": cfg, "held_out_accuracy": accs, "mean": float(np.mean(accs)),
                      "train_s": round(time.time() - t0, 1)}
-        rows.append((name, str(cfg), " / ".join(f"{v:.3f}" for v in accs), f"{np.mean(accs):.3f}", res[name]["train_s"]))
+        res[name]["round"] = N6.ROUNDS.get(name)
+        rows.append((name, N6.ROUNDS.get(name), str(cfg), " / ".join(f"{v:.3f}" for v in accs), f"{np.mean(accs):.3f}", res[name]["train_s"]))
     best = max(res, key=lambda k: res[k]["mean"])
     gate = N6.GATE.get(a.dataset)
 
@@ -97,8 +98,11 @@ def main():
           f"Training split only: {stats['fit']} recordings to fit, {stats['held_out']} of held-out users {held} to "
           f"score. Median {stats['events_median']:.0f} events and {stats['duration_s_median']:.2f} s per recording "
           f"(max {stats['events_max']} events); class counts {stats['class_counts']}.", "",
-          C.table(["candidate", "config", "held-out accuracy per seed", "mean", "train s"], rows), "",
-          f"Chosen: {best} (mean {res[best]['mean']:.3f}); gate of the full run on the test split: {gate}.", "",
+          C.table(["candidate", "round", "config", "held-out accuracy per seed", "mean", "train s"], rows), "",
+          f"Chosen: {best} (mean {res[best]['mean']:.3f}) of {len(res)} candidates over "
+          f"{len({N6.ROUNDS.get(k) for k in res})} selection round(s) on the same held-out users (report the count: "
+          f"choosing the best of several on one split is itself optimistic); gate of the full run on the test split: "
+          f"{gate}.", "",
           C.table(["view", "sealing s per recording (mean)"], [(v, f"{p['mean_s']:.1f}") for v, p in prof.items()]),
           "", f"Estimated sealing of the full N6 run ({n_tr} + {n_te} recordings, 4 processes): {est_h:.1f} h."]
     C.write("n6sel", "selection", data, "\n".join(md), a.out)

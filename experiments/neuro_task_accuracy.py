@@ -46,7 +46,16 @@ CANDIDATES = {   # fixed before the selection run (22 Nov 2026)
     "A_bug74": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
     "B_deep16": dict(nb=16, arch="deep", epochs=60, shift=8, down=1),
     "C_deep16_64px": dict(nb=16, arch="deep", epochs=100, shift=4, down=2),
+    # Round 2, fixed 22 Nov 2026 after round 1 (A-C) reached at most 0.785 on the held-out users: an ImageNet-
+    # pretrained ResNet-18, the backbone of the event-representation literature (EST, Gehrig et al. 2019).
+    # D: 3 channels ON count, OFF count, time of the last event per pixel (keeps motion direction);
+    # E / F: 16 time bins through a first convolution initialised from the mean of the pretrained RGB filters.
+    "D_rn18_ts3": dict(nb=1, feat="ts3", arch="resnet18", epochs=40, shift=8, down=1),
+    "E_rn18_bins16": dict(nb=16, arch="resnet18", epochs=40, shift=8, down=1),
+    "F_rn18_bins16_64px": dict(nb=16, arch="resnet18", epochs=60, shift=4, down=2),
 }
+ROUNDS = {"A_bug74": 1, "B_deep16": 1, "C_deep16_64px": 1, "D_rn18_ts3": 2, "E_rn18_bins16": 2,
+          "F_rn18_bins16_64px": 2}
 # The decryption check seals and decrypts a sample again: ~26 s per DVS Gesture recording (profiled 16 Nov), i.e. ~2 h
 # for all 264 test recordings on top of the ~4.6 h of sealing. It shows exactness, not accuracy, so it runs on a fixed
 # seeded subset of the ciphertext test samples (TESTING bug #65).
@@ -57,7 +66,7 @@ CT_QUICK = {"nmnist": (40, 40), "dvsgesture": (16, 16)}   # QUICK: DVS Gesture c
 
 def _seal_one(job):
     ev, geom, view, key, cfg = job
-    return features(view_events(ev, geom, view, key), geom, cfg["nb"], cfg["down"])
+    return features_cfg(view_events(ev, geom, view, key), geom, cfg)
 
 
 def _check_one(job):
@@ -103,6 +112,29 @@ def bins(ev, geom, nb=10):
     return out
 
 
+def ts3(ev, geom):
+    """(3, H, W): ON count, OFF count (each scaled by its maximum) and the time of each pixel's last event, scaled
+    to [0, 1] over the sample (0 where no event): one image that still shows where motion went last."""
+    out = np.zeros((3, geom.H, geom.W), np.float32)
+    if len(ev):
+        p, y, x = ev["p"].astype(int), ev["y"].astype(int), ev["x"].astype(int)
+        np.add.at(out, (p, y, x), 1.0)
+        out[:2] /= max(1.0, float(out[:2].max()))
+        t = ev["t"].astype(np.float64)
+        tn = (t - t.min()) / max(1.0, t.max() - t.min())
+        last = np.zeros((geom.H, geom.W))
+        np.maximum.at(last, (y, x), tn + 1e-9)       # events are time-ordered, max = last; +eps marks "seen"
+        out[2] = np.clip(last, 0.0, 1.0).astype(np.float32)
+    return out
+
+
+def features_cfg(ev, geom, cfg):
+    """features() of a CONFIG / CANDIDATES entry."""
+    if cfg.get("feat") == "ts3":
+        return ts3(ev, geom)
+    return features(ev, geom, cfg["nb"], cfg["down"])
+
+
 def features(ev, geom, nb=1, down=1):
     """CNN input (2 nb, H / down, W / down): ON / OFF counts in nb equal time bins of the sample, summed over
     down x down pixel blocks, scaled by the sample's maximum. nb = down = 1 is frame()."""
@@ -139,6 +171,24 @@ def decrypt_check(samples, T=1024, base=0):
     return ok
 
 
+def resnet18(torch, classes, in_ch, pretrained=True):
+    """torchvision ResNet-18 (ImageNet weights when pretrained) with a new classifier; for in_ch != 3 the first
+    convolution gets in_ch input channels, each initialised with the mean of the pretrained RGB filters x 3 / in_ch."""
+    import torchvision
+    w = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
+    m = torchvision.models.resnet18(weights=w)
+    if in_ch != 3:
+        old = m.conv1
+        m.conv1 = torch.nn.Conv2d(in_ch, 64, 7, 2, 3, bias=False)
+        with torch.no_grad():
+            m.conv1.weight.copy_(old.weight.mean(1, keepdim=True).repeat(1, in_ch, 1, 1) * 3.0 / in_ch)
+    m.fc = torch.nn.Linear(m.fc.in_features, classes)
+    return m
+
+
+PRETRAINED = True          # tests set False (no download)
+
+
 def cnn(torch, classes, in_ch=2, arch="small"):
     """Two blocks of two conv-BN-ReLU layers (32, 64 channels), each max-pooled, then adaptive pooling to 8 x 8,
     dropout and two linear layers (bug #74: the previous two-layer CNN stayed under the N-MNIST gate)."""
@@ -146,6 +196,8 @@ def cnn(torch, classes, in_ch=2, arch="small"):
 
     def blk(i, o):
         return [nn.Conv2d(i, o, 3, padding=1), nn.BatchNorm2d(o), nn.ReLU()]
+    if arch == "resnet18":
+        return resnet18(torch, classes, in_ch, PRETRAINED)
     if arch == "deep":           # four conv-BN-ReLU-pool stages (32, 64, 128, 128), as the DVS Gesture CNNs of the
         layers, c = [], in_ch    # SpikingJelly examples; global pooling keeps it valid for any input size
         for o in (32, 64, 128, 128):
@@ -240,8 +292,8 @@ def main():
     fit = dict(arch=cfg["arch"], shift=cfg["shift"])
     # 1. Gate first (bug #75): the clean model needs no sealing, and a failed gate ends the run here, in minutes,
     #    instead of after hours of sealing whose rows the gate would discard.
-    Xtr = np.stack([features(s[0], geom, cfg["nb"], cfg["down"]) for s in tr_s])
-    Xte = np.stack([features(s[0], geom, cfg["nb"], cfg["down"]) for s in te_s])
+    Xtr = np.stack([features_cfg(s[0], geom, cfg) for s in tr_s])
+    Xte = np.stack([features_cfg(s[0], geom, cfg) for s in te_s])
     clean, models = [], []
     for sd in a.seeds:
         m, acc = fit_eval(torch, Xtr, ytr, Xte, yte, classes, cfg["epochs"], sd, dev, **fit)
