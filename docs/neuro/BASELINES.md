@@ -157,8 +157,9 @@ N6 on N-MNIST (Kaggle, commit 9a58dfa, frame CNN on the whole-sample ON/OFF coun
 Conclusion for the paper: the reimplementation is faithful; Zhang's protection does not hold against a
 time-independent count-image classifier trained on its ciphertext, because the scheme leaves the real events in
 place. The anchor is reported as failed, with this explanation, not tuned away. Du 2021 (0.279 vs 0.11-0.19) is
-reported the same way; its permutation is keyed per pixel and fixed for the whole recording, which a CNN trained on
-ciphertext can partly learn.
+reported the same way; we have not traced its cause. With a fresh key per sample, Du's permutation is new for every
+sample and, by §1.3, not updated inside an N-MNIST sample (one update per ~7 900 events at 34 x 34), so what a CNN
+can use is what a permutation keeps: the multiset of per-pixel event counts and the event rate, as for our V2.
 
 ---
 
