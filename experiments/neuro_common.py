@@ -125,6 +125,12 @@ def master(i):
     return hashlib.sha256(b"neuro-exp-master-%d" % i).digest()[:16]
 
 
+def pad_policies():
+    """The padding policies of N5 and N6 (DESIGN §5): name -> PadPolicy."""
+    from neuro.pad import FLOOR, LADDER, PadPolicy
+    return {"floor 4": PadPolicy(FLOOR, 4), "floor 16": PadPolicy(FLOOR, 16), "ladder 2..64": PadPolicy(LADDER, 2, 64)}
+
+
 def protect(events, geom, level, T_us=1024, ts_bits=None, pad=None, key_index=0, epoch=0):
     """Sealed packets (list of bytes) of an event array, PSK profile, master `key_index`."""
     if ts_bits is None:

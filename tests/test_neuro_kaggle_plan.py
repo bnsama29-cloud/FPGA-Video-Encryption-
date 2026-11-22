@@ -120,3 +120,13 @@ def test_n6x_configs_are_the_extra_models_of_n6():
     with pytest.raises(SystemExit):
         ns["n6x_configs"]("N_foo")
     assert plan("C", "n6x") == {"n6x"} and "n6x" not in plan("C")
+
+
+def test_n12_reid_is_a_part_b_step_on_request():
+    """22 Nov: N12 (re-identification on Event-ReId) runs in part B (which fetches Event-ReId), only when asked."""
+    assert plan("B", "n12") == {"n12"}
+    assert "n12" not in plan("B")
+    with pytest.raises(SystemExit):
+        plan("C", "n12")
+    src = SRC.read_text(encoding="utf-8")
+    assert "experiments/neuro_reid.py --data {DATA}/eventreid" in src

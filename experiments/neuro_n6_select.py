@@ -67,7 +67,7 @@ def main():
         t0 = time.time()
         for sd in a.seeds:
             _, acc = N6.fit_eval(torch, X[~va], y[~va], X[va], y[va], classes, 2 if a.quick else cfg["epochs"], sd,
-                                 dev, arch=cfg["arch"], shift=cfg["shift"])
+                                 dev, **N6.fit_args(cfg))
             accs.append(acc)
             print(f"{name} seed {sd}: held-out accuracy {acc:.4f}", flush=True)
         res[name] = {"config": cfg, "held_out_accuracy": accs, "mean": float(np.mean(accs)),

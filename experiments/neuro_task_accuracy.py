@@ -53,6 +53,12 @@ CANDIDATES = {   # fixed before the selection run (22 Nov 2026)
     "D_rn18_ts3": dict(nb=1, feat="ts3", arch="resnet18", epochs=40, shift=8, down=1),
     "E_rn18_bins16": dict(nb=16, arch="resnet18", epochs=40, shift=8, down=1),
     "F_rn18_bins16_64px": dict(nb=16, arch="resnet18", epochs=60, shift=4, down=2),
+    # Round 3, fixed 22 Nov 2026 after round 2 (best 0.762): not a new design but the published DVS Gesture recipe of
+    # AnonyNoise (Bendig et al., WACV 2025, Sec. 4.2 and Table 5), whose target network reached 92.4 % on the test
+    # split: ImageNet ResNet-50, 2T = 10 histogram channels (T = 5), AdamW 1e-4 with cosine decay, batch 32,
+    # 200 epochs, random crop after zero padding by 1/12 of the size (shift 10 of 128); their 15 degree rotation is
+    # not used.
+    "G_anonynoise_rn50": dict(nb=5, arch="resnet50", epochs=200, shift=10, down=1, lr=1e-4, bs=32),
 }
 # Extra N6 models (22 Nov 2026), run with --config, each against the gate of its dataset:
 #   N_bins8 / N_ts3: does the verdict on a view depend on the input representation? Zhang 2024 scrambles time and
@@ -63,9 +69,11 @@ EXTRA = {
     "N_bins8": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
     "N_ts3": dict(nb=1, feat="ts3", arch="small", epochs=20, shift=0, down=1),
     "N_snn10": dict(nb=10, arch="snn", epochs=20, shift=0, down=1),
+    # N_bins8 (the strongest keyless attacker of 22 Nov: 0.40 on V3) against V3 with N5's padding policies
+    "N_bins8_pad": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
 }
 ROUNDS = {"A_bug74": 1, "B_deep16": 1, "C_deep16_64px": 1, "D_rn18_ts3": 2, "E_rn18_bins16": 2,
-          "F_rn18_bins16_64px": 2}
+          "F_rn18_bins16_64px": 2, "G_anonynoise_rn50": 3}
 # The decryption check seals and decrypts a sample again: ~26 s per DVS Gesture recording (profiled 16 Nov), i.e. ~2 h
 # for all 264 test recordings on top of the ~4.6 h of sealing. It shows exactness, not accuracy, so it runs on a fixed
 # seeded subset of the ciphertext test samples (TESTING bug #65).
@@ -159,6 +167,9 @@ def features(ev, geom, nb=1, down=1):
 def view_events(ev, geom, view, k, T=1024):
     if view == "clear":
         return ev
+    if view.startswith("V") and " + pad " in view:          # e.g. "V3 + pad floor 16" (N5's policies, DESIGN §5)
+        pol = C.pad_policies()[view.split(" + pad ")[1]]
+        return C.keyless_events(C.protect(ev, geom, int(view[1]), T, pad=pol, key_index=k))
     if view.startswith("V"):
         return C.keyless_events(C.protect(ev, geom, int(view[1]), T, key_index=k))
     if view == "Du 2021":
@@ -181,12 +192,17 @@ def decrypt_check(samples, T=1024, base=0):
     return ok
 
 
-def resnet18(torch, classes, in_ch, pretrained=True):
-    """torchvision ResNet-18 (ImageNet weights when pretrained) with a new classifier; for in_ch != 3 the first
-    convolution gets in_ch input channels, each initialised with the mean of the pretrained RGB filters x 3 / in_ch."""
+def resnet18(torch, classes, in_ch, pretrained=True, depth=18):
+    """torchvision ResNet-18 (or -50 with depth=50; ImageNet weights when pretrained) with a new classifier; for
+    in_ch != 3 the first convolution gets in_ch input channels, each initialised with the mean of the pretrained RGB
+    filters x 3 / in_ch."""
     import torchvision
-    w = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
-    m = torchvision.models.resnet18(weights=w)
+    if depth == 50:
+        w = torchvision.models.ResNet50_Weights.IMAGENET1K_V2 if pretrained else None
+        m = torchvision.models.resnet50(weights=w)
+    else:
+        w = torchvision.models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None
+        m = torchvision.models.resnet18(weights=w)
     if in_ch != 3:
         old = m.conv1
         m.conv1 = torch.nn.Conv2d(in_ch, 64, 7, 2, 3, bias=False)
@@ -254,6 +270,8 @@ def cnn(torch, classes, in_ch=2, arch="small"):
         return snn(torch, classes, in_ch)
     if arch == "resnet18":
         return resnet18(torch, classes, in_ch, PRETRAINED)
+    if arch == "resnet50":
+        return resnet18(torch, classes, in_ch, PRETRAINED, depth=50)
     if arch == "deep":           # four conv-BN-ReLU-pool stages (32, 64, 128, 128), as the DVS Gesture CNNs of the
         layers, c = [], in_ch    # SpikingJelly examples; global pooling keeps it valid for any input size
         for o in (32, 64, 128, 128):
@@ -276,14 +294,20 @@ def shift_batch(torch, x, s, gen):
     return torch.stack([xp[k, :, d[k, 0]:d[k, 0] + h, d[k, 1]:d[k, 1] + w] for k in range(n)])
 
 
-def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64, arch="small", shift=0):
-    """Train a fresh cnn() with AdamW and a one-cycle learning rate (peak 3e-3), return (model, test accuracy)."""
+def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64, arch="small", shift=0, lr=None):
+    """Train a fresh cnn() with AdamW, return (model, test accuracy). lr None: one-cycle learning rate (peak 3e-3);
+    lr given: AdamW at lr with cosine decay to 0 (the fine-tuning recipe of AnonyNoise, Bendig et al. WACV 2025)."""
     torch.manual_seed(seed)
     gen = torch.Generator().manual_seed(seed)
     m = cnn(torch, classes, Xtr.shape[1], arch).to(dev)
-    opt = torch.optim.AdamW(m.parameters(), 1e-3)
     Xt, yt = torch.from_numpy(Xtr), torch.from_numpy(ytr).long()
-    sch = torch.optim.lr_scheduler.OneCycleLR(opt, 3e-3, total_steps=max(1, epochs * ((len(Xt) + bs - 1) // bs)))
+    steps = max(1, epochs * ((len(Xt) + bs - 1) // bs))
+    if lr is None:
+        opt = torch.optim.AdamW(m.parameters(), 1e-3)
+        sch = torch.optim.lr_scheduler.OneCycleLR(opt, 3e-3, total_steps=steps)
+    else:
+        opt = torch.optim.AdamW(m.parameters(), lr)
+        sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps)
     for _ in range(epochs):
         m.train()
         perm = torch.randperm(len(Xt))
@@ -295,6 +319,11 @@ def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64, arch=
             opt.step()
             sch.step()
     return m, evaluate(torch, m, Xte, yte, dev)
+
+
+def fit_args(cfg):
+    """fit_eval keyword arguments of a CONFIG / CANDIDATES / EXTRA entry (lr and bs only where the entry sets them)."""
+    return {k: cfg[k] for k in ("arch", "shift", "lr", "bs") if k in cfg}
 
 
 def evaluate(torch, m, X, y, dev):
@@ -348,7 +377,7 @@ def main():
     i_tr, i_te = subset(tr_s, n_tr, a.seed), subset(te_s, n_te, a.seed + 1)
     ct_tr, ct_te = [tr_s[i] for i in i_tr], [te_s[i] for i in i_te]
     ytr_ct, yte_ct = ytr[i_tr], yte[i_te]
-    fit = dict(arch=cfg["arch"], shift=cfg["shift"])
+    fit = fit_args(cfg)
     # 1. Gate first (bug #75): the clean model needs no sealing, and a failed gate ends the run here, in minutes,
     #    instead of after hours of sealing whose rows the gate would discard.
     Xtr = np.stack([features_cfg(s[0], geom, cfg) for s in tr_s])

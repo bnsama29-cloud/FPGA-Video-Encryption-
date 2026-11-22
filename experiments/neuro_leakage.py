@@ -32,10 +32,10 @@ import numpy as np
 import neuro_common as C
 from neuro import evt2
 from neuro.packet import packetize
-from neuro.pad import FLOOR, LADDER, PadPolicy, bucket_target, bucket_targets, pad_packet
+from neuro.pad import FLOOR, bucket_target, bucket_targets, pad_packet
 from neuro.stats import cluster_bootstrap_ci, mi_perm_null, n_clusters, quantize
 
-POLICIES = {"floor 4": PadPolicy(FLOOR, 4), "floor 16": PadPolicy(FLOOR, 16), "ladder 2..64": PadPolicy(LADDER, 2, 64)}
+POLICIES = C.pad_policies()          # shared with neuro_task_accuracy.py (N6 padded views)
 
 
 def series_from_samples(samples):

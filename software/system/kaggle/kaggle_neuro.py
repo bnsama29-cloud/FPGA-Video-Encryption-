@@ -229,6 +229,7 @@ def plan(part, steps=None):
     run = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[part]
     allowed = run | ({"n6sel", "n6x"} if part == "C" else set())  # on request only: n6sel model selection (bug
     #                                                                    #75), n6x extra N6 models (22 Nov)
+    allowed |= {"n12"} if part == "B" else set()  # on request only: N12 re-identification on Event-ReId (22 Nov)
     if steps:
         want = {s.strip().lower() for s in steps.split(",") if s.strip()}
         if not want <= allowed:
@@ -360,6 +361,13 @@ if "n3" in RUN:
        f"--out {OUT}/n3/synthetic", "N3 synthetic (v2e-lite, exact ground truth)", limit=GPU_S, want="wrote ")
     checkpoint()
 
+# ---------------------------------------------------------------- N12 re-identification (GPU, on request)
+if "n12" in RUN:
+    sh(f"{sys.executable} experiments/neuro_reid.py --data {DATA}/eventreid "
+       f"{'--quick --limit 16 --train-persons 2' if QUICK else ''} --out {OUT}/n12", "N12 reid eventreid",
+       limit=GPU_S if QUICK else DEADLINE_S, want="wrote ")
+    checkpoint()
+
 # ---------------------------------------------------------------- N6 task accuracy (GPU)
 def n6_args(quick, seeds):
     """N6 options. QUICK passes --quick (seed 0, 2 epochs and the small ciphertext subset CT_QUICK) plus --limit 300 for
@@ -379,7 +387,8 @@ if "n6sel" in RUN:
         checkpoint()
 
 N6X_VIEWS = {"N_bins8": '"V2" "V3" "Du 2021" "Zhang 2024"', "N_ts3": '"V2" "V3" "Du 2021" "Zhang 2024"',
-             "N_snn10": '"V1" "V2" "V3" "V4" "Du 2021" "Zhang 2024"'}
+             "N_snn10": '"V1" "V2" "V3" "V4" "Du 2021" "Zhang 2024"',
+             "N_bins8_pad": '"V3" "V3 + pad floor 4" "V3 + pad floor 16" "V3 + pad ladder 2..64"'}
 
 
 def n6x_configs(env):

@@ -622,3 +622,44 @@ def test_n6_config_option_runs_an_extra_model(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, "argv", ["n6", "--quick", "--config", "nope", "--out", str(tmp_path)])
     with pytest.raises(SystemExit, match="nope"):
         N6.main()
+
+
+def test_n6_padded_view_adds_dummies_by_policy():
+    """22 Nov: N6x N_bins8_pad tests V3 with N5's padding; the view must really pad (more CD events than V3) and
+    floor 16 must pad more than floor 4."""
+    sys.path.insert(0, str(ROOT / "experiments"))
+    import neuro_task_accuracy as N6
+    import neuro_common as C
+    ev, _, _, geom, _ = C.synthetic_samples(1, 0)[0]
+    n = {v: len(N6.view_events(ev, geom, v, 0)) for v in ("V3", "V3 + pad floor 4", "V3 + pad floor 16")}
+    assert n["V3"] == len(ev), n
+    assert n["V3"] < n["V3 + pad floor 4"] < n["V3 + pad floor 16"], n
+    assert set(C.pad_policies()) == {"floor 4", "floor 16", "ladder 2..64"}
+    with pytest.raises(KeyError):
+        N6.view_events(ev, geom, "V3 + pad floor 99", 0)
+
+
+def test_n6_round3_anonynoise_recipe_reaches_training(monkeypatch):
+    """Round 3 (22 Nov): G_anonynoise_rn50 is AnonyNoise's recipe; its lr / bs must reach fit_eval (fit_args), the
+    lr path must use AdamW at that lr with cosine decay, and the model is a ResNet-50 on 2T = 10 channels."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("torchvision")
+    import neuro_task_accuracy as N6
+    monkeypatch.setattr(N6, "PRETRAINED", False)
+    g = N6.CANDIDATES["G_anonynoise_rn50"]
+    assert N6.fit_args(g) == {"arch": "resnet50", "shift": 10, "lr": 1e-4, "bs": 32}
+    assert N6.fit_args(N6.CANDIDATES["A_bug74"]) == {"arch": "small", "shift": 0}, "older entries: unchanged"
+    assert N6.ROUNDS["G_anonynoise_rn50"] == 3
+    seen = {}
+    real = torch.optim.lr_scheduler.CosineAnnealingLR
+
+    def spy(opt, steps):
+        seen["lr"], seen["steps"] = opt.param_groups[0]["lr"], steps
+        return real(opt, steps)
+    monkeypatch.setattr(torch.optim.lr_scheduler, "CosineAnnealingLR", spy)
+    X = np.random.default_rng(0).random((6, 10, 32, 32)).astype(np.float32)
+    y = np.array([0, 1, 2, 0, 1, 2])
+    m, acc = N6.fit_eval(torch, X, y, X, y, 3, 1, 0, "cpu", **N6.fit_args(g))
+    assert seen == {"lr": 1e-4, "steps": 1}, seen                 # 1 epoch x ceil(6 / 32) batches
+    assert type(m).__name__ == "ResNet" and m.conv1.in_channels == 10 and len(m.layer3) == 6   # ResNet-50: 6 blocks
+    assert 0.0 <= acc <= 1.0
