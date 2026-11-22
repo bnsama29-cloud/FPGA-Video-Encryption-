@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_adjacency_attack.py --dataset eventreid --data /kaggle/temp/kneuro_data/eventreid  --out /kaggle/working/repo/sim_out/neuro/n4b/eventreid
+
+wrote /kaggle/working/repo/sim_out/neuro/n4b/eventreid/adjacency.json and .md
+
+ok

@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_leakage.py --counts /kaggle/working/repo/sim_out/neuro/n5/eventreid_counts.npz --dataset eventreid --data /kaggle/temp/kneuro_data/eventreid  --out /kaggle/working/repo/sim_out/neuro/n5/eventreid
+
+wrote /kaggle/working/repo/sim_out/neuro/n5/eventreid/leakage.json and .md
+
+ok

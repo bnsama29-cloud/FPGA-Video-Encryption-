@@ -1,0 +1,5 @@
+$ git clone --depth 1 -b cedric/firenet https://github.com/cedric-scheerlinck/rpg_e2vid.git /kaggle/working/ext/rpg_e2vid
+
+Cloning into '/kaggle/working/ext/rpg_e2vid'...
+
+ok

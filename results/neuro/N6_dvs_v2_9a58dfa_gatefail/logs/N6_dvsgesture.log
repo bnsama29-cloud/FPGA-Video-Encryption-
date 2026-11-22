@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_task_accuracy.py --dataset dvsgesture --data /kaggle/temp/kneuro_data/dvsgesture --seeds 0 1 2 --out /kaggle/working/repo/sim_out/neuro/n6/dvsgesture
+
+wrote /kaggle/working/repo/sim_out/neuro/n6/dvsgesture/task_accuracy.json and .md
+
+ok

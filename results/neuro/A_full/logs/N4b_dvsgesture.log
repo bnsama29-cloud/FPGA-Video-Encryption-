@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_adjacency_attack.py --dataset dvsgesture --data /kaggle/temp/kneuro_data/dvsgesture  --out /kaggle/working/repo/sim_out/neuro/n4b/dvsgesture
+
+wrote /kaggle/working/repo/sim_out/neuro/n4b/dvsgesture/adjacency.json and .md
+
+ok

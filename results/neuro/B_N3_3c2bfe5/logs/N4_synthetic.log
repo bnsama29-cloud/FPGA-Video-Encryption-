@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_learned_attack.py --dataset synthetic --keys 5  --out /kaggle/working/repo/sim_out/neuro/n4/synthetic
+
+wrote /kaggle/working/repo/sim_out/neuro/n4/synthetic/learned_attack.json and .md
+
+ok

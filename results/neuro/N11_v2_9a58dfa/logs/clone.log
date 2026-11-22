@@ -1,0 +1,5 @@
+$ git clone --depth 1 -b neuromorphic https://github.com/bnsama29-cloud/FPGA-Video-Encryption-.git /kaggle/working/repo
+
+Cloning into '/kaggle/working/repo'...
+
+ok

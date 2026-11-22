@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_overhead.py --dataset dvsgesture --data /kaggle/temp/kneuro_data/dvsgesture --limit 12  --out /kaggle/working/repo/sim_out/neuro/n9/dvsgesture
+
+wrote /kaggle/working/repo/sim_out/neuro/n9/dvsgesture/overhead.json and .md
+
+ok

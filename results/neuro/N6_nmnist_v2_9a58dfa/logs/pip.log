@@ -1,0 +1,4 @@
+$ /usr/bin/python3 -m pip install -q -e . tonic==1.7.0 expelliarmus zstandard snntorch h5py scipy pandas scikit-image
+
+
+ok

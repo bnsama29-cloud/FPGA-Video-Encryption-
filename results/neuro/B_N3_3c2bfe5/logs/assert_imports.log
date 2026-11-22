@@ -1,0 +1,5 @@
+$ /usr/bin/python3 -c "import tonic, torch; print('tonic', tonic.__version__, 'torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+
+tonic 1.7.0 torch 2.11.0+cu130 cuda True
+
+ok

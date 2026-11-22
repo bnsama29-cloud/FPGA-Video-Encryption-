@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_active_attacks.py --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist  --out /kaggle/working/repo/sim_out/neuro/n7
+
+wrote /kaggle/working/repo/sim_out/neuro/n7/active_attacks.json and .md
+
+ok

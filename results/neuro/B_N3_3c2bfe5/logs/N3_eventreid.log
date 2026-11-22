@@ -1,0 +1,11 @@
+$ /usr/bin/python3 experiments/neuro_recon_attack.py --dataset eventreid --data /kaggle/temp/kneuro_data/eventreid --keys 5  --recon-repo /kaggle/working/ext/rpg_e2vid --recon-ckpt e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar firenet=/kaggle/working/ext/firenet.pth.tar --out /kaggle/working/repo/sim_out/neuro/n3/eventreid
+
+Loading model /kaggle/working/ext/E2VID_lightweight.pth.tar...
+/kaggle/working/repo/experiments/neuro_recon_attack.py:118: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  torch.load = lambda f, *a, **k: torch_load(f, *a, **{"map_location": self.dev, **k})
+Using TransposedConvLayer (fast, with checkerboard artefacts)
+Loading model /kaggle/working/ext/firenet.pth.tar...
+Using UpsampleConvLayer (slow, but no checkerboard artefacts)
+wrote /kaggle/working/repo/sim_out/neuro/n3/eventreid/recon_attack.json and .md
+
+ok

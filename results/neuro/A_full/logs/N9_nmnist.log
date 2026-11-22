@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_overhead.py --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist   --out /kaggle/working/repo/sim_out/neuro/n9/nmnist
+
+wrote /kaggle/working/repo/sim_out/neuro/n9/nmnist/overhead.json and .md
+
+ok

@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_overhead.py --dataset eventreid --data /kaggle/temp/kneuro_data/eventreid --limit 8  --out /kaggle/working/repo/sim_out/neuro/n9/eventreid
+
+wrote /kaggle/working/repo/sim_out/neuro/n9/eventreid/overhead.json and .md
+
+ok

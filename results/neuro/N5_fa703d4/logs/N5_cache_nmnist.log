@@ -1,0 +1,5 @@
+$ /usr/bin/python3 -c "import sys; sys.path.insert(0, 'experiments'); import neuro_common as C; from neuro import datasets as D; S = [s for sp in ['train', 'test'] for s in C.load_samples('nmnist', '/kaggle/temp/kneuro_data/nmnist', sp, 0 or None)]; print(D.cache_counts(((e, l, g, m) for e, l, g, m, _ in S), '/kaggle/working/repo/sim_out/neuro/n5/nmnist_counts.npz'), 'samples')"
+
+70000 samples
+
+ok

@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_adjacency_attack.py --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist  --out /kaggle/working/repo/sim_out/neuro/n4b/nmnist
+
+wrote /kaggle/working/repo/sim_out/neuro/n4b/nmnist/adjacency.json and .md
+
+ok

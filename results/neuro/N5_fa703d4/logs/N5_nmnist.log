@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_leakage.py --counts /kaggle/working/repo/sim_out/neuro/n5/nmnist_counts.npz --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist  --out /kaggle/working/repo/sim_out/neuro/n5/nmnist
+
+wrote /kaggle/working/repo/sim_out/neuro/n5/nmnist/leakage.json and .md
+
+ok

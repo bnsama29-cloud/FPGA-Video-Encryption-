@@ -19,4 +19,5 @@ its script.
 | `security/research/` | Research suite R1-R8 (cycles per pixel, lanes, rate control, size side channel, chosen plaintext) | see `docs/RESEARCH.md` |
 | `security/first_runs/` | Format compliance in standard decoders, software codec baselines, first jigsaw run, visual-security grid | `software/system/figures/format_compliance.py`, `software/system/baselines/bench_software_codecs.py` |
 | `simulation/` | System simulation of the link (attack suite, benign impairments, policy comparison and seeds), model benchmark and RTL cycles, Ascon rate, leakage on the synthetic scene and the real clips; `run_log_kaggle.json` is the log of the cloud run | `experiments/scenario.py`, `experiments/compare_policies.py`, `software/system/kaggle/kaggle_runs.py` |
+| `neuro/` | Paper 2 (event-camera encryption): every finished Kaggle run, one folder each with kernel and commit | `software/scripts/save_kaggle_neuro.py` (runs from `software/system/kaggle/kaggle_neuro.py`) |
 | `results_tables.md` | All tables collected into one file | `python -m system.figures.results_tables` |

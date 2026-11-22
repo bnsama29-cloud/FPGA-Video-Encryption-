@@ -1,0 +1,6 @@
+$ /usr/bin/python3 experiments/neuro_perm_strength.py --dataset dvsgesture --data /kaggle/temp/kneuro_data/dvsgesture  --out /kaggle/working/repo/sim_out/neuro/n8
+
+WARNING: The timestamps are not monotonic.
+wrote /kaggle/working/repo/sim_out/neuro/n8/perm_strength.json and .md
+
+ok

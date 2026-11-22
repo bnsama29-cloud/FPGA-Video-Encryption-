@@ -1,0 +1,4 @@
+$ /usr/bin/python3 experiments/neuro_overhead.py --dataset dvsgesture --data /kaggle/temp/kneuro_data/dvsgesture   --out /kaggle/working/repo/sim_out/neuro/n9/dvsgesture
+
+
+TIMEOUT after 120 min

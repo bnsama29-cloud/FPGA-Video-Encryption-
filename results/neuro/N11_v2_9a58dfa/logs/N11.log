@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_fpe_utility.py --dataset eventreid --data /kaggle/temp/kneuro_data/eventreid --limit 10  --out /kaggle/working/repo/sim_out/neuro/n11
+
+wrote /kaggle/working/repo/sim_out/neuro/n11/fpe_utility.json and .md
+
+ok

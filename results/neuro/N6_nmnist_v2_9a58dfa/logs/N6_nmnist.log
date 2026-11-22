@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_task_accuracy.py --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist --seeds 0 1 2 --out /kaggle/working/repo/sim_out/neuro/n6/nmnist
+
+wrote /kaggle/working/repo/sim_out/neuro/n6/nmnist/task_accuracy.json and .md
+
+ok
