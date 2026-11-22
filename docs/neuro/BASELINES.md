@@ -135,6 +135,31 @@ Random guess 0.1. Our anchor (DESIGN §8.3): our Zhang reimplementation with a f
 ciphertext must land within ±3 pp of the 0.06-0.14 range for the frame-based rows (N6, row (ii)). The paper's
 §5 states the algorithm is at least quadratic in time with non-deterministic runtime; we report our runtime in N9.
 
+### 2.3 Anchor result (22 Nov 2026) and why it differs
+
+N6 on N-MNIST (Kaggle, commit 9a58dfa, frame CNN on the whole-sample ON/OFF count image): Zhang ciphertext row (ii)
+0.966, Du row (ii) 0.279, against the anchors 0.06-0.14 and 0.11-0.19. Both anchors fail. Re-reading the paper
+(fetched 22 Nov from the IOP open-access PDF) against `zhang2024.py`:
+
+- The construction matches: `Ẽ = E ∪ N` (Algorithm 1, line 8) keeps every real event at its own pixel and time;
+  noise fills the mask with |N| = |E_c| per neighbour, recursively. The key is the set of real pixels (eq. 7). A
+  count image of the ciphertext is therefore the plaintext count image plus a halo whose per-pixel counts copy the
+  nearest real pixel's count, outward; on three N-MNIST test digits the ciphertext and plaintext count images
+  correlate at 0.95-0.98 (local check, 17 Nov).
+- What the scheme does scramble is time and polarity: noise times grow as 1.05^d with the recursion depth d (up to
+  ~4x the sample's duration at 34 x 34) and λ flips polarity by pixel parity. Representations that bin by time
+  over the stream's extent (the voxel grids / EST of the classifiers in their Table 1) compress the real events into
+  the first fraction of the bins; a count image ignores time and is untouched.
+- Their Fig. 5(a) shows TRAINING accuracy on their ciphertext of 0.03-0.07 for 60 epochs, below the 0.10 of
+  chance. A classifier that cannot fit its own training set below chance points at the representation (or the
+  pipeline), not at the absence of information, since the real events are all present.
+
+Conclusion for the paper: the reimplementation is faithful; Zhang's protection does not hold against a
+time-independent count-image classifier trained on its ciphertext, because the scheme leaves the real events in
+place. The anchor is reported as failed, with this explanation, not tuned away. Du 2021 (0.279 vs 0.11-0.19) is
+reported the same way; its permutation is keyed per pixel and fixed for the whole recording, which a CNN trained on
+ciphertext can partly learn.
+
 ---
 
 ## 3. What is not reproduced
