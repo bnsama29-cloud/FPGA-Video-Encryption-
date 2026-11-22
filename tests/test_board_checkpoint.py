@@ -95,3 +95,11 @@ def test_pull_unpacks_only_the_result_folders_and_lists_them(tmp_path):
     assert rows["lanes2_final_640"][2].startswith("timing only")
     assert rows["v2_final"][1] == "stopped" and "--resume" in rows["v2_final"][2]
     assert rows["pq_kex/pynq.md"][1] == "done"
+
+
+def test_pull_keeps_the_paper2_board_results(tmp_path):
+    """22 Nov: nv_first_contact / nv_replay write sim_out/neuro/n10; the checkpoint must bring them back too."""
+    data = _tgz({"sim_out/neuro/n10/first_contact.json": b"{}", "sim_out/neuro/n5/x.json": b"no"})
+    assert pbr.unpack(data, tmp_path) == 1
+    assert (tmp_path / "sim_out/neuro/n10/first_contact.json").exists()
+    assert not (tmp_path / "sim_out/neuro/n5").exists()

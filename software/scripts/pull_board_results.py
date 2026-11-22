@@ -8,7 +8,8 @@ while a run is going):
     py software\\scripts\\pull_board_results.py --status              no copy: only list what the laptop already has
 
 What it does:
-  * one ssh call (password xilinx) packs /home/xilinx/fpga/sim_out/board and sim_out/pq_kex on the board;
+  * one ssh call (password xilinx) packs /home/xilinx/fpga/sim_out/board, sim_out/pq_kex and (paper 2)
+    sim_out/neuro/n10 on the board (--remote for another checkout);
   * keeps that pack as sim_out/board_backups/board_<date>_<time>.tgz (every checkpoint, never overwritten);
   * unpacks it into sim_out/ here, so sim_out/board/<run>/ always holds the newest copy;
   * lists every run: done (with its bit-exact verdict), or stopped after N levels (rerun the same board command
@@ -27,7 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SIM = ROOT / "sim_out"
 BACKUPS = SIM / "board_backups"
-PULLED = ("sim_out/board", "sim_out/pq_kex")
+PULLED = ("sim_out/board", "sim_out/pq_kex", "sim_out/neuro/n10")   # n10: paper-2 board runs (nv_first_contact, nv_replay)
 
 
 def pull(board, user="xilinx", remote="/home/xilinx/fpga", ssh="ssh"):
