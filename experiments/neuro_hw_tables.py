@@ -11,6 +11,9 @@ imported, not edited) and adds per build:
     4 words per (8/U + 1) clk and the fill-bound rate is given for a 1 ms packet at the sensor's peak rate
     (fill_clk from neuro.cycle_model); reported in Mev/s at the build's Fmax and at 100 MHz;
   * K_pol generators per build (1 for every n1 build) and the power source (SAIF or vectorless).
+Also reads the PYNQ-Z2 overlay reports (--overlay, written by software/system/board/neuro/block_design_neuro.tcl) as
+the row "board overlay". A folder without post-route reports (a build that did not finish, e.g. nv_ascon_core_u U = 4,
+TESTING bug #77) stays in the JSON but is listed under the table as "no reports", not as a row of dashes.
 Writes sim_out/neuro/n2/hw_tables.{json,md}.
 """
 import argparse
@@ -50,10 +53,16 @@ def bram_per_ram(hier_text):
     return rows
 
 
+def has_reports(build):
+    """True when the build has post-route utilisation and timing (a finished build)."""
+    return bool(build["util"].get("lut")) and build["timing"].get("wns") is not None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dir", type=Path, default=C.ROOT / "sim_build")
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--overlay", type=Path, default=C.ROOT / "software" / "system" / "board" / "overlay" / "neuro")
     a = ap.parse_args()
     rvd = p1_parsers()
     builds = []
@@ -79,6 +88,14 @@ def main():
         hier = (f / "utilization_hier.txt")
         row["bram_rows"] = bram_per_ram(hier.read_text(errors="replace")) if hier.exists() else []
         builds.append(row)
+    if (a.overlay / "utilization.txt").exists():
+        r = rvd.read_folder(a.overlay)
+        builds.append({"build": "board overlay (PS + AXI DMA + nv_top U=2)", "params": {"top": "system_wrapper"},
+                       "util": r["util"], "timing": r["timing"], "fmax_mhz": r.get("fmax_mhz"), "power": r["power"],
+                       "power_source": "vectorless", "missing": r["missing"], "kpol_generators": 1, "impl": "bd",
+                       "bram_rows": []})
+    for b in builds:
+        b["reported"] = has_reports(b)
 
     def u(r, k):
         v = r["util"].get(k)
@@ -88,13 +105,15 @@ def main():
     rows = [(b["build"], u(b, "lut"), u(b, "ff"), u(b, "bram"), u(b, "dsp"), b["timing"].get("wns", "-"),
              b["fmax_mhz"] or "-", b.get("auth_mev_s_fmax") or "-", b["power"].get("total", "-"), b["power_source"],
              b["impl"])
-            for b in builds]
+            for b in builds if b["reported"]]
+    unreported = [b["build"] for b in builds if not b["reported"]]
     data = {"builds": builds, "meta": C.meta(a, note="authenticated rate = min(1, tag rate) x Fmax; fill-bound "
                                                      "rate per packet is in fill_clk (see §6.3)")}
     md = ["# N2 hardware tables (Vivado, xc7z020clg400-1, post-route OOC)", "",
-          "No build found: run hardware/vivado/neuro/run_vivado_neuro.py first." if not builds else
+          "No build found: run hardware/vivado/neuro/run_vivado_neuro.py first." if not rows else
           C.table(["build", "LUT", "FF", "BRAM tiles", "DSP", "WNS ns", "Fmax MHz", "auth Mev/s at Fmax", "power W",
                    "power source", "impl"], rows),
+          "" if not unreported else f"No post-route reports (build did not finish): {', '.join(unreported)}.",
           "", "impl: Vivado implementation strategy (NV_IMPL). fast = default directives, redone with the timing-driven "
           "ones only when 100 MHz was missed (fast+perf); its Fmax from the slack can be slightly below a perf build's."]
     C.write("n2", "hw_tables", data, "\n".join(md), a.out)

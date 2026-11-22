@@ -156,3 +156,25 @@ def test_blocks_step_does_not_build_the_u4_core():
     names = [n for n, _ in R.jobs_for("blocks")]
     assert names == ["core_u1", "core_u2", "feistel", "table_gen", "tag32_u2"], names
     assert "top_u4_1280x720" in [n for n, _ in R.jobs_for("usweep")], "U = 4 is still built at the top level"
+
+
+def test_hw_table_has_overlay_row_and_no_dash_rows(tmp_path):
+    """22 Nov: core_u4 (never finished, bug #77) printed as a row of dashes, and the bd overlay was missing."""
+    from test_vivado_reports import UTIL, TIMING, POWER
+    builds = tmp_path / "b"
+    done = builds / "vivado_neuro_nv_feistel_10.0ns"
+    unfinished = builds / "vivado_neuro_nv_ascon_core_u_10.0ns_u4"
+    overlay = tmp_path / "overlay"
+    for d in (done, overlay):
+        d.mkdir(parents=True)
+        for name, text in (("utilization.txt", UTIL), ("timing.txt", TIMING), ("power.txt", POWER)):
+            (d / name).write_text(text)
+    unfinished.mkdir()
+    p = subprocess.run([sys.executable, "experiments/neuro_hw_tables.py", "--dir", str(builds), "--out", str(tmp_path),
+                        "--overlay", str(overlay)], cwd=ROOT, capture_output=True, text=True, timeout=120)
+    assert p.returncode == 0, p.stdout + p.stderr
+    md = (tmp_path / "hw_tables.md").read_text()
+    rows = [l for l in md.splitlines() if l.startswith("| ") and not l.startswith("| build")]
+    names = [r.split("|")[1].strip() for r in rows]
+    assert names == ["nv_feistel_10.0ns", "board overlay (PS + AXI DMA + nv_top U=2)"], f"got rows {names}"
+    assert "No post-route reports (build did not finish): nv_ascon_core_u_10.0ns_u4." in md, md
