@@ -13,3 +13,4 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N6_dvs_v2_9a58dfa_gatefail/` | `samarthium/neuro-paper2-n6-dvs-v2` | 9a58dfa |
 | `N4_v2_b968fac/` | `samarthium/neuro-paper2-n4` | b968fac |
 | `N6sel_dvs_r2_27902c6/` | `samarthium/neuro-paper2-n6-select` | 27902c6 |
+| `N2_vivado_169f7e3/` | laptop Vivado 2026.1 (not Kaggle) | 169f7e3 |
