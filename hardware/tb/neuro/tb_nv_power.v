@@ -20,7 +20,7 @@ module tb_nv_power;
     always #5 clk = ~clk;                          // 100 MHz, the clock of every N2 build
 
     reg  [31:0] script [0:SCRIPT_MAX-1];
-    reg  [32:0] expect [0:EXPECT_MAX-1];
+    reg  [32:0] exp_mem [0:EXPECT_MAX-1];  // not "expect": a SystemVerilog keyword
     integer n_expect;
 
     reg         s_valid = 1'b0;
@@ -51,10 +51,10 @@ module tb_nv_power;
     integer n_out = 0, mismatches = 0;
     always @(posedge clk) begin
         if (!rst && m_valid) begin
-            if (n_out >= n_expect || {m_last, m_data} !== expect[n_out]) begin
+            if (n_out >= n_expect || {m_last, m_data} !== exp_mem[n_out]) begin
                 if (mismatches == 0)
                     $display("first mismatch at output word %0d: got %08x last=%0d, expected %09x",
-                             n_out, m_data, m_last, (n_out < n_expect) ? expect[n_out] : 33'h0);
+                             n_out, m_data, m_last, (n_out < n_expect) ? exp_mem[n_out] : 33'h0);
                 mismatches = mismatches + 1;
             end
             n_out = n_out + 1;
@@ -83,11 +83,11 @@ module tb_nv_power;
     endtask
 
     initial begin
-        for (k = 0; k < EXPECT_MAX; k = k + 1) expect[k] = 33'h1_FFFF_FFFF;
+        for (k = 0; k < EXPECT_MAX; k = k + 1) exp_mem[k] = 33'h1_FFFF_FFFF;
         $readmemh("script.hex", script);
-        $readmemh("expect.hex", expect);
+        $readmemh("expect.hex", exp_mem);
         n_expect = 0;
-        while (n_expect < EXPECT_MAX && expect[n_expect] !== 33'h1_FFFF_FFFF) n_expect = n_expect + 1;
+        while (n_expect < EXPECT_MAX && exp_mem[n_expect] !== 33'h1_FFFF_FFFF) n_expect = n_expect + 1;
         events = 0; accepted = 0; pushed = 0;
         repeat (10) @(posedge clk);
         rst = 1'b0;

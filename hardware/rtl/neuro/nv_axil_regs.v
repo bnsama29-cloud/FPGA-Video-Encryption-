@@ -102,6 +102,7 @@ module nv_axil_regs #(
     reg [2:0]   cfg_code;
     reg [63:0]  last_sid, last_ctr;
     reg         last_valid;
+    reg         c1, c2, en_q;     // commit pipeline, see "Commit in two clocks" below
 
     assign soft_rst = por || ctl_srst;
     assign enable   = ctl_enable && keys_valid;
@@ -167,7 +168,7 @@ module nv_axil_regs #(
     // state during c1 and c2 (commit_hold), so `code` sees the counters of the write and the result is the same as
     // the one-clock rule; ENABLE is taken as it was before the write (en_q). The write response waits for the
     // decision, so CFG_CODE is final when the ARM can read it, and no other write is accepted meanwhile.
-    reg        c1, c2, en_q;
+    // c1, c2, en_q are declared above `code` (en_q is read there; XSim rejects use before declaration)
     reg  [2:0] code_r;
     assign commit_hold = c1 || c2;
     wire wr = s_axil_awvalid && s_axil_wvalid && !s_axil_bvalid && !c1 && !c2;
