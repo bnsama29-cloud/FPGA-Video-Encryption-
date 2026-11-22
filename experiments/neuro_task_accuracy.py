@@ -54,6 +54,16 @@ CANDIDATES = {   # fixed before the selection run (22 Nov 2026)
     "E_rn18_bins16": dict(nb=16, arch="resnet18", epochs=40, shift=8, down=1),
     "F_rn18_bins16_64px": dict(nb=16, arch="resnet18", epochs=60, shift=4, down=2),
 }
+# Extra N6 models (22 Nov 2026), run with --config, each against the gate of its dataset:
+#   N_bins8 / N_ts3: does the verdict on a view depend on the input representation? Zhang 2024 scrambles time and
+#     polarity but leaves every real event in place (BASELINES §2.3), so a count image reads it (0.966) where the
+#     time-binned classifiers of its Table 1 did not. Same CNN, 8 time bins / last-event time instead of one frame.
+#   N_snn10: the SNN of DESIGN §8.2: leaky integrate-and-fire convolutional network over 10 time bins.
+EXTRA = {
+    "N_bins8": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
+    "N_ts3": dict(nb=1, feat="ts3", arch="small", epochs=20, shift=0, down=1),
+    "N_snn10": dict(nb=10, arch="snn", epochs=20, shift=0, down=1),
+}
 ROUNDS = {"A_bug74": 1, "B_deep16": 1, "C_deep16_64px": 1, "D_rn18_ts3": 2, "E_rn18_bins16": 2,
           "F_rn18_bins16_64px": 2}
 # The decryption check seals and decrypts a sample again: ~26 s per DVS Gesture recording (profiled 16 Nov), i.e. ~2 h
@@ -189,6 +199,50 @@ def resnet18(torch, classes, in_ch, pretrained=True):
 PRETRAINED = True          # tests set False (no download)
 
 
+def snn(torch, classes, in_ch, beta=0.9):
+    """Convolutional SNN: the input (2 nb, H, W) is nb time steps of ON/OFF counts; two conv-BN layers with leaky
+    integrate-and-fire neurons (membrane u <- beta u + I, spike when u >= 1, reset by subtraction; surrogate gradient
+    of a fast sigmoid), then a linear LIF readout whose membrane, summed over the steps, is the logit."""
+    nn = torch.nn
+
+    class Spike(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, u):
+            ctx.save_for_backward(u)
+            return (u >= 1.0).float()
+
+        @staticmethod
+        def backward(ctx, g):
+            (u,) = ctx.saved_tensors
+            return g / (1.0 + 10.0 * (u - 1.0).abs()) ** 2
+
+    class Net(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.steps = in_ch // 2
+            self.c1 = nn.Sequential(nn.Conv2d(2, 32, 3, padding=1), nn.BatchNorm2d(32), nn.MaxPool2d(2))
+            self.c2 = nn.Sequential(nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.MaxPool2d(2))
+            self.pool = nn.AdaptiveAvgPool2d(4)
+            self.fc = nn.Linear(64 * 16, classes)
+
+        def forward(self, x):
+            n, _, h, w = x.shape
+            x = x.view(n, self.steps, 2, h, w)
+            u1 = u2 = u3 = 0.0
+            out = 0.0
+            for t in range(self.steps):
+                u1 = beta * u1 + self.c1(x[:, t])
+                s1 = Spike.apply(u1)
+                u1 = u1 - s1
+                u2 = beta * u2 + self.c2(s1)
+                s2 = Spike.apply(u2)
+                u2 = u2 - s2
+                u3 = beta * u3 + self.fc(self.pool(s2).flatten(1))
+                out = out + u3
+            return out / self.steps
+    return Net()
+
+
 def cnn(torch, classes, in_ch=2, arch="small"):
     """Two blocks of two conv-BN-ReLU layers (32, 64 channels), each max-pooled, then adaptive pooling to 8 x 8,
     dropout and two linear layers (bug #74: the previous two-layer CNN stayed under the N-MNIST gate)."""
@@ -196,6 +250,8 @@ def cnn(torch, classes, in_ch=2, arch="small"):
 
     def blk(i, o):
         return [nn.Conv2d(i, o, 3, padding=1), nn.BatchNorm2d(o), nn.ReLU()]
+    if arch == "snn":
+        return snn(torch, classes, in_ch)
     if arch == "resnet18":
         return resnet18(torch, classes, in_ch, PRETRAINED)
     if arch == "deep":           # four conv-BN-ReLU-pool stages (32, 64, 128, 128), as the DVS Gesture CNNs of the
@@ -253,6 +309,7 @@ def main():
     C.dataset_arg(ap)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     ap.add_argument("--epochs", type=int, help="override the dataset's CONFIG epochs")
+    ap.add_argument("--config", help="model of EXTRA or CANDIDATES instead of the dataset's CONFIG (extra rows)")
     ap.add_argument("--views", nargs="+", default=["V1", "V2", "V3", "V4", "Du 2021", "Zhang 2024"])
     ap.add_argument("--ct-train", type=int, help="training samples sealed for row (ii) (default by dataset)")
     ap.add_argument("--ct-test", type=int, help="test samples sealed for rows (i), (ii) and the decryption check")
@@ -279,7 +336,9 @@ def main():
     classes = int(max(s[1] for s in tr_s + te_s)) + 1
     ytr = np.array([s[1] for s in tr_s])
     yte = np.array([s[1] for s in te_s])
-    cfg = dict(CONFIG.get(a.dataset, DEFAULT_CONFIG))
+    if a.config and a.config not in {**EXTRA, **CANDIDATES}:
+        raise SystemExit(f"--config {a.config}: not in EXTRA or CANDIDATES")
+    cfg = dict({**EXTRA, **CANDIDATES}[a.config] if a.config else CONFIG.get(a.dataset, DEFAULT_CONFIG))
     if a.epochs:
         cfg["epochs"] = a.epochs
     if a.quick:
@@ -332,14 +391,16 @@ def main():
                 n_equal = int(sum(pool.map(_check_one, jobs)))
         else:
             n_equal = int(sum(_check_one(j) for j in jobs))
-    snn = "SNN rows not run: the SNN of DESIGN §8.2 is not implemented, CNN only"
+    snn = ("this table is the SNN of DESIGN §8.2" if cfg["arch"] == "snn" else
+           "SNN rows: run with --config N_snn10")
     data = {"results": res, "gate": {"threshold": gate_thr, "clean_mean": float(np.mean(clean)), "passes": bool(gate)},
             "decrypted_event_equal": f"{n_equal} of {len(i_ck)}" if gate else "not run (gate failed)",
             "ciphertext_subset": {"train": len(ct_tr), "test": len(ct_te), "of_train": len(tr_s), "of_test": len(te_s),
                                   "seed": a.seed},
             "chance": chance, "snn": snn,
             "meta": C.meta(a, dataset=a.dataset, synthetic=a.data is None, device=dev, seeds=a.seeds,
-                           ci="Student-t 95 % over seeds", n_keys="fresh key per sample", config=cfg)}
+                           ci="Student-t 95 % over seeds", n_keys="fresh key per sample", config=cfg,
+                           config_name=a.config or "CONFIG")}
     md = ["# N6 task accuracy" + (" (synthetic smoke data)" if a.data is None else ""), "",
           f"Clean model ({cfg}): {len(tr_s)} training / {len(te_s)} test samples; ciphertext rows and decryption "
           f"check: a fixed subset of {len(ct_tr)} / {len(ct_te)}, with a clear reference trained on the same subset. "

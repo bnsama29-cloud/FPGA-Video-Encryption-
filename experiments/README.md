@@ -45,7 +45,7 @@ Paper 2 (event-camera encryption, branch `neuromorphic`; design `docs/neuro/DESI
 | `neuro_learned_attack.py` | N4: network trained on (ciphertext, plaintext) pairs vs the count-series control (PyTorch); same `--max-windows`; batch size shrinks with image size (8 at 480 x 640); Event-ReId: loss and SSIM inside the person box; controls (c) and (f), P1 invalid when (f) < (c) |
 | `neuro_adjacency_attack.py` | N4b: layout recovered from co-activation of permuted addresses, vs an ideal permutation |
 | `neuro_leakage.py` | N5: MI and classifiers on the visible counts per level and padding policy, dummy distinguisher, padding cost |
-| `neuro_task_accuracy.py` | N6: task accuracy with the key and without it (PyTorch) |
+| `neuro_task_accuracy.py` | N6: task accuracy with the key and without it (PyTorch); `--config N_snn10 / N_bins8 / N_ts3` for the SNN and the representation rows |
 | `neuro_n6_select.py` | N6 model selection on users held out of the training split, and sealing cost per view (PyTorch) |
 | `neuro_active_attacks.py` | N7: receiver status for every active attack, gap latency, flood cost, benign loss |
 | `neuro_perm_strength.py` | N8: permutation exactness, bias, independence, known plaintext per packet, readers (N8-R) |

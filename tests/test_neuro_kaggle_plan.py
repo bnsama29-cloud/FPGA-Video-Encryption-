@@ -98,3 +98,25 @@ def test_n6sel_is_a_part_c_step_on_request_only():
     assert "n6sel" not in plan("C") and "n6sel" not in plan("A")
     with pytest.raises(SystemExit):
         plan("A", "n6sel")
+
+
+def test_n6x_configs_are_the_extra_models_of_n6():
+    """22 Nov: the n6x step runs the EXTRA models of neuro_task_accuracy.py; names must match exactly."""
+    import importlib.util
+    import sys as _s
+    tree = ast.parse(SRC.read_text(encoding="utf-8"))
+    ns = {"os": __import__("os")}
+    keep = [n for n in tree.body if (isinstance(n, ast.Assign) and any(getattr(t, "id", "") == "N6X_VIEWS"
+            for t in n.targets)) or (isinstance(n, ast.FunctionDef) and n.name == "n6x_configs")]
+    exec(compile(ast.Module(body=keep, type_ignores=[]), str(SRC), "exec"), ns)
+    root = SRC.parents[3]
+    _s.path[:0] = [str(root / "software"), str(root / "experiments")]
+    spec = importlib.util.spec_from_file_location("n6mod", root / "experiments" / "neuro_task_accuracy.py")
+    n6 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(n6)
+    assert set(ns["N6X_VIEWS"]) == set(n6.EXTRA)
+    assert ns["n6x_configs"](None) == ["N_bins8", "N_ts3", "N_snn10"]
+    assert ns["n6x_configs"](" N_snn10 ") == ["N_snn10"]
+    with pytest.raises(SystemExit):
+        ns["n6x_configs"]("N_foo")
+    assert plan("C", "n6x") == {"n6x"} and "n6x" not in plan("C")

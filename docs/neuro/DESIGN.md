@@ -1002,8 +1002,9 @@ energy, multiplicity and dummy position reveal, and what does padding cost?
 - Decryption is exact, so "accuracy on decrypted data" is not a result: the script asserts `event_equal` over the
   whole test set and reports the count of equal samples in one sentence.
 - Models: one frame CNN and one SNN (snnTorch), both trained to convergence. *(17 Nov 2026: the CNN is two
-  conv-BN-ReLU blocks with a one-cycle schedule, on 8 time bins for DVS Gesture (TESTING bug #74); the SNN is not
-  implemented, and the table says so.)* **Gate:** clean accuracy ≥ 98 %
+  conv-BN-ReLU blocks with a one-cycle schedule, on 8 time bins for DVS Gesture (TESTING bug #74); the SNN is a
+  leaky integrate-and-fire convolutional network over 10 time bins, `--config N_snn10` (22 Nov 2026); extra rows with
+  time-binned / last-event-time inputs (`N_bins8`, `N_ts3`) test whether a verdict depends on the representation.)* **Gate:** clean accuracy ≥ 98 %
   (N-MNIST) and ≥ 90 % (DVS Gesture) before any ciphertext row is reported; context numbers from PLIF
   [`fang2021iccv`] (99.61 % / 97.57 %).
 - Rows: (i) trained on clear, tested on ciphertext; (ii) trained on ciphertext with fresh keys per sample. The

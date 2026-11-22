@@ -587,3 +587,38 @@ def test_n6_resnet18_first_conv_keeps_the_pretrained_response_on_flat_input(monk
         b = ref.conv1(torch.full((1, 3, 16, 16), 0.5))
     assert torch.allclose(a, b, atol=1e-5), f"max difference {float((a - b).abs().max())}"
     assert m.fc.out_features == 11
+
+
+# ---------------------------------------------------------------- 22 Nov: extra N6 models (SNN, representations)
+def test_n6_snn_learns_a_temporal_toy_task():
+    """The SNN must use time: class 1 has its events in the first half of the steps, class 0 in the second half,
+    at the same pixels, so a model blind to time sits at chance."""
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    rng = np.random.default_rng(0)
+    nb, n = 10, 160
+    y = rng.integers(0, 2, n)
+    X = np.zeros((n, 2 * nb, 16, 16), np.float32)
+    for i in range(n):
+        steps = range(0, nb // 2) if y[i] else range(nb // 2, nb)
+        for t in steps:
+            X[i, 2 * t, 4:12, 4:12] = 1.0
+    m, acc = N6.fit_eval(torch, X[:120], y[:120], X[120:], y[120:], 2, 15, 0, "cpu", bs=16, arch="snn")
+    assert acc >= 0.9, f"SNN on a time-only task: accuracy {acc}"
+    assert np.array_equal(X[y == 1].sum(1)[0], X[y == 0].sum(1)[0]), "both classes have the same count image"
+
+
+def test_n6_config_option_runs_an_extra_model(monkeypatch, tmp_path):
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    for name in ("N_bins8", "N_ts3", "N_snn10"):
+        out = tmp_path / name
+        monkeypatch.setattr(sys, "argv", ["n6", "--quick", "--limit", "16", "--config", name, "--views", "V2",
+                                          "--workers", "1", "--out", str(out)])
+        N6.main()
+        data = json.loads((out / "task_accuracy.json").read_text())
+        assert data["meta"]["config_name"] == name and data["meta"]["config"]["arch"] == N6.EXTRA[name]["arch"]
+        assert "V2" in data["results"], sorted(data["results"])
+    monkeypatch.setattr(sys, "argv", ["n6", "--quick", "--config", "nope", "--out", str(tmp_path)])
+    with pytest.raises(SystemExit, match="nope"):
+        N6.main()

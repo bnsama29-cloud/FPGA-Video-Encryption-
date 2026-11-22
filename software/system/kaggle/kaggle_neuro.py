@@ -227,7 +227,8 @@ def plan(part, steps=None):
     """Step groups of a part; env STEPS (comma list of cpu, n3, n4, n6) narrows it. With three accounts part C runs
     N6, so part A runs STEPS=cpu: no GPU step left, a CPU session that does not wait in the T4 queue (16 Nov)."""
     run = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[part]
-    allowed = run | ({"n6sel"} if part == "C" else set())     # n6sel: N6 model selection (bug #75), on request only
+    allowed = run | ({"n6sel", "n6x"} if part == "C" else set())  # on request only: n6sel model selection (bug
+    #                                                                    #75), n6x extra N6 models (22 Nov)
     if steps:
         want = {s.strip().lower() for s in steps.split(",") if s.strip()}
         if not want <= allowed:
@@ -376,6 +377,27 @@ if "n6sel" in RUN:
         sh(f"{sys.executable} experiments/neuro_n6_select.py --dataset {ds} --data {DATA}/{ds} "
            f"{'--quick' if QUICK else ''} --out {OUT}/n6sel/{ds}", f"N6 select {ds}", limit=GPU_S, want="wrote ")
         checkpoint()
+
+N6X_VIEWS = {"N_bins8": '"V2" "V3" "Du 2021" "Zhang 2024"', "N_ts3": '"V2" "V3" "Du 2021" "Zhang 2024"',
+             "N_snn10": '"V1" "V2" "V3" "V4" "Du 2021" "Zhang 2024"'}
+
+
+def n6x_configs(env):
+    """N6 extra models to run (env N6X_CONFIGS, comma list of EXTRA names in neuro_task_accuracy.py)."""
+    names = [c.strip() for c in (env or "N_bins8,N_ts3,N_snn10").split(",") if c.strip()]
+    bad = [c for c in names if c not in N6X_VIEWS]
+    if bad or not names:
+        raise SystemExit(f"N6X_CONFIGS {env!r}: use {sorted(N6X_VIEWS)}")
+    return names
+
+
+if "n6x" in RUN:
+    for cfg in n6x_configs(os.environ.get("N6X_CONFIGS")):
+        for ds in n6_datasets(os.environ.get("N6_DATASETS")):
+            sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} "
+               f"--config {cfg} --views {N6X_VIEWS[cfg]} {n6_args(QUICK, SEEDS)} --out {OUT}/n6x/{cfg}/{ds}",
+               f"N6x {cfg} {ds}", limit=N6_S, want="wrote ")
+            checkpoint()
 
 if "n6" in RUN:
     for ds in n6_datasets(os.environ.get("N6_DATASETS")):
