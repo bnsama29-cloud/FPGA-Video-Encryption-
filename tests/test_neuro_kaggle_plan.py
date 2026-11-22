@@ -90,3 +90,11 @@ def test_n9_caps_dvs_gesture_recordings_in_full_runs():
     """Bug #73: N9 on DVS Gesture (default 30 recordings) timed out at the 2-hour step limit on Kaggle."""
     src = SRC.read_text(encoding="utf-8")
     assert 'N9_LIMIT = {"eventreid": "--limit 8", "dvsgesture": "--limit 12"} if not QUICK else {}' in src
+
+
+def test_n6sel_is_a_part_c_step_on_request_only():
+    """Bug #75: the N6 model selection runs as STEPS=n6sel on part C; it is not part of any default plan."""
+    assert plan("C", "n6sel") == {"n6sel"}
+    assert "n6sel" not in plan("C") and "n6sel" not in plan("A")
+    with pytest.raises(SystemExit):
+        plan("A", "n6sel")

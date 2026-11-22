@@ -227,10 +227,11 @@ def plan(part, steps=None):
     """Step groups of a part; env STEPS (comma list of cpu, n3, n4, n6) narrows it. With three accounts part C runs
     N6, so part A runs STEPS=cpu: no GPU step left, a CPU session that does not wait in the T4 queue (16 Nov)."""
     run = {"A": {"cpu", "n6"}, "B": {"n3", "n4"}, "C": {"n6"}}[part]
+    allowed = run | ({"n6sel"} if part == "C" else set())     # n6sel: N6 model selection (bug #75), on request only
     if steps:
         want = {s.strip().lower() for s in steps.split(",") if s.strip()}
-        if not want <= run:
-            raise SystemExit(f"STEPS {sorted(want - run)} are not part of part {part} ({sorted(run)})")
+        if not want <= allowed:
+            raise SystemExit(f"STEPS {sorted(want - allowed)} are not part of part {part} ({sorted(allowed)})")
         run = want
     return run
 
@@ -370,6 +371,12 @@ def n6_args(quick, seeds):
 # ~4.9 CPU-h, so the 4-hour GPU_S cap could cut it on a slow machine (16 Nov, bug #65). Full runs give N6 the rest
 # of the 12-hour session instead; DEADLINE_S still stops it in time for the checkpoint.
 N6_S = GPU_S if QUICK else DEADLINE_S
+if "n6sel" in RUN:
+    for ds in n6_datasets(os.environ.get("N6_DATASETS")):
+        sh(f"{sys.executable} experiments/neuro_n6_select.py --dataset {ds} --data {DATA}/{ds} "
+           f"{'--quick' if QUICK else ''} --out {OUT}/n6sel/{ds}", f"N6 select {ds}", limit=GPU_S, want="wrote ")
+        checkpoint()
+
 if "n6" in RUN:
     for ds in n6_datasets(os.environ.get("N6_DATASETS")):
         sh(f"{sys.executable} experiments/neuro_task_accuracy.py --dataset {ds} --data {DATA}/{ds} "

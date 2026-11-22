@@ -35,35 +35,48 @@ from neuro import evt2, keys, receiver
 from neuro.stats import mean_ci
 
 GATE = {"nmnist": 0.98, "dvsgesture": 0.90}
-BINS = {"dvsgesture": 8}             # time bins of the CNN input (default 1: one count frame)
+# Model of each dataset (TESTING bug #75). N-MNIST: the bug #74 CNN, 0.991 on Kaggle (16 Nov). DVS Gesture: the bug #74
+# CNN on 8 bins reached 0.732 (seeds 0.62 / 0.73 / 0.85: undertrained, 20 epochs = 340 steps on 1077 samples), so the
+# DVS model is chosen by experiments/neuro_n6_select.py among CANDIDATES on users held out of the TRAINING split
+# (never on the test split) and copied here by hand with the selection table it came from.
+CONFIG = {"nmnist": dict(nb=1, arch="small", epochs=20, shift=0, down=1),
+          "dvsgesture": dict(nb=8, arch="small", epochs=20, shift=0, down=1)}
+DEFAULT_CONFIG = CONFIG["nmnist"]
+CANDIDATES = {   # fixed before the selection run (22 Nov 2026)
+    "A_bug74": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
+    "B_deep16": dict(nb=16, arch="deep", epochs=60, shift=8, down=1),
+    "C_deep16_64px": dict(nb=16, arch="deep", epochs=100, shift=4, down=2),
+}
 # The decryption check seals and decrypts a sample again: ~26 s per DVS Gesture recording (profiled 16 Nov), i.e. ~2 h
 # for all 264 test recordings on top of the ~4.6 h of sealing. It shows exactness, not accuracy, so it runs on a fixed
 # seeded subset of the ciphertext test samples (TESTING bug #65).
 CHECK_N = 64
 CT_DEFAULT = {"nmnist": (4000, 2000), "dvsgesture": (300, 264)}     # ciphertext subset (train, test), full run
 CT_QUICK = {"nmnist": (40, 40), "dvsgesture": (16, 16)}   # QUICK: DVS Gesture costs 20-50 s per recording to seal
-_NB = 1                              # time bins of features(), set by main() before sealing
-_POOL = None                         # samples visible to the forked sealing workers (no pickling of event arrays)
 
 
 def _seal_one(job):
-    i, view, key = job
-    ev, geom = _POOL[i][0], _POOL[i][3]
-    return features(view_events(ev, geom, view, key), geom, _NB)
+    ev, geom, view, key, cfg = job
+    return features(view_events(ev, geom, view, key), geom, cfg["nb"], cfg["down"])
 
 
-def _check_one(i):
-    return decrypt_check([_POOL[i]], base=i)
+def _check_one(job):
+    sample, i = job
+    return decrypt_check([sample], base=i)
 
 
-def sealed_frames(samples, view, keys, workers):
-    """features(view_events(...)) of every sample, in parallel over `workers` forked processes."""
-    global _POOL
-    _POOL = samples
-    jobs = [(j, view, keys[j]) for j in range(len(samples))]
+def _pool(workers):
+    """Worker pool for sealing. Sealing now runs after the GPU gate (bug #75), so CUDA is initialised in this process
+    and plain fork is unsafe: the forkserver starts workers from a fresh interpreter; jobs carry their samples."""
+    return mp.get_context("forkserver").Pool(workers)
+
+
+def sealed_frames(samples, view, keys, workers, cfg):
+    """features(view_events(...)) of every sample, in parallel over `workers` processes."""
+    jobs = [(s[0], s[3], view, keys[j], cfg) for j, s in enumerate(samples)]
     if workers <= 1 or len(jobs) < 8:
         return np.stack([_seal_one(j) for j in jobs])
-    with mp.get_context("fork").Pool(workers) as pool:
+    with _pool(workers) as pool:
         return np.stack(pool.map(_seal_one, jobs, chunksize=max(1, len(jobs) // (8 * workers))))
 
 
@@ -90,12 +103,14 @@ def bins(ev, geom, nb=10):
     return out
 
 
-def features(ev, geom, nb=1):
-    """CNN input (2 nb, H, W): ON / OFF counts in nb equal time bins of the sample, scaled by the sample's maximum.
-    nb = 1 is frame()."""
-    if nb == 1:
+def features(ev, geom, nb=1, down=1):
+    """CNN input (2 nb, H / down, W / down): ON / OFF counts in nb equal time bins of the sample, summed over
+    down x down pixel blocks, scaled by the sample's maximum. nb = down = 1 is frame()."""
+    if nb == 1 and down == 1:
         return frame(ev, geom)
     x = bins(ev, geom, nb).reshape(2 * nb, geom.H, geom.W)
+    if down > 1:
+        x = x.reshape(2 * nb, geom.H // down, down, geom.W // down, down).sum((2, 4))
     return x / max(1.0, float(x.max()))
 
 
@@ -124,22 +139,40 @@ def decrypt_check(samples, T=1024, base=0):
     return ok
 
 
-def cnn(torch, classes, in_ch=2):
+def cnn(torch, classes, in_ch=2, arch="small"):
     """Two blocks of two conv-BN-ReLU layers (32, 64 channels), each max-pooled, then adaptive pooling to 8 x 8,
     dropout and two linear layers (bug #74: the previous two-layer CNN stayed under the N-MNIST gate)."""
     nn = torch.nn
 
     def blk(i, o):
         return [nn.Conv2d(i, o, 3, padding=1), nn.BatchNorm2d(o), nn.ReLU()]
+    if arch == "deep":           # four conv-BN-ReLU-pool stages (32, 64, 128, 128), as the DVS Gesture CNNs of the
+        layers, c = [], in_ch    # SpikingJelly examples; global pooling keeps it valid for any input size
+        for o in (32, 64, 128, 128):
+            layers += blk(c, o) + [nn.MaxPool2d(2)]
+            c = o
+        return nn.Sequential(*layers, nn.AdaptiveAvgPool2d(4), nn.Flatten(), nn.Dropout(0.5),
+                             nn.Linear(128 * 16, 256), nn.ReLU(), nn.Dropout(0.5), nn.Linear(256, classes))
     return nn.Sequential(*blk(in_ch, 32), *blk(32, 32), nn.MaxPool2d(2), *blk(32, 64), *blk(64, 64), nn.MaxPool2d(2),
                          nn.AdaptiveAvgPool2d(8), nn.Dropout(0.25), nn.Flatten(), nn.Linear(64 * 64, 256), nn.ReLU(),
                          nn.Dropout(0.5), nn.Linear(256, classes))
 
 
-def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64):
+def shift_batch(torch, x, s, gen):
+    """Random translation of each sample by up to s pixels in x and y, with zero fill (data augmentation)."""
+    if s <= 0:
+        return x
+    n, _, h, w = x.shape
+    xp = torch.nn.functional.pad(x, (s, s, s, s))
+    d = torch.randint(0, 2 * s + 1, (n, 2), generator=gen)
+    return torch.stack([xp[k, :, d[k, 0]:d[k, 0] + h, d[k, 1]:d[k, 1] + w] for k in range(n)])
+
+
+def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64, arch="small", shift=0):
     """Train a fresh cnn() with AdamW and a one-cycle learning rate (peak 3e-3), return (model, test accuracy)."""
     torch.manual_seed(seed)
-    m = cnn(torch, classes, Xtr.shape[1]).to(dev)
+    gen = torch.Generator().manual_seed(seed)
+    m = cnn(torch, classes, Xtr.shape[1], arch).to(dev)
     opt = torch.optim.AdamW(m.parameters(), 1e-3)
     Xt, yt = torch.from_numpy(Xtr), torch.from_numpy(ytr).long()
     sch = torch.optim.lr_scheduler.OneCycleLR(opt, 3e-3, total_steps=max(1, epochs * ((len(Xt) + bs - 1) // bs)))
@@ -148,7 +181,7 @@ def fit_eval(torch, Xtr, ytr, Xte, yte, classes, epochs, seed, dev, bs=64):
         perm = torch.randperm(len(Xt))
         for i in range(0, len(Xt), bs):
             j = perm[i:i + bs]
-            loss = torch.nn.functional.cross_entropy(m(Xt[j].to(dev)), yt[j].to(dev))
+            loss = torch.nn.functional.cross_entropy(m(shift_batch(torch, Xt[j], shift, gen).to(dev)), yt[j].to(dev))
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -167,7 +200,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     C.dataset_arg(ap)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
-    ap.add_argument("--epochs", type=int, default=20)
+    ap.add_argument("--epochs", type=int, help="override the dataset's CONFIG epochs")
     ap.add_argument("--views", nargs="+", default=["V1", "V2", "V3", "V4", "Du 2021", "Zhang 2024"])
     ap.add_argument("--ct-train", type=int, help="training samples sealed for row (ii) (default by dataset)")
     ap.add_argument("--ct-test", type=int, help="test samples sealed for rows (i), (ii) and the decryption check")
@@ -180,7 +213,7 @@ def main():
     except ImportError:
         raise SystemExit("N6 needs PyTorch (Kaggle job: software/system/kaggle/kaggle_neuro.py); not run")
     if a.quick:
-        a.seeds, a.epochs = [0], 2
+        a.seeds = [0]
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     if a.data is None:
         allS = C.synthetic_samples(a.limit or 48, a.seed)
@@ -194,59 +227,70 @@ def main():
     classes = int(max(s[1] for s in tr_s + te_s)) + 1
     ytr = np.array([s[1] for s in tr_s])
     yte = np.array([s[1] for s in te_s])
+    cfg = dict(CONFIG.get(a.dataset, DEFAULT_CONFIG))
+    if a.epochs:
+        cfg["epochs"] = a.epochs
+    if a.quick:
+        cfg["epochs"] = 2
     n_tr, n_te = CT_QUICK.get(a.dataset, (40, 40)) if a.quick else CT_DEFAULT.get(a.dataset, (None, None))
     n_tr, n_te = a.ct_train or n_tr, a.ct_test or n_te
     i_tr, i_te = subset(tr_s, n_tr, a.seed), subset(te_s, n_te, a.seed + 1)
     ct_tr, ct_te = [tr_s[i] for i in i_tr], [te_s[i] for i in i_te]
     ytr_ct, yte_ct = ytr[i_tr], yte[i_te]
-    # Sealing first, in forked workers, while PyTorch has not initialised CUDA in this process. Keys: training
-    # sample i -> key i, test sample i -> key 10 000 + i (fresh key per sample, as before the subset).
-    global _NB
-    _NB = BINS.get(a.dataset, 1)
-    sealed = {}
-    for view in a.views:
-        if view in ("Du 2021", "Zhang 2024") and not C.baseline("du2021" if view.startswith("Du") else "zhang2024"):
-            continue
-        sealed[view] = (sealed_frames(ct_tr, view, i_tr, a.workers),
-                        sealed_frames(ct_te, view, [10_000 + i for i in i_te], a.workers))
-    global _POOL
-    _POOL = ct_te
-    i_ck = subset(ct_te, a.check, a.seed + 2)            # positions in ct_te; key of position k is k (as before)
-    if a.workers > 1 and len(i_ck) >= 8:
-        with mp.get_context("fork").Pool(a.workers) as pool:
-            n_equal = int(sum(pool.map(_check_one, i_ck)))
-    else:
-        n_equal = int(sum(_check_one(k) for k in i_ck))
-    Xtr = np.stack([features(s[0], geom, _NB) for s in tr_s])
-    Xte = np.stack([features(s[0], geom, _NB) for s in te_s])
+    fit = dict(arch=cfg["arch"], shift=cfg["shift"])
+    # 1. Gate first (bug #75): the clean model needs no sealing, and a failed gate ends the run here, in minutes,
+    #    instead of after hours of sealing whose rows the gate would discard.
+    Xtr = np.stack([features(s[0], geom, cfg["nb"], cfg["down"]) for s in tr_s])
+    Xte = np.stack([features(s[0], geom, cfg["nb"], cfg["down"]) for s in te_s])
     clean, models = [], []
     for sd in a.seeds:
-        m, acc = fit_eval(torch, Xtr, ytr, Xte, yte, classes, a.epochs, sd, dev)
+        m, acc = fit_eval(torch, Xtr, ytr, Xte, yte, classes, cfg["epochs"], sd, dev, **fit)
         clean.append(acc)
         models.append(m)
+        print(f"clean seed {sd}: {acc:.4f}", flush=True)
     gate_thr = GATE.get(a.dataset)
     gate = gate_thr is None or np.mean(clean) >= gate_thr
     chance = 1 / classes
     res, rows = {"clean": mean_ci(clean)}, [("clear (clean)", mean_ci(clean), "-", "-")]
+    n_equal, i_ck = 0, []
     if gate:
-        for view, (Ctr, Cte) in sealed.items():
+        # 2. Reference for row (ii): the same model trained on the CLEAR events of the ciphertext training subset,
+        #    so (ii) is compared with a model that saw as many samples (bug #75).
+        ref = [fit_eval(torch, Xtr[i_tr], ytr_ct, Xte[i_te], yte_ct, classes, cfg["epochs"], sd, dev, **fit)[1]
+               for sd in a.seeds]
+        res["clear_subset"] = mean_ci(ref)
+        rows.append(("clear, trained on the subset", "-", mean_ci(ref), mean_ci(np.asarray(ref) - chance)))
+        # 3. Seal (keys: training sample i -> key i, test sample i -> key 10 000 + i) and check decryption.
+        for view in a.views:
+            if view in ("Du 2021", "Zhang 2024") and not C.baseline("du2021" if view.startswith("Du") else "zhang2024"):
+                continue
+            Ctr = sealed_frames(ct_tr, view, i_tr, a.workers, cfg)
+            Cte = sealed_frames(ct_te, view, [10_000 + i for i in i_te], a.workers, cfg)
+            print(f"sealed {view}", flush=True)
             r_i = [evaluate(torch, m, Cte, yte_ct, dev) for m in models]
-            r_ii = [fit_eval(torch, Ctr, ytr_ct, Cte, yte_ct, classes, a.epochs, sd, dev)[1] for sd in a.seeds]
+            r_ii = [fit_eval(torch, Ctr, ytr_ct, Cte, yte_ct, classes, cfg["epochs"], sd, dev, **fit)[1]
+                    for sd in a.seeds]
             d = mean_ci(np.asarray(r_ii) - chance)
             res[view] = {"i_clear_trained": mean_ci(r_i), "ii_cipher_trained": mean_ci(r_ii), "ii_minus_chance": d}
             rows.append((view, mean_ci(r_i), mean_ci(r_ii), d))
+        i_ck = subset(ct_te, a.check, a.seed + 2)        # positions in ct_te; key of position k is k
+        jobs = [(ct_te[k], k) for k in i_ck]
+        if a.workers > 1 and len(jobs) >= 8:
+            with _pool(a.workers) as pool:
+                n_equal = int(sum(pool.map(_check_one, jobs)))
+        else:
+            n_equal = int(sum(_check_one(j) for j in jobs))
     snn = "SNN rows not run: the SNN of DESIGN §8.2 is not implemented, CNN only"
     data = {"results": res, "gate": {"threshold": gate_thr, "clean_mean": float(np.mean(clean)), "passes": bool(gate)},
-            "decrypted_event_equal": f"{n_equal} of {len(i_ck)}",
+            "decrypted_event_equal": f"{n_equal} of {len(i_ck)}" if gate else "not run (gate failed)",
             "ciphertext_subset": {"train": len(ct_tr), "test": len(ct_te), "of_train": len(tr_s), "of_test": len(te_s),
                                   "seed": a.seed},
             "chance": chance, "snn": snn,
             "meta": C.meta(a, dataset=a.dataset, synthetic=a.data is None, device=dev, seeds=a.seeds,
-                           ci="Student-t 95 % over seeds", n_keys="fresh key per sample",
-                           time_bins=_NB, epochs=a.epochs)}
+                           ci="Student-t 95 % over seeds", n_keys="fresh key per sample", config=cfg)}
     md = ["# N6 task accuracy" + (" (synthetic smoke data)" if a.data is None else ""), "",
-          f"Clean model: {len(tr_s)} training / {len(te_s)} test samples; ciphertext rows and decryption check: a "
-          f"fixed subset of {len(ct_tr)} / {len(ct_te)}. "
+          f"Clean model ({cfg}): {len(tr_s)} training / {len(te_s)} test samples; ciphertext rows and decryption "
+          f"check: a fixed subset of {len(ct_tr)} / {len(ct_te)}, with a clear reference trained on the same subset. "
           f"Decryption check: {data['decrypted_event_equal']} test samples decrypt event-equal (V3). "
           f"Gate: clean {np.mean(clean):.3f} vs {gate_thr} -> {'pass' if gate else 'FAIL: no ciphertext rows'}. "
           f"Chance {chance:.3f}. {snn}.", "",

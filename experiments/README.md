@@ -46,6 +46,7 @@ Paper 2 (event-camera encryption, branch `neuromorphic`; design `docs/neuro/DESI
 | `neuro_adjacency_attack.py` | N4b: layout recovered from co-activation of permuted addresses, vs an ideal permutation |
 | `neuro_leakage.py` | N5: MI and classifiers on the visible counts per level and padding policy, dummy distinguisher, padding cost |
 | `neuro_task_accuracy.py` | N6: task accuracy with the key and without it (PyTorch) |
+| `neuro_n6_select.py` | N6 model selection on users held out of the training split, and sealing cost per view (PyTorch) |
 | `neuro_active_attacks.py` | N7: receiver status for every active attack, gap latency, flood cost, benign loss |
 | `neuro_perm_strength.py` | N8: permutation exactness, bias, independence, known plaintext per packet, readers (N8-R) |
 | `neuro_overhead.py` | N9: event rates, bytes per event, latency and FIFO from the cycle model, software cost |

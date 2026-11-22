@@ -227,8 +227,8 @@ def test_n6_parallel_sealing_equals_serial():
     S = C.synthetic_samples(10, 0)
     keys = list(range(10))
     for view in ("V2", "V3"):
-        serial = N6.sealed_frames(S, view, keys, 1)
-        par = N6.sealed_frames(S, view, keys, 2)
+        serial = N6.sealed_frames(S, view, keys, 1, N6.DEFAULT_CONFIG)
+        par = N6.sealed_frames(S, view, keys, 2, N6.DEFAULT_CONFIG)
         assert serial.shape == par.shape and np.array_equal(serial, par), f"{view}: parallel frames differ"
 
 
@@ -240,8 +240,7 @@ def test_n6_decryption_check_runs_on_a_fixed_subset_and_still_decrypts():
     ct_te = C.synthetic_samples(6, seed=4)
     i_ck = N6.subset(ct_te, 3, 2)
     assert i_ck == N6.subset(ct_te, 3, 2) and len(i_ck) == 3, i_ck            # fixed and seeded
-    N6._POOL = ct_te
-    got = [N6._check_one(k) for k in i_ck]
+    got = [N6._check_one((ct_te[k], k)) for k in i_ck]
     assert got == [1, 1, 1], f"positions {i_ck}: decryption event-equal flags {got}, expected all 1"
     assert N6.subset(ct_te, N6.CHECK_N, 2) == list(range(6)), "fewer samples than --check: all are checked"
 
@@ -472,7 +471,7 @@ def test_n6_features_bins_tell_a_stream_from_its_time_reverse():
     rev = rev[np.argsort(rev["t"], kind="stable")]
     assert np.array_equal(N6.features(ev, g, 1), N6.frame(ev, g))
     assert np.array_equal(N6.features(ev, g, 1), N6.features(rev, g, 1)), "one frame is blind to time order"
-    nb = N6.BINS["dvsgesture"]
+    nb = 8
     f, r = N6.features(ev, g, nb), N6.features(rev, g, nb)
     assert f.shape == (2 * nb, g.H, g.W) and f.max() == 1.0
     assert not np.array_equal(f, r), "time bins must see the order"
@@ -492,3 +491,82 @@ def test_n6_cnn_learns_and_evaluates_deterministically():
     m.train()
     assert N6.evaluate(torch, m, X[96:], y[96:], "cpu") == acc and not m.training, "evaluate() must switch to eval"
     assert N6.cnn(torch, 11, 16)(torch.zeros(2, 16, 128, 128)).shape == (2, 11)      # DVS Gesture input
+
+
+# ---------------------------------------------------------------- #75: N6 gate before sealing, model selection
+def test_n6_gate_runs_before_any_sealing(monkeypatch, tmp_path):
+    """Bug #75: N6 sealed ~10 h of DVS Gesture before learning that the clean model failed its gate. A failing gate
+    must now end the run without one call of the sealer."""
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    calls = []
+    monkeypatch.setattr(N6, "sealed_frames", lambda *a, **k: calls.append(a[1]) or np.zeros((1,)))
+    monkeypatch.setattr(N6, "GATE", {"synthetic": 1.01})                 # unreachable: the gate must fail
+    monkeypatch.setattr(sys, "argv", ["n6", "--quick", "--limit", "24", "--out", str(tmp_path)])
+    N6.main()
+    data = json.loads((tmp_path / "task_accuracy.json").read_text())
+    assert data["gate"]["passes"] is False and calls == [], f"sealed {calls} after a failed gate"
+    assert data["decrypted_event_equal"] == "not run (gate failed)"
+
+
+def test_n6_passing_gate_seals_every_view_and_adds_the_subset_reference(monkeypatch, tmp_path):
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    monkeypatch.setattr(sys, "argv", ["n6", "--quick", "--limit", "24", "--views", "V2", "V4", "--workers", "1",
+                                      "--out", str(tmp_path)])
+    N6.main()                                                             # synthetic data: no gate
+    data = json.loads((tmp_path / "task_accuracy.json").read_text())
+    assert {"clean", "clear_subset", "V2", "V4"} <= set(data["results"]), sorted(data["results"])
+    assert data["decrypted_event_equal"].endswith(f"of {data['ciphertext_subset']['test']}"), data["decrypted_event_equal"]
+
+
+def test_n6_features_downsample_sums_blocks():
+    import neuro_common as C
+    import neuro_task_accuracy as N6
+    ev, _, _, g, _ = C.synthetic_samples(1, seed=6)[0]
+    full = N6.bins(ev, g, 4).reshape(8, g.H, g.W)
+    got = N6.features(ev, g, 4, 2)
+    ref = full.reshape(8, g.H // 2, 2, g.W // 2, 2).sum((2, 4))
+    assert got.shape == (8, g.H // 2, g.W // 2) and np.allclose(got, ref / ref.max())
+    assert np.isclose(got.sum() * ref.max(), len(ev)), "every event counted once"
+
+
+def test_n6_shift_augmentation_moves_content_and_keeps_shape():
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    x = torch.zeros(3, 2, 10, 10)
+    x[:, :, 5, 5] = 1.0
+    g = torch.Generator().manual_seed(0)
+    y = N6.shift_batch(torch, x, 2, g)
+    assert y.shape == x.shape and torch.equal(y.sum((1, 2, 3)), x.sum((1, 2, 3))), "a 2 px shift of a centre dot keeps it"
+    pos = [tuple(torch.nonzero(y[k, 0])[0].tolist()) for k in range(3)]
+    assert all(3 <= r <= 7 and 3 <= c <= 7 for r, c in pos), pos
+    assert N6.shift_batch(torch, x, 0, g) is x
+
+
+def test_n6_deep_cnn_works_on_both_dvs_input_sizes():
+    torch = pytest.importorskip("torch")
+    import neuro_task_accuracy as N6
+    for c in N6.CANDIDATES.values():
+        side = 128 // c["down"]
+        out = N6.cnn(torch, 11, 2 * c["nb"], c["arch"])(torch.zeros(2, 2 * c["nb"], side, side))
+        assert out.shape == (2, 11), (c, out.shape)
+
+
+def test_n6_select_scores_on_held_out_training_users_only(monkeypatch, tmp_path):
+    """Bug #75: the DVS model is chosen on users held out of the TRAINING split; the test split is never loaded."""
+    torch = pytest.importorskip("torch")
+    import neuro_common as C
+    import neuro_n6_select as SEL
+    loaded = []
+    real = C.load_samples
+    monkeypatch.setattr(C, "load_samples", lambda *a, **k: loaded.append(a[2] if len(a) > 2 else k.get("split")) or real(*a, **k))
+    held = SEL.holdout_users([f"u{i % 6}" for i in range(36)], 2)
+    assert held == SEL.holdout_users([f"u{i % 6}" for i in range(36)], 2) and len(held) == 2   # fixed seed
+    monkeypatch.setattr(sys, "argv", ["sel", "--quick", "--limit", "36", "--holdout", "2", "--seeds", "0",
+                                      "--profile", "1", "--candidates", "A_bug74", "--out", str(tmp_path)])
+    SEL.main()
+    data = json.loads((tmp_path / "selection.json").read_text())
+    assert data["chosen"] == "A_bug74" and data["data"]["held_out"] + data["data"]["fit"] == 36
+    assert set(data["data"]["held_out_users"]) and "V3" in data["sealing_profile"]
+    assert "test" not in loaded, "the test split must not be touched by model selection"
