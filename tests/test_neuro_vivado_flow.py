@@ -147,3 +147,12 @@ def test_sources_hash_ignores_line_endings_and_sees_rtl_edits(tmp_path):
     (rtl / "a.v").write_bytes(b"module a; wire w;\nendmodule\n")
     assert R.sources_hash(tmp_path) != h, "an RTL edit must change the hash"
     assert R.sources_hash() == R.sources_hash(), "deterministic"
+
+
+def test_blocks_step_does_not_build_the_u4_core():
+    """Bug #77: core_u4 routed for over an hour with a growing WNS and never finished; nv_top U = 4 reports the miss."""
+    sys.path.insert(0, str(ROOT / "hardware" / "vivado" / "neuro"))
+    import run_vivado_neuro as R
+    names = [n for n, _ in R.jobs_for("blocks")]
+    assert names == ["core_u1", "core_u2", "feistel", "table_gen", "tag32_u2"], names
+    assert "top_u4_1280x720" in [n for n, _ in R.jobs_for("usweep")], "U = 4 is still built at the top level"

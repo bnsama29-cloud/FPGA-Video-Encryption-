@@ -11,7 +11,7 @@ Steps (run only when the PC is free of paper-1 runs):
   ooc      nv_top, plan of record U = 2, PAD = 1, at 100 MHz for MAXW x MAXH in {34x34, 128x128, 346x260, 1280x720}
   usweep   nv_top at 1280 x 720 for U in {1, 2, 4} (L = 1: lane builds L >= 2 are not in contract n1's RTL; §6.4).
            Every run is at 100 MHz (the board's clock); Fmax is reported from the slack, no faster-clock builds
-  blocks   nv_ascon_core_u (U = 1, 2, 4), nv_feistel, nv_table_gen, nv_tag32 alone
+  blocks   nv_ascon_core_u (U = 1, 2; U = 4 misses 100 MHz, see nv_top U = 4), nv_feistel, nv_table_gen, nv_tag32 alone
   bd       PYNQ-Z2 block design + bitstream (software/system/board/neuro/block_design_neuro.tcl) -> overlay/neuro/
   power    report_power with a SAIF (set NV_SAIF to an XSim SAIF of the N1 run); without it the vectorless
            estimate of every ooc run is used and labelled "vectorless"
@@ -45,7 +45,10 @@ def jobs_for(step):
         for U in (1, 4):                   # U = 2 at 1280 x 720 is the last `ooc` build (not built twice)
             j.append((f"top_u{U}_1280x720", ["nv_top", "10.0", "U", str(U)]))
     elif step == "blocks":
-        for U in (1, 2, 4):
+        # U = 4 alone is not built (TESTING bug #77): its four unrolled rounds miss 100 MHz by ~2 ns, as nv_top U = 4
+        # does (WNS -2.133 ns), and the router then iterated for over an hour with a growing WNS (-1.55 -> -5.64 ns,
+        # laptop logs of 17 and 22 Nov) without finishing. The nv_top U = 4 row already reports that U = 4 misses.
+        for U in (1, 2):
             j.append((f"core_u{U}", ["nv_ascon_core_u", "10.0", "U", str(U)]))
         j += [("feistel", ["nv_feistel", "10.0"]), ("table_gen", ["nv_table_gen", "10.0"]),
               ("tag32_u2", ["nv_tag32", "10.0", "U", "2"])]
