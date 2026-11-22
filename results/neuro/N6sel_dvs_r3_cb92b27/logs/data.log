@@ -1,0 +1,9 @@
+$ /usr/bin/python3 software/scripts/get_events.py --out /kaggle/temp/kneuro_data dvsgesture --inputs /kaggle/input --inputs /kaggle/working/inputs --zip-url 'https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing'
+
+DVS Gesture: using the unpacked folder /kaggle/input/datasets/samarthium/neuro-inputs/ibmGestureTrain/ibmGestureTrain (no MD5 check possible on a folder)
+DVS Gesture: using the unpacked folder /kaggle/input/datasets/samarthium/neuro-inputs/ibmGestureTest/ibmGestureTest (no MD5 check possible on a folder)
+dvsgesture train: 1077 samples
+dvsgesture test: 264 samples
+dvsgesture: 2 files, 0.00 GB, manifest written
+
+ok
