@@ -12,3 +12,4 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N6_nmnist_v2_9a58dfa/` | `samarthbnsul/neuro-paper2-n6-nmnist-v2` | 9a58dfa |
 | `N6_dvs_v2_9a58dfa_gatefail/` | `samarthium/neuro-paper2-n6-dvs-v2` | 9a58dfa |
 | `N4_v2_b968fac/` | `samarthium/neuro-paper2-n4` | b968fac |
+| `N6sel_dvs_r2_27902c6/` | `samarthium/neuro-paper2-n6-select` | 27902c6 |
