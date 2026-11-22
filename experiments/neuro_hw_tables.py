@@ -14,8 +14,12 @@ imported, not edited) and adds per build:
 Also reads the PYNQ-Z2 overlay reports (--overlay, written by software/system/board/neuro/block_design_neuro.tcl) as
 the row "board overlay". A folder without post-route reports (a build that did not finish, e.g. nv_ascon_core_u U = 4,
 TESTING bug #77) stays in the JSON but is listed under the table as "no reports", not as a row of dashes.
+Power with simulated switching activity (run_vivado_neuro.py --steps power): every power_saif_<workload>.txt of a
+build, with the workload's events and clocks from sim_build/nv_power_<workload>/{sim_result,vectors}.json, gives
+energy per event = P x clocks x period / events (W x ns = nJ), total and dynamic.
 Writes sim_out/neuro/n2/hw_tables.{json,md}.
 """
+import json
 import argparse
 import importlib.util
 import re
@@ -53,6 +57,27 @@ def bram_per_ram(hier_text):
     return rows
 
 
+def energy_rows(build, sim_dir):
+    """[{workload, total_w, dynamic_w, confidence, events, cycles, nj_per_event, dyn_nj_per_event, ...}] of a build."""
+    out = []
+    period = build["params"].get("period", 10.0)
+    for tag, pw in sorted((build.get("power_saif") or {}).items()):
+        f = sim_dir / f"nv_power_{tag}" / "sim_result.json"
+        if not f.exists() or pw.get("total") is None:
+            continue
+        r = json.loads(f.read_text())
+        v = sim_dir / f"nv_power_{tag}" / "vectors.json"
+        vec = json.loads(v.read_text()) if v.exists() else {}
+        t_ns = r["cycles"] * period
+        out.append({"workload": tag, "level": vec.get("level"), "source": vec.get("source"),
+                    "total_w": pw["total"], "dynamic_w": pw.get("dynamic"), "confidence": pw.get("confidence"),
+                    "events": r["events"], "cycles": r["cycles"], "events_per_clk": r["events"] / r["cycles"],
+                    "nj_per_event": pw["total"] * t_ns / r["events"],
+                    "dyn_nj_per_event": pw["dynamic"] * t_ns / r["events"] if pw.get("dynamic") is not None
+                    else None})
+    return out
+
+
 def has_reports(build):
     """True when the build has post-route utilisation and timing (a finished build)."""
     return bool(build["util"].get("lut")) and build["timing"].get("wns") is not None
@@ -77,7 +102,8 @@ def main():
                "fmax_mhz": fmax, "power": r["power"], "power_source": "SAIF" if (f / "power_saif.txt").exists()
                else "vectorless", "missing": r["missing"], "kpol_generators": 1,
                # NV_IMPL of the build (impl.txt): "fast" Fmax can be slightly pessimistic; builds before 15 Nov: perf
-               "impl": (f / "impl.txt").read_text().strip() if (f / "impl.txt").exists() else "perf"}
+               "impl": (f / "impl.txt").read_text().strip() if (f / "impl.txt").exists() else "perf",
+               "power_saif": r.get("power_saif") or {}}
         if U and "nv_top" in f.name:
             tag = 4 / (8 // U + 1)
             W, H = p.get("maxw", 1280), p.get("maxh", 720)
@@ -96,6 +122,11 @@ def main():
                        "bram_rows": []})
     for b in builds:
         b["reported"] = has_reports(b)
+        b["energy"] = energy_rows(b, a.dir)
+    erows = [(b["build"], e["workload"], e["events"], e["cycles"], f"{e['events_per_clk']:.3f}", e["total_w"],
+              e["dynamic_w"], e["confidence"], f"{e['nj_per_event']:.2f}",
+              f"{e['dyn_nj_per_event']:.2f}" if e["dyn_nj_per_event"] is not None else "-")
+             for b in builds for e in b["energy"]]
 
     def u(r, k):
         v = r["util"].get(k)
@@ -114,6 +145,12 @@ def main():
           C.table(["build", "LUT", "FF", "BRAM tiles", "DSP", "WNS ns", "Fmax MHz", "auth Mev/s at Fmax", "power W",
                    "power source", "impl"], rows),
           "" if not unreported else f"No post-route reports (build did not finish): {', '.join(unreported)}.",
+          *(["", "## Power with simulated switching activity (SAIF from tb_nv_power, bit-exact replay)", "",
+              C.table(["build", "workload", "events", "clocks", "events/clk", "total W", "dynamic W", "confidence",
+                       "nJ/event (total)", "nJ/event (dynamic)"], erows),
+              "", "real_*: a DVS Gesture test recording at sensor rate (the per-packet table fill dominates the "
+              "clocks); dense_*: uniform synthetic events, 10 000 per ms (the datapath busy every clock). "
+              "Energy per event = power x clocks x 10 ns / events."] if erows else []),
           "", "impl: Vivado implementation strategy (NV_IMPL). fast = default directives, redone with the timing-driven "
           "ones only when 100 MHz was missed (fast+perf); its Fmax from the slack can be slightly below a perf build's."]
     C.write("n2", "hw_tables", data, "\n".join(md), a.out)

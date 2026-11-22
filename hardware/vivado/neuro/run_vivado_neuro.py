@@ -13,14 +13,19 @@ Steps (run only when the PC is free of paper-1 runs):
            Every run is at 100 MHz (the board's clock); Fmax is reported from the slack, no faster-clock builds
   blocks   nv_ascon_core_u (U = 1, 2; U = 4 misses 100 MHz, see nv_top U = 4), nv_feistel, nv_table_gen, nv_tag32 alone
   bd       PYNQ-Z2 block design + bitstream (software/system/board/neuro/block_design_neuro.tcl) -> overlay/neuro/
-  power    report_power with a SAIF (set NV_SAIF to an XSim SAIF of the N1 run); without it the vectorless
-           estimate of every ooc run is used and labelled "vectorless"
+  power    switching activity for nv_top U = 2 at 1280 x 720 (the ooc build): for each workload of POWER_RUNS,
+           experiments/neuro_power_vectors.py writes the stimulus, XSim runs hardware/tb/neuro/tb_nv_power.v
+           (bit-exact against the model, else the workload is not used) and records activity.saif, and
+           hardware/vivado/power_saif.tcl re-reports the routed design's power with it ->
+           sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720/power_saif_<workload>.txt. The real workloads need one
+           DVS Gesture test recording: --power-npy ibmGestureTest/user24_fluorescent/0.npy (unpacked)
   parse    experiments/neuro_hw_tables.py: sim_build/vivado_neuro_* -> sim_out/neuro/n2/hw_tables.{json,md}
 The N2b walk ablation (nv_feistel_walk) is not built: the walk variant exists in the model only (§4.3.4).
 Each job's log goes to sim_build/vivado_neuro_logs/<job>.log; a failed job does not stop the others.
 """
 import argparse
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -87,6 +92,91 @@ def done(name, current=None):
     return stamp.exists() and stamp.read_text().strip() == (current or sources_hash())
 
 
+POWER_DCP = "sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720"
+POWER_TB = "hardware/tb/neuro/tb_nv_power.v"
+POWER_RTL = ["hardware/rtl/ascon_round.v", "hardware/rtl/ascon_aead128_core.v", "hardware/rtl/keystream_gen.v",
+             "hardware/rtl/skid_buf.v", "hardware/rtl/neuro/*.v"]
+# workload -> neuro_power_vectors.py arguments; "real" ones read --power-npy
+POWER_RUNS = {"real_v2": ["--level", "2", "--npy"], "real_v3": ["--level", "3", "--npy"],
+              "dense_v2": ["--level", "2", "--ms", "8"], "dense_v3": ["--level", "3", "--ms", "8"]}
+
+
+def tool(name):
+    exe = shutil.which(name) or shutil.which(name + ".bat")
+    if not exe:
+        raise SystemExit(f"{name} not on PATH (source settings64 / run from the Vivado command prompt)")
+    return exe
+
+
+def sim_result(text):
+    """{mismatches, words, events, cycles} from tb_nv_power's RESULT line, or None."""
+    m = re.search(r"RESULT nv_power mismatches=(\d+) words=(\d+) events=(\d+) cycles=(\d+)", text)
+    return dict(zip(("mismatches", "words", "events", "cycles"), map(int, m.groups()))) if m else None
+
+
+def power_jobs(npy):
+    """(workload, vector arguments) to run; the real workloads only when a recording is given."""
+    out = []
+    for tag, args in POWER_RUNS.items():
+        if args[-1] == "--npy":
+            if not npy:
+                print(f"power {tag}: skipped (no --power-npy)")
+                continue
+            args = args + [str(npy)]
+        out.append((tag, args))
+    return out
+
+
+def run_power(npy, dry):
+    """The power step; returns [(name, rc, seconds)]."""
+    results = []
+    dcp = ROOT / POWER_DCP / "routed.dcp"
+    if not dcp.exists() and not dry:
+        print(f"power: no {dcp.relative_to(ROOT)} (run --steps ooc first)")
+        return [("power", 1, 0.0)]
+    srcs = [str(ROOT / POWER_TB)] + [str(f) for p in POWER_RTL for f in sorted(ROOT.glob(p))]
+    for tag, args in power_jobs(npy):
+        t0 = time.time()
+        work = ROOT / "sim_build" / f"nv_power_{tag}"
+        cmds = [[sys.executable, str(ROOT / "experiments" / "neuro_power_vectors.py"), *args, "--out", str(work)]]
+        if dry:
+            print("DRY", " ".join(cmds[0]), "; xvlog/xelab/xsim tb_nv_power; power_saif.tcl", tag)
+            results.append((f"power_{tag}", 0, 0.0))
+            continue
+        work.mkdir(parents=True, exist_ok=True)
+        (work / "saif.tcl").write_text("open_saif activity.saif\nlog_saif [get_objects -r /tb_nv_power/dut/*]\n"
+                                       "run all\nclose_saif\nquit\n")
+        cmds += [[tool("xvlog"), "-i", str(ROOT / "hardware" / "rtl" / "include"), *srcs],
+                 [tool("xelab"), "-debug", "typical", "-top", "tb_nv_power", "-snapshot", "tb_power"],
+                 [tool("xsim"), "tb_power", "-tclbatch", "saif.tcl"]]
+        log = LOGS / f"power_{tag}.log"
+        LOGS.mkdir(parents=True, exist_ok=True)
+        rc = 0
+        with open(log, "w", encoding="utf-8") as f:
+            for c in cmds:
+                rc = subprocess.run(c, cwd=work if c[0] != sys.executable else ROOT, stdout=f,
+                                    stderr=subprocess.STDOUT).returncode
+                if rc:
+                    break
+        r = sim_result(log.read_text(errors="replace"))
+        if rc or not r or r["mismatches"] or not (work / "activity.saif").exists():
+            print(f"power {tag}: simulation failed or not bit-exact ({r}); see {log}")
+            results.append((f"power_{tag}", 1, time.time() - t0))
+            continue
+        (work / "sim_result.json").write_text(json.dumps(r) + "\n")
+        rpt = f"{POWER_DCP}/power_saif_{tag}.txt"
+        with open(log, "a", encoding="utf-8") as f:
+            rc = subprocess.run([tool("vivado"), "-mode", "batch", "-nojournal", "-nolog", "-source",
+                                 "hardware/vivado/power_saif.tcl", "-tclargs", f"{POWER_DCP}/routed.dcp",
+                                 f"sim_build/nv_power_{tag}/activity.saif", "tb_nv_power/dut", rpt],
+                                cwd=ROOT, stdout=f, stderr=subprocess.STDOUT).returncode
+        ok = "RESULT power_saif" in log.read_text(errors="replace") and (ROOT / rpt).exists()
+        print(f"power {tag}: {r['events']} events in {r['cycles']} clk, bit-exact; "
+              f"{'report ' + rpt if ok else 'power report FAILED, see ' + str(log)}")
+        results.append((f"power_{tag}", 0 if ok else 1, time.time() - t0))
+    return results
+
+
 def overlay_status(text):
     """(rc, message) of the bd step from its log: 0 only with a RESULT overlay line and WNS >= 0 (paper 1 checks the
     same line; a bitstream that misses its clock must not be reported as built)."""
@@ -135,6 +225,8 @@ def main():
     ap.add_argument("--impl", choices=["fast", "perf"], default="fast", help="Vivado implementation strategy")
     ap.add_argument("--resume", action="store_true",
                     help="skip jobs already built from the current sources (RESULT line and matching .src stamp)")
+    ap.add_argument("--power-npy", type=Path, default=None,
+                    help="one unpacked DVS Gesture test recording for the real power workloads")
     a = ap.parse_args()
     os.environ["NV_IMPL"] = a.impl                 # read by vivado_ooc_neuro.tcl (inherited by every Vivado job)
     exe = "vivado" if a.dry else None
@@ -160,8 +252,8 @@ def main():
             rc, msg = overlay_status((LOGS / "bd.log").read_text(errors="replace"))
             print(msg)
         results.append((name, rc, dt))
-    if "power" in a.steps and not os.getenv("NV_SAIF"):
-        print("power: NV_SAIF not set; the tables use the vectorless estimate (labelled)")
+    if "power" in a.steps:
+        results += run_power(a.power_npy, a.dry)
     if "parse" in a.steps:
         subprocess.run([sys.executable, str(ROOT / "experiments" / "neuro_hw_tables.py")], cwd=ROOT, check=False)
     bad = [n for n, rc, _ in results if rc]
