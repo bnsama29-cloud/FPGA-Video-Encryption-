@@ -20,3 +20,4 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N6x_bins8_51c8b96/` | `samarthbnsul/neuro-paper2-n6x-bins8` | 51c8b96 |
 | `N2_power_ef5cb58/` | laptop Vivado 2026.1 + XSim (not Kaggle) | ef5cb58 |
 | `N6sel_dvs_r3_cb92b27/` | `samarthium/neuro-paper2-n6-select-r3` | cb92b27 |
+| `N6x_pad_cb92b27/` | `samarthbnsul/neuro-paper2-n6x-pad` | cb92b27 |

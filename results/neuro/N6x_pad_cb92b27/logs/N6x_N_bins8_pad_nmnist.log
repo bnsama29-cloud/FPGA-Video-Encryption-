@@ -1,0 +1,12 @@
+$ /usr/bin/python3 experiments/neuro_task_accuracy.py --dataset nmnist --data /kaggle/temp/kneuro_data/nmnist --config N_bins8_pad --views "V3" "V3 + pad floor 4" "V3 + pad floor 16" "V3 + pad ladder 2..64" --seeds 0 1 2 --out /kaggle/working/repo/sim_out/neuro/n6x/N_bins8_pad/nmnist
+
+clean seed 0: 0.9950
+clean seed 1: 0.9962
+clean seed 2: 0.9956
+sealed V3
+sealed V3 + pad floor 4
+sealed V3 + pad floor 16
+sealed V3 + pad ladder 2..64
+wrote /kaggle/working/repo/sim_out/neuro/n6x/N_bins8_pad/nmnist/task_accuracy.json and .md
+
+ok
