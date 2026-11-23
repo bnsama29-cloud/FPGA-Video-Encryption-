@@ -141,3 +141,20 @@ def test_finished_rows_are_written_before_a_later_view_fails(tmp_path, monkeypat
         R.main()
     d = json.loads((tmp_path / "reid.json").read_text())
     assert set(d["results"]) == {"clear", "counts only"}
+
+
+def test_a_paper_run_stops_when_no_query_has_a_match():
+    """23 Nov QUICK run: rank-1 was nan (no same-identity sample in any gallery); a paper run must stop, not train."""
+    R.check_queries([0.5, float("nan")], quick=False)           # one seed defined: fine
+    with pytest.raises(SystemExit, match="undefined"):
+        R.check_queries([float("nan")] * 3, quick=False)
+    R.check_queries([float("nan")], quick=True)                 # QUICK: reported, not fatal
+
+
+def test_scheduler_follows_only_real_optimizer_steps(monkeypatch):
+    """AMP's scaler can skip a step; the cosine schedule must not run ahead of the optimizer (PyTorch warned)."""
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("torchvision")
+    import inspect
+    src = inspect.getsource(R.train_net)
+    assert "scaler.get_scale() >= scale" in src and src.index("scaler.update()") < src.index("sch.step()")

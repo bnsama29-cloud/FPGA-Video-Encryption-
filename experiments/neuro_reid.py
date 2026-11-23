@@ -155,6 +155,16 @@ def rank1_map(emb, pid, cam, gallery="cross-camera"):
     return (float(np.mean(r1)) if r1 else float("nan")), (float(np.mean(aps)) if aps else float("nan"))
 
 
+def check_queries(rank1, quick):
+    """Stop a paper run at once when no test sample had a same-identity sample in its gallery (every rank-1 is nan):
+    the split or the gallery rule is wrong, and the hours of training that follow would report nothing."""
+    if all(np.isnan(v) for v in rank1):
+        msg = "no test sample has a same-identity sample in its gallery: rank-1 / mAP undefined"
+        if not quick:
+            raise SystemExit(msg)
+        print("QUICK:", msg, "(small --limit; a paper run stops here)", flush=True)
+
+
 def batch_hard_triplet(torch, f, y, margin=MARGIN):
     """Batch-hard triplet loss (Hermans et al. 2017): for every anchor, its farthest positive and nearest negative
     in the batch (Euclidean); anchors without a positive or a negative are left out."""
@@ -230,9 +240,11 @@ def train_net(torch, X, y, classes, epochs, seed, dev, bs=32, lr=1e-4, triplet=F
             loss = loss + batch_hard_triplet(torch, f.float(), yb)
             opt.zero_grad()
             scaler.scale(loss).backward()
+            scale = scaler.get_scale()
             scaler.step(opt)
             scaler.update()
-            sch.step()
+            if scaler.get_scale() >= scale:   # the scaler skipped this step (inf / nan gradients): keep the schedule
+                sch.step()                    # in step with the optimizer (PyTorch warns otherwise)
     return m
 
 
@@ -354,6 +366,7 @@ def main():
 
     res["clear"] = {"cipher_trained": score(clear_nets, X[te]), "clear_trained": None}
     print("clear", res["clear"], f"{time.time() - t0:.0f} s", flush=True)
+    check_queries(res["clear"]["cipher_trained"]["rank1"], a.quick)
     report()                                  # written after every view: a run stopped at the time limit keeps
     #                                           every finished row
     for view in a.views:

@@ -145,3 +145,4 @@ def test_n12_datasets_and_args():
     assert args(None) == ""
     with pytest.raises(SystemExit, match="--out"):
         args("--out /tmp/x")                 # the runner owns --out / --data
+    assert args("--limit 300") == "--limit 300", "DVS Gesture full run seals a subset of the training split"

@@ -264,7 +264,7 @@ def n12_args(env):
     the shell; only the options that choose recipe, views, seeds, frames and epochs are accepted."""
     import shlex
     toks = shlex.split(env or "")
-    allowed = {"--recipe", "--views", "--seeds", "--per-file", "--epochs", "--seed"}
+    allowed = {"--recipe", "--views", "--seeds", "--per-file", "--epochs", "--seed", "--limit"}
     bad = [t for t in toks if t.startswith("--") and t not in allowed]
     if bad:
         raise SystemExit(f"N12_ARGS: options {bad} are not accepted ({sorted(allowed)})")
@@ -388,10 +388,10 @@ if "n3" in RUN:
 if "n12" in RUN:
     N12_EXTRA = n12_args(os.environ.get("N12_ARGS"))
     for ds in N12_DATASETS:
-        q12 = {"eventreid": "--quick --limit 16 --train-persons 2", "dvsgesture": "--quick --limit 24"}[ds]
+        q12 = {"eventreid": "--quick --limit 12 --train-persons 2", "dvsgesture": "--quick --limit 8"}[ds]
         # 22 Nov run: Event-ReId wrote to {OUT}/n12; per-dataset folders from 23 Nov
         sh(f"{sys.executable} experiments/neuro_reid.py --dataset {ds} --data {DATA}/{ds} {q12 if QUICK else ''} "
-           f"{N12_EXTRA} --out {OUT}/n12/{ds}", f"N12 reid {ds}", limit=GPU_S if QUICK else DEADLINE_S,
+           f"{N12_EXTRA} --out {OUT}/n12/{ds}", f"N12 reid {ds}", limit=2400 if QUICK else DEADLINE_S,
            want="wrote ")
         checkpoint()
 
