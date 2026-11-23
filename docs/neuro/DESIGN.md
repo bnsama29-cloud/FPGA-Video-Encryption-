@@ -1231,6 +1231,7 @@ over every paper-2 step.
 | 2026-11-23 | N13 | Count-series leak without dummies: `experiments/neuro_mixing.py` mixes k cameras into one encryptor configured as a virtual k W × H sensor (k W ≤ 2048, no RTL change) and evaluates a model-only shaped padding (peak hold, decay λ); attackers and statistics as N5 |
 | 2026-11-23 | N14, masking cost, N12 e2vid | `experiments/neuro_reduced_rounds.py` (exact known-plaintext attacks on r = 1-3 within a packet); `nv_ascon_round_dom.v` (first-order DOM-indep Ascon round, functional check against the model only; area via `run_vivado_neuro.py --steps mask`) next to `nv_ascon_round_reg.v`; `neuro_reid.py --recipe e2vid` (reconstruct-then-identify attacker) |
 | 2026-11-23 | N15, N6x ideal | `experiments/neuro_margin.py` (single-packet distinguisher by rounds at N8's per-packet budgets); N6 view `ideal` (fresh uniform permutation per packet window, V2 otherwise) and config `N_bins8_ideal` (Kaggle `STEPS=n6x N6X_CONFIGS=N_bins8_ideal`) |
+| 2026-11-23 | N16 | `experiments/neuro_tvla_sim.py`: simulated first-order TVLA (HW + HD per register, no glitches) of `nv_ascon_round_dom` against `nv_ascon_round_reg`; measured traces and a glitch-aware check (PROLEAD) remain open |
 
 ---
 
