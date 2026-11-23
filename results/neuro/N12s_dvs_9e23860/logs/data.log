@@ -1,0 +1,18 @@
+$ /usr/bin/python3 software/scripts/get_events.py --out /kaggle/temp/kneuro_data eventreid dvsgesture --inputs /kaggle/input --inputs /kaggle/working/inputs --zip-url 'https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing'
+
+Event-ReId (Zenodo 8256439): 1 files, 0.67 GB
+  Event_ReId.zip  670.1 MB  md5:6dec09171760e6ff6bdc48e99512caa3
+eventreid: 266 files, 2.34 GB, manifest written
+ibmGestureTrain.tar.gz: extracting 2443.7 MB from https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing
+DVS Gesture: ibmGestureTrain.tar.gz taken from https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing
+ibmGestureTest.tar.gz: extracting 691.5 MB from https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing
+DVS Gesture: ibmGestureTest.tar.gz taken from https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing
+Using downloaded and verified file: /kaggle/temp/kneuro_data/dvsgesture/DVSGesture/ibmGestureTrain.tar.gz
+Extracting /kaggle/temp/kneuro_data/dvsgesture/DVSGesture/ibmGestureTrain.tar.gz to /kaggle/temp/kneuro_data/dvsgesture/DVSGesture
+dvsgesture train: 1077 samples
+Using downloaded and verified file: /kaggle/temp/kneuro_data/dvsgesture/DVSGesture/ibmGestureTest.tar.gz
+Extracting /kaggle/temp/kneuro_data/dvsgesture/DVSGesture/ibmGestureTest.tar.gz to /kaggle/temp/kneuro_data/dvsgesture/DVSGesture
+dvsgesture test: 264 samples
+dvsgesture: 1345 files, 15.98 GB, manifest written
+
+ok

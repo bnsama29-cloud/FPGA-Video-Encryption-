@@ -1,0 +1,20 @@
+$ /usr/bin/python3 experiments/neuro_reid.py --dataset dvsgesture --data /kaggle/temp/kneuro_data/dvsgesture  --recipe strong --limit 300 --views V3 'Du 2021' 'counts only' --seeds 0 1 2 --out /kaggle/working/repo/sim_out/neuro/n12/dvsgesture
+
+Downloading: "https://download.pytorch.org/models/resnet50-11ad3fa6.pth" to /root/.cache/torch/hub/checkpoints/resnet50-11ad3fa6.pth
+
+  0%|          | 0.00/97.8M [00:00<?, ?B/s]
+  9%|▉         | 9.12M/97.8M [00:00<00:00, 95.3MB/s]
+ 35%|███▌      | 34.5M/97.8M [00:00<00:00, 196MB/s] 
+ 59%|█████▉    | 57.8M/97.8M [00:00<00:00, 217MB/s]
+ 83%|████████▎ | 81.0M/97.8M [00:00<00:00, 227MB/s]
+100%|██████████| 97.8M/97.8M [00:00<00:00, 219MB/s]
+clear {'cipher_trained': {'rank1': [0.7348484848484849, 0.6704545454545454, 0.7121212121212122], 'map': [0.3895206909016362, 0.3374927910742533, 0.3727828511927117]}, 'clear_trained': None} 196 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/dvsgesture/reid.json and .md
+V3 {'cipher_trained': {'rank1': [0.23106060606060605, 0.1553030303030303, 0.2159090909090909], 'map': [0.19148163943918903, 0.18842915201183605, 0.18821384340811925]}, 'clear_trained': {'rank1': [0.17424242424242425, 0.1553030303030303, 0.1893939393939394], 'map': [0.18562742481745254, 0.19060561800810147, 0.19109830471869982]}} 15719 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/dvsgesture/reid.json and .md
+Du 2021 {'cipher_trained': {'rank1': [0.2689393939393939, 0.19696969696969696, 0.20075757575757575], 'map': [0.1892542275235214, 0.18996101764285203, 0.18539090853127785]}, 'clear_trained': {'rank1': [0.17045454545454544, 0.14015151515151514, 0.1893939393939394], 'map': [0.18394259694133266, 0.18213859960739898, 0.18348527819456278]}} 15925 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/dvsgesture/reid.json and .md
+counts only {'cipher_trained': {'rank1': [0.14393939393939395, 0.19318181818181818, 0.20833333333333334], 'map': [0.1855394624332825, 0.18952983942118445, 0.18381207908019445]}, 'clear_trained': {'rank1': [0.19318181818181818, 0.17803030303030304, 0.1590909090909091], 'map': [0.18727858305910192, 0.19086588710655245, 0.1891878697828578]}} 16123 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/dvsgesture/reid.json and .md
+
+ok

@@ -25,3 +25,4 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N12s_er_counts_9e23860/` | `samarthbnsul/neuro-paper2-n12s2-er-counts` | 9e23860 |
 | `N12s_er_v3_9e23860/` | `samarthium/neuro-paper2-n12s2-er-v3` | 9e23860 |
 | `N2b_walk_model_f4e3066/` | none (cloud workspace, `experiments/neuro_walk_ablation.py --keys 16`) | f4e3066 |
+| `N12s_dvs_9e23860/` | `samarthhhhium/neuro-paper2-n12s2-dvs` | 9e23860 |
