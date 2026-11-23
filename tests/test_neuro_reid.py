@@ -137,3 +137,53 @@ def test_collapsed_embedding_stops_the_run():
     bad[3, 1] = np.nan
     with pytest.raises(SystemExit, match="non-finite"):
         R.check_embedding(bad, "x")
+
+
+# ---------------------------------------------------------------- recipe e2vid (reconstruct-then-identify, 23 Nov)
+class FakeRecon:
+    """Stands in for N3.Learned: the image is the window index (as a constant image), so the kept frames show
+    which window each one came from."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def reset(self):
+        self.calls = 0
+
+    def __call__(self, ev, geom):
+        self.calls += 1
+        return {"e2vid": np.full((geom.H, geom.W), min(1.0, ev["t"].min() / 1e6), np.float32)}
+
+
+def _ev(times, W=8, H=6):
+    ev = np.zeros(len(times), dtype=[("t", "<i8"), ("x", "<u2"), ("y", "<u2"), ("p", "u1")])
+    ev["t"] = times
+    return ev
+
+
+def test_block_mean_shapes_and_values():
+    img = np.arange(30, dtype=np.float32).reshape(5, 6)
+    out = R.block_mean(img, 2)
+    assert out.shape == (3, 3)
+    assert out[0, 0] == np.mean([0, 1, 6, 7]) and out[2, 2] == np.mean([28, 29, 0, 0])
+
+
+def test_e2vid_frames_keeps_the_image_of_each_start_window():
+    from neuro.geometry import Geometry
+    geom = Geometry("tiny", 8, 6)
+    f = R.FRAME_US
+    ev = _ev([int(0.5 * f), int(1.5 * f), int(3.5 * f)])          # windows 0, 1 and 3 have events, 2 has none
+    rec = FakeRecon()
+    out = R.e2vid_frames(ev, geom, np.array([0.0, 2 * f, 3 * f]), rec, 2)
+    assert out.shape == (3, 1, 3, 4) and out.dtype == np.float16
+    exp = [0.5 * f / 1e6, 1.5 * f / 1e6, 3.5 * f / 1e6]          # window 2 keeps the image of window 1 (recurrent)
+    got = [float(out[i, 0, 0, 0]) for i in range(3)]
+    assert np.allclose(got, exp, atol=1e-3), f"got {got}, expected {exp}"
+    assert rec.calls == 3, f"the network ran {rec.calls} times, expected once per non-empty window up to the last start"
+
+
+def test_e2vid_recipe_needs_the_checkout(monkeypatch):
+    pytest.importorskip("torch")
+    monkeypatch.setattr(sys, "argv", ["neuro_reid.py", "--recipe", "e2vid", "--quick"])
+    with pytest.raises(SystemExit, match="e2vid-repo"):
+        R.main()

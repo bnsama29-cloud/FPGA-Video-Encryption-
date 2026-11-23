@@ -55,6 +55,10 @@ RECIPES = {
               "per_file": 40},
     "strong": {"bins": 5, "down": {"eventreid": 2, "dvsgesture": 1, "synthetic": 2}, "epochs": 40, "lr": 1e-4,
                "per_file": 20},
+    # reconstruct-then-identify (Ahmad et al.'s attacker type): E2VID image of each frame window, run statefully over
+    # the recording (needs --e2vid-repo / --e2vid-ckpt), one grey channel, then the same ResNet-50 (23 Nov)
+    "e2vid": {"bins": 1, "down": {"eventreid": 2, "dvsgesture": 1, "synthetic": 2}, "epochs": 40, "lr": 1e-4,
+              "per_file": 20, "input": "e2vid"},
 }
 
 
@@ -118,8 +122,47 @@ def _frames_one(job):
                      for s in frame_times(roi, ev, per_file)]).astype(np.float16)
 
 
-def view_frames(recs, view, per_file, workers, whole=False, down=DOWN, bins=1):
+def block_mean(img, down):
+    """(H, W) image -> (ceil(H / down), ceil(W / down)) block means (zero padding at the edges)."""
+    H, W = img.shape
+    h, w = -(-H // down), -(-W // down)
+    p = np.zeros((h * down, w * down), np.float32)
+    p[:H, :W] = img
+    return p.reshape(h, down, w, down).mean((1, 3))
+
+
+def e2vid_frames(rec_ev, geom, starts, recon, down, whole=False):
+    """E2VID images at the given window starts: the network runs over every FRAME_US window from the start of the
+    recording (it is recurrent), and the image after window [s, s + FRAME_US) is kept for each s in starts.
+    whole: one image after the whole recording (DVS Gesture). Returns (n, 1, h, w) float16 in [0, 1]."""
+    recon.reset()
+    t_end = float(rec_ev["t"].max()) + 1 if len(rec_ev) else 1.0
+    last = t_end if whole else float(max(starts)) + FRAME_US
+    keep = {} if whole else {int(round(s / FRAME_US)): None for s in starts}
+    t, k, img = 0.0, 0, None
+    while t < last:
+        m = (rec_ev["t"] >= t) & (rec_ev["t"] < t + FRAME_US)
+        if m.any():
+            img = next(iter(recon(rec_ev[m], geom).values()))
+        if k in keep:
+            keep[k] = img
+        t, k = t + FRAME_US, k + 1
+    blank = np.zeros((geom.H, geom.W), np.float32)
+    imgs = [img if img is not None else blank] if whole else [keep[int(round(s / FRAME_US))] for s in starts]
+    out = [block_mean(np.clip(np.nan_to_num(i if i is not None else blank), 0, 1), down)[None] for i in imgs]
+    return np.stack(out).astype(np.float16)
+
+
+def view_frames(recs, view, per_file, workers, whole=False, down=DOWN, bins=1, recon=None):
     """Frames (n, 2 bins, h, w) of every recording under `view`, and the recording index of each frame."""
+    if recon is not None:                             # GPU network: sequential, in this process
+        out = []
+        for i, r in enumerate(recs):
+            v = apply_view(r["ev"], r["geom"], view, i)
+            starts = None if whole else frame_times(r["roi"], r["ev"], per_file)
+            out.append(e2vid_frames(v, r["geom"], starts, recon, down, whole))
+        idx = np.concatenate([np.full(len(f), i) for i, f in enumerate(out)])
+        return np.concatenate(out), idx
     jobs = [(r["ev"], r["geom"], view, i, r["roi"], per_file, whole, down, bins) for i, r in enumerate(recs)]
     if workers > 1 and len(jobs) >= 8:
         with ProcessPoolExecutor(workers, mp_context=mp.get_context("forkserver")) as ex:
@@ -237,6 +280,8 @@ def main():
     ap.add_argument("--epochs", type=int, default=None, help="override the recipe's epochs")
     ap.add_argument("--train-persons", type=int, default=22)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--e2vid-repo", default=None, help="rpg_e2vid checkout (recipe e2vid)")
+    ap.add_argument("--e2vid-ckpt", default=None, help="NAME=path of the E2VID checkpoint (recipe e2vid)")
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
@@ -250,6 +295,12 @@ def main():
     if a.quick:
         epochs, a.seeds, per_file = 1, a.seeds[:1], min(per_file, 4)
     whole = ds == "dvsgesture"
+    recon = None
+    if rec.get("input") == "e2vid":
+        if not (a.e2vid_repo and a.e2vid_ckpt):
+            raise SystemExit("recipe e2vid needs --e2vid-repo and --e2vid-ckpt (the N3 E2VID checkout)")
+        import neuro_recon_attack as N3
+        recon = N3.Learned(a.e2vid_repo, [a.e2vid_ckpt])
     gallery = "anonynoise" if whole else "cross-camera"
     recs = load(a)
     pid = np.array([r["pid"] for r in recs])
@@ -263,7 +314,7 @@ def main():
         tr_ids, te_ids = split_persons(pid, a.train_persons if a.data else max(1, len(set(pid)) // 2), a.seed)
     lab = {p: i for i, p in enumerate(tr_ids)}
     res, t0 = {}, time.time()
-    X, idx = view_frames(recs, "clear", per_file, a.workers, whole, down, bins)
+    X, idx = view_frames(recs, "clear", per_file, a.workers, whole, down, bins, recon)
     tr = np.isin(pid[idx], tr_ids)
     ytr = np.array([lab[p] for p in pid[idx][tr]])
     te = ~tr
@@ -294,8 +345,8 @@ def main():
             unit = (f"{n_q} test frames (33.3 ms each, up to {per_file} per recording), cross-camera retrieval")
         md = [f"# N12 person re-identification on {name}", "",
               f"{len(recs)} recordings, identities {len(tr_ids)} train / {len(te_ids)} test; {unit}; chance rank-1 about "
-              f"{100 / max(1, len(te_ids)):.0f} %. Recipe {a.recipe}: ResNet-50 (ImageNet), input {2 * bins} x {h} x {w} "
-              f"({bins} time bin(s), {down} x {down} blocks), cross-entropy, AdamW {lr:g} cosine, "
+              f"{100 / max(1, len(te_ids)):.0f} %. Recipe {a.recipe}: ResNet-50 (ImageNet), input {X.shape[1]} x {h} x {w} "
+              f"({'E2VID image' if recon else f'{bins} time bin(s)'}, {down} x {down} blocks), cross-entropy, AdamW {lr:g} cosine, "
               f"{epochs} epochs, seeds {a.seeds}; mean and 95 % interval in %.", "",
               C.table(["view", "rank-1, trained on the view", "mAP, trained on the view", "rank-1, clear-trained net",
                        "mAP, clear-trained net"], rows), "",
@@ -304,7 +355,7 @@ def main():
               "Ahmad et al. ICCV 2023 Event-ReId re-id rank-1 63.7 % on raw events; AnonyNoise WACV 2025 retrained "
               "attacker, Event-ReId top-1 59.1 % raw / 38.6 % anonymised, DVS Gesture 98.3 % raw / 40.0 % anonymised."]
         data = {"results": res, "train_ids": tr_ids, "test_ids": te_ids, "test_samples": n_q, "dataset": ds,
-                "recipe": a.recipe, "input_shape": [2 * bins, int(h), int(w)], "epochs": epochs, "gallery": gallery,
+                "recipe": a.recipe, "input_shape": [int(X.shape[1]), int(h), int(w)], "epochs": epochs, "gallery": gallery,
                 "meta": C.meta(a, synthetic=a.data is None, device=dev)}
         # keys kept for the 22 Nov readers (make_figures / make_summary read train_persons / test_persons)
         data["train_persons"], data["test_persons"], data["test_frames"] = tr_ids, te_ids, n_q
@@ -316,7 +367,7 @@ def main():
     report()                                  # written after every view: a run stopped at the time limit keeps
     #                                           every finished row
     for view in a.views:
-        V, vidx = view_frames(recs, view, per_file, a.workers, whole, down, bins)
+        V, vidx = view_frames(recs, view, per_file, a.workers, whole, down, bins, recon)
         assert (vidx == idx).all(), "frame order must not depend on the view"
         nets = [train_net(torch, V[tr], ytr, len(tr_ids), epochs, sd, dev, **fit) for sd in a.seeds]
         res[view] = {"cipher_trained": score(nets, V[te]), "clear_trained": score(clear_nets, V[te])}

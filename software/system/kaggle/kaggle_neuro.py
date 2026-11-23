@@ -403,6 +403,20 @@ if "n13" in RUN:
 
 if "n12" in RUN:
     N12_EXTRA = n12_args(os.environ.get("N12_ARGS"))
+    if "--recipe e2vid" in N12_EXTRA:      # reconstruct-then-identify attacker (23 Nov): upstream E2VID, as N3
+        ext12 = WORK / "ext12"
+        if ext12.exists():
+            shutil.rmtree(ext12)
+        ext12.mkdir()
+        sh(f"git clone --depth 1 {E2VID_REPO} {ext12 / 'rpg_e2vid'}", "E2VID code (N12)", cwd=WORK, check=True)
+        for f in (ext12 / "rpg_e2vid").rglob("*.py"):           # old-numpy names, this downloaded copy only
+            t = f.read_text(errors="replace")
+            t2 = t.replace("np.int(", "int(").replace("np.float(", "float(").replace("np.bool(", "bool(")
+            if t2 != t:
+                f.write_text(t2)
+        ck12 = fetch(E2VID_URL, ext12 / "E2VID_lightweight.pth.tar", "e2vid")   # SHA-256 checked, as N3
+        ENV["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"                         # old full pickle, pinned file
+        N12_EXTRA += f" --e2vid-repo {ext12 / 'rpg_e2vid'} --e2vid-ckpt e2vid={ck12}"
     for ds in N12_DATASETS:
         q12 = {"eventreid": "--quick --limit 12 --train-persons 2", "dvsgesture": "--quick --limit 8"}[ds]
         # 22 Nov run: Event-ReId wrote to {OUT}/n12; per-dataset folders from 23 Nov
