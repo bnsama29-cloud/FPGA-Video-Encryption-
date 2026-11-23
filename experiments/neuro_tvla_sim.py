@@ -5,14 +5,14 @@ Usage:
 
 Method, fixed before the run. A simulation, not a measurement: no glitches, no coupling, no real noise model.
   * Register-level model of hardware/rtl/neuro/nv_ascon_round_dom.v (the 20 registered 64-bit partial products
-    p00, p01, p10, p11 of the five ANDs and the 10 registered linear terms l0, l1) and of nv_ascon_round_reg.v
+    p00, p01, p10, p11 of the seven ANDs (bug #84 form) and the 10 registered linear terms l0, l1) and of nv_ascon_round_reg.v
     (input and output registers). The model is checked against software/model/ascon.py (the shares recombine to one
     Ascon round) before any trace is simulated.
   * Leakage per clock: for every 64-bit register, its Hamming weight (value model) and the Hamming distance to the
     previous trace's value in the same register (transition model, traces back to back), plus Gaussian noise of
     standard deviation --noise bits. One sample per register and model.
   * Non-specific fixed-vs-random test (TVLA, ISO 17825 style): fixed state against uniformly random states, classes
-    interleaved at random, fresh mask and fresh 320 bits of DOM randomness per trace; Welch's t per sample; the
+    interleaved at random, fresh mask and fresh 448 bits of DOM randomness per trace; Welch's t per sample; the
     usual threshold |t| > 4.5. First order only: a first-order masking is expected to leak at second order.
 Writes sim_out/neuro/n16/tvla_sim.{json,md}.
 """
@@ -37,9 +37,23 @@ def pre_sbox(x0, x1, x2, x3, x4, rc):
     return x0 ^ x4, x1, x2 ^ x1, x3, x4 ^ x3           # a0, x1, a2, x3, a4
 
 
+N_AND = 7
+INV = [True, True, True, False, False, False, True]    # ANDs whose first operand is complemented (~u & v)
+
+
 def and_operands(a0, x1, a2, x3, a4):
-    """(u, v) of the five ANDs ~u & v, in the order of nv_ascon_round_dom.v: b_i = l_i ^ (~u_i & v_i)."""
-    return [(x1, a2), (a2, x3), (x3, a4), (a4, a0), (a0, x1)], [a0, x1, a2, x3, a4]
+    """(u, v) of the seven ANDs of nv_ascon_round_dom.v, every pair independently shared (bug #84):
+    0 ~x1&x2  1 ~a2&x3  2 ~x3&x4  3 x3&x0  4 x3&x4  5 x4&x0  6 ~a0&x1, and the linear terms of b0..b4."""
+    x4 = a4 ^ x3
+    x0 = a0 ^ x4
+    x2 = a2 ^ x1
+    return ([(x1, x2), (a2, x3), (x3, x4), (x3, x0), (x3, x4), (x4, x0), (a0, x1)],
+            [a0, x1, a2, x3 ^ x0, a4])
+
+
+def combine(z):
+    """S-box nonlinear term of b0..b4 from the seven AND outputs."""
+    return [z[0], z[1], z[2], z[3] ^ z[4] ^ z[5], z[6]]
 
 
 def post(b, share0=True):
@@ -50,22 +64,25 @@ def post(b, share0=True):
 
 
 def dom_registers(S0, S1, R, rc=RC):
-    """Registered values of nv_ascon_round_dom for share arrays S0, S1 (5 x n uint64) and randomness R (5 x n).
-    Returns (regs: list of 30 arrays, out0, out1). Constants and inversions on share 0 only, as in the RTL."""
+    """Registered values of nv_ascon_round_dom for share arrays S0, S1 (5 x n uint64) and randomness R (7 x n).
+    Returns (regs: list of 38 arrays, out0, out1). Constants and inversions on share 0 only, as in the RTL."""
     a_0 = pre_sbox(*S0, rc)
     a_1 = pre_sbox(*S1, 0)
     ops0, lin0 = and_operands(*a_0)
     ops1, lin1 = and_operands(*a_1)
-    regs, b0, b1 = [], [], []
-    for i in range(5):
+    regs, z0, z1 = [], [], []
+    for i in range(N_AND):
         u0, v0 = ops0[i]
         u1, v1 = ops1[i]
-        u0 = ~u0                                       # ~u = (~u0) ^ u1
+        if INV[i]:
+            u0 = ~u0                                   # ~u = (~u0) ^ u1
         p00, p11 = u0 & v0, u1 & v1
         p01, p10 = (u0 & v1) ^ R[i], (u1 & v0) ^ R[i]
         regs += [p00, p01, p10, p11]
-        b0.append(lin0[i] ^ p00 ^ p01)
-        b1.append(lin1[i] ^ p11 ^ p10)
+        z0.append(p00 ^ p01)
+        z1.append(p11 ^ p10)
+    b0 = [l ^ z for l, z in zip(lin0, combine(z0))]
+    b1 = [l ^ z for l, z in zip(lin1, combine(z1))]
     regs += lin0 + lin1
     out0 = post(b0)
     out1 = post(b1, share0=False)
@@ -76,7 +93,8 @@ def plain_registers(S, rc=RC):
     """Registered values of nv_ascon_round_reg: input register and output register (10 words)."""
     a = pre_sbox(*S, rc)
     ops, lin = and_operands(*a)
-    b = [lin[i] ^ (~ops[i][0] & ops[i][1]) for i in range(5)]
+    z = [(~u if inv else u) & v for (u, v), inv in zip(ops, INV)]
+    b = [l ^ t for l, t in zip(lin, combine(z))]
     return list(S) + post(b)
 
 
@@ -84,7 +102,7 @@ def check_against_model(rng, n=64):
     S = rng.integers(0, 2 ** 63, size=(5, n), dtype=np.uint64) * np.uint64(2) + rng.integers(0, 2, (5, n),
                                                                                               dtype=np.uint64)
     m = rng.integers(0, 2 ** 63, size=(5, n), dtype=np.uint64) * np.uint64(2)
-    R = rng.integers(0, 2 ** 63, size=(5, n), dtype=np.uint64)
+    R = rng.integers(0, 2 ** 63, size=(N_AND, n), dtype=np.uint64)
     _, o0, o1 = dom_registers(S ^ m, m, R)
     plain = plain_registers(S)[5:]
     for k in range(n):
@@ -102,9 +120,9 @@ def traces(regs_fn, fixed, n, rng, noise, masked):
                                                                                               dtype=np.uint64)
     S[:, lab] = np.asarray(fixed, dtype=np.uint64)[:, None]
     if masked:
-        rnd = lambda: rng.integers(0, 2 ** 63, size=(5, n), dtype=np.uint64) * np.uint64(2) + rng.integers(
-            0, 2, (5, n), dtype=np.uint64)
-        m, R = rnd(), rnd()
+        rnd = lambda k: rng.integers(0, 2 ** 63, size=(k, n), dtype=np.uint64) * np.uint64(2) + rng.integers(
+            0, 2, (k, n), dtype=np.uint64)
+        m, R = rnd(5), rnd(N_AND)
         regs = regs_fn(S ^ m, m, R)[0]
     else:
         regs = regs_fn(S)

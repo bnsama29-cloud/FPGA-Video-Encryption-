@@ -38,7 +38,7 @@ async def dom_rounds_recombine_to_p12(dut):
             await FallingEdge(dut.clk)
             dut.s0_in.value, dut.s1_in.value = s0, s1
             dut.rc.value = ((0xF - r) << 4) | r
-            dut.rnd.value = rng.getrandbits(320)
+            dut.rnd.value = rng.getrandbits(448)
             await RisingEdge(dut.clk)
             await FallingEdge(dut.clk)
             s0, s1 = int(dut.s0_out.value), int(dut.s1_out.value)
