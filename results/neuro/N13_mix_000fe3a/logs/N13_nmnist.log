@@ -1,0 +1,5 @@
+$ /usr/bin/python3 experiments/neuro_mixing.py --counts /kaggle/working/repo/sim_out/neuro/n5/nmnist_counts.npz --dataset nmnist  --out /kaggle/working/repo/sim_out/neuro/n13/nmnist
+
+wrote /kaggle/working/repo/sim_out/neuro/n13/nmnist/mixing.json and .md
+
+ok
