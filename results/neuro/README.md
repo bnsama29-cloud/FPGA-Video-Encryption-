@@ -22,3 +22,4 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N6sel_dvs_r3_cb92b27/` | `samarthium/neuro-paper2-n6-select-r3` | cb92b27 |
 | `N6x_pad_cb92b27/` | `samarthbnsul/neuro-paper2-n6x-pad` | cb92b27 |
 | `N12_reid_22819cb/` | `samarthium/neuro-paper2-n12-reid` | 22819cb |
+| `N12s_er_counts_9e23860/` | `samarthbnsul/neuro-paper2-n12s2-er-counts` | 9e23860 |

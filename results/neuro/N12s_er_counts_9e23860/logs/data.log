@@ -1,0 +1,7 @@
+$ /usr/bin/python3 software/scripts/get_events.py --out /kaggle/temp/kneuro_data eventreid --inputs /kaggle/input --inputs /kaggle/working/inputs --zip-url 'https://drive.google.com/file/d/10lsAYQsfsbdzGWrA0LGmoyUqisoYGINq/view?usp=sharing'
+
+Event-ReId (Zenodo 8256439): 1 files, 0.67 GB
+  Event_ReId.zip  670.1 MB  md5:6dec09171760e6ff6bdc48e99512caa3
+eventreid: 266 files, 2.34 GB, manifest written
+
+ok
