@@ -250,7 +250,30 @@ def n6_datasets(env):
     return names
 
 
-NEED = {"A": "nmnist dvsgesture eventreid", "B": "eventreid",
+def n12_datasets(env):
+    """N12 datasets, env N12_DATASETS (comma list; default eventreid): DVS Gesture users are AnonyNoise's re-id setting."""
+    names = [d.strip().lower() for d in (env or "eventreid").split(",") if d.strip()]
+    bad = [d for d in names if d not in ("eventreid", "dvsgesture")]
+    if bad or not names:
+        raise SystemExit(f"N12_DATASETS {env!r}: use eventreid and/or dvsgesture")
+    return names
+
+
+def n12_args(env):
+    """Extra neuro_reid.py arguments from env N12_ARGS (e.g. '--recipe strong --views V3 "Du 2021"'), re-quoted for
+    the shell; only the options that choose recipe, views, seeds, frames and epochs are accepted."""
+    import shlex
+    toks = shlex.split(env or "")
+    allowed = {"--recipe", "--views", "--seeds", "--per-file", "--epochs", "--seed"}
+    bad = [t for t in toks if t.startswith("--") and t not in allowed]
+    if bad:
+        raise SystemExit(f"N12_ARGS: options {bad} are not accepted ({sorted(allowed)})")
+    return shlex.join(toks)
+
+
+N12_DATASETS = n12_datasets(os.environ.get("N12_DATASETS")) if "n12" in RUN else []
+NEED = {"A": "nmnist dvsgesture eventreid",
+        "B": " ".join(["eventreid"] + [d for d in N12_DATASETS if d != "eventreid"]),
         "C": " ".join(n6_datasets(os.environ.get("N6_DATASETS")))}[PART]
 print("steps:", sorted(RUN), "| ONLY:", ONLY or "-", flush=True)
 ZIP_ARG = f"--zip-url '{DATA_ZIP}'" if DATA_ZIP else ""
@@ -363,10 +386,14 @@ if "n3" in RUN:
 
 # ---------------------------------------------------------------- N12 re-identification (GPU, on request)
 if "n12" in RUN:
-    sh(f"{sys.executable} experiments/neuro_reid.py --data {DATA}/eventreid "
-       f"{'--quick --limit 16 --train-persons 2' if QUICK else ''} --out {OUT}/n12", "N12 reid eventreid",
-       limit=GPU_S if QUICK else DEADLINE_S, want="wrote ")
-    checkpoint()
+    N12_EXTRA = n12_args(os.environ.get("N12_ARGS"))
+    for ds in N12_DATASETS:
+        q12 = {"eventreid": "--quick --limit 16 --train-persons 2", "dvsgesture": "--quick --limit 24"}[ds]
+        # 22 Nov run: Event-ReId wrote to {OUT}/n12; per-dataset folders from 23 Nov
+        sh(f"{sys.executable} experiments/neuro_reid.py --dataset {ds} --data {DATA}/{ds} {q12 if QUICK else ''} "
+           f"{N12_EXTRA} --out {OUT}/n12/{ds}", f"N12 reid {ds}", limit=GPU_S if QUICK else DEADLINE_S,
+           want="wrote ")
+        checkpoint()
 
 # ---------------------------------------------------------------- N6 task accuracy (GPU)
 def n6_args(quick, seeds):

@@ -129,4 +129,19 @@ def test_n12_reid_is_a_part_b_step_on_request():
     with pytest.raises(SystemExit):
         plan("C", "n12")
     src = SRC.read_text(encoding="utf-8")
-    assert "experiments/neuro_reid.py --data {DATA}/eventreid" in src
+    assert "experiments/neuro_reid.py --dataset {ds} --data {DATA}/{ds}" in src
+
+
+def test_n12_datasets_and_args():
+    """23 Nov: N12 on Event-ReId and DVS Gesture users, with the strong recipe and a view list split over accounts."""
+    ds, args = _fn("n12_datasets"), _fn("n12_args")
+    assert ds(None) == ["eventreid"] and ds("eventreid, dvsgesture") == ["eventreid", "dvsgesture"]
+    with pytest.raises(SystemExit):
+        ds("nmnist")
+    got = args('--recipe strong --views V3 "Du 2021" "counts only" --seeds 0 1')
+    assert got == "--recipe strong --views V3 'Du 2021' 'counts only' --seeds 0 1", got
+    import shlex
+    assert shlex.split(got)[4] == "Du 2021", "a view name with a space stays one argument"
+    assert args(None) == ""
+    with pytest.raises(SystemExit, match="--out"):
+        args("--out /tmp/x")                 # the runner owns --out / --data
