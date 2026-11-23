@@ -22,6 +22,8 @@ Steps (run only when the PC is free of paper-1 runs):
   parse    experiments/neuro_hw_tables.py: sim_build/vivado_neuro_* -> sim_out/neuro/n2/hw_tables.{json,md}
   walk     ablation N2b only: nv_feistel_walk (cycle walking on the 2048 x 1024 binary domain of 1280 x 720) for
            K = 4 and 8 unrolled passes, against the `blocks` nv_feistel build (§4.3.4); not part of the IP
+  mask     masking-cost ablation only: one Ascon round with first-order DOM masking (nv_ascon_round_dom) against
+           the same round unmasked with registers (nv_ascon_round_reg); area and Fmax, no security claim
 Each job's log goes to sim_build/vivado_neuro_logs/<job>.log; a failed job does not stop the others.
 """
 import argparse
@@ -61,6 +63,8 @@ def jobs_for(step):
     elif step == "walk":
         for K in (4, 8):
             j.append((f"feistel_walk_k{K}", ["nv_feistel_walk", "10.0", "W", "1280", "H", "720", "K", str(K)]))
+    elif step == "mask":
+        j += [("ascon_round_dom", ["nv_ascon_round_dom", "10.0"]), ("ascon_round_reg", ["nv_ascon_round_reg", "10.0"])]
     return j
 
 
@@ -223,7 +227,7 @@ def run_job(name, cmd, dry):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["ooc", "usweep", "blocks", "parse"],
-                    choices=["ooc", "usweep", "blocks", "walk", "bd", "power", "parse"])
+                    choices=["ooc", "usweep", "blocks", "walk", "mask", "bd", "power", "parse"])
     ap.add_argument("--jobs", type=int, default=2, help="parallel Vivado runs (each needs ~6 GB RAM)")
     ap.add_argument("--dry", action="store_true", help="print the commands only")
     ap.add_argument("--impl", choices=["fast", "perf"], default="fast", help="Vivado implementation strategy")
