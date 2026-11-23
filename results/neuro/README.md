@@ -28,6 +28,9 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N14_reduced_rounds_f840c50/` | none (cloud workspace, `experiments/neuro_reduced_rounds.py`) | f840c50 |
 | `N13_mix_000fe3a/` | `samarthium/neuro-paper2-n13-mix` | 000fe3a |
 | `N15_margin_e905ac4/` | none (cloud workspace, `experiments/neuro_margin.py`) | e905ac4 |
+| `N6x_ideal_e905ac4/` | `samarthium/neuro-paper2-n6x-ideal` | e905ac4 |
 | `N12s_dvs_9e23860/` | `samarthhhhium/neuro-paper2-n12s2-dvs` | 9e23860 |
 | `N13_mix_000fe3a/` | `samarthium/neuro-paper2-n13-mix` | 000fe3a |
 | `N15_margin_e905ac4/` | none (cloud workspace, `experiments/neuro_margin.py`) | e905ac4 |
+| `N6x_ideal_e905ac4/` | `samarthium/neuro-paper2-n6x-ideal` | e905ac4 |
+| `N6x_ideal_e905ac4/` | `samarthium/neuro-paper2-n6x-ideal` | 400f3d2 |
