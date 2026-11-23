@@ -14,6 +14,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "software"), str(ROOT / "hardware" / "tb")
 KS = [RTL / "ascon_round.v", RTL / "ascon_aead128_core.v", RTL / "keystream_gen.v"]
 SOURCES_NV = {
     "nv_feistel": [NV / "nv_sdp_ram.v", NV / "nv_feistel.v"],
+    "nv_feistel_walk": [NV / "nv_sdp_ram.v", NV / "nv_feistel_walk.v"],   # ablation N2b only
     "nv_table_gen": KS + [NV / "nv_table_gen.v"],
     "nv_xor": KS + [NV / "nv_xor.v"],
     "nv_top": [RTL / "ascon_round.v", RTL / "ascon_aead128_core.v", RTL / "keystream_gen.v", RTL / "skid_buf.v"]

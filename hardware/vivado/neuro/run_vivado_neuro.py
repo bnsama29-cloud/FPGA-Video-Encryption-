@@ -20,7 +20,8 @@ Steps (run only when the PC is free of paper-1 runs):
            sim_build/vivado_neuro_nv_top_u2_maxw1280_maxh720/power_saif_<workload>.txt. The real workloads need one
            DVS Gesture test recording: --power-npy ibmGestureTest/user24_fluorescent/0.npy (unpacked)
   parse    experiments/neuro_hw_tables.py: sim_build/vivado_neuro_* -> sim_out/neuro/n2/hw_tables.{json,md}
-The N2b walk ablation (nv_feistel_walk) is not built: the walk variant exists in the model only (§4.3.4).
+  walk     ablation N2b only: nv_feistel_walk (cycle walking on the 2048 x 1024 binary domain of 1280 x 720) for
+           K = 4 and 8 unrolled passes, against the `blocks` nv_feistel build (§4.3.4); not part of the IP
 Each job's log goes to sim_build/vivado_neuro_logs/<job>.log; a failed job does not stop the others.
 """
 import argparse
@@ -57,6 +58,9 @@ def jobs_for(step):
             j.append((f"core_u{U}", ["nv_ascon_core_u", "10.0", "U", str(U)]))
         j += [("feistel", ["nv_feistel", "10.0"]), ("table_gen", ["nv_table_gen", "10.0"]),
               ("tag32_u2", ["nv_tag32", "10.0", "U", "2"])]
+    elif step == "walk":
+        for K in (4, 8):
+            j.append((f"feistel_walk_k{K}", ["nv_feistel_walk", "10.0", "W", "1280", "H", "720", "K", str(K)]))
     return j
 
 
@@ -219,7 +223,7 @@ def run_job(name, cmd, dry):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--steps", nargs="+", default=["ooc", "usweep", "blocks", "parse"],
-                    choices=["ooc", "usweep", "blocks", "bd", "power", "parse"])
+                    choices=["ooc", "usweep", "blocks", "walk", "bd", "power", "parse"])
     ap.add_argument("--jobs", type=int, default=2, help="parallel Vivado runs (each needs ~6 GB RAM)")
     ap.add_argument("--dry", action="store_true", help="print the commands only")
     ap.add_argument("--impl", choices=["fast", "perf"], default="fast", help="Vivado implementation strategy")

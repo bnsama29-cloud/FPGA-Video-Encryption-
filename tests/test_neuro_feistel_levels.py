@@ -48,6 +48,34 @@ def test_walk_variant_is_exact_and_counts_calls():
     assert np.array_equal(ux, x) and np.array_equal(uy, y)
 
 
+@pytest.mark.parametrize("W,H", [(34, 34), (40, 23), (346, 260)])
+def test_pow2_walk_is_a_bijection_onto_w_by_h(W, H):
+    y, x = np.divmod(np.arange(W * H), W)
+    px, py, calls = feistel.permute_walk(x, y, sk().perm, sid(), 2, W, H, domain="pow2")
+    codes = py * W + px
+    assert px.max() < W and py.max() < H and calls.min() >= 1
+    assert len(np.unique(codes)) == W * H, "pow2 walk is not a bijection of W x H"
+    ux, uy = feistel.unpermute_walk(px, py, sk().perm, sid(), 2, W, H, domain="pow2")
+    bad = np.flatnonzero((ux != x) | (uy != y))
+    assert bad.size == 0, f"first mismatch at {bad[:1]}: ({x[bad[:1]]}, {y[bad[:1]]}) -> ({ux[bad[:1]]}, {uy[bad[:1]]})"
+
+
+def test_walk_domains():
+    assert feistel.walk_domain(1280, 720, "pow2") == (2048, 1024)
+    assert feistel.walk_domain(1280, 720, "balanced") == (2048, 2048)
+    assert feistel.walk_domain(346, 260, "pow2") == (512, 512)
+    with pytest.raises(ValueError):
+        feistel.walk_domain(16, 16, "other")
+
+
+def test_pow2_geometry_needs_no_walk_and_equals_make_tables():
+    W, H = 128, 64
+    y, x = np.divmod(np.arange(W * H), W)
+    px, py, calls = feistel.permute_walk(x, y, sk().perm, sid(), 3, W, H, domain="pow2")
+    ex, ey = feistel.permute(x, y, feistel.make_tables(sk().perm, sid(), 3, W, H))
+    assert (calls == 1).all() and np.array_equal(px, ex) and np.array_equal(py, ey)
+
+
 def test_shuffle_table_is_a_permutation():
     p = feistel.shuffle_table(sk().perm, sid(), 0, 16, 16)
     assert sorted(p.tolist()) == list(range(256))

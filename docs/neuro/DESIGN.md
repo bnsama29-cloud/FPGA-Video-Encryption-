@@ -494,10 +494,14 @@ P_ctr^-1:     for j in 7..0:   if j even: x = (x - T_j[y]) mod W      else: y = 
 **Cycle walking is not used in contract n1.** The domain is exactly Z_W × Z_H, so every output is already
 in range. For comparison only (ablation N2b), the binary variant is specified as:
 
-- encrypt (x, y) packed into the smallest balanced binary domain;
-- repeat while the result is outside W × H, at most K = 4 times, then recirculate.
+- encrypt (x, y) on a binary domain with the same eight-round table Feistel and plain binary additions;
+- repeat while the result is outside W × H; the RTL unrolls K passes and finishes longer walks in a side unit
+  while the pipeline is frozen (order kept).
 
-It is implemented as `nv_feistel_walk.v` only if N2b is run. It is not part of the IP.
+Two binary domains are modelled (`neuro.feistel.walk_domain`): `balanced` 2^h × 2^h (as first specified) and
+`pow2` 2^⌈lg W⌉ × 2^⌈lg H⌉, the smallest binary domain that contains W × H. `pow2` is the fair baseline (2048 × 1024
+for 1280 × 720, 2.28 passes on average instead of 4.55) and is the one `nv_feistel_walk.v` implements, with the
+geometry fixed at synthesis. Ablation only; not part of the IP (added 23 Nov, N2b).
 
 #### 4.3.5 Round count
 
@@ -684,7 +688,7 @@ AXI-Lite (GP0) -> nv_axil_regs (shadow set, commit, counters)
 | `nv_word_fifo.v` | n/a | BRAM FIFO, 512 × 35 b (word + kind[1:0] ∈ {hdr, payload, trailer/bitmap} + last), one RAMB18 in 512 × 36 mode |
 | `nv_out_mux.v` | `neuro.packet :: Packet.to_words()`; `neuro.hw :: out_words()` | Forwards the ordered stream (MAC mode) or the ciphertext words (ENC mode), inserts the 4 tag words after `last`, sets `tlast` on the last tag word |
 | `nv_axil_regs.v` | n/a | §6.7 |
-| `nv_feistel_walk.v` | `neuro.feistel :: permute_walk()` | **Ablation N2b only**: binary Feistel with a K = 4 unrolled walk, a "first in domain" select and a recirculate/stall path |
+| `nv_feistel_walk.v` | `neuro.feistel :: permute_walk(domain="pow2")` | **Ablation N2b only**: binary Feistel with K unrolled passes, "first in domain" hold, and a side unit that finishes longer walks while the pipeline is frozen (geometry fixed at synthesis) |
 
 ### 6.3 Throughput (what is claimed, and the limits)
 
@@ -1223,6 +1227,7 @@ over every paper-2 step.
 | 2026-11-06 | n1 draft | From notes. Changes from the draft plan: T = 1024 µs (multiple of 64); event count moved to the trailer; mixed-radix Feistel instead of cycle walking; subkeys for domain separation; padding only at V3/V4 |
 | 2026-11-07 | n1 revision 2 (review) | Receiver state moves only after the tag (read-only replay check, bounded epoch peek, `EventRatchet` rooted at `nv1-events`); keys bound to the boot (kex profile; ctx table with distinct ctx per key); header 48 B with FIRST/FINAL flags and `link` (tail and epoch-boundary deletion detectable); trailer fixed fields last (unique parse); exact receiver profile instead of a minimum level; PAD only at V3 with b = 6 or V4, empty packets padded, mask bits interleaved in the same K_dum stream (1 per CD word, before each dummy's 39 content bits), MAX_CD_PAD; time-jump rule; one shadow set with COMMIT_AT and counter-rewind refusal; pipeline reordered (stalling units before the Feistel, in-band header/trailer, credit gate, 35-bit FIFO); tag32 look-ahead and ENC backpressure; SDP RAM template; 64-bit counters with SNAP; VERSION build byte; register map renumbered; W, H ≥ 16 at V2/V3; lanes limited to V0/V2; claims narrowed ((iii) payload, (iv) measured throughput) with pass criteria; experiments reworked (Event-ReId mandatory, N4b, N11, cluster statistics, Kaggle budget) |
 | 2026-11-07 | implementation notes | RTL cases use a 1280 x 16 domain for the §7.2 "16 x 1280" case (H = 1280 exceeds MAXH = 720); `nv_table_bank` is folded into `nv_feistel` (the 16 `nv_sdp_ram` instances are its generate loop); a commit is applied with the pipeline drained (the downstream stages read the active keys), which costs one pipeline flush per commit and changes no output word; `CTRL.CLEAR_HALT` is not needed (a commit with a new SID resumes, as in the model); Du's construction is in its §4 (BASELINES.md) |
+| 2026-11-23 | N2b ablation | Walk model gets a `pow2` domain (smallest binary domain containing W × H) next to the balanced one; `nv_feistel_walk.v` implements it with K unrolled passes and an order-keeping side unit; `experiments/neuro_walk_ablation.py` (model statistics over all addresses) and the `walk` step of `run_vivado_neuro.py` (area, Fmax) |
 
 ---
 

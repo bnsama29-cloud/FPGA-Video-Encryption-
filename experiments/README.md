@@ -50,6 +50,7 @@ Paper 2 (event-camera encryption, branch `neuromorphic`; design `docs/neuro/DESI
 | `neuro_task_accuracy.py` | N6: task accuracy with the key and without it (PyTorch); `--config N_snn10 / N_bins8 / N_ts3` for the SNN and the representation rows |
 | `neuro_n6_select.py` | N6 model selection on users held out of the training split, and sealing cost per view (PyTorch) |
 | `neuro_active_attacks.py` | N7: receiver status for every active attack, gap latency, flood cost, benign loss |
+| `neuro_walk_ablation.py` | N2b (model): cycle walking on the binary domain vs the mixed-radix Feistel; walk length of every address of every sensor geometry for 16 packet keys, the fraction beyond K passes and the dense throughput of the K-unrolled RTL ablation `nv_feistel_walk` (its stall model is checked by `hardware/tb/neuro/test_nv_feistel_walk.py`); Vivado area via `run_vivado_neuro.py --steps walk` |
 | `neuro_perm_strength.py` | N8: permutation exactness, bias, independence, known plaintext per packet, readers (N8-R) |
 | `neuro_overhead.py` | N9: event rates, bytes per event, latency and FIFO from the cycle model, software cost |
 | `neuro_board_tables.py` | N10: board replay table (`software/system/board/neuro/nv_replay.py`) |

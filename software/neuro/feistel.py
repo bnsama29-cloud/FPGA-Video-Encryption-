@@ -95,35 +95,58 @@ def _bits(n):
     return max(1, (n - 1).bit_length())
 
 
-def walk_tables(k_perm, sid, ctr, W, H, r=ROUNDS):
-    """Tables of the balanced binary Feistel on 2*h bits, h = ceil(max(lg W, lg H)) (§4.3.4)."""
-    _check_dims(W, H)
-    h = max(_bits(W), _bits(H))
-    ks = ascon.Keystream(k_perm, nonce(sid, ctr, 0))
-    M = 1 << h
-    t = tuple(np.array([(ks.take(16) * M) >> 16 for _ in range(M)], dtype=np.int64) for _ in range(r))
-    return Tables(M, M, r, t), h
+WALK_DOMAINS = ("balanced", "pow2")
 
 
-def permute_walk(x, y, k_perm, sid, ctr, W, H, r=ROUNDS, k_max=4):
-    """Binary Feistel on (x, y) in Z_{2^h}^2, repeated while the result is outside W x H.
+def walk_domain(W, H, domain="balanced"):
+    """Binary domain (Wb, Hb) of the walk ablation (§4.3.4).
 
-    Returns (x', y', calls): calls > k_max means the hardware would recirculate (counted, still exact).
+    balanced: 2^h x 2^h with h = max(ceil lg W, ceil lg H) (a balanced binary Feistel, as first specified);
+    pow2:     2^ceil(lg W) x 2^ceil(lg H), the smallest binary domain that contains W x H (the fair baseline:
+              the same unbalanced Method-3 network with power-of-two moduli, i.e. plain binary additions).
     """
-    tb, _ = walk_tables(k_perm, sid, ctr, W, H, r)
+    if domain == "balanced":
+        h = max(_bits(W), _bits(H))
+        return 1 << h, 1 << h
+    if domain == "pow2":
+        return 1 << _bits(W), 1 << _bits(H)
+    raise ValueError(f"domain must be one of {WALK_DOMAINS}, got {domain!r}")
+
+
+def walk_tables(k_perm, sid, ctr, W, H, r=ROUNDS, domain="balanced"):
+    """Round tables of the binary walk network for packet (sid, ctr): same keystream and fill order as
+    make_tables, on the binary domain walk_domain(W, H, domain). Returns (Tables, (Wb, Hb))."""
+    _check_dims(W, H)
+    Wb, Hb = walk_domain(W, H, domain)
+    ks = ascon.Keystream(k_perm, nonce(sid, ctr, 0))
+    return Tables(Wb, Hb, r, table_entries(ks, Wb, Hb, r)), (Wb, Hb)
+
+
+def walk_calls(x, y, tables, W, H):
+    """Cycle walk with given binary tables: (x', y', calls), calls = cipher passes until (x', y') in W x H."""
     x, y = _xy(x, y)
     calls = np.zeros(x.shape, dtype=np.int64)
     todo = np.ones(x.shape, dtype=bool)
     while todo.any():
-        nx, ny = permute(x[todo], y[todo], tb)
+        nx, ny = permute(x[todo], y[todo], tables)
         x[todo], y[todo] = nx, ny
         calls[todo] += 1
         todo = (x >= W) | (y >= H)
     return x, y, calls
 
 
-def unpermute_walk(x, y, k_perm, sid, ctr, W, H, r=ROUNDS):
-    tb, _ = walk_tables(k_perm, sid, ctr, W, H, r)
+def permute_walk(x, y, k_perm, sid, ctr, W, H, r=ROUNDS, domain="balanced"):
+    """Binary Feistel on (x, y) in the binary domain, repeated while the result is outside W x H.
+
+    Returns (x', y', calls). The RTL ablation nv_feistel_walk unrolls K passes and finishes longer walks in a
+    side unit; its output equals this function's (x', y') for domain="pow2".
+    """
+    tb, _ = walk_tables(k_perm, sid, ctr, W, H, r, domain)
+    return walk_calls(x, y, tb, W, H)
+
+
+def unpermute_walk(x, y, k_perm, sid, ctr, W, H, r=ROUNDS, domain="balanced"):
+    tb, _ = walk_tables(k_perm, sid, ctr, W, H, r, domain)
     x, y = _xy(x, y)
     todo = np.ones(x.shape, dtype=bool)
     while todo.any():
