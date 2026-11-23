@@ -84,3 +84,23 @@ def test_board_mock_first_contact_and_replay(tmp_path):
 def test_vivado_runner_dry():
     out = run(["hardware/vivado/neuro/run_vivado_neuro.py", "--steps", "ooc", "usweep", "blocks", "--dry"])
     assert out.count("DRY") == 4 + 2 + 5 and "MAXW 1280 MAXH 720" in out   # blocks: no core_u4 (bug #77)
+
+
+def test_ideal_view_is_a_fresh_bijection_per_window():
+    """N6x control (23 Nov): ideal_view permutes addresses within each T window, keeps t and p, depends on k."""
+    import numpy as np
+    sys.path.insert(0, str(ROOT / "experiments"))
+    import neuro_task_accuracy as N6
+    from neuro.geometry import Geometry
+    g = Geometry("t", 20, 10)
+    ev = np.zeros(400, dtype=[("t", "<i8"), ("x", "<u2"), ("y", "<u2"), ("p", "u1")])
+    ev["t"] = np.repeat([0, 2000], 200)                      # two windows of T = 1024 µs
+    ev["x"], ev["y"] = np.tile(np.arange(200) % 20, 2), np.tile(np.arange(200) // 20, 2)
+    ev["p"] = np.arange(400) % 2
+    a, b = N6.ideal_view(ev, g, 1), N6.ideal_view(ev, g, 2)
+    assert np.array_equal(a["t"], ev["t"]) and np.array_equal(a["p"], ev["p"])
+    for w in (slice(0, 200), slice(200, 400)):
+        codes = a["y"][w].astype(int) * 20 + a["x"][w]
+        assert len(np.unique(codes)) == 200, "addresses of one window must stay distinct (a permutation)"
+    assert not np.array_equal(a["x"][:200], a["x"][200:]), "each window needs its own permutation"
+    assert not np.array_equal(a["x"], b["x"]), "the permutation must depend on the key index"

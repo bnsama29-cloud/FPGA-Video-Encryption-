@@ -71,6 +71,8 @@ EXTRA = {
     "N_snn10": dict(nb=10, arch="snn", epochs=20, shift=0, down=1),
     # N_bins8 (the strongest keyless attacker of 22 Nov: 0.40 on V3) against V3 with N5's padding policies
     "N_bins8_pad": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
+    # N_bins8 against V2 and the ideal-permutation control (23 Nov): equal accuracy = no leak beyond the ideal cipher
+    "N_bins8_ideal": dict(nb=8, arch="small", epochs=20, shift=0, down=1),
 }
 ROUNDS = {"A_bug74": 1, "B_deep16": 1, "C_deep16_64px": 1, "D_rn18_ts3": 2, "E_rn18_bins16": 2,
           "F_rn18_bins16_64px": 2, "G_anonynoise_rn50": 3}
@@ -164,9 +166,30 @@ def features(ev, geom, nb=1, down=1):
     return x / max(1.0, float(x.max()))
 
 
+def ideal_view(ev, geom, k, T=1024):
+    """V2 with an ideal cipher: in every packet window of T µs, (x, y) mapped by a fresh uniformly random
+    permutation of all W * H addresses (numpy, keyed by k and the window); polarity and time kept, as at V2.
+    The control for "does the eight-round network leak more than an ideal permutation to this attacker"."""
+    out = ev.copy()
+    if not len(ev):
+        return out
+    W, H = geom.W, geom.H
+    win = ev["t"].astype(np.int64) // T
+    addr = ev["y"].astype(np.int64) * W + ev["x"].astype(np.int64)
+    new = np.empty_like(addr)
+    for w in np.unique(win):
+        m = win == w
+        perm = np.random.default_rng([k, int(w), 0x1DEA]).permutation(W * H)
+        new[m] = perm[addr[m]]
+    out["y"], out["x"] = np.divmod(new, W)
+    return out
+
+
 def view_events(ev, geom, view, k, T=1024):
     if view == "clear":
         return ev
+    if view == "ideal":                                     # control (23 Nov): what V2 would be with an ideal cipher
+        return ideal_view(ev, geom, k, T)
     if view.startswith("V") and " + pad " in view:          # e.g. "V3 + pad floor 16" (N5's policies, DESIGN §5)
         pol = C.pad_policies()[view.split(" + pad ")[1]]
         return C.keyless_events(C.protect(ev, geom, int(view[1]), T, pad=pol, key_index=k))

@@ -445,7 +445,8 @@ if "n6sel" in RUN:
 
 N6X_VIEWS = {"N_bins8": '"V2" "V3" "Du 2021" "Zhang 2024"', "N_ts3": '"V2" "V3" "Du 2021" "Zhang 2024"',
              "N_snn10": '"V1" "V2" "V3" "V4" "Du 2021" "Zhang 2024"',
-             "N_bins8_pad": '"V3" "V3 + pad floor 4" "V3 + pad floor 16" "V3 + pad ladder 2..64"'}
+             "N_bins8_pad": '"V3" "V3 + pad floor 4" "V3 + pad floor 16" "V3 + pad ladder 2..64"',
+             "N_bins8_ideal": '"V2" "ideal"'}
 
 
 def n6x_configs(env):
