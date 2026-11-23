@@ -146,3 +146,10 @@ def test_n12_datasets_and_args():
     with pytest.raises(SystemExit, match="--out"):
         args("--out /tmp/x")                 # the runner owns --out / --data
     assert args("--limit 300") == "--limit 300", "DVS Gesture full run seals a subset of the training split"
+
+
+def test_n13_only_on_request_in_part_a():
+    assert plan("A", "n13") == {"n13"}
+    assert "n13" not in plan("A"), "N13 must not run in the default part A"
+    with pytest.raises(SystemExit, match="n13"):
+        plan("B", "n13")

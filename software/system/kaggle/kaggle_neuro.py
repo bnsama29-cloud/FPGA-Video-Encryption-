@@ -230,6 +230,7 @@ def plan(part, steps=None):
     allowed = run | ({"n6sel", "n6x"} if part == "C" else set())  # on request only: n6sel model selection (bug
     #                                                                    #75), n6x extra N6 models (22 Nov)
     allowed |= {"n12"} if part == "B" else set()  # on request only: N12 re-identification on Event-ReId (22 Nov)
+    allowed |= {"n13"} if part == "A" else set()  # on request only: N13 camera mixing / shaped padding (23 Nov)
     if steps:
         want = {s.strip().lower() for s in steps.split(",") if s.strip()}
         if not want <= allowed:
@@ -272,7 +273,7 @@ def n12_args(env):
 
 
 N12_DATASETS = n12_datasets(os.environ.get("N12_DATASETS")) if "n12" in RUN else []
-NEED = {"A": "nmnist dvsgesture eventreid",
+NEED = {"A": "nmnist dvsgesture" if RUN == {"n13"} else "nmnist dvsgesture eventreid",   # n13: no Event-ReId
         "B": " ".join(["eventreid"] + [d for d in N12_DATASETS if d != "eventreid"]),
         "C": " ".join(n6_datasets(os.environ.get("N6_DATASETS")))}[PART]
 print("steps:", sorted(RUN), "| ONLY:", ONLY or "-", flush=True)
@@ -385,6 +386,21 @@ if "n3" in RUN:
     checkpoint()
 
 # ---------------------------------------------------------------- N12 re-identification (GPU, on request)
+# ---------------------------------------------------------------- N13 camera mixing and shaped padding (CPU)
+if "n13" in RUN:
+    lim = 200 if QUICK else 0
+    for ds in ("nmnist", "dvsgesture"):
+        npz = f"{OUT}/n5/{ds}_counts.npz"
+        if not os.path.exists(npz):           # same count cache as N5 (Tonic needed only here)
+            sh(f"{sys.executable} -c \"import sys; sys.path.insert(0, 'experiments'); import neuro_common as C; "
+               f"from neuro import datasets as D; "
+               f"S = [s for sp in ['train', 'test'] for s in C.load_samples('{ds}', '{DATA}/{ds}', sp, {lim} or None)]; "
+               f"print(D.cache_counts(((e, l, g, m) for e, l, g, m, _ in S), '{npz}'), 'samples')\"",
+               f"N13 cache {ds}")
+        sh(f"{sys.executable} experiments/neuro_mixing.py --counts {npz} --dataset {ds} {q} --out {OUT}/n13/{ds}",
+           f"N13 {ds}", want="wrote ")
+    checkpoint()
+
 if "n12" in RUN:
     N12_EXTRA = n12_args(os.environ.get("N12_ARGS"))
     for ds in N12_DATASETS:
