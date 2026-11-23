@@ -31,3 +31,5 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N6x_ideal_e905ac4/` | `samarthium/neuro-paper2-n6x-ideal` | e905ac4 |
 | `N16_tvla_sim_cb79679/` | none (cloud workspace, `experiments/neuro_tvla_sim.py`; superseded: models the five-AND round before bug #84) | cb79679 |
 | `N12s_dvs_9e23860/` | `samarthhhhium/neuro-paper2-n12s2-dvs` | 9e23860 |
+| `N16_tvla_sim_3ee7bff/` | none (cloud workspace, `experiments/neuro_tvla_sim.py`) | 3ee7bff |
+| `N17_prolead_3ee7bff/` | none (cloud workspace, `experiments/neuro_prolead.py`, PROLEAD) | 3ee7bff |

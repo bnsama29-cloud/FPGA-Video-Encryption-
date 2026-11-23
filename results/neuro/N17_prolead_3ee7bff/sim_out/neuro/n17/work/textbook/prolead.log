@@ -1,0 +1,36 @@
+[2026-11-23 17:15:46] Successfully validated the settings file.
+[2026-11-23 17:15:46] Successfully read the library with name "custom".
+[2026-11-23 17:15:46] Successfully parsed 10 cells from the library.
+[2026-11-23 17:15:46] Successfully found buffer cell with identifier "BUFF" and others.
+[2026-11-23 17:15:46] Successfully read design file with topmodule "nv_ascon_sbox_dom"!
+[2026-11-23 17:15:46] Successfully matched 5 fresh mask signals (for rising edge) [{r[0]}, {r[1]}, {r[2]}, {r[3]}, {r[4]}].
+[2026-11-23 17:15:46] Successfully detected 456 possible probes in total.
+[2026-11-23 17:15:46] Successfully extended 104 placable probes in total.
+[2026-11-23 17:15:46] Successfully placed 180 possible extensions in total.
+[2026-11-23 17:15:46] Successfully initialized a univariate evaluation with 104 probing sets.
+[2026-11-23 17:15:46] Successfully set a batch of 104 probing sets.
+[2026-11-23 17:15:46] Successfully applied probing set minimization. 38 covered probing sets removed.
+[2026-11-23 17:15:46] -------------------------------------------------------------------------------------------------------------------------------------
+[2026-11-23 17:15:46] | #Standard Probes | #Extended Probes | #Probing Sets | Minimum #Probes per Set | Maximum #Probes per Set | Average #Probes per Set |
+[2026-11-23 17:15:46] -------------------------------------------------------------------------------------------------------------------------------------
+[2026-11-23 17:15:46] |              104 |              180 |            66 |                       6 |                      12 |                8.727273 |
+[2026-11-23 17:15:46] -------------------------------------------------------------------------------------------------------------------------------------
+[2026-11-23 17:15:46] -----------------------------------------------------------------------------------------------------------------------------------
+[2026-11-23 17:15:46] | Elapsed Time |        Used Memory |          #Simulations | Probing Set with Highest Information Leakage |  -log10(p) |  Status |
+[2026-11-23 17:15:46] -----------------------------------------------------------------------------------------------------------------------------------
+[2026-11-23 17:15:48] |   0-00:00:02 |   0TB    0GB 033MB |        128000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:15:50] |   0-00:00:04 |   0TB    0GB 033MB |        256000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:15:52] |   0-00:00:06 |   0TB    0GB 033MB |        384000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:15:54] |   0-00:00:08 |   0TB    0GB 033MB |        512000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:15:57] |   0-00:00:10 |   0TB    0GB 033MB |        640000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:15:59] |   0-00:00:12 |   0TB    0GB 033MB |        768000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:01] |   0-00:00:15 |   0TB    0GB 033MB |        896000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:03] |   0-00:00:17 |   0TB    0GB 033MB |       1024000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:05] |   0-00:00:18 |   0TB    0GB 033MB |       1152000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:07] |   0-00:00:21 |   0TB    0GB 033MB |       1280000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:09] |   0-00:00:23 |   0TB    0GB 033MB |       1408000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:11] |   0-00:00:25 |   0TB    0GB 033MB |       1536000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:13] |   0-00:00:27 |   0TB    0GB 033MB |       1664000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:15] |   0-00:00:29 |   0TB    0GB 033MB |       1792000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:17] |   0-00:00:30 |   0TB    0GB 033MB |       1920000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |
+[2026-11-23 17:16:19] |   0-00:00:32 |   0TB    0GB 033MB |       2048000 / 21971 |                                  _002_[0](3) |        inf | LEAKAGE |

@@ -1,0 +1,47 @@
+{
+  "results": {
+    "independent": {
+      "verdict": "OKAY",
+      "simulations": 2048000,
+      "probing_sets": 79304,
+      "probe": "y_s0[0](3)",
+      "max_neg_log10_p": 3.543606,
+      "max_neg_log10_p_all_steps": 3.551333,
+      "fresh_bits": 7,
+      "netlist_cells": 123
+    },
+    "textbook": {
+      "verdict": "LEAKAGE",
+      "simulations": 128000,
+      "probing_sets": 21971,
+      "probe": "_002_[0](3)",
+      "max_neg_log10_p": Infinity,
+      "max_neg_log10_p_all_steps": Infinity,
+      "fresh_bits": 5,
+      "netlist_cells": 99
+    }
+  },
+  "meta": {
+    "commit": "3ee7bffeb0ba7ea8167a09b785799a0d183df126",
+    "date": "2026-11-23 17:16:19",
+    "argv": [
+      "--prolead-src",
+      "/tmp/claude-0/prolead/src"
+    ],
+    "inputs": {},
+    "args": {
+      "prolead_src": "/tmp/claude-0/prolead/src",
+      "simulations": 2048000,
+      "variants": [
+        "independent",
+        "textbook"
+      ],
+      "out": null
+    },
+    "tool": "PROLEAD",
+    "order": 1,
+    "glitches": true,
+    "transitions": true,
+    "threshold_neg_log10_p": 5.0
+  }
+}
