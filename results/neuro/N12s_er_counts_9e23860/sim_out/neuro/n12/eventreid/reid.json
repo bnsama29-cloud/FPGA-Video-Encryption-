@@ -1,0 +1,190 @@
+{
+ "results": {
+  "clear": {
+   "cipher_trained": {
+    "rank1": [
+     0.2534090909090909,
+     0.24545454545454545
+    ],
+    "map": [
+     0.18885689672851624,
+     0.18307345357893093
+    ]
+   },
+   "clear_trained": null
+  },
+  "counts only": {
+   "cipher_trained": {
+    "rank1": [
+     0.06363636363636363,
+     0.05795454545454545
+    ],
+    "map": [
+     0.09934149255415002,
+     0.0987333452002887
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.07272727272727272,
+     0.06136363636363636
+    ],
+    "map": [
+     0.10083562538853796,
+     0.09967232758290233
+    ]
+   }
+  },
+  "Du 2021": {
+   "cipher_trained": {
+    "rank1": [
+     0.09204545454545454,
+     0.1125
+    ],
+    "map": [
+     0.10520300327847813,
+     0.10476134277957405
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.0715909090909091,
+     0.08295454545454546
+    ],
+    "map": [
+     0.09899978723381532,
+     0.10046454811644394
+    ]
+   }
+  }
+ },
+ "train_ids": [
+  1,
+  2,
+  4,
+  5,
+  8,
+  9,
+  11,
+  13,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  27,
+  28,
+  29,
+  31,
+  32
+ ],
+ "test_ids": [
+  3,
+  6,
+  7,
+  10,
+  12,
+  14,
+  22,
+  23,
+  24,
+  30,
+  33
+ ],
+ "test_samples": 880,
+ "dataset": "eventreid",
+ "recipe": "strong",
+ "input_shape": [
+  10,
+  240,
+  320
+ ],
+ "epochs": 40,
+ "gallery": "cross-camera",
+ "meta": {
+  "commit": "9e2386052ad087a785ec0775d0a43e9e62fb3844",
+  "date": "2026-11-23 10:25:48",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--recipe",
+   "strong",
+   "--views",
+   "counts only",
+   "Du 2021",
+   "--seeds",
+   "0",
+   "1",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n12/eventreid"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": null,
+   "seed": 0,
+   "seeds": [
+    0,
+    1
+   ],
+   "views": [
+    "counts only",
+    "Du 2021"
+   ],
+   "recipe": "strong",
+   "per_file": null,
+   "epochs": null,
+   "train_persons": 22,
+   "workers": 4,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n12/eventreid"
+  },
+  "synthetic": false,
+  "device": "cuda"
+ },
+ "train_persons": [
+  1,
+  2,
+  4,
+  5,
+  8,
+  9,
+  11,
+  13,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  27,
+  28,
+  29,
+  31,
+  32
+ ],
+ "test_persons": [
+  3,
+  6,
+  7,
+  10,
+  12,
+  14,
+  22,
+  23,
+  24,
+  30,
+  33
+ ],
+ "test_frames": 880
+}

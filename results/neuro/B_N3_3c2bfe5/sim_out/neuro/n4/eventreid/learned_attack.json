@@ -1,0 +1,250 @@
+{
+ "results": {
+  "plain": {
+   "ssim_net": [
+    0.8186483044058886,
+    0.802304499172594,
+    0.8348643079894993
+   ],
+   "ssim_control_f": [
+    0.5727300575080346,
+    0.5459782071677194,
+    0.5987160950915971
+   ],
+   "ssim_control_c": [
+    0.6872644499374214,
+    0.6544509191992007,
+    0.7182590859663321
+   ],
+   "net_minus_control_f": [
+    0.2459182468978542,
+    0.22986779207622834,
+    0.2630269214845563
+   ],
+   "control_f_minus_control_c": [
+    -0.11453439242938689,
+    -0.13579689011148496,
+    -0.09610410259690469
+   ],
+   "control_f_valid": false,
+   "train_windows": 336,
+   "test_windows": 386,
+   "test_clusters": 17,
+   "P1_pass": null
+  },
+  "V1": {
+   "ssim_net": [
+    0.6891917721322226,
+    0.6599338448309776,
+    0.715448908600172
+   ],
+   "ssim_control_f": [
+    0.5718790247989304,
+    0.545273660928872,
+    0.5976722192490502
+   ],
+   "ssim_control_c": [
+    0.6872644499374214,
+    0.6544509191992007,
+    0.7182590859663321
+   ],
+   "net_minus_control_f": [
+    0.11731274733329237,
+    0.1052563763880837,
+    0.13040094611790978
+   ],
+   "control_f_minus_control_c": [
+    -0.11538542513849111,
+    -0.13597637068278567,
+    -0.09749836149608967
+   ],
+   "control_f_valid": false,
+   "train_windows": 336,
+   "test_windows": 386,
+   "test_clusters": 17,
+   "P1_pass": null
+  },
+  "V2": {
+   "ssim_net": [
+    0.6496668551929762,
+    0.6235017519050015,
+    0.6747560806128071
+   ],
+   "ssim_control_f": [
+    0.5718790247989304,
+    0.545273660928872,
+    0.5976722192490502
+   ],
+   "ssim_control_c": [
+    0.6872644499374214,
+    0.6544509191992007,
+    0.7182590859663321
+   ],
+   "net_minus_control_f": [
+    0.07778783039404577,
+    0.06274059130261228,
+    0.09397921441205155
+   ],
+   "control_f_minus_control_c": [
+    -0.11538542513849111,
+    -0.13597637068278567,
+    -0.09749836149608967
+   ],
+   "control_f_valid": false,
+   "train_windows": 336,
+   "test_windows": 386,
+   "test_clusters": 17,
+   "P1_pass": null
+  },
+  "V3": {
+   "ssim_net": [
+    0.6517662737344345,
+    0.6241617914555989,
+    0.6769965628256112
+   ],
+   "ssim_control_f": [
+    0.5718790247989304,
+    0.545273660928872,
+    0.5976722192490502
+   ],
+   "ssim_control_c": [
+    0.6872644499374214,
+    0.6544509191992007,
+    0.7182590859663321
+   ],
+   "net_minus_control_f": [
+    0.07988724893550418,
+    0.06514517018316703,
+    0.0971118368362004
+   ],
+   "control_f_minus_control_c": [
+    -0.11538542513849111,
+    -0.13597637068278567,
+    -0.09749836149608967
+   ],
+   "control_f_valid": false,
+   "train_windows": 336,
+   "test_windows": 386,
+   "test_clusters": 17,
+   "P1_pass": null
+  },
+  "Du 2021": {
+   "ssim_net": [
+    0.6660660509114769,
+    0.6379989867976905,
+    0.6941403175035438
+   ],
+   "ssim_control_f": [
+    0.5718790247989304,
+    0.545273660928872,
+    0.5976722192490502
+   ],
+   "ssim_control_c": [
+    0.6872644499374214,
+    0.6544509191992007,
+    0.7182590859663321
+   ],
+   "net_minus_control_f": [
+    0.09418702611254666,
+    0.07831633437874397,
+    0.11191335387490262
+   ],
+   "control_f_minus_control_c": [
+    -0.11538542513849111,
+    -0.13597637068278567,
+    -0.09749836149608967
+   ],
+   "control_f_valid": false,
+   "train_windows": 336,
+   "test_windows": 386,
+   "test_clusters": 17,
+   "P1_pass": null
+  },
+  "Zhang 2024": {
+   "ssim_net": [
+    0.7260383477047913,
+    0.7027181995924798,
+    0.747424310197901
+   ],
+   "ssim_control_f": [
+    0.5718790247989304,
+    0.545273660928872,
+    0.5976722192490502
+   ],
+   "ssim_control_c": [
+    0.6872644499374214,
+    0.6544509191992007,
+    0.7182590859663321
+   ],
+   "net_minus_control_f": [
+    0.15415932290586096,
+    0.14080494563843174,
+    0.16749071544449565
+   ],
+   "control_f_minus_control_c": [
+    -0.11538542513849111,
+    -0.13597637068278567,
+    -0.09749836149608967
+   ],
+   "control_f_valid": false,
+   "train_windows": 336,
+   "test_windows": 386,
+   "test_clusters": 17,
+   "P1_pass": null
+  }
+ },
+ "scored": "inside the person box (Event-ReId labels/label.json; union over the frames of the window, +4 px)",
+ "target": "plaintext E2VID reconstruction",
+ "meta": {
+  "commit": "3c2bfe5fbfa5245bf5e9398e4ad4282f8644580f",
+  "date": "2026-11-16 18:26:47",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--keys",
+   "5",
+   "--recon-repo",
+   "/kaggle/working/ext/rpg_e2vid",
+   "--recon-ckpt",
+   "e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar",
+   "firenet=/kaggle/working/ext/firenet.pth.tar",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n4/eventreid"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n4/eventreid",
+   "epochs": 30,
+   "win_ms": 20.0,
+   "T": 1024,
+   "max_windows": 6,
+   "views": [
+    "plain",
+    "V1",
+    "V2",
+    "V3",
+    "Du 2021",
+    "Zhang 2024"
+   ],
+   "recon_repo": "/kaggle/working/ext/rpg_e2vid",
+   "recon_ckpt": [
+    "e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar",
+    "firenet=/kaggle/working/ext/firenet.pth.tar"
+   ]
+  },
+  "dataset": "eventreid",
+  "synthetic": false,
+  "n_keys": 5,
+  "device": "cuda",
+  "target": "plaintext E2VID reconstruction",
+  "ci": "paired cluster bootstrap 95 %, 1000 resamples"
+ }
+}

@@ -1,0 +1,225 @@
+{
+ "inverse": {
+  "nmnist": {
+   "exact": true,
+   "detail": "",
+   "points": 1156,
+   "packets": 3
+  },
+  "dvsgesture": {
+   "exact": true,
+   "detail": "",
+   "points": 16384,
+   "packets": 3
+  },
+  "davis346": {
+   "exact": true,
+   "detail": "",
+   "points": 89960,
+   "packets": 3
+  },
+  "cif": {
+   "exact": true,
+   "detail": "",
+   "points": 101376,
+   "packets": 3
+  },
+  "vga": {
+   "exact": true,
+   "detail": "",
+   "points": 307200,
+   "packets": 3
+  },
+  "imx636": {
+   "exact": true,
+   "detail": "",
+   "points": 921600,
+   "packets": 3
+  },
+  "16x16": {
+   "exact": true,
+   "detail": "",
+   "points": 256,
+   "packets": 3
+  },
+  "1280x16": {
+   "exact": true,
+   "detail": "",
+   "points": 20480,
+   "packets": 3
+  }
+ },
+ "bias": {
+  "nmnist": {
+   "samples": 2720,
+   "tv_empirical": 0.04117647058823529,
+   "tv_sampling_noise": 0.04460310290381928,
+   "tv_multiply_shift_exact": 0.00012925091911764747
+  },
+  "dvsgesture": {
+   "samples": 10240,
+   "tv_empirical": 0.041699218749999996,
+   "tv_sampling_noise": 0.04460310290381928,
+   "tv_multiply_shift_exact": 0.0
+  },
+  "davis346": {
+   "samples": 20800,
+   "tv_empirical": 0.049049577590040014,
+   "tv_sampling_noise": 0.051453680771097694,
+   "tv_multiply_shift_exact": 0.0012775046287933482
+  },
+  "cif": {
+   "samples": 23040,
+   "tv_empirical": 0.050603693181818184,
+   "tv_sampling_noise": 0.049310585605859984,
+   "tv_multiply_shift_exact": 0.0007990056818181906
+  },
+  "vga": {
+   "samples": 38400,
+   "tv_empirical": 0.05046875000000001,
+   "tv_sampling_noise": 0.05150322693642528,
+   "tv_multiply_shift_exact": 0.0023437500000000056
+  },
+  "imx636": {
+   "samples": 57600,
+   "tv_empirical": 0.060052083333333325,
+   "tv_sampling_noise": 0.05947080387175904,
+   "tv_multiply_shift_exact": 0.0031250000000000167
+  },
+  "16x16": {
+   "samples": 1280,
+   "tv_empirical": 0.031249999999999993,
+   "tv_sampling_noise": 0.04460310290381928,
+   "tv_multiply_shift_exact": 0.0
+  },
+  "1280x16": {
+   "samples": 1280,
+   "tv_empirical": 0.37265624999999997,
+   "tv_sampling_noise": 0.3989422804014327,
+   "tv_multiply_shift_exact": 0.0031250000000000167
+  }
+ },
+ "cross_packet_corr": {
+  "nmnist": -0.02242999409517041,
+  "dvsgesture": -0.0008912157542458043,
+  "davis346": -0.005197447695059524,
+  "cif": -0.0007558149012300082,
+  "vga": -0.0004456679277086461,
+  "imx636": 0.0018798915378058136,
+  "16x16": 0.07503576333257037,
+  "1280x16": -0.00025030317869109676
+ },
+ "refusal_below_16": {
+  "15x16": "refused",
+  "16x15": "refused",
+  "1x720": "refused",
+  "1280x1": "refused"
+ },
+ "known_plaintext": [
+  {
+   "T_us": 256,
+   "packets": 1300262,
+   "distinct_median": 11.0,
+   "distinct_p99": 43.0,
+   "distinct_max": 75,
+   "dv_4round_need": 2896.309375740099,
+   "max_over_need": 0.02589502372509329
+  },
+  {
+   "T_us": 1024,
+   "packets": 328727,
+   "distinct_median": 40.0,
+   "distinct_p99": 140.0,
+   "distinct_max": 198,
+   "dv_4round_need": 2896.309375740099,
+   "max_over_need": 0.06836286263424629
+  },
+  {
+   "T_us": 4096,
+   "packets": 82214,
+   "distinct_median": 135.0,
+   "distinct_p99": 398.0,
+   "distinct_max": 532,
+   "dv_4round_need": 2896.309375740099,
+   "max_over_need": 0.18368203495666174
+  }
+ ],
+ "round_structure": {
+  "34x34": {
+   "r1": 1.0,
+   "r2": 0.0298,
+   "r4": 0.0304,
+   "r6": 0.0271,
+   "r8": 0.02905,
+   "ideal": 0.02825,
+   "ideal_expected": 0.02857142857142857
+  },
+  "64x16": {
+   "r1": 1.0,
+   "r2": 0.0578,
+   "r4": 0.0589,
+   "r6": 0.0641,
+   "r8": 0.05865,
+   "ideal": 0.05985,
+   "ideal_expected": 0.06158357771260997
+  }
+ },
+ "readers": {
+  "V1": {
+   "n_cd": 87787,
+   "ours_read": 87787,
+   "ours_geometry_ok": true,
+   "in_range": true,
+   "non_monotone_pairs": 0,
+   "max_backstep_us": 0,
+   "expelliarmus": "87787 read, 87787 equal to ours, in range",
+   "tonic": "no EVT 2.0 RAW reader in Tonic 1.7.0"
+  },
+  "V2": {
+   "n_cd": 87787,
+   "ours_read": 87787,
+   "ours_geometry_ok": true,
+   "in_range": true,
+   "non_monotone_pairs": 0,
+   "max_backstep_us": 0,
+   "expelliarmus": "87787 read, 87787 equal to ours, in range",
+   "tonic": "no EVT 2.0 RAW reader in Tonic 1.7.0"
+  },
+  "V3": {
+   "n_cd": 87787,
+   "ours_read": 87787,
+   "ours_geometry_ok": true,
+   "in_range": true,
+   "non_monotone_pairs": 21353,
+   "max_backstep_us": 63,
+   "expelliarmus": "87787 read, 87787 equal to ours, in range",
+   "tonic": "no EVT 2.0 RAW reader in Tonic 1.7.0"
+  }
+ },
+ "meta": {
+  "commit": "b968facad2e876228d72aa12933520eff68e1f37",
+  "date": "2026-11-16 20:04:14",
+  "argv": [
+   "--dataset",
+   "dvsgesture",
+   "--data",
+   "/kaggle/temp/kneuro_data/dvsgesture",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n8"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "dvsgesture",
+   "data": "/kaggle/temp/kneuro_data/dvsgesture",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n8"
+  },
+  "dataset": "dvsgesture",
+  "synthetic": false,
+  "n_keys": 1,
+  "note": "round_structure is an oracle structural distinguisher, not the DV attack"
+ }
+}

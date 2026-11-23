@@ -1,0 +1,182 @@
+{
+ "results": {
+  "clean": [
+   0.9907,
+   0.9895616250899351,
+   0.991838374910065
+  ],
+  "V1": {
+   "i_clear_trained": [
+    0.9891666666666667,
+    0.9877324490901014,
+    0.9906008842432321
+   ],
+   "ii_cipher_trained": [
+    0.9696666666666668,
+    0.9623888073340111,
+    0.9769445259993225
+   ],
+   "ii_minus_chance": [
+    0.8696666666666667,
+    0.862388807334011,
+    0.8769445259993224
+   ]
+  },
+  "V2": {
+   "i_clear_trained": [
+    0.10783333333333334,
+    0.08898278148903717,
+    0.1266838851776295
+   ],
+   "ii_cipher_trained": [
+    0.22,
+    0.17242697920421476,
+    0.2675730207957852
+   ],
+   "ii_minus_chance": [
+    0.11999999999999998,
+    0.07242697920421476,
+    0.1675730207957852
+   ]
+  },
+  "V3": {
+   "i_clear_trained": [
+    0.10916666666666668,
+    0.10089656467860801,
+    0.11743676865472534
+   ],
+   "ii_cipher_trained": [
+    0.21233333333333335,
+    0.18154772693634857,
+    0.24311893973031812
+   ],
+   "ii_minus_chance": [
+    0.11233333333333333,
+    0.08154772693634854,
+    0.1431189397303181
+   ]
+  },
+  "V4": {
+   "i_clear_trained": [
+    0.11433333333333334,
+    0.11074778939191988,
+    0.1179188772747468
+   ],
+   "ii_cipher_trained": [
+    0.1135,
+    0.1135,
+    0.1135
+   ],
+   "ii_minus_chance": [
+    0.013499999999999998,
+    0.013499999999999998,
+    0.013499999999999998
+   ]
+  },
+  "Du 2021": {
+   "i_clear_trained": [
+    0.09749999999999999,
+    0.07238071194354836,
+    0.12261928805645161
+   ],
+   "ii_cipher_trained": [
+    0.2785,
+    0.2641757631729061,
+    0.29282423682709396
+   ],
+   "ii_minus_chance": [
+    0.1785,
+    0.16417576317290605,
+    0.19282423682709393
+   ]
+  },
+  "Zhang 2024": {
+   "i_clear_trained": [
+    0.8494999999999999,
+    0.7853558314507672,
+    0.9136441685492327
+   ],
+   "ii_cipher_trained": [
+    0.9661666666666667,
+    0.9589955787838398,
+    0.9733377545494937
+   ],
+   "ii_minus_chance": [
+    0.8661666666666666,
+    0.8589955787838397,
+    0.8733377545494936
+   ]
+  }
+ },
+ "gate": {
+  "threshold": 0.98,
+  "clean_mean": 0.9907,
+  "passes": true
+ },
+ "decrypted_event_equal": "64 of 64",
+ "ciphertext_subset": {
+  "train": 4000,
+  "test": 2000,
+  "of_train": 60000,
+  "of_test": 10000,
+  "seed": 0
+ },
+ "chance": 0.1,
+ "snn": "SNN rows not run: the SNN of DESIGN \u00a78.2 is not implemented, CNN only",
+ "meta": {
+  "commit": "9a58dfa9d3ef86bde7bc735ad3fc6b1f56df2057",
+  "date": "2026-11-16 23:51:41",
+  "argv": [
+   "--dataset",
+   "nmnist",
+   "--data",
+   "/kaggle/temp/kneuro_data/nmnist",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n6/nmnist"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "nmnist",
+   "data": "/kaggle/temp/kneuro_data/nmnist",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n6/nmnist",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "epochs": 20,
+   "views": [
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "Du 2021",
+    "Zhang 2024"
+   ],
+   "ct_train": null,
+   "ct_test": null,
+   "check": 64,
+   "workers": 4
+  },
+  "dataset": "nmnist",
+  "synthetic": false,
+  "device": "cuda",
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "ci": "Student-t 95 % over seeds",
+  "n_keys": "fresh key per sample",
+  "time_bins": 1,
+  "epochs": 20
+ }
+}

@@ -1,0 +1,224 @@
+{
+ "results": {
+  "clear": {
+   "cipher_trained": {
+    "rank1": [
+     0.7348484848484849,
+     0.6704545454545454,
+     0.7121212121212122
+    ],
+    "map": [
+     0.3895206909016362,
+     0.3374927910742533,
+     0.3727828511927117
+    ]
+   },
+   "clear_trained": null
+  },
+  "V3": {
+   "cipher_trained": {
+    "rank1": [
+     0.23106060606060605,
+     0.1553030303030303,
+     0.2159090909090909
+    ],
+    "map": [
+     0.19148163943918903,
+     0.18842915201183605,
+     0.18821384340811925
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.17424242424242425,
+     0.1553030303030303,
+     0.1893939393939394
+    ],
+    "map": [
+     0.18562742481745254,
+     0.19060561800810147,
+     0.19109830471869982
+    ]
+   }
+  },
+  "Du 2021": {
+   "cipher_trained": {
+    "rank1": [
+     0.2689393939393939,
+     0.19696969696969696,
+     0.20075757575757575
+    ],
+    "map": [
+     0.1892542275235214,
+     0.18996101764285203,
+     0.18539090853127785
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.17045454545454544,
+     0.14015151515151514,
+     0.1893939393939394
+    ],
+    "map": [
+     0.18394259694133266,
+     0.18213859960739898,
+     0.18348527819456278
+    ]
+   }
+  },
+  "counts only": {
+   "cipher_trained": {
+    "rank1": [
+     0.14393939393939395,
+     0.19318181818181818,
+     0.20833333333333334
+    ],
+    "map": [
+     0.1855394624332825,
+     0.18952983942118445,
+     0.18381207908019445
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.19318181818181818,
+     0.17803030303030304,
+     0.1590909090909091
+    ],
+    "map": [
+     0.18727858305910192,
+     0.19086588710655245,
+     0.1891878697828578
+    ]
+   }
+  }
+ },
+ "train_ids": [
+  "user01",
+  "user02",
+  "user03",
+  "user04",
+  "user05",
+  "user06",
+  "user07",
+  "user08",
+  "user09",
+  "user10",
+  "user11",
+  "user12",
+  "user13",
+  "user14",
+  "user15",
+  "user16",
+  "user17",
+  "user18",
+  "user19",
+  "user20",
+  "user21",
+  "user22",
+  "user23"
+ ],
+ "test_ids": [
+  "user24",
+  "user25",
+  "user26",
+  "user27",
+  "user28",
+  "user29"
+ ],
+ "test_samples": 264,
+ "dataset": "dvsgesture",
+ "recipe": "strong",
+ "input_shape": [
+  10,
+  128,
+  128
+ ],
+ "epochs": 40,
+ "gallery": "anonynoise",
+ "meta": {
+  "commit": "9e2386052ad087a785ec0775d0a43e9e62fb3844",
+  "date": "2026-11-23 12:56:49",
+  "argv": [
+   "--dataset",
+   "dvsgesture",
+   "--data",
+   "/kaggle/temp/kneuro_data/dvsgesture",
+   "--recipe",
+   "strong",
+   "--limit",
+   "300",
+   "--views",
+   "V3",
+   "Du 2021",
+   "counts only",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n12/dvsgesture"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "dvsgesture",
+   "data": "/kaggle/temp/kneuro_data/dvsgesture",
+   "limit": 300,
+   "seed": 0,
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "views": [
+    "V3",
+    "Du 2021",
+    "counts only"
+   ],
+   "recipe": "strong",
+   "per_file": null,
+   "epochs": null,
+   "train_persons": 22,
+   "workers": 4,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n12/dvsgesture"
+  },
+  "synthetic": false,
+  "device": "cuda"
+ },
+ "train_persons": [
+  "user01",
+  "user02",
+  "user03",
+  "user04",
+  "user05",
+  "user06",
+  "user07",
+  "user08",
+  "user09",
+  "user10",
+  "user11",
+  "user12",
+  "user13",
+  "user14",
+  "user15",
+  "user16",
+  "user17",
+  "user18",
+  "user19",
+  "user20",
+  "user21",
+  "user22",
+  "user23"
+ ],
+ "test_persons": [
+  "user24",
+  "user25",
+  "user26",
+  "user27",
+  "user28",
+  "user29"
+ ],
+ "test_frames": 264
+}

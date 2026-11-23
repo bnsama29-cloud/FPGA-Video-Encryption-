@@ -1,0 +1,128 @@
+{
+ "views": {
+  "V2": {
+   "mi_bits": 0.8058241778490007,
+   "mi_null_mean": 0.943207101941957,
+   "mi_p": 0.9651741293532339,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V3": {
+   "mi_bits": 0.8058241778490007,
+   "mi_null_mean": 0.943207101941957,
+   "mi_p": 0.9651741293532339,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V3 + pad floor 4": {
+   "mi_bits": 0.7852079087547237,
+   "mi_null_mean": 0.9457263749643343,
+   "mi_p": 0.9800995024875622,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V3 + pad floor 16": {
+   "mi_bits": 0.961575750935654,
+   "mi_null_mean": 0.9603404856846433,
+   "mi_p": 0.42786069651741293,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V3 + pad ladder 2..64": {
+   "mi_bits": 0.8058241778490007,
+   "mi_null_mean": 0.941781972483283,
+   "mi_p": 0.9502487562189055,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V4": {
+   "mi_bits": 0.7852079087547237,
+   "mi_null_mean": 0.9456464568837281,
+   "mi_p": 0.9800995024875622,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V4 + pad floor 4": {
+   "mi_bits": 0.7027428323776181,
+   "mi_null_mean": 0.9508385713085334,
+   "mi_p": 1.0,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  },
+  "V4 + pad ladder 2..64": {
+   "mi_bits": 0.8058241778490007,
+   "mi_null_mean": 0.9406644550473056,
+   "mi_p": 0.9353233830845771,
+   "nearest-centroid": "n/a",
+   "5-NN": "n/a"
+  }
+ },
+ "chance": 0.030303030303030304,
+ "test_clusters": 17,
+ "dummy_auc": {
+  "floor 4": {
+   "multiplicity": 0.5003712099874329,
+   "position": 0.9004921916329096,
+   "both": 0.9005576836284869,
+   "words": 4147661
+  },
+  "floor 16": {
+   "multiplicity": 0.5003548552539322,
+   "position": 0.8173863952255993,
+   "both": 0.8175472128268815,
+   "words": 7908862
+  },
+  "ladder 2..64": {
+   "multiplicity": 0.5003185752011721,
+   "position": 0.768127810409013,
+   "both": 0.7681287427053495,
+   "words": 5146691
+  }
+ },
+ "pad_cost": {
+  "floor 4": {
+   "dummies_per_real": 0.06775226598122192,
+   "buckets_above_limit": 0.6056049007271445
+  },
+  "floor 16": {
+   "dummies_per_real": 0.6763016363922726,
+   "buckets_above_limit": 0.2600849507902464
+  },
+  "ladder 2..64": {
+   "dummies_per_real": 0.391698414630862,
+   "buckets_above_limit": 0.0052483429924339315
+  }
+ },
+ "meta": {
+  "commit": "39ab3f4f8a25aad9a3eacbcea9cbfe0b49d697dd",
+  "date": "2026-11-16 13:07:16",
+  "argv": [
+   "--counts",
+   "/kaggle/working/repo/sim_out/neuro/n5/eventreid_counts.npz",
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n5/eventreid"
+  ],
+  "inputs": {
+   "/kaggle/working/repo/sim_out/neuro/n5/eventreid_counts.npz": "43b9653de05d808ee00120e7de2f96aef3c8923883c47add64dbae6cc5124bc0"
+  },
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n5/eventreid",
+   "counts": "/kaggle/working/repo/sim_out/neuro/n5/eventreid_counts.npz"
+  },
+  "dataset": "eventreid",
+  "synthetic": false,
+  "split": "by group (half of the groups for test)",
+  "ci": "cluster bootstrap 95 % over test groups",
+  "classifiers": "nearest-centroid, 5-NN (GBT / 1-D CNN only on Kaggle)"
+ }
+}

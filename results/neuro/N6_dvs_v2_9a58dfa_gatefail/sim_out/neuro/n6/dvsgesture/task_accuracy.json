@@ -1,0 +1,80 @@
+{
+ "results": {
+  "clean": [
+   0.7323232323232323,
+   0.6173358676702099,
+   0.8473105969762547
+  ]
+ },
+ "gate": {
+  "threshold": 0.9,
+  "clean_mean": 0.7323232323232323,
+  "passes": false
+ },
+ "decrypted_event_equal": "64 of 64",
+ "ciphertext_subset": {
+  "train": 300,
+  "test": 264,
+  "of_train": 1077,
+  "of_test": 264,
+  "seed": 0
+ },
+ "chance": 0.09090909090909091,
+ "snn": "SNN rows not run: the SNN of DESIGN \u00a78.2 is not implemented, CNN only",
+ "meta": {
+  "commit": "9a58dfa9d3ef86bde7bc735ad3fc6b1f56df2057",
+  "date": "2026-11-17 08:19:17",
+  "argv": [
+   "--dataset",
+   "dvsgesture",
+   "--data",
+   "/kaggle/temp/kneuro_data/dvsgesture",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n6/dvsgesture"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "dvsgesture",
+   "data": "/kaggle/temp/kneuro_data/dvsgesture",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n6/dvsgesture",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "epochs": 20,
+   "views": [
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "Du 2021",
+    "Zhang 2024"
+   ],
+   "ct_train": null,
+   "ct_test": null,
+   "check": 64,
+   "workers": 4
+  },
+  "dataset": "dvsgesture",
+  "synthetic": false,
+  "device": "cuda",
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "ci": "Student-t 95 % over seeds",
+  "n_keys": "fresh key per sample",
+  "time_bins": 8,
+  "epochs": 20
+ }
+}

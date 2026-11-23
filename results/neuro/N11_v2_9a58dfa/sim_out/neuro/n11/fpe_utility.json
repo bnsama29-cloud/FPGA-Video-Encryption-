@@ -1,0 +1,96 @@
+{
+ "bandwidth_bytes": {
+  "plain": {
+   "lzma": 22193888,
+   "zlib": 27751802,
+   "zstd-19": 26065913,
+   "raw": 33742368
+  },
+  "V1": {
+   "lzma": 22448404,
+   "zlib": 27895012,
+   "zstd-19": 26263431,
+   "raw": 33742368
+  },
+  "V2": {
+   "lzma": 29231648,
+   "zlib": 31066134,
+   "zstd-19": 30795292,
+   "raw": 33742368
+  },
+  "V3": {
+   "lzma": 29659320,
+   "zlib": 31064124,
+   "zstd-19": 30785369,
+   "raw": 33742368
+  },
+  "V4": {
+   "lzma": 35161568,
+   "zlib": 34950188,
+   "zstd-19": 34789714,
+   "raw": 35970004
+  }
+ },
+ "activity_auc": {
+  "plain": 0.9982714299651908,
+  "V1": 0.9982714299651908,
+  "V2": 0.9982714299651908,
+  "V3": 0.9982714299651908,
+  "V4": 0.9986304108462576,
+  "V3 + pad floor 8": 0.8730957723707546,
+  "V3 + pad ladder 2..64": 0.9931459129665183,
+  "V4 + pad floor 8": 0.8730957723707546,
+  "V4 + pad ladder 2..64": 0.9931459129665183
+ },
+ "evt3": {
+  "plain": 44781562,
+  "V1": 44781562,
+  "V2": 45181094,
+  "V3": 44843668
+ },
+ "readers": "run N8 first",
+ "criterion": {
+  "kept_by": [
+   "V1",
+   "V2",
+   "V3"
+  ],
+  "lost_by_V4_pad": [
+   "V4 + pad floor 8"
+  ],
+  "fpe_worth_it": true,
+  "rule": "AUC within 0.05 of plaintext for V1-V3 and lost (> 0.05 lower) by V4 + padding"
+ },
+ "meta": {
+  "commit": "9a58dfa9d3ef86bde7bc735ad3fc6b1f56df2057",
+  "date": "2026-11-16 23:19:45",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--limit",
+   "10",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n11"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": 10,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n11"
+  },
+  "dataset": "eventreid",
+  "synthetic": false,
+  "n_keys": 1,
+  "compressors": [
+   "lzma",
+   "zlib",
+   "zstd-19"
+  ]
+ }
+}

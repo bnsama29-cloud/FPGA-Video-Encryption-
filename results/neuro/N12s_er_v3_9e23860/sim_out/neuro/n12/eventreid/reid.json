@@ -1,0 +1,174 @@
+{
+ "results": {
+  "clear": {
+   "cipher_trained": {
+    "rank1": [
+     0.2590909090909091,
+     0.24204545454545454,
+     0.25795454545454544
+    ],
+    "map": [
+     0.1788358128789063,
+     0.1684422619241132,
+     0.18578638710008752
+    ]
+   },
+   "clear_trained": null
+  },
+  "V3": {
+   "cipher_trained": {
+    "rank1": [
+     0.07272727272727272,
+     0.08068181818181819,
+     0.05795454545454545
+    ],
+    "map": [
+     0.0987918175250795,
+     0.10027530726869613,
+     0.09890439636158327
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.053409090909090906,
+     0.07272727272727272,
+     0.06136363636363636
+    ],
+    "map": [
+     0.09885995749949274,
+     0.10009515625465636,
+     0.09866816201048542
+    ]
+   }
+  }
+ },
+ "train_ids": [
+  1,
+  2,
+  4,
+  5,
+  8,
+  9,
+  11,
+  13,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  27,
+  28,
+  29,
+  31,
+  32
+ ],
+ "test_ids": [
+  3,
+  6,
+  7,
+  10,
+  12,
+  14,
+  22,
+  23,
+  24,
+  30,
+  33
+ ],
+ "test_samples": 880,
+ "dataset": "eventreid",
+ "recipe": "strong",
+ "input_shape": [
+  10,
+  240,
+  320
+ ],
+ "epochs": 40,
+ "gallery": "cross-camera",
+ "meta": {
+  "commit": "9e2386052ad087a785ec0775d0a43e9e62fb3844",
+  "date": "2026-11-23 12:38:29",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--recipe",
+   "strong",
+   "--views",
+   "V3",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n12/eventreid"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": null,
+   "seed": 0,
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "views": [
+    "V3"
+   ],
+   "recipe": "strong",
+   "per_file": null,
+   "epochs": null,
+   "train_persons": 22,
+   "workers": 4,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n12/eventreid"
+  },
+  "synthetic": false,
+  "device": "cuda"
+ },
+ "train_persons": [
+  1,
+  2,
+  4,
+  5,
+  8,
+  9,
+  11,
+  13,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  27,
+  28,
+  29,
+  31,
+  32
+ ],
+ "test_persons": [
+  3,
+  6,
+  7,
+  10,
+  12,
+  14,
+  22,
+  23,
+  24,
+  30,
+  33
+ ],
+ "test_frames": 880
+}

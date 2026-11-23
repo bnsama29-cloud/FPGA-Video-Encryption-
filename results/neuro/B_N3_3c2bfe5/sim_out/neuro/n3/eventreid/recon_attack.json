@@ -1,0 +1,215 @@
+{
+ "results": {
+  "plain": {
+   "ssim": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "psnr_mean": 99.0,
+   "edge_corr_mean": 1.0,
+   "minus_control_f": [
+    0.6721636976602887,
+    0.6433552601926732,
+    0.7006195670290147
+   ],
+   "best_attack_counts": {
+    "e2vid": 386
+   },
+   "P1_pass": false
+  },
+  "V1": {
+   "ssim": [
+    0.5032241496996529,
+    0.47012979242904435,
+    0.5367977906446185
+   ],
+   "psnr_mean": 12.940895485538158,
+   "edge_corr_mean": 0.6217282185667421,
+   "minus_control_f": [
+    0.17538784735994156,
+    0.14281487043233482,
+    0.20994916974466937
+   ],
+   "best_attack_counts": {
+    "e2vid": 318,
+    "denoise+integration": 59,
+    "integration": 1,
+    "firenet": 8
+   },
+   "P1_pass": false
+  },
+  "V2": {
+   "ssim": [
+    0.11331540520450126,
+    0.09923785769990943,
+    0.12754528834152212
+   ],
+   "psnr_mean": 10.138062968768194,
+   "edge_corr_mean": 0.004528412947973534,
+   "minus_control_f": [
+    -0.21452089713521,
+    -0.24508672891411568,
+    -0.18381200147343385
+   ],
+   "best_attack_counts": {
+    "integration": 180,
+    "e2vid": 181,
+    "firenet": 25
+   },
+   "P1_pass": true
+  },
+  "V3": {
+   "ssim": [
+    0.12080225067014612,
+    0.10769221614102494,
+    0.13416100697734973
+   ],
+   "psnr_mean": 10.175366028609389,
+   "edge_corr_mean": 0.004607075330224894,
+   "minus_control_f": [
+    -0.20703405166956512,
+    -0.2325726771524522,
+    -0.17977509188865298
+   ],
+   "best_attack_counts": {
+    "integration": 196,
+    "e2vid": 169,
+    "firenet": 21
+   },
+   "P1_pass": true
+  },
+  "V4": {
+   "ssim": [
+    0.0025805802322698282,
+    0.0018997224196719493,
+    0.003256101830651285
+   ],
+   "psnr_mean": 3.52911392858432,
+   "edge_corr_mean": 0.0,
+   "minus_control_f": [
+    -0.3252557221074414,
+    -0.3545405143719199,
+    -0.29678164631612275
+   ],
+   "best_attack_counts": {
+    "none": 386
+   },
+   "P1_pass": true
+  },
+  "Du 2021": {
+   "ssim": [
+    0.0962694219157968,
+    0.08877920771239992,
+    0.10484900798851825
+   ],
+   "psnr_mean": 10.180499165022828,
+   "edge_corr_mean": 0.010231406509934675,
+   "minus_control_f": [
+    -0.2315668804239145,
+    -0.26342882340014645,
+    -0.2006725405956122
+   ],
+   "best_attack_counts": {
+    "e2vid": 236,
+    "firenet": 121,
+    "integration": 29
+   },
+   "P1_pass": true
+  },
+  "control_c": {
+   "ssim": [
+    0.3081570224632199,
+    0.2904775930764038,
+    0.3253242524227773
+   ],
+   "psnr_mean": 10.342320213716507,
+   "edge_corr_mean": 0.11919704782023514,
+   "minus_control_f": [
+    -0.019679279876491394,
+    -0.048176066054717824,
+    0.010411136235289836
+   ],
+   "best_attack_counts": {},
+   "P1_pass": true
+  },
+  "control_f": {
+   "ssim": [
+    0.3278363023397112,
+    0.29938043297098527,
+    0.3566447398073268
+   ],
+   "psnr_mean": 9.711613533427919,
+   "edge_corr_mean": 0.08355867041111018,
+   "minus_control_f": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "best_attack_counts": {},
+   "P1_pass": true
+  }
+ },
+ "validity_gate": {
+  "plain_minus_control_c": [
+   0.6918429775367801,
+   0.6746757475772228,
+   0.7095224069235961
+  ],
+  "passes": true
+ },
+ "windows_test": 386,
+ "clusters_test": 17,
+ "target": "plaintext E2VID reconstruction",
+ "learned_attacks": true,
+ "scored": "inside the person box (Event-ReId labels/label.json; union over the frames of the window, +4 px)",
+ "windows_unlabelled_skipped": 70,
+ "views_not_run": {
+  "Zhang 2024": "not run at 640 x 480: it adds noise events to every empty pixel (> 128 x 128)"
+ },
+ "meta": {
+  "commit": "3c2bfe5fbfa5245bf5e9398e4ad4282f8644580f",
+  "date": "2026-11-16 16:19:05",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--keys",
+   "5",
+   "--recon-repo",
+   "/kaggle/working/ext/rpg_e2vid",
+   "--recon-ckpt",
+   "e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar",
+   "firenet=/kaggle/working/ext/firenet.pth.tar",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n3/eventreid"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n3/eventreid",
+   "win_ms": 20.0,
+   "T": 1024,
+   "max_windows": 6,
+   "recon_repo": "/kaggle/working/ext/rpg_e2vid",
+   "recon_ckpt": [
+    "e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar",
+    "firenet=/kaggle/working/ext/firenet.pth.tar"
+   ]
+  },
+  "dataset": "eventreid",
+  "synthetic": false,
+  "n_keys": 5,
+  "ci": "cluster bootstrap 95 % over recordings, 1000 resamples",
+  "baselines": {
+   "du2021": true,
+   "zhang2024": true
+  }
+ }
+}

@@ -1,0 +1,166 @@
+{
+ "results": {
+  "clean": [
+   0.9927,
+   0.9924515862288281,
+   0.9929484137711719
+  ],
+  "clear_subset": [
+   0.9723333333333333,
+   0.9673135718153544,
+   0.9773530948513122
+  ],
+  "V2": {
+   "i_clear_trained": [
+    0.11783333333333333,
+    0.11034649778342862,
+    0.12532016888323805
+   ],
+   "ii_cipher_trained": [
+    0.3618333333333333,
+    0.3592477608270942,
+    0.36441890583957237
+   ],
+   "ii_minus_chance": [
+    0.2618333333333333,
+    0.25924776082709416,
+    0.26441890583957245
+   ]
+  },
+  "V3": {
+   "i_clear_trained": [
+    0.1185,
+    0.10011905948133773,
+    0.13688094051866226
+   ],
+   "ii_cipher_trained": [
+    0.3586666666666667,
+    0.357949557878384,
+    0.3593837754549494
+   ],
+   "ii_minus_chance": [
+    0.25866666666666666,
+    0.25794955787838386,
+    0.25938377545494945
+   ]
+  },
+  "Du 2021": {
+   "i_clear_trained": [
+    0.12483333333333334,
+    0.09399765543717764,
+    0.15566901122948903
+   ],
+   "ii_cipher_trained": [
+    0.38766666666666666,
+    0.3749190620094223,
+    0.400414271323911
+   ],
+   "ii_minus_chance": [
+    0.2876666666666667,
+    0.27491906200942234,
+    0.300414271323911
+   ]
+  },
+  "Zhang 2024": {
+   "i_clear_trained": [
+    0.6038333333333333,
+    0.5352790833916361,
+    0.6723875832750306
+   ],
+   "ii_cipher_trained": [
+    0.9691666666666667,
+    0.9677324490901014,
+    0.9706008842432321
+   ],
+   "ii_minus_chance": [
+    0.8691666666666666,
+    0.8677324490901013,
+    0.870600884243232
+   ]
+  }
+ },
+ "gate": {
+  "threshold": 0.98,
+  "clean_mean": 0.9927,
+  "passes": true
+ },
+ "decrypted_event_equal": "64 of 64",
+ "ciphertext_subset": {
+  "train": 4000,
+  "test": 2000,
+  "of_train": 60000,
+  "of_test": 10000,
+  "seed": 0
+ },
+ "chance": 0.1,
+ "snn": "SNN rows: run with --config N_snn10",
+ "meta": {
+  "commit": "51c8b96221000076e65f248fa6670f3df97f40af",
+  "date": "2026-11-22 09:40:02",
+  "argv": [
+   "--dataset",
+   "nmnist",
+   "--data",
+   "/kaggle/temp/kneuro_data/nmnist",
+   "--config",
+   "N_ts3",
+   "--views",
+   "V2",
+   "V3",
+   "Du 2021",
+   "Zhang 2024",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n6x/N_ts3/nmnist"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "nmnist",
+   "data": "/kaggle/temp/kneuro_data/nmnist",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n6x/N_ts3/nmnist",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "epochs": null,
+   "config": "N_ts3",
+   "views": [
+    "V2",
+    "V3",
+    "Du 2021",
+    "Zhang 2024"
+   ],
+   "ct_train": null,
+   "ct_test": null,
+   "check": 64,
+   "workers": 4
+  },
+  "dataset": "nmnist",
+  "synthetic": false,
+  "device": "cuda",
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "ci": "Student-t 95 % over seeds",
+  "n_keys": "fresh key per sample",
+  "config": {
+   "nb": 1,
+   "feat": "ts3",
+   "arch": "small",
+   "epochs": 20,
+   "shift": 0,
+   "down": 1
+  },
+  "config_name": "N_ts3"
+ }
+}

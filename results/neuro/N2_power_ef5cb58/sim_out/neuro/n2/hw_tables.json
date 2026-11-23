@@ -1,0 +1,854 @@
+{
+ "builds": [
+  {
+   "build": "nv_ascon_core_u_u1",
+   "params": {
+    "top": "nv_ascon_core_u",
+    "u": 1,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     994.0,
+     53200.0,
+     1.87
+    ],
+    "ff": [
+     715.0,
+     106400.0,
+     0.67
+    ],
+    "bram": [
+     0.0,
+     140.0,
+     0.0
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 3.039,
+    "tns": 0.0,
+    "whs": 0.144,
+    "met": true
+   },
+   "fmax_mhz": 143.7,
+   "power": {
+    "total": 0.125,
+    "dynamic": 0.022,
+    "static": 0.103,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_ascon_core_u_u2",
+   "params": {
+    "top": "nv_ascon_core_u",
+    "u": 2,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     1495.0,
+     53200.0,
+     2.81
+    ],
+    "ff": [
+     714.0,
+     106400.0,
+     0.67
+    ],
+    "bram": [
+     0.0,
+     140.0,
+     0.0
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 1.664,
+    "tns": 0.0,
+    "whs": 0.121,
+    "met": true
+   },
+   "fmax_mhz": 120.0,
+   "power": {
+    "total": 0.18,
+    "dynamic": 0.077,
+    "static": 0.104,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_ascon_core_u_u4",
+   "params": {
+    "top": "nv_ascon_core_u",
+    "u": 4,
+    "period": 10.0
+   },
+   "util": {},
+   "timing": {},
+   "fmax_mhz": null,
+   "power": {},
+   "power_source": "vectorless",
+   "missing": [
+    "utilization.txt",
+    "timing.txt",
+    "power.txt"
+   ],
+   "kpol_generators": 1,
+   "impl": "perf",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": false,
+   "energy": []
+  },
+  {
+   "build": "nv_feistel",
+   "params": {
+    "top": "nv_feistel",
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     389.0,
+     53200.0,
+     0.73
+    ],
+    "ff": [
+     272.0,
+     106400.0,
+     0.26
+    ],
+    "bram": [
+     12.0,
+     140.0,
+     8.57
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 1.89,
+    "tns": 0.0,
+    "whs": 0.051,
+    "met": true
+   },
+   "fmax_mhz": 123.3,
+   "power": {
+    "total": 0.144,
+    "dynamic": 0.04,
+    "static": 0.104,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_table_gen",
+   "params": {
+    "top": "nv_table_gen",
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     893.0,
+     53200.0,
+     1.68
+    ],
+    "ff": [
+     916.0,
+     106400.0,
+     0.86
+    ],
+    "bram": [
+     0.0,
+     140.0,
+     0.0
+    ],
+    "dsp": [
+     1.0,
+     220.0,
+     0.45
+    ]
+   },
+   "timing": {
+    "wns": 1.217,
+    "tns": 0.0,
+    "whs": 0.11,
+    "met": true
+   },
+   "fmax_mhz": 113.9,
+   "power": {
+    "total": 0.128,
+    "dynamic": 0.025,
+    "static": 0.103,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_tag32_u2",
+   "params": {
+    "top": "nv_tag32",
+    "u": 2,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     1824.0,
+     53200.0,
+     3.43
+    ],
+    "ff": [
+     1934.0,
+     106400.0,
+     1.82
+    ],
+    "bram": [
+     0.0,
+     140.0,
+     0.0
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 1.787,
+    "tns": 0.0,
+    "whs": 0.144,
+    "met": true
+   },
+   "fmax_mhz": 121.8,
+   "power": {
+    "total": 0.22,
+    "dynamic": 0.116,
+    "static": 0.104,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_top_u1",
+   "params": {
+    "top": "nv_top",
+    "u": 1,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     7499.0,
+     53200.0,
+     14.1
+    ],
+    "ff": [
+     10961.0,
+     106400.0,
+     10.3
+    ],
+    "bram": [
+     16.5,
+     140.0,
+     11.79
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": 0.026,
+    "tns": 0.0,
+    "whs": 0.07,
+    "met": true
+   },
+   "fmax_mhz": 100.3,
+   "power": {
+    "total": 0.251,
+    "dynamic": 0.145,
+    "static": 0.106,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "tag_words_per_clk": 0.4444444444444444,
+   "fill_clk": 20515,
+   "auth_mev_s_100mhz": 44.44444444444444,
+   "auth_mev_s_fmax": 44.577777777777776,
+   "bram_rows": [
+    [
+     "g_pad.bm_ram",
+     "nv_sdp_ram",
+     "63",
+     "63",
+     "0",
+     "0",
+     "3",
+     "4",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_top_u2_maxw1280_maxh720",
+   "params": {
+    "top": "nv_top",
+    "u": 2,
+    "maxw": 1280,
+    "maxh": 720,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     7997.0,
+     53200.0,
+     15.03
+    ],
+    "ff": [
+     10958.0,
+     106400.0,
+     10.3
+    ],
+    "bram": [
+     16.5,
+     140.0,
+     11.79
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": 0.298,
+    "tns": 0.0,
+    "whs": 0.098,
+    "met": true
+   },
+   "fmax_mhz": 103.1,
+   "power": {
+    "total": 0.336,
+    "dynamic": 0.229,
+    "static": 0.107,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {
+    "dense_v2": {
+     "total": 0.274,
+     "dynamic": 0.168,
+     "static": 0.106,
+     "confidence": "Medium",
+     "internal": "Medium",
+     "internal_detail": "User specified less than 25% of internal nodes"
+    },
+    "dense_v3": {
+     "total": 0.277,
+     "dynamic": 0.171,
+     "static": 0.106,
+     "confidence": "Medium",
+     "internal": "Medium",
+     "internal_detail": "User specified less than 25% of internal nodes"
+    },
+    "real_v2": {
+     "total": 0.259,
+     "dynamic": 0.154,
+     "static": 0.106,
+     "confidence": "Medium",
+     "internal": "Medium",
+     "internal_detail": "User specified less than 25% of internal nodes"
+    },
+    "real_v3": {
+     "total": 0.259,
+     "dynamic": 0.154,
+     "static": 0.106,
+     "confidence": "Medium",
+     "internal": "Medium",
+     "internal_detail": "User specified less than 25% of internal nodes"
+    }
+   },
+   "tag_words_per_clk": 0.8,
+   "fill_clk": 20515,
+   "auth_mev_s_100mhz": 80.0,
+   "auth_mev_s_fmax": 82.48,
+   "bram_rows": [
+    [
+     "g_pad.bm_ram",
+     "nv_sdp_ram",
+     "63",
+     "63",
+     "0",
+     "0",
+     "3",
+     "4",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": [
+    {
+     "workload": "dense_v2",
+     "level": 2,
+     "source": "synthetic: 10000 events/ms, uniform pixels (neuro.vectors.events, seed 0)",
+     "total_w": 0.274,
+     "dynamic_w": 0.168,
+     "confidence": "Medium",
+     "events": 80000,
+     "cycles": 102779,
+     "events_per_clk": 0.7783691220969264,
+     "nj_per_event": 3.52018075,
+     "dyn_nj_per_event": 2.158359
+    },
+    {
+     "workload": "dense_v3",
+     "level": 3,
+     "source": "synthetic: 10000 events/ms, uniform pixels (neuro.vectors.events, seed 0)",
+     "total_w": 0.277,
+     "dynamic_w": 0.171,
+     "confidence": "Medium",
+     "events": 80000,
+     "cycles": 102779,
+     "events_per_clk": 0.7783691220969264,
+     "nj_per_event": 3.5587228750000004,
+     "dyn_nj_per_event": 2.196901125
+    },
+    {
+     "workload": "real_v2",
+     "level": 2,
+     "source": "user24_fluorescent/0.npy (sha256 425c54c9b4e8e89b13f839b8704c1dbd6d2b7cfc46158f25fd969a42a5a18f40)",
+     "total_w": 0.259,
+     "dynamic_w": 0.154,
+     "confidence": "Medium",
+     "events": 1524,
+     "cycles": 130409,
+     "events_per_clk": 0.011686309993942136,
+     "nj_per_event": 221.626843832021,
+     "dyn_nj_per_event": 131.77812335958004
+    },
+    {
+     "workload": "real_v3",
+     "level": 3,
+     "source": "user24_fluorescent/0.npy (sha256 425c54c9b4e8e89b13f839b8704c1dbd6d2b7cfc46158f25fd969a42a5a18f40)",
+     "total_w": 0.259,
+     "dynamic_w": 0.154,
+     "confidence": "Medium",
+     "events": 1524,
+     "cycles": 130409,
+     "events_per_clk": 0.011686309993942136,
+     "nj_per_event": 221.626843832021,
+     "dyn_nj_per_event": 131.77812335958004
+    }
+   ]
+  },
+  {
+   "build": "nv_top_u2_maxw128_maxh128",
+   "params": {
+    "top": "nv_top",
+    "u": 2,
+    "maxw": 128,
+    "maxh": 128,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     7995.0,
+     53200.0,
+     15.03
+    ],
+    "ff": [
+     10954.0,
+     106400.0,
+     10.3
+    ],
+    "bram": [
+     12.5,
+     140.0,
+     8.93
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": 0.148,
+    "tns": 0.0,
+    "whs": 0.093,
+    "met": true
+   },
+   "fmax_mhz": 101.5,
+   "power": {
+    "total": 0.329,
+    "dynamic": 0.222,
+    "static": 0.107,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "tag_words_per_clk": 0.8,
+   "fill_clk": 2639,
+   "auth_mev_s_100mhz": 80.0,
+   "auth_mev_s_fmax": 81.2,
+   "bram_rows": [
+    [
+     "g_pad.bm_ram",
+     "nv_sdp_ram",
+     "63",
+     "63",
+     "0",
+     "0",
+     "3",
+     "4",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_top_u2_maxw346_maxh260",
+   "params": {
+    "top": "nv_top",
+    "u": 2,
+    "maxw": 346,
+    "maxh": 260,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     7992.0,
+     53200.0,
+     15.02
+    ],
+    "ff": [
+     10956.0,
+     106400.0,
+     10.3
+    ],
+    "bram": [
+     12.5,
+     140.0,
+     8.93
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": 0.182,
+    "tns": 0.0,
+    "whs": 0.07,
+    "met": true
+   },
+   "fmax_mhz": 101.9,
+   "power": {
+    "total": 0.329,
+    "dynamic": 0.222,
+    "static": 0.107,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "tag_words_per_clk": 0.8,
+   "fill_clk": 6226,
+   "auth_mev_s_100mhz": 80.0,
+   "auth_mev_s_fmax": 81.52000000000001,
+   "bram_rows": [
+    [
+     "g_pad.bm_ram",
+     "nv_sdp_ram",
+     "63",
+     "63",
+     "0",
+     "0",
+     "3",
+     "4",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_top_u2_maxw34_maxh34",
+   "params": {
+    "top": "nv_top",
+    "u": 2,
+    "maxw": 34,
+    "maxh": 34,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     8261.0,
+     53200.0,
+     15.53
+    ],
+    "ff": [
+     10894.0,
+     106400.0,
+     10.24
+    ],
+    "bram": [
+     4.5,
+     140.0,
+     3.21
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": 0.116,
+    "tns": 0.0,
+    "whs": 0.028,
+    "met": true
+   },
+   "fmax_mhz": 101.2,
+   "power": {
+    "total": 0.312,
+    "dynamic": 0.206,
+    "static": 0.106,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "tag_words_per_clk": 0.8,
+   "fill_clk": 712,
+   "auth_mev_s_100mhz": 80.0,
+   "auth_mev_s_fmax": 80.96000000000001,
+   "bram_rows": [
+    [
+     "g_pad.bm_ram",
+     "nv_sdp_ram",
+     "63",
+     "63",
+     "0",
+     "0",
+     "3",
+     "4",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_top_u4",
+   "params": {
+    "top": "nv_top",
+    "u": 4,
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     9826.0,
+     53200.0,
+     18.47
+    ],
+    "ff": [
+     11033.0,
+     106400.0,
+     10.37
+    ],
+    "bram": [
+     16.5,
+     140.0,
+     11.79
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": -2.133,
+    "tns": -555.694,
+    "whs": 0.095,
+    "met": false
+   },
+   "fmax_mhz": 82.4,
+   "power": {
+    "total": 0.73,
+    "dynamic": 0.616,
+    "static": 0.114,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast+perf",
+   "power_saif": {},
+   "tag_words_per_clk": 1.3333333333333333,
+   "fill_clk": 20515,
+   "auth_mev_s_100mhz": 100.0,
+   "auth_mev_s_fmax": 82.4,
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "board overlay (PS + AXI DMA + nv_top U=2)",
+   "params": {
+    "top": "system_wrapper"
+   },
+   "util": {
+    "lut": [
+     10706.0,
+     53200.0,
+     20.12
+    ],
+    "ff": [
+     14442.0,
+     106400.0,
+     13.57
+    ],
+    "bram": [
+     18.5,
+     140.0,
+     13.21
+    ],
+    "dsp": [
+     3.0,
+     220.0,
+     1.36
+    ]
+   },
+   "timing": {
+    "wns": 0.382,
+    "tns": 0.0,
+    "whs": 0.022,
+    "met": true
+   },
+   "fmax_mhz": 104.0,
+   "power": {
+    "total": 1.9,
+    "dynamic": 1.756,
+    "static": 0.144,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "bd",
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  }
+ ],
+ "meta": {
+  "commit": "ef5cb5869cfc2a6a2cbea79f3ea4514232e30228",
+  "date": "2026-11-22 15:36:22",
+  "argv": [],
+  "inputs": {},
+  "args": {
+   "dir": "E:\\FPGA-Video-Encryption-\\neuro_wt\\sim_build",
+   "out": null,
+   "overlay": "E:\\FPGA-Video-Encryption-\\neuro_wt\\software\\system\\board\\overlay\\neuro"
+  },
+  "note": "authenticated rate = min(1, tag rate) x Fmax; fill-bound rate per packet is in fill_clk (see \u00a76.3)"
+ }
+}

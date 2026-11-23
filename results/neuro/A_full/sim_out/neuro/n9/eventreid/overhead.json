@@ -1,0 +1,290 @@
+{
+ "machine": "x86_64 x86_64 CPython 3.13.18",
+ "software_us_per_event": {
+  "ours V1 (model)": 19.008570606583152,
+  "ours V2 (model)": 16.989048702423297,
+  "ours V3 (model)": 22.33977382414651,
+  "ours V4 (model)": 16.934884495729435,
+  "Du 2021 (own 2D-SIMM)": 0.15054719824893778,
+  "Du 2021 (Ascon-keyed)": 0.21115582600740354,
+  "Zhang 2024": 5.486384126229782
+ },
+ "rates": {
+  "10us": {
+   "median": 200000.0,
+   "p99": 900000.0,
+   "max": 15200000.0
+  },
+  "100us": {
+   "median": 160000.0,
+   "p99": 800000.0,
+   "max": 3730000.0
+  },
+  "1000us": {
+   "median": 192000.0,
+   "p99": 709000.0,
+   "max": 1138000.0
+  }
+ },
+ "bytes": [
+  {
+   "T_us": 256,
+   "config": "V3",
+   "bytes_per_event": 5.47761648965438,
+   "overhead_vs_4B": 0.3694041224135951
+  },
+  {
+   "T_us": 256,
+   "config": "V3 + pad floor 4",
+   "bytes_per_event": 5.892341979271308,
+   "overhead_vs_4B": 0.4730854948178269
+  },
+  {
+   "T_us": 256,
+   "config": "V3 + pad ladder 2..64",
+   "bytes_per_event": 7.411465792054742,
+   "overhead_vs_4B": 0.8528664480136856
+  },
+  {
+   "T_us": 256,
+   "config": "V4",
+   "bytes_per_event": 5.47761648965438,
+   "overhead_vs_4B": 0.3694041224135951
+  },
+  {
+   "T_us": 512,
+   "config": "V3",
+   "bytes_per_event": 4.853542595462245,
+   "overhead_vs_4B": 0.21338564886556122
+  },
+  {
+   "T_us": 512,
+   "config": "V3 + pad floor 4",
+   "bytes_per_event": 5.25751306238918,
+   "overhead_vs_4B": 0.3143782655972951
+  },
+  {
+   "T_us": 512,
+   "config": "V3 + pad ladder 2..64",
+   "bytes_per_event": 6.7796021189708915,
+   "overhead_vs_4B": 0.6949005297427229
+  },
+  {
+   "T_us": 512,
+   "config": "V4",
+   "bytes_per_event": 4.853542595462245,
+   "overhead_vs_4B": 0.21338564886556122
+  },
+  {
+   "T_us": 1024,
+   "config": "V3",
+   "bytes_per_event": 4.541498949314672,
+   "overhead_vs_4B": 0.135374737328668
+  },
+  {
+   "T_us": 1024,
+   "config": "V3 + pad floor 4",
+   "bytes_per_event": 4.940424421453164,
+   "overhead_vs_4B": 0.23510610536329102
+  },
+  {
+   "T_us": 1024,
+   "config": "V3 + pad ladder 2..64",
+   "bytes_per_event": 6.465910506152927,
+   "overhead_vs_4B": 0.6164776265382317
+  },
+  {
+   "T_us": 1024,
+   "config": "V4",
+   "bytes_per_event": 4.541498949314672,
+   "overhead_vs_4B": 0.135374737328668
+  },
+  {
+   "T_us": 4096,
+   "config": "V3",
+   "bytes_per_event": 4.307423736627399,
+   "overhead_vs_4B": 0.07685593415684977
+  },
+  {
+   "T_us": 4096,
+   "config": "V3 + pad floor 4",
+   "bytes_per_event": 4.704611718407197,
+   "overhead_vs_4B": 0.17615292960179918
+  },
+  {
+   "T_us": 4096,
+   "config": "V3 + pad ladder 2..64",
+   "bytes_per_event": 6.227681272527464,
+   "overhead_vs_4B": 0.556920318131866
+  },
+  {
+   "T_us": 4096,
+   "config": "V4",
+   "bytes_per_event": 4.307423736627399,
+   "overhead_vs_4B": 0.07685593415684977
+  }
+ ],
+ "cycle_model": [
+  {
+   "T_us": 256,
+   "U": 1,
+   "finalisation_us_median": 0.51,
+   "finalisation_us_p99": 0.53,
+   "auth_latency_worst_ms_p99": 0.25653,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.0066068531614006535
+  },
+  {
+   "T_us": 256,
+   "U": 2,
+   "finalisation_us_median": 0.37,
+   "finalisation_us_p99": 0.39,
+   "auth_latency_worst_ms_p99": 0.25639,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.0066068621516699325
+  },
+  {
+   "T_us": 256,
+   "U": 4,
+   "finalisation_us_median": 0.3,
+   "finalisation_us_p99": 0.32,
+   "auth_latency_worst_ms_p99": 0.25632,
+   "fifo_max_words": 6,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.006606864648479234
+  },
+  {
+   "T_us": 512,
+   "U": 1,
+   "finalisation_us_median": 0.52,
+   "finalisation_us_p99": 0.53,
+   "auth_latency_worst_ms_p99": 0.5125299999999999,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.013209945383109507
+  },
+  {
+   "T_us": 512,
+   "U": 2,
+   "finalisation_us_median": 0.38,
+   "finalisation_us_p99": 0.39,
+   "auth_latency_worst_ms_p99": 0.51239,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.013209981333408567
+  },
+  {
+   "T_us": 512,
+   "U": 4,
+   "finalisation_us_median": 0.31,
+   "finalisation_us_p99": 0.32,
+   "auth_latency_worst_ms_p99": 0.51232,
+   "fifo_max_words": 6,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.013209991317682867
+  },
+  {
+   "T_us": 1024,
+   "U": 1,
+   "finalisation_us_median": 0.52,
+   "finalisation_us_p99": 0.53,
+   "auth_latency_worst_ms_p99": 1.02453,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.02641862400049986
+  },
+  {
+   "T_us": 1024,
+   "U": 2,
+   "finalisation_us_median": 0.38,
+   "finalisation_us_p99": 0.39,
+   "auth_latency_worst_ms_p99": 1.0243900000000001,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.026418900191208437
+  },
+  {
+   "T_us": 1024,
+   "U": 4,
+   "finalisation_us_median": 0.31,
+   "finalisation_us_p99": 0.32,
+   "auth_latency_worst_ms_p99": 1.02432,
+   "fifo_max_words": 6,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.026418973728686436
+  },
+  {
+   "T_us": 4096,
+   "U": 1,
+   "finalisation_us_median": 0.51,
+   "finalisation_us_p99": 0.53,
+   "auth_latency_worst_ms_p99": 4.09653,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.10573185381138402
+  },
+  {
+   "T_us": 4096,
+   "U": 2,
+   "finalisation_us_median": 0.37,
+   "finalisation_us_p99": 0.39,
+   "auth_latency_worst_ms_p99": 4.09639,
+   "fifo_max_words": 7,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.10574930268406897
+  },
+  {
+   "T_us": 4096,
+   "U": 4,
+   "finalisation_us_median": 0.3,
+   "finalisation_us_p99": 0.32,
+   "auth_latency_worst_ms_p99": 4.0963199999999995,
+   "fifo_max_words": 6,
+   "input_backlog_max": 1,
+   "max_rate_words_per_clk": 0.10575369516873112
+  }
+ ],
+ "fixed_bytes_per_packet": 76,
+ "meta": {
+  "commit": "39ab3f4f8a25aad9a3eacbcea9cbfe0b49d697dd",
+  "date": "2026-11-16 14:38:56",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--limit",
+   "8",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n9/eventreid"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": 8,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n9/eventreid",
+   "T": [
+    256,
+    512,
+    1024,
+    4096
+   ],
+   "U": [
+    1,
+    2,
+    4
+   ],
+   "sw_only": false
+  },
+  "dataset": "eventreid",
+  "synthetic": false,
+  "n_keys": 1,
+  "note": "cycle model is an estimate checked against RTL CYCLES in N1"
+ }
+}

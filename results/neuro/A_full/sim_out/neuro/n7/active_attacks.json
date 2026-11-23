@@ -1,0 +1,278 @@
+{
+ "attacks": {
+  "inject": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "forged"
+   ],
+   "required": [
+    "forged",
+    "malformed"
+   ]
+  },
+  "bitflip_payload": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "forged"
+   ],
+   "required": [
+    "forged"
+   ]
+  },
+  "bitflip_tag": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "forged"
+   ],
+   "required": [
+    "forged"
+   ]
+  },
+  "replay_in_window": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "replay"
+   ],
+   "required": [
+    "replay"
+   ]
+  },
+  "replay_old": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "replay"
+   ],
+   "required": [
+    "replay"
+   ]
+  },
+  "reorder_in_window": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "ok"
+   ],
+   "required": [
+    "ok"
+   ]
+  },
+  "splice": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "forged"
+   ],
+   "required": [
+    "forged",
+    "malformed"
+   ]
+  },
+  "downgrade": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "policy"
+   ],
+   "required": [
+    "forged",
+    "policy"
+   ]
+  },
+  "epoch_jump": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "policy, kdf +0"
+   ],
+   "required": [
+    "policy"
+   ]
+  },
+  "flood": {
+   "trials": 200,
+   "success": 200,
+   "cp95": [
+    0.9817246596448638,
+    1.0
+   ],
+   "statuses": [
+    "malformed"
+   ],
+   "required": [
+    "forged",
+    "malformed",
+    "policy",
+    "stale"
+   ]
+  }
+ },
+ "delete": {
+  "trials": 200,
+  "detected": 200,
+  "cp95": [
+   0.9817246596448638,
+   1.0
+  ],
+  "latency_packets_max": 64,
+  "latency_ms_max": 65.536,
+  "bound_ms": 65.536
+ },
+ "tail_truncation": {
+  "trials": 20,
+  "detected": 20
+ },
+ "flood_cost": {
+  "junk_header_like_us": 5.183999746805057,
+  "junk_random_us": 5.040001269662753,
+  "passes_header_checks_one_mac_us": 1485.2375006739749
+ },
+ "benign_loss": [
+  {
+   "T_us": 256,
+   "p_loss": 0.0,
+   "events_delivered": 1.0,
+   "events_delivered_min": 1.0
+  },
+  {
+   "T_us": 256,
+   "p_loss": 0.001,
+   "events_delivered": 0.9991025883242018,
+   "events_delivered_min": 0.9945210655582846
+  },
+  {
+   "T_us": 256,
+   "p_loss": 0.01,
+   "events_delivered": 0.9900245607406009,
+   "events_delivered_min": 0.9811071226147743
+  },
+  {
+   "T_us": 256,
+   "p_loss": 0.05,
+   "events_delivered": 0.9484035518609485,
+   "events_delivered_min": 0.939920649914982
+  },
+  {
+   "T_us": 1024,
+   "p_loss": 0.0,
+   "events_delivered": 1.0,
+   "events_delivered_min": 1.0
+  },
+  {
+   "T_us": 1024,
+   "p_loss": 0.001,
+   "events_delivered": 0.9983279803514076,
+   "events_delivered_min": 0.9924428490459097
+  },
+  {
+   "T_us": 1024,
+   "p_loss": 0.01,
+   "events_delivered": 0.9890326846778763,
+   "events_delivered_min": 0.9744946155299452
+  },
+  {
+   "T_us": 1024,
+   "p_loss": 0.05,
+   "events_delivered": 0.9523805025505384,
+   "events_delivered_min": 0.9261288494237673
+  },
+  {
+   "T_us": 4096,
+   "p_loss": 0.0,
+   "events_delivered": 1.0,
+   "events_delivered_min": 1.0
+  },
+  {
+   "T_us": 4096,
+   "p_loss": 0.001,
+   "events_delivered": 0.9966276213867372,
+   "events_delivered_min": 0.974305686756093
+  },
+  {
+   "T_us": 4096,
+   "p_loss": 0.01,
+   "events_delivered": 0.9833364821462307,
+   "events_delivered_min": 0.943510296618175
+  },
+  {
+   "T_us": 4096,
+   "p_loss": 0.05,
+   "events_delivered": 0.9553088985452485,
+   "events_delivered_min": 0.917815983374268
+  }
+ ],
+ "baselines": {
+  "du2021": "all manipulations accepted (no tag)",
+  "zhang2024": "all manipulations accepted (no tag)"
+ },
+ "forgery_bound": "2^-128 per attempt (Ascon-AEAD128 tag, 128 bits)",
+ "meta": {
+  "commit": "39ab3f4f8a25aad9a3eacbcea9cbfe0b49d697dd",
+  "date": "2026-11-16 17:41:44",
+  "argv": [
+   "--dataset",
+   "nmnist",
+   "--data",
+   "/kaggle/temp/kneuro_data/nmnist",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n7"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "nmnist",
+   "data": "/kaggle/temp/kneuro_data/nmnist",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n7",
+   "trials": 200,
+   "T": 1024
+  },
+  "dataset": "nmnist",
+  "n_keys": 1,
+  "ci": "Clopper-Pearson 95 %",
+  "level": "V3 b=6",
+  "synthetic": false
+ }
+}

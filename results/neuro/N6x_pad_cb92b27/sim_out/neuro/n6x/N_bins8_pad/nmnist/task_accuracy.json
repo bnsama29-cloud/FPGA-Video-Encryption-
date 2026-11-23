@@ -1,0 +1,165 @@
+{
+ "results": {
+  "clean": [
+   0.9956,
+   0.9941095173729684,
+   0.9970904826270317
+  ],
+  "clear_subset": [
+   0.9838333333333334,
+   0.9800387502997837,
+   0.9876279163668832
+  ],
+  "V3": {
+   "i_clear_trained": [
+    0.11716666666666666,
+    0.11214690514868783,
+    0.12218642818464548
+   ],
+   "ii_cipher_trained": [
+    0.3913333333333333,
+    0.36995194381692237,
+    0.41271472284974425
+   ],
+   "ii_minus_chance": [
+    0.29133333333333333,
+    0.2699519438169224,
+    0.3127147228497443
+   ]
+  },
+  "V3 + pad floor 4": {
+   "i_clear_trained": [
+    0.116,
+    0.116,
+    0.116
+   ],
+   "ii_cipher_trained": [
+    0.1135,
+    0.1135,
+    0.1135
+   ],
+   "ii_minus_chance": [
+    0.013499999999999998,
+    0.013499999999999998,
+    0.013499999999999998
+   ]
+  },
+  "V3 + pad floor 16": {
+   "i_clear_trained": [
+    0.11633333333333334,
+    0.11489911575676796,
+    0.11776755090989872
+   ],
+   "ii_cipher_trained": [
+    0.1135,
+    0.1135,
+    0.1135
+   ],
+   "ii_minus_chance": [
+    0.013499999999999998,
+    0.013499999999999998,
+    0.013499999999999998
+   ]
+  },
+  "V3 + pad ladder 2..64": {
+   "i_clear_trained": [
+    0.116,
+    0.116,
+    0.116
+   ],
+   "ii_cipher_trained": [
+    0.33916666666666667,
+    0.3007561349620368,
+    0.37757719837129655
+   ],
+   "ii_minus_chance": [
+    0.23916666666666667,
+    0.20075613496203676,
+    0.2775771983712966
+   ]
+  }
+ },
+ "gate": {
+  "threshold": 0.98,
+  "clean_mean": 0.9956,
+  "passes": true
+ },
+ "decrypted_event_equal": "64 of 64",
+ "ciphertext_subset": {
+  "train": 4000,
+  "test": 2000,
+  "of_train": 60000,
+  "of_test": 10000,
+  "seed": 0
+ },
+ "chance": 0.1,
+ "snn": "SNN rows: run with --config N_snn10",
+ "meta": {
+  "commit": "cb92b27fcb7b2023c2efef28f14129a20027bf58",
+  "date": "2026-11-22 17:58:42",
+  "argv": [
+   "--dataset",
+   "nmnist",
+   "--data",
+   "/kaggle/temp/kneuro_data/nmnist",
+   "--config",
+   "N_bins8_pad",
+   "--views",
+   "V3",
+   "V3 + pad floor 4",
+   "V3 + pad floor 16",
+   "V3 + pad ladder 2..64",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n6x/N_bins8_pad/nmnist"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "nmnist",
+   "data": "/kaggle/temp/kneuro_data/nmnist",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n6x/N_bins8_pad/nmnist",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "epochs": null,
+   "config": "N_bins8_pad",
+   "views": [
+    "V3",
+    "V3 + pad floor 4",
+    "V3 + pad floor 16",
+    "V3 + pad ladder 2..64"
+   ],
+   "ct_train": null,
+   "ct_test": null,
+   "check": 64,
+   "workers": 4
+  },
+  "dataset": "nmnist",
+  "synthetic": false,
+  "device": "cuda",
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "ci": "Student-t 95 % over seeds",
+  "n_keys": "fresh key per sample",
+  "config": {
+   "nb": 8,
+   "arch": "small",
+   "epochs": 20,
+   "shift": 0,
+   "down": 1
+  },
+  "config_name": "N_bins8_pad"
+ }
+}

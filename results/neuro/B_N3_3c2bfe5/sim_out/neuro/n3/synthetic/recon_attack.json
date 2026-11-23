@@ -1,0 +1,242 @@
+{
+ "results": {
+  "plain": {
+   "ssim": [
+    0.26235892102909225,
+    0.25640418447575103,
+    0.26796105924748315
+   ],
+   "psnr_mean": 10.46564862241581,
+   "edge_corr_mean": 0.4940779057716825,
+   "minus_control_f": [
+    0.12956902345682636,
+    0.11304434487209793,
+    0.1460943829914791
+   ],
+   "best_attack_counts": {
+    "integration": 84,
+    "e2vid": 246,
+    "denoise+integration": 69,
+    "firenet": 5
+   },
+   "P1_pass": false
+  },
+  "V1": {
+   "ssim": [
+    0.13927871110725185,
+    0.13705880691780248,
+    0.14143637050433752
+   ],
+   "psnr_mean": 9.478645230324663,
+   "edge_corr_mean": 0.4739770292617656,
+   "minus_control_f": [
+    0.006488813534985961,
+    -0.008900071594705766,
+    0.02211885097098709
+   ],
+   "best_attack_counts": {
+    "count": 20,
+    "denoise+integration": 352,
+    "integration": 32
+   },
+   "P1_pass": true
+  },
+  "V2": {
+   "ssim": [
+    0.02913890937026214,
+    0.02834581632046094,
+    0.030041393581653256
+   ],
+   "psnr_mean": 9.244407086062722,
+   "edge_corr_mean": -0.0011529571104016126,
+   "minus_control_f": [
+    -0.10365098820200375,
+    -0.11811306544683954,
+    -0.08822986751407383
+   ],
+   "best_attack_counts": {
+    "denoise+integration": 237,
+    "e2vid": 104,
+    "count": 7,
+    "firenet": 43,
+    "denoise+count": 10,
+    "integration": 3
+   },
+   "P1_pass": true
+  },
+  "V3": {
+   "ssim": [
+    0.029579569235963575,
+    0.02872296397510651,
+    0.030465375434549333
+   ],
+   "psnr_mean": 9.168446881660492,
+   "edge_corr_mean": -0.0011547124556946784,
+   "minus_control_f": [
+    -0.10321032833630231,
+    -0.11817297921008982,
+    -0.08807851422460321
+   ],
+   "best_attack_counts": {
+    "denoise+integration": 262,
+    "firenet": 39,
+    "e2vid": 90,
+    "integration": 4,
+    "count": 4,
+    "denoise+count": 5
+   },
+   "P1_pass": true
+  },
+  "V4": {
+   "ssim": [
+    0.004661951612710099,
+    0.004494872201390908,
+    0.004829281325954853
+   ],
+   "psnr_mean": 10.306212192517318,
+   "edge_corr_mean": 0.0,
+   "minus_control_f": [
+    -0.1281279459595558,
+    -0.14315233185828644,
+    -0.11310294683969352
+   ],
+   "best_attack_counts": {
+    "none": 404
+   },
+   "P1_pass": true
+  },
+  "Du 2021": {
+   "ssim": [
+    0.04201754318631616,
+    0.04090954359053429,
+    0.043154422749359905
+   ],
+   "psnr_mean": 9.376407774275908,
+   "edge_corr_mean": 0.006851378524302246,
+   "minus_control_f": [
+    -0.09077235438594973,
+    -0.10577254319177522,
+    -0.07562253437317608
+   ],
+   "best_attack_counts": {
+    "denoise+integration": 312,
+    "e2vid": 66,
+    "firenet": 24,
+    "integration": 2
+   },
+   "P1_pass": true
+  },
+  "Zhang 2024": {
+   "ssim": [
+    0.11203846237484333,
+    0.11018221122887581,
+    0.1140027641033266
+   ],
+   "psnr_mean": 10.244459426771092,
+   "edge_corr_mean": 0.15814794785273265,
+   "minus_control_f": [
+    -0.02075143519742257,
+    -0.034899026739347604,
+    -0.006223728632763208
+   ],
+   "best_attack_counts": {
+    "denoise+count": 6,
+    "count": 111,
+    "denoise+integration": 281,
+    "e2vid": 5,
+    "integration": 1
+   },
+   "P1_pass": true
+  },
+  "control_c": {
+   "ssim": [
+    0.12812585510548638,
+    0.11668680533785956,
+    0.13931473505528327
+   ],
+   "psnr_mean": 10.40261940832724,
+   "edge_corr_mean": 0.084927886103579,
+   "minus_control_f": [
+    -0.004664042466779517,
+    -0.019838069270973393,
+    0.010020357976016966
+   ],
+   "best_attack_counts": {},
+   "P1_pass": true
+  },
+  "control_f": {
+   "ssim": [
+    0.1327898975722659,
+    0.11777350778992622,
+    0.14778913004821734
+   ],
+   "psnr_mean": 10.979674830810296,
+   "edge_corr_mean": 0.11224310697611695,
+   "minus_control_f": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "best_attack_counts": {},
+   "P1_pass": true
+  }
+ },
+ "validity_gate": {
+  "plain_minus_control_c": [
+   0.1342330659236059,
+   0.12278340391263615,
+   0.1462100588477955
+  ],
+  "passes": true
+ },
+ "windows_test": 404,
+ "clusters_test": 34,
+ "target": "ground truth",
+ "learned_attacks": true,
+ "scored": "full frame",
+ "windows_unlabelled_skipped": 0,
+ "views_not_run": {},
+ "meta": {
+  "commit": "3c2bfe5fbfa5245bf5e9398e4ad4282f8644580f",
+  "date": "2026-11-16 16:24:22",
+  "argv": [
+   "--dataset",
+   "synthetic",
+   "--keys",
+   "5",
+   "--recon-repo",
+   "/kaggle/working/ext/rpg_e2vid",
+   "--recon-ckpt",
+   "e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar",
+   "firenet=/kaggle/working/ext/firenet.pth.tar",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n3/synthetic"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "synthetic",
+   "data": null,
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n3/synthetic",
+   "win_ms": 20.0,
+   "T": 1024,
+   "max_windows": 6,
+   "recon_repo": "/kaggle/working/ext/rpg_e2vid",
+   "recon_ckpt": [
+    "e2vid=/kaggle/working/ext/E2VID_lightweight.pth.tar",
+    "firenet=/kaggle/working/ext/firenet.pth.tar"
+   ]
+  },
+  "dataset": "synthetic",
+  "synthetic": true,
+  "n_keys": 5,
+  "ci": "cluster bootstrap 95 % over recordings, 1000 resamples",
+  "baselines": {
+   "du2021": true,
+   "zhang2024": true
+  }
+ }
+}

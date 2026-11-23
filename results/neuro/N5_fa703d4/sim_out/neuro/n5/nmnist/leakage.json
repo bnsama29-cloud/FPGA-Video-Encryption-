@@ -1,0 +1,193 @@
+{
+ "views": {
+  "V2": {
+   "mi_bits": 0.45309467201412,
+   "mi_null_mean": 3.859184336011179e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.26651334208278915,
+    0.25843173197381747,
+    0.2735698982683129
+   ],
+   "5-NN": [
+    0.2293496116623121,
+    0.22079489035233546,
+    0.2369221288243814
+   ]
+  },
+  "V3": {
+   "mi_bits": 0.45309467201412,
+   "mi_null_mean": 3.859184336011179e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.26651334208278915,
+    0.25843173197381747,
+    0.2735698982683129
+   ],
+   "5-NN": [
+    0.2293496116623121,
+    0.22079489035233546,
+    0.2369221288243814
+   ]
+  },
+  "V3 + pad floor 4": {
+   "mi_bits": 0.11307519147167522,
+   "mi_null_mean": 4.125398992613327e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.21503031056162622,
+    0.20707647644843025,
+    0.22216358067511563
+   ],
+   "5-NN": [
+    0.1986368891948667,
+    0.19197789296674023,
+    0.2059267156305586
+   ]
+  },
+  "V3 + pad floor 16": {
+   "mi_bits": 0.008913781491392214,
+   "mi_null_mean": 4.580735218452592e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.11237667823623305,
+    0.10695066257712306,
+    0.11800576589584515
+   ],
+   "5-NN": [
+    0.10747011300713707,
+    0.1011459798895742,
+    0.1126501242260206
+   ]
+  },
+  "V3 + pad ladder 2..64": {
+   "mi_bits": 0.424288329363109,
+   "mi_null_mean": 3.974424428613954e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.23852258269690857,
+    0.23066491096545397,
+    0.2461101598727932
+   ],
+   "5-NN": [
+    0.2175794177852138,
+    0.2100278195928748,
+    0.22470072518148412
+   ]
+  },
+  "V4": {
+   "mi_bits": 0.45552735734238503,
+   "mi_null_mean": 4.4505587927785586e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.2567282212100816,
+    0.24892189266659595,
+    0.26451360204450464
+   ],
+   "5-NN": [
+    0.25413831989238045,
+    0.24580930366748313,
+    0.2619343369214801
+   ]
+  },
+  "V4 + pad floor 4": {
+   "mi_bits": 0.08951994742468461,
+   "mi_null_mean": 3.949372504202131e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.21372977355370332,
+    0.20586623645962698,
+    0.22158365603858954
+   ],
+   "5-NN": [
+    0.21587998222207722,
+    0.20778905675143045,
+    0.22412139123687613
+   ]
+  },
+  "V4 + pad ladder 2..64": {
+   "mi_bits": 0.4121646331038624,
+   "mi_null_mean": 3.804421723613505e-05,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.23513417284593097,
+    0.22566181291572618,
+    0.24335601697322162
+   ],
+   "5-NN": [
+    0.25384324246264023,
+    0.24621959261616114,
+    0.26190605265964595
+   ]
+  }
+ },
+ "chance": 0.1,
+ "test_clusters": 10000,
+ "split": "official test split",
+ "dummy_auc": {
+  "floor 4": {
+   "multiplicity": 0.5010378312724882,
+   "position": 0.7699735536719716,
+   "both": 0.7696415872396261,
+   "words": 2578158
+  },
+  "floor 16": {
+   "multiplicity": 0.500913351745813,
+   "position": 0.9432074644478153,
+   "both": 0.9382972668470141,
+   "words": 10236416
+  },
+  "ladder 2..64": {
+   "multiplicity": 0.5012306188230221,
+   "position": 0.7775937023308858,
+   "both": 0.7773281307133251,
+   "words": 1468564
+  }
+ },
+ "pad_cost": {
+  "floor 4": {
+   "dummies_per_real": 3.6187901004847594,
+   "buckets_above_limit": 0.017791479445772963
+  },
+  "floor 16": {
+   "dummies_per_real": 17.348103780064392,
+   "buckets_above_limit": 1.0141478698584605e-07
+  },
+  "ladder 2..64": {
+   "dummies_per_real": 1.6176270105900827,
+   "buckets_above_limit": 1.1931151410099534e-08
+  }
+ },
+ "meta": {
+  "commit": "fa703d4292ebd49e5ad3c5612ca41a1838aedfd6",
+  "date": "2026-11-16 14:56:17",
+  "argv": [
+   "--counts",
+   "/kaggle/working/repo/sim_out/neuro/n5/nmnist_counts.npz",
+   "--dataset",
+   "nmnist",
+   "--data",
+   "/kaggle/temp/kneuro_data/nmnist",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n5/nmnist"
+  ],
+  "inputs": {
+   "/kaggle/working/repo/sim_out/neuro/n5/nmnist_counts.npz": "e9030a2391080e800b27af819f66d05eb09659ce82fceda7a3e4796375c43f3d"
+  },
+  "args": {
+   "dataset": "nmnist",
+   "data": "/kaggle/temp/kneuro_data/nmnist",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n5/nmnist",
+   "counts": "/kaggle/working/repo/sim_out/neuro/n5/nmnist_counts.npz"
+  },
+  "dataset": "nmnist",
+  "synthetic": false,
+  "split": "by group (half of the groups for test)",
+  "ci": "cluster bootstrap 95 % over test groups",
+  "classifiers": "nearest-centroid, 5-NN (GBT / 1-D CNN only on Kaggle)"
+ }
+}

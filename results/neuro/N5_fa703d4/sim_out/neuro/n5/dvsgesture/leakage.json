@@ -1,0 +1,193 @@
+{
+ "views": {
+  "V2": {
+   "mi_bits": 0.3684990176798921,
+   "mi_null_mean": 0.0028965992115503303,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.3484848484848484,
+    0.27739898989898987,
+    0.40909090909090906
+   ],
+   "5-NN": [
+    0.27651515151515144,
+    0.2288952745849297,
+    0.3399209486166007
+   ]
+  },
+  "V3": {
+   "mi_bits": 0.3684990176798921,
+   "mi_null_mean": 0.0028965992115503303,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.3484848484848484,
+    0.27739898989898987,
+    0.40909090909090906
+   ],
+   "5-NN": [
+    0.27651515151515144,
+    0.2288952745849297,
+    0.3399209486166007
+   ]
+  },
+  "V3 + pad floor 4": {
+   "mi_bits": 0.32480838723175687,
+   "mi_null_mean": 0.0023960723145058926,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.3030303030303029,
+    0.21850168350168345,
+    0.3968585858585858
+   ],
+   "5-NN": [
+    0.2272727272727272,
+    0.1818181818181818,
+    0.277056277056277
+   ]
+  },
+  "V3 + pad floor 16": {
+   "mi_bits": 0.25204426445279804,
+   "mi_null_mean": 0.002946746694030127,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.3181818181818181,
+    0.2727272727272727,
+    0.3567727272727272
+   ],
+   "5-NN": [
+    0.24999999999999994,
+    0.20891414141414139,
+    0.2933884297520661
+   ]
+  },
+  "V3 + pad ladder 2..64": {
+   "mi_bits": 0.36155031072461696,
+   "mi_null_mean": 0.0026977262978166248,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.3030303030303029,
+    0.23027308659719725,
+    0.37878787878787873
+   ],
+   "5-NN": [
+    0.24621212121212116,
+    0.2188552188552188,
+    0.2927206851119894
+   ]
+  },
+  "V4": {
+   "mi_bits": 0.36599523483549845,
+   "mi_null_mean": 0.0026919816451780407,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.35606060606060597,
+    0.26225108225108223,
+    0.42711732711732703
+   ],
+   "5-NN": [
+    0.28787878787878785,
+    0.25967975206611565,
+    0.31468531468531463
+   ]
+  },
+  "V4 + pad floor 4": {
+   "mi_bits": 0.3124518510456351,
+   "mi_null_mean": 0.002504557250207422,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.3068181818181817,
+    0.22498860788334468,
+    0.39011544011544
+   ],
+   "5-NN": [
+    0.25378787878787873,
+    0.21678321678321677,
+    0.29414685314685307
+   ]
+  },
+  "V4 + pad ladder 2..64": {
+   "mi_bits": 0.36625313140573024,
+   "mi_null_mean": 0.0024495704667942997,
+   "mi_p": 0.004975124378109453,
+   "nearest-centroid": [
+    0.30681818181818177,
+    0.23205808080808077,
+    0.3804713804713804
+   ],
+   "5-NN": [
+    0.31439393939393934,
+    0.2467532467532467,
+    0.3781055900621117
+   ]
+  }
+ },
+ "chance": 0.09090909090909091,
+ "test_clusters": 6,
+ "split": "official test split",
+ "dummy_auc": {
+  "floor 4": {
+   "multiplicity": 0.6029329462688993,
+   "position": 0.8102576306481394,
+   "both": 0.8390056912637918,
+   "words": 3538426
+  },
+  "floor 16": {
+   "multiplicity": 0.6028217004541402,
+   "position": 0.87849840999236,
+   "both": 0.9074196200505155,
+   "words": 10257280
+  },
+  "ladder 2..64": {
+   "multiplicity": 0.6027820389169785,
+   "position": 0.8067268579119407,
+   "both": 0.8292648028975026,
+   "words": 3807060
+  }
+ },
+ "pad_cost": {
+  "floor 4": {
+   "dummies_per_real": 0.4122482667854402,
+   "buckets_above_limit": 0.3103502160116267
+  },
+  "floor 16": {
+   "dummies_per_real": 3.3830942861532924,
+   "buckets_above_limit": 0.005967250159145721
+  },
+  "ladder 2..64": {
+   "dummies_per_real": 0.4070545628846059,
+   "buckets_above_limit": 7.317801684661861e-09
+  }
+ },
+ "meta": {
+  "commit": "fa703d4292ebd49e5ad3c5612ca41a1838aedfd6",
+  "date": "2026-11-16 15:02:43",
+  "argv": [
+   "--counts",
+   "/kaggle/working/repo/sim_out/neuro/n5/dvsgesture_counts.npz",
+   "--dataset",
+   "dvsgesture",
+   "--data",
+   "/kaggle/temp/kneuro_data/dvsgesture",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n5/dvsgesture"
+  ],
+  "inputs": {
+   "/kaggle/working/repo/sim_out/neuro/n5/dvsgesture_counts.npz": "f4d9df8f36b8506391d819a5580919be90e78647cdff3a30f2b2b161e1f78901"
+  },
+  "args": {
+   "dataset": "dvsgesture",
+   "data": "/kaggle/temp/kneuro_data/dvsgesture",
+   "limit": null,
+   "keys": 5,
+   "seed": 0,
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n5/dvsgesture",
+   "counts": "/kaggle/working/repo/sim_out/neuro/n5/dvsgesture_counts.npz"
+  },
+  "dataset": "dvsgesture",
+  "synthetic": false,
+  "split": "by group (half of the groups for test)",
+  "ci": "cluster bootstrap 95 % over test groups",
+  "classifiers": "nearest-centroid, 5-NN (GBT / 1-D CNN only on Kaggle)"
+ }
+}

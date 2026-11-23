@@ -12,7 +12,8 @@ rx_frames/
 *.mjpeg
 receiver_log.csv
 sim_build/
-sim_out/
+# working output only; result snapshots keep their copy in results/<area>/<run>/sim_out/
+/sim_out/
 results.xml
 hardware/tb/*.result.xml
 debug_bundle.md
