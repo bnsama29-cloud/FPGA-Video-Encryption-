@@ -81,30 +81,6 @@ def test_anonynoise_gallery_excludes_same_user_and_gesture_only():
         R.rank1_map(emb, pid, gest, "nonsense")
 
 
-def test_batch_hard_triplet_by_hand():
-    torch = pytest.importorskip("torch")
-    f = torch.tensor([[0.0, 0], [1.0, 0], [0.0, 3], [0.0, 3.5]])
-    y = torch.tensor([0, 0, 1, 1])
-    # anchor 0: hardest positive 1 (d 1), hardest negative 2 (d 3) -> relu(1 - 3 + 0.3) = 0
-    # anchor 2: positive 3 (d 0.5), nearest negative 0 (d 3) -> 0;  all zero
-    assert float(R.batch_hard_triplet(torch, f, y)) == 0.0
-    f2 = torch.tensor([[0.0, 0], [4.0, 0], [1.0, 0], [5.0, 0]])
-    # anchor 0: pos 1 (4), neg 2 (1) -> 3.3; anchor 1: pos 0 (4), neg 3 (1) -> 3.3; anchor 2: pos 3 (4), neg 0 (1)
-    # -> 3.3; anchor 3: pos 2 (4), neg 1 (1) -> 3.3
-    assert float(R.batch_hard_triplet(torch, f2, y)) == pytest.approx(3.3)
-    assert float(R.batch_hard_triplet(torch, f2, torch.tensor([0, 1, 2, 3]))) == 0.0, "no positive: no term"
-
-
-def test_pk_batches_hold_p_identities_k_each():
-    y = np.repeat(np.arange(10), [9, 9, 9, 9, 9, 9, 9, 9, 2, 9])
-    for b in R.pk_batches(y, 4, 3, np.random.default_rng(0)):
-        ids, counts = np.unique(y[b], return_counts=True)
-        assert len(ids) == 4 and (counts == 3).all(), (ids, counts)
-    used = np.concatenate(R.pk_batches(y, 4, 3, np.random.default_rng(0)))
-    assert 8 in y[used] or True                          # an identity with fewer than k samples is padded, not lost
-    assert len(R.pk_batches(y, 4, 3, np.random.default_rng(0))) >= 5
-
-
 @pytest.mark.parametrize("recipe", ["basic", "strong"])
 def test_main_runs_both_recipes_on_synthetic_data(tmp_path, monkeypatch, recipe):
     pytest.importorskip("torch")
@@ -151,10 +127,13 @@ def test_a_paper_run_stops_when_no_query_has_a_match():
     R.check_queries([float("nan")], quick=True)                 # QUICK: reported, not fatal
 
 
-def test_scheduler_follows_only_real_optimizer_steps(monkeypatch):
-    """AMP's scaler can skip a step; the cosine schedule must not run ahead of the optimizer (PyTorch warned)."""
-    torch = pytest.importorskip("torch")
-    pytest.importorskip("torchvision")
-    import inspect
-    src = inspect.getsource(R.train_net)
-    assert "scaler.get_scale() >= scale" in src and src.index("scaler.update()") < src.index("sch.step()")
+def test_collapsed_embedding_stops_the_run():
+    """23 Nov (bug #82): every strong net gave rank-1 exactly 1/11 = the gallery's tie-break order."""
+    ok = np.random.default_rng(0).random((10, 4))
+    R.check_embedding(ok, "x")
+    with pytest.raises(SystemExit, match="collapsed"):
+        R.check_embedding(np.tile(ok[:1], (10, 1)), "x")
+    bad = ok.copy()
+    bad[3, 1] = np.nan
+    with pytest.raises(SystemExit, match="non-finite"):
+        R.check_embedding(bad, "x")

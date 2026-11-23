@@ -24,11 +24,13 @@ Protocol (fixed before the run; "basic" 22 Nov 2026, "strong" and DVS Gesture 23
   * Each view is applied to the whole recording (one fresh key per recording, as in N6), then cut into samples.
     View "counts only" gives every event a fresh uniform position and polarity: what remains is when events
     happen, i.e. exactly the count series that every level leaves public (control (f) of N3 / N4).
-  * Network: ImageNet ResNet-50 with 2 x bins input channels; embedding = the 2048-d pooled feature.
-    basic: cross-entropy, AdamW 1e-4, cosine, batch 32, 30 epochs, 1 bin, 4 x 4 blocks.
-    strong: cross-entropy + batch-hard triplet loss (margin 0.3, P x K = 8 x 4 batches), as both papers;
-    AdamW 1e-3 with cosine decay, batch 32, 60 epochs (Ahmad: 60; AnonyNoise Event-ReId: lr 1e-3 cosine), 5 bins,
-    2 x 2 blocks on Event-ReId (240 x 320), none on DVS Gesture (128 x 128); mixed precision on the GPU.
+  * Network: ImageNet ResNet-50 with 2 x bins input channels, cross-entropy over the training identities,
+    AdamW 1e-4 with cosine decay, batch 32, float32; embedding = the 2048-d pooled feature.
+    basic: 1 time bin, 4 x 4 blocks on Event-ReId (120 x 160), 30 epochs, 40 frames per recording.
+    strong: 5 time bins (AnonyNoise's 2 x 5 channels), 2 x 2 blocks on Event-ReId (240 x 320), none on DVS Gesture
+    (128 x 128), 40 epochs, 20 frames per recording. A first strong version that added the batch-hard triplet loss
+    of both papers (AdamW 1e-3, float16) collapsed to one embedding on Event-ReId, and a Bag-of-Tricks variant
+    (BNNeck, Adam 3.5e-4) trained worse than cross-entropy alone on a synthetic check; both were dropped (bug #82).
   * Evaluation: cosine distance; rank-1 and mAP over the test identities; mean and Student-t 95 % interval over
     --seeds. Rows per view: (ii) network trained on that view's training samples (the attacker who holds ciphertext
     of other people) and (i) the clear-trained network applied to the view. "clear" is what the key holder gets,
@@ -50,11 +52,10 @@ FRAME_US = 100_000 / 3                 # one Event-ReId labelled frame (README "
 DOWN = 4
 RECIPES = {
     "basic": {"bins": 1, "down": {"eventreid": 4, "dvsgesture": 1, "synthetic": 4}, "epochs": 30, "lr": 1e-4,
-              "triplet": False, "per_file": 40},
-    "strong": {"bins": 5, "down": {"eventreid": 2, "dvsgesture": 1, "synthetic": 2}, "epochs": 60, "lr": 1e-3,
-               "triplet": True, "per_file": 20},
+              "per_file": 40},
+    "strong": {"bins": 5, "down": {"eventreid": 2, "dvsgesture": 1, "synthetic": 2}, "epochs": 40, "lr": 1e-4,
+               "per_file": 20},
 }
-P_IDS, K_PER_ID, MARGIN = 8, 4, 0.3
 
 
 def split_persons(persons, n_train=22, seed=0):
@@ -165,45 +166,6 @@ def check_queries(rank1, quick):
         print("QUICK:", msg, "(small --limit; a paper run stops here)", flush=True)
 
 
-def batch_hard_triplet(torch, f, y, margin=MARGIN):
-    """Batch-hard triplet loss (Hermans et al. 2017): for every anchor, its farthest positive and nearest negative
-    in the batch (Euclidean); anchors without a positive or a negative are left out."""
-    d = torch.cdist(f, f)
-    same = y[:, None] == y[None, :]
-    eye = torch.eye(len(y), dtype=torch.bool, device=f.device)
-    pos = same & ~eye
-    neg = ~same
-    ok = pos.any(1) & neg.any(1)
-    if not ok.any():
-        return f.sum() * 0.0
-    hp = torch.where(pos, d, torch.full_like(d, -1e9)).max(1).values
-    hn = torch.where(neg, d, torch.full_like(d, 1e9)).min(1).values
-    return torch.relu(hp - hn + margin)[ok].mean()
-
-
-def pk_batches(y, p, k, rng):
-    """One epoch of P x K batches: every identity's samples shuffled and cut into groups of k (sampled with
-    replacement up to k when an identity has fewer), groups shuffled, p groups of different identities per batch."""
-    groups = []
-    for c in np.unique(y):
-        ix = rng.permutation(np.flatnonzero(y == c))
-        if len(ix) < k:
-            ix = np.concatenate([ix, rng.choice(ix, k - len(ix))])
-        groups += [(c, ix[i:i + k]) for i in range(0, len(ix) - k + 1, k)]
-    order = rng.permutation(len(groups))
-    batches, cur, seen = [], [], set()
-    for g in order:
-        c, ix = groups[g]
-        if c in seen:
-            continue
-        cur.append(ix)
-        seen.add(c)
-        if len(cur) == p:
-            batches.append(np.concatenate(cur))
-            cur, seen = [], set()
-    return batches
-
-
 def features(m, x):
     """2048-d pooled feature of a torchvision ResNet (the layers before m.fc)."""
     x = m.maxpool(m.relu(m.bn1(m.conv1(x))))
@@ -211,47 +173,28 @@ def features(m, x):
     return m.avgpool(x).flatten(1)
 
 
-def train_net(torch, X, y, classes, epochs, seed, dev, bs=32, lr=1e-4, triplet=False, shift=4):
-    """basic: N6's fit_eval (cross-entropy). triplet: own loop, cross-entropy + batch-hard triplet on P x K batches,
-    AdamW at lr with cosine decay, float16 autocast on CUDA."""
-    if not triplet:
-        X = X.astype(np.float32)               # frames are kept as float16 (memory); the network trains in float32
-        m, _ = N6.fit_eval(torch, X, y, X[:1], y[:1], classes, epochs, seed, dev, bs=bs, arch="resnet50",
-                           shift=shift, lr=lr)
-        return m
-    torch.manual_seed(seed)
-    gen = torch.Generator().manual_seed(seed)
-    rng = np.random.default_rng(seed)
-    m = N6.cnn(torch, classes, X.shape[1], "resnet50").to(dev)
-    per_epoch = max(1, len(pk_batches(y, P_IDS, K_PER_ID, np.random.default_rng(seed))))
-    opt = torch.optim.AdamW(m.parameters(), lr)
-    sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs * per_epoch)
-    amp = dev == "cuda"
-    scaler = torch.amp.GradScaler("cuda", enabled=amp)
-    yt = torch.from_numpy(y).long()
-    for _ in range(epochs):
-        m.train()
-        for b in pk_batches(y, P_IDS, K_PER_ID, rng):
-            xb = N6.shift_batch(torch, torch.from_numpy(X[b].astype(np.float32)), shift, gen).to(dev)
-            yb = yt[b].to(dev)
-            with torch.autocast("cuda", dtype=torch.float16, enabled=amp):
-                f = features(m, xb)
-                loss = torch.nn.functional.cross_entropy(m.fc(f), yb)
-            loss = loss + batch_hard_triplet(torch, f.float(), yb)
-            opt.zero_grad()
-            scaler.scale(loss).backward()
-            scale = scaler.get_scale()
-            scaler.step(opt)
-            scaler.update()
-            if scaler.get_scale() >= scale:   # the scaler skipped this step (inf / nan gradients): keep the schedule
-                sch.step()                    # in step with the optimizer (PyTorch warns otherwise)
+def check_embedding(e, what):
+    """Stop at once when a trained network maps every sample to the same (or a non-finite) embedding: its rank-1 is
+    then the tie-break order of the gallery, not a measurement (bug #82: 23 Nov, rank-1 exactly 1/11 everywhere)."""
+    if not np.isfinite(e).all():
+        raise SystemExit(f"{what}: non-finite embedding")
+    if float(e.std(0).max()) < 1e-6 or len(np.unique(e.round(6), axis=0)) < 2:
+        raise SystemExit(f"{what}: every sample has the same embedding (training collapsed)")
+
+
+def train_net(torch, X, y, classes, epochs, seed, dev, bs=32, lr=1e-4, shift=4):
+    """ResNet-50 identity classifier, trained with N6's fit_eval (cross-entropy, AdamW, cosine decay, float32)."""
+    X = X.astype(np.float32)                   # frames are kept as float16 (memory); the network trains in float32
+    m, _ = N6.fit_eval(torch, X, y, X[:1], y[:1], classes, epochs, seed, dev, bs=bs, arch="resnet50", shift=shift,
+                       lr=lr)
     return m
 
 
 def embed(torch, m, X, dev):
+    """Embedding of every sample: the 2048-d pooled feature."""
     m.eval()
     with torch.no_grad():
-        out = torch.cat([features(m, torch.from_numpy(X[i:i + 128].astype(np.float32)).to(dev)).float().cpu()
+        out = torch.cat([features(m, torch.from_numpy(X[i:i + 128].astype(np.float32)).to(dev)).cpu()
                          for i in range(0, len(X), 128)]).numpy()
     return out
 
@@ -301,7 +244,7 @@ def main():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     rec = RECIPES[a.recipe]
     ds = a.dataset if a.data else "synthetic"
-    bins, down, lr, triplet = rec["bins"], rec["down"][ds], rec["lr"], rec["triplet"]
+    bins, down, lr = rec["bins"], rec["down"][ds], rec["lr"]
     epochs = a.epochs or rec["epochs"]
     per_file = a.per_file or rec["per_file"]
     if a.quick:
@@ -324,11 +267,14 @@ def main():
     tr = np.isin(pid[idx], tr_ids)
     ytr = np.array([lab[p] for p in pid[idx][tr]])
     te = ~tr
-    fit = dict(lr=lr, triplet=triplet)
+    fit = dict(lr=lr)
     clear_nets = [train_net(torch, X[tr], ytr, len(tr_ids), epochs, sd, dev, **fit) for sd in a.seeds]
 
     def score(nets, Xte):
-        r = [rank1_map(embed(torch, m, Xte, dev), pid[idx][te], cams[idx][te], gallery) for m in nets]
+        embs = [embed(torch, m, Xte, dev) for m in nets]
+        for k, e in enumerate(embs):
+            check_embedding(e, f"seed {a.seeds[k]}")
+        r = [rank1_map(e, pid[idx][te], cams[idx][te], gallery) for e in embs]
         return {"rank1": [v[0] for v in r], "map": [v[1] for v in r]}
     def report():
         def cell(d, k):
@@ -349,8 +295,8 @@ def main():
         md = [f"# N12 person re-identification on {name}", "",
               f"{len(recs)} recordings, identities {len(tr_ids)} train / {len(te_ids)} test; {unit}; chance rank-1 about "
               f"{100 / max(1, len(te_ids)):.0f} %. Recipe {a.recipe}: ResNet-50 (ImageNet), input {2 * bins} x {h} x {w} "
-              f"({bins} time bin(s), {down} x {down} blocks), {'cross-entropy + batch-hard triplet' if triplet else 'cross-entropy'}, "
-              f"AdamW {lr:g} cosine, {epochs} epochs, seeds {a.seeds}; mean and 95 % interval in %.", "",
+              f"({bins} time bin(s), {down} x {down} blocks), cross-entropy, AdamW {lr:g} cosine, "
+              f"{epochs} epochs, seeds {a.seeds}; mean and 95 % interval in %.", "",
               C.table(["view", "rank-1, trained on the view", "mAP, trained on the view", "rank-1, clear-trained net",
                        "mAP, clear-trained net"], rows), "",
               "clear = what the key holder gets (decryption is exact). counts only = every event at a random position "
