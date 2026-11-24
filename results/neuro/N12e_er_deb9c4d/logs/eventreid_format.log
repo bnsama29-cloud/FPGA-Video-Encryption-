@@ -1,0 +1,37 @@
+$ /usr/bin/python3 -c "import json; from neuro import datasets; print(json.dumps(datasets.describe_eventreid('/kaggle/temp/kneuro_data/eventreid'), indent=1))"
+
+{
+ "n_files": 267,
+ "extensions": {
+  ".json": 133,
+  "": 1,
+  ".md": 1,
+  ".txt": 132
+ },
+ "dirs_first": [
+  ".",
+  "Event_ReId",
+  "Event_ReId/Event_ReId",
+  "Event_ReId/Event_ReId/001/cam01",
+  "Event_ReId/Event_ReId/001/cam01/labels",
+  "Event_ReId/Event_ReId/001/cam02",
+  "Event_ReId/Event_ReId/001/cam02/labels",
+  "Event_ReId/Event_ReId/001/cam03",
+  "Event_ReId/Event_ReId/001/cam03/labels",
+  "Event_ReId/Event_ReId/001/cam04",
+  "Event_ReId/Event_ReId/001/cam04/labels",
+  "Event_ReId/Event_ReId/002/cam01",
+  "Event_ReId/Event_ReId/002/cam01/labels",
+  "Event_ReId/Event_ReId/002/cam02",
+  "Event_ReId/Event_ReId/002/cam02/labels",
+  "Event_ReId/Event_ReId/002/cam03",
+  "Event_ReId/Event_ReId/002/cam03/labels",
+  "Event_ReId/Event_ReId/002/cam04",
+  "Event_ReId/Event_ReId/002/cam04/labels",
+  "Event_ReId/Event_ReId/003/cam01"
+ ],
+ "n_dirs": 267,
+ "first_files": []
+}
+
+ok

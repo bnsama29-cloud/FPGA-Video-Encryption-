@@ -33,3 +33,4 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N12s_dvs_9e23860/` | `samarthhhhium/neuro-paper2-n12s2-dvs` | 9e23860 |
 | `N16_tvla_sim_3ee7bff/` | none (cloud workspace, `experiments/neuro_tvla_sim.py`) | 3ee7bff |
 | `N17_prolead_3ee7bff/` | none (cloud workspace, `experiments/neuro_prolead.py`, PROLEAD) | 3ee7bff |
+| `N12e_er_deb9c4d/` | `samarthhhhium/neuro-paper2-n12e-er` | deb9c4d |

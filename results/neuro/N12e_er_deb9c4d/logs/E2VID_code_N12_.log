@@ -1,0 +1,5 @@
+$ git clone --depth 1 https://github.com/uzh-rpg/rpg_e2vid.git /kaggle/working/ext12/rpg_e2vid
+
+Cloning into '/kaggle/working/ext12/rpg_e2vid'...
+
+ok

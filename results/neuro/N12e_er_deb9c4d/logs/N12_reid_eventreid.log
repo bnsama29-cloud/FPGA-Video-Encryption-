@@ -1,0 +1,22 @@
+$ /usr/bin/python3 experiments/neuro_reid.py --dataset eventreid --data /kaggle/temp/kneuro_data/eventreid  --recipe e2vid --views V3 'counts only' --seeds 0 1 2 --e2vid-repo /kaggle/working/ext12/rpg_e2vid --e2vid-ckpt e2vid=/kaggle/working/ext12/E2VID_lightweight.pth.tar --out /kaggle/working/repo/sim_out/neuro/n12/eventreid
+
+Loading model /kaggle/working/ext12/E2VID_lightweight.pth.tar...
+/kaggle/working/repo/experiments/neuro_recon_attack.py:118: UserWarning: Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected, since the`weights_only` argument was not explicitly passed to `torch.load`, forcing weights_only=False.
+  torch.load = lambda f, *a, **k: torch_load(f, *a, **{"map_location": self.dev, **k})
+Using TransposedConvLayer (fast, with checkerboard artefacts)
+Downloading: "https://download.pytorch.org/models/resnet50-11ad3fa6.pth" to /root/.cache/torch/hub/checkpoints/resnet50-11ad3fa6.pth
+
+  0%|          | 0.00/97.8M [00:00<?, ?B/s]
+  9%|▊         | 8.50M/97.8M [00:00<00:01, 88.9MB/s]
+ 31%|███       | 30.5M/97.8M [00:00<00:00, 172MB/s] 
+ 54%|█████▎    | 52.5M/97.8M [00:00<00:00, 199MB/s]
+ 76%|███████▋  | 74.6M/97.8M [00:00<00:00, 211MB/s]
+100%|██████████| 97.8M/97.8M [00:00<00:00, 205MB/s]
+clear {'cipher_trained': {'rank1': [0.3840909090909091, 0.4011363636363636, 0.4284090909090909], 'map': [0.2748117021008247, 0.28383271928473114, 0.2690637140031115]}, 'clear_trained': None} 5167 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/eventreid/reid.json and .md
+V3 {'cipher_trained': {'rank1': [0.09431818181818181, 0.10227272727272728, 0.10227272727272728], 'map': [0.12374780817982058, 0.117495608339761, 0.1162746586361967]}, 'clear_trained': {'rank1': [0.06818181818181818, 0.053409090909090906, 0.07954545454545454], 'map': [0.110281129365939, 0.1085683894894039, 0.10646852275353398]}} 22809 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/eventreid/reid.json and .md
+counts only {'cipher_trained': {'rank1': [0.07727272727272727, 0.04090909090909091, 0.045454545454545456], 'map': [0.11886144237276039, 0.10653640707458424, 0.11390113072690582]}, 'clear_trained': {'rank1': [0.035227272727272725, 0.031818181818181815, 0.04318181818181818], 'map': [0.10900031466675507, 0.1076332989037494, 0.10394747596062183]}} 28026 s
+wrote /kaggle/working/repo/sim_out/neuro/n12/eventreid/reid.json and .md
+
+ok

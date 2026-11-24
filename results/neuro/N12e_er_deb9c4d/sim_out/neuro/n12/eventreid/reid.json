@@ -1,0 +1,208 @@
+{
+ "results": {
+  "clear": {
+   "cipher_trained": {
+    "rank1": [
+     0.3840909090909091,
+     0.4011363636363636,
+     0.4284090909090909
+    ],
+    "map": [
+     0.2748117021008247,
+     0.28383271928473114,
+     0.2690637140031115
+    ]
+   },
+   "clear_trained": null
+  },
+  "V3": {
+   "cipher_trained": {
+    "rank1": [
+     0.09431818181818181,
+     0.10227272727272728,
+     0.10227272727272728
+    ],
+    "map": [
+     0.12374780817982058,
+     0.117495608339761,
+     0.1162746586361967
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.06818181818181818,
+     0.053409090909090906,
+     0.07954545454545454
+    ],
+    "map": [
+     0.110281129365939,
+     0.1085683894894039,
+     0.10646852275353398
+    ]
+   }
+  },
+  "counts only": {
+   "cipher_trained": {
+    "rank1": [
+     0.07727272727272727,
+     0.04090909090909091,
+     0.045454545454545456
+    ],
+    "map": [
+     0.11886144237276039,
+     0.10653640707458424,
+     0.11390113072690582
+    ]
+   },
+   "clear_trained": {
+    "rank1": [
+     0.035227272727272725,
+     0.031818181818181815,
+     0.04318181818181818
+    ],
+    "map": [
+     0.10900031466675507,
+     0.1076332989037494,
+     0.10394747596062183
+    ]
+   }
+  }
+ },
+ "train_ids": [
+  1,
+  2,
+  4,
+  5,
+  8,
+  9,
+  11,
+  13,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  27,
+  28,
+  29,
+  31,
+  32
+ ],
+ "test_ids": [
+  3,
+  6,
+  7,
+  10,
+  12,
+  14,
+  22,
+  23,
+  24,
+  30,
+  33
+ ],
+ "test_samples": 880,
+ "dataset": "eventreid",
+ "recipe": "e2vid",
+ "input_shape": [
+  1,
+  240,
+  320
+ ],
+ "epochs": 40,
+ "gallery": "cross-camera",
+ "meta": {
+  "commit": "deb9c4df3c0022ef2a11700d75197e3d0c4acd24",
+  "date": "2026-11-23 21:41:20",
+  "argv": [
+   "--dataset",
+   "eventreid",
+   "--data",
+   "/kaggle/temp/kneuro_data/eventreid",
+   "--recipe",
+   "e2vid",
+   "--views",
+   "V3",
+   "counts only",
+   "--seeds",
+   "0",
+   "1",
+   "2",
+   "--e2vid-repo",
+   "/kaggle/working/ext12/rpg_e2vid",
+   "--e2vid-ckpt",
+   "e2vid=/kaggle/working/ext12/E2VID_lightweight.pth.tar",
+   "--out",
+   "/kaggle/working/repo/sim_out/neuro/n12/eventreid"
+  ],
+  "inputs": {},
+  "args": {
+   "dataset": "eventreid",
+   "data": "/kaggle/temp/kneuro_data/eventreid",
+   "limit": null,
+   "seed": 0,
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "views": [
+    "V3",
+    "counts only"
+   ],
+   "recipe": "e2vid",
+   "per_file": null,
+   "epochs": null,
+   "train_persons": 22,
+   "workers": 4,
+   "e2vid_repo": "/kaggle/working/ext12/rpg_e2vid",
+   "e2vid_ckpt": "e2vid=/kaggle/working/ext12/E2VID_lightweight.pth.tar",
+   "quick": false,
+   "out": "/kaggle/working/repo/sim_out/neuro/n12/eventreid"
+  },
+  "synthetic": false,
+  "device": "cuda"
+ },
+ "train_persons": [
+  1,
+  2,
+  4,
+  5,
+  8,
+  9,
+  11,
+  13,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  25,
+  26,
+  27,
+  28,
+  29,
+  31,
+  32
+ ],
+ "test_persons": [
+  3,
+  6,
+  7,
+  10,
+  12,
+  14,
+  22,
+  23,
+  24,
+  30,
+  33
+ ],
+ "test_frames": 880
+}
