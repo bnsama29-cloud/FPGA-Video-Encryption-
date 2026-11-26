@@ -14,6 +14,7 @@ One folder per finished run, copied unchanged by `software/scripts/save_kaggle_n
 | `N4_v2_b968fac/` | `samarthium/neuro-paper2-n4` | b968fac |
 | `N6sel_dvs_r2_27902c6/` | `samarthium/neuro-paper2-n6-select` | 27902c6 |
 | `N2_vivado_169f7e3/` | laptop Vivado 2026.1 (not Kaggle) | 169f7e3 |
+| `N2c_walk_mask_b205ad2/` | laptop Vivado 2026.1 (not Kaggle), `--steps walk mask parse` | b205ad2 |
 | `N6_nmnist_v3_27902c6/` | `samarthhhhium/neuro-paper2-n6-nmnist-v3` | 27902c6 |
 | `N6x_snn10_51c8b96/` | `samarthhhhium/neuro-paper2-n6x-snn` | 51c8b96 |
 | `N6x_ts3_51c8b96/` | `samarthbnsul/neuro-paper2-n6x-ts3` | 51c8b96 |

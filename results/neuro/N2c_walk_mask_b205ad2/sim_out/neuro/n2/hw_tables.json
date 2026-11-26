@@ -1,0 +1,280 @@
+{
+ "builds": [
+  {
+   "build": "nv_ascon_round_dom",
+   "params": {
+    "top": "nv_ascon_round_dom",
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     2290.0,
+     53200.0,
+     4.3
+    ],
+    "ff": [
+     2368.0,
+     106400.0,
+     2.23
+    ],
+    "bram": [
+     0.0,
+     140.0,
+     0.0
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 2.094,
+    "tns": 0.0,
+    "whs": 1.666,
+    "met": true
+   },
+   "fmax_mhz": 126.5,
+   "power": {
+    "total": 0.158,
+    "dynamic": 0.054,
+    "static": 0.103,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_ascon_round_reg",
+   "params": {
+    "top": "nv_ascon_round_reg",
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     462.0,
+     53200.0,
+     0.87
+    ],
+    "ff": [
+     648.0,
+     106400.0,
+     0.61
+    ],
+    "bram": [
+     0.0,
+     140.0,
+     0.0
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 5.501,
+    "tns": 0.0,
+    "whs": 0.12,
+    "met": true
+   },
+   "fmax_mhz": 222.3,
+   "power": {
+    "total": 0.121,
+    "dynamic": 0.018,
+    "static": 0.103,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_feistel_walk_w1280_h720_k4",
+   "params": {
+    "top": "nv_feistel_walk_w1280_h720_k4",
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     1046.0,
+     53200.0,
+     1.97
+    ],
+    "ff": [
+     1682.0,
+     106400.0,
+     1.58
+    ],
+    "bram": [
+     60.0,
+     140.0,
+     42.86
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 0.491,
+    "tns": 0.0,
+    "whs": 0.1,
+    "met": true
+   },
+   "fmax_mhz": 105.2,
+   "power": {
+    "total": 0.287,
+    "dynamic": 0.178,
+    "static": 0.109,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [
+    [
+     "sidetab[1].sb1",
+     "nv_sdp_ram__parameterized0_1",
+     "74",
+     "74",
+     "0",
+     "0",
+     "0",
+     "1",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_feistel_walk_w1280_h720_k8",
+   "params": {
+    "top": "nv_feistel_walk_w1280_h720_k8",
+    "period": 10.0
+   },
+   "util": {
+    "lut": [
+     1945.0,
+     53200.0,
+     3.66
+    ],
+    "ff": [
+     3304.0,
+     106400.0,
+     3.11
+    ],
+    "bram": [
+     108.0,
+     140.0,
+     77.14
+    ],
+    "dsp": [
+     0.0,
+     220.0,
+     0.0
+    ]
+   },
+   "timing": {
+    "wns": 0.502,
+    "tns": 0.0,
+    "whs": 0.097,
+    "met": true
+   },
+   "fmax_mhz": 105.3,
+   "power": {
+    "total": 0.443,
+    "dynamic": 0.328,
+    "static": 0.115,
+    "confidence": "Medium",
+    "internal": "Medium",
+    "internal_detail": "User specified less than 25% of internal nodes"
+   },
+   "power_source": "vectorless",
+   "missing": [],
+   "kpol_generators": 1,
+   "impl": "fast",
+   "power_saif": {},
+   "bram_rows": [
+    [
+     "sidetab[1].sb1",
+     "nv_sdp_ram__parameterized0_1",
+     "74",
+     "74",
+     "0",
+     "0",
+     "0",
+     "1",
+     "0",
+     "0"
+    ]
+   ],
+   "reported": true,
+   "energy": []
+  },
+  {
+   "build": "nv_top_u2_maxw34_maxh34",
+   "params": {
+    "top": "nv_top",
+    "u": 2,
+    "maxw": 34,
+    "maxh": 34,
+    "period": 10.0
+   },
+   "util": {},
+   "timing": {},
+   "fmax_mhz": null,
+   "power": {},
+   "power_source": "vectorless",
+   "missing": [
+    "utilization.txt",
+    "timing.txt",
+    "power.txt"
+   ],
+   "kpol_generators": 1,
+   "impl": "perf",
+   "power_saif": {},
+   "tag_words_per_clk": 0.8,
+   "fill_clk": 712,
+   "auth_mev_s_100mhz": 80.0,
+   "auth_mev_s_fmax": null,
+   "bram_rows": [],
+   "reported": false,
+   "energy": []
+  }
+ ],
+ "meta": {
+  "commit": "b205ad253bbfaafd381eabc65259bc09acfca5d4",
+  "date": "2026-11-27 00:13:41",
+  "argv": [],
+  "inputs": {},
+  "args": {
+   "dir": "E:\\FPGA-Video-Encryption-\\sim_build",
+   "out": null,
+   "overlay": "E:\\FPGA-Video-Encryption-\\software\\system\\board\\overlay\\neuro"
+  },
+  "note": "authenticated rate = min(1, tag rate) x Fmax; fill-bound rate per packet is in fill_clk (see \u00a76.3)"
+ }
+}

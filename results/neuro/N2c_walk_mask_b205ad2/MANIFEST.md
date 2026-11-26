@@ -1,0 +1,21 @@
+| file | bytes | sha256 |
+|---|---|---|
+| ./README.md | 818 | 555e145aceed519351ff0109136ca006144c53c5efec106c1b0afa193ecca1a9 |
+| ./builds/vivado_neuro_nv_ascon_round_dom/impl.txt | 6 | 8cb68ecfa8ad1a570631bf5f140373e4e8683d0339f10cee39b1f5f6aebc60bd |
+| ./builds/vivado_neuro_nv_ascon_round_dom/power.txt | 8928 | ba83debb1bb62ddb67b5b4895065ba395231d62c13e709053d676efc6d7ef0ff |
+| ./builds/vivado_neuro_nv_ascon_round_dom/timing.txt | 75935 | 26b9d2669c70947a64d36cfec387389e56a9ff5593ad2c01f8bb8b80848af141 |
+| ./builds/vivado_neuro_nv_ascon_round_dom/utilization.txt | 10293 | 8da94e46dd500c9413fda242226e161223b5337798f01c53813d3104b9b1f243 |
+| ./builds/vivado_neuro_nv_ascon_round_reg/impl.txt | 6 | 8cb68ecfa8ad1a570631bf5f140373e4e8683d0339f10cee39b1f5f6aebc60bd |
+| ./builds/vivado_neuro_nv_ascon_round_reg/power.txt | 8928 | 1e1f68c466c60ea6defbcf86998a6139cdd140cc5f546a2ebc143b5d140de8d5 |
+| ./builds/vivado_neuro_nv_ascon_round_reg/timing.txt | 70901 | b7341f15763e01ee67077ed8779a703b9e8f4cafaefb43be7d9c84f5e461f066 |
+| ./builds/vivado_neuro_nv_ascon_round_reg/utilization.txt | 10251 | 123bb4e22eadc226ca778037d485ac6df531921cccf4553d1b559475c746ef4f |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k4/impl.txt | 6 | 8cb68ecfa8ad1a570631bf5f140373e4e8683d0339f10cee39b1f5f6aebc60bd |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k4/power.txt | 12082 | f998e40a48962aba9ef1cb39c80205a487cdfd2b21207525cec79420f2178cf7 |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k4/timing.txt | 84851 | d2c03355fd1a02194bc70a256f53ffa330da238bf20b9a184a54512765df22f8 |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k4/utilization.txt | 10995 | ab7385df125a8c6974e88e3f87d466172f1e1c5752efe7ddaac4759f357b901f |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k8/impl.txt | 6 | 8cb68ecfa8ad1a570631bf5f140373e4e8683d0339f10cee39b1f5f6aebc60bd |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k8/power.txt | 14258 | 0bb8cf81cf72176166525d61b5dcf51eb0aad4cf9796abc210270dfd8bfc0ac1 |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k8/timing.txt | 77576 | 4b7a536c49a1c1d687fce3795d28d3a317c35a60add2f507d8cf64313a24f3cd |
+| ./builds/vivado_neuro_nv_feistel_walk_w1280_h720_k8/utilization.txt | 10995 | 88c87a032cf0b9df0254917aa635f2aca5bb3e53118e61d744d14c436ce22bf0 |
+| ./sim_out/neuro/n2/hw_tables.json | 5014 | 6d1f5ca8cee5de61efcf51d3e53167fa12e73a97627231db4891183a00d0d97d |
+| ./sim_out/neuro/n2/hw_tables.md | 915 | c9e7e9160d892bdbcb523efcdc90731d4a845516dfecf3e70e656df826dba871 |
